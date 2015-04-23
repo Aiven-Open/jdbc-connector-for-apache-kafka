@@ -181,7 +181,7 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
     }
     db.createTable(SINGLE_TABLE_NAME, "id", sqlColumnSpec);
     db.insert(SINGLE_TABLE_NAME, "id", sqlValue);
-    List<SourceRecord<Object, Object>> records = task.poll();
+    List<SourceRecord> records = task.poll();
     validateRecords(records, convertedType, nullable, fixedSize);
   }
 
@@ -189,7 +189,7 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
    * Validates schema and type of returned record data. Assumes single-field values since this is
    * only used for validating type information.
    */
-  private void validateRecords(List<SourceRecord<Object, Object>> records, Type type,
+  private void validateRecords(List<SourceRecord> records, Type type,
                                boolean nullable, Integer fixedSize) {
     // Validate # of records and object type
     assertEquals(1, records.size());

@@ -108,7 +108,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
   }
 
   @Override
-  public List<SourceRecord<Object, Object>> poll() throws InterruptedException {
+  public List<SourceRecord> poll() throws InterruptedException {
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     if (tables.size() > 1) {
       throw new CopycatRuntimeException("JdbcSourceTask currently only supports a single table");
@@ -128,7 +128,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
       }
 
       String tableName = tables.get(0);
-      List<SourceRecord<Object, Object>> results = new ArrayList<SourceRecord<Object, Object>>();
+      List<SourceRecord> results = new ArrayList<SourceRecord>();
       try {
         PreparedStatement stmt = getPreparedStatement(tableName);
         ResultSet resultSet = stmt.executeQuery();
@@ -139,8 +139,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
         while (resultSet.next()) {
           GenericRecord record = buildRecordFromDBResult(schema, resultSet);
           // TODO: input stream offset, key if available. partition?
-          results.add(
-              new SourceRecord<Object, Object>(tableName, null, tableName, null, null, record));
+          results.add(new SourceRecord(tableName, null, tableName, null, null, record));
         }
 
         return results;

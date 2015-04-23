@@ -48,7 +48,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     // This is currently the default mode
     task.start(singleTableConfig());
 
-    List<SourceRecord<Object, Object>> records = task.poll();
+    List<SourceRecord> records = task.poll();
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records));
 
     records = task.poll();
@@ -66,9 +66,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     assertEquals(Collections.singletonMap(2, 1), countIntValues(records));
   }
 
-  Map<Integer, Integer> countIntValues(List<SourceRecord<Object, Object>> records) {
+  Map<Integer, Integer> countIntValues(List<SourceRecord> records) {
     HashMap<Integer, Integer> result = new HashMap<Integer, Integer>();
-    for (SourceRecord<Object, Object> record : records) {
+    for (SourceRecord record : records) {
       Integer value = (Integer) ((GenericRecord) record.getValue()).get(0);
       Integer count = result.get(value);
       count = (count != null ? count : 0) + 1;
