@@ -10,3 +10,9 @@ target/
 /docs/_build
 
 .DS_Store
+
+derby.log
+
+# Test databases
+__test_database_*
+test.sqlite
