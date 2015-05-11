@@ -31,6 +31,7 @@ import java.sql.SQLXML;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -59,14 +60,8 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
   JdbcSourceConnectorConfig connectorConfig;
   JdbcSourceTaskConfig config;
   Connection db;
-
+  PriorityQueue<TableState> tableQueue = new PriorityQueue<TableState>();
   AtomicBoolean stop;
-
-  // TODO: This state should be kept per-table
-  long lastUpdate;
-  PreparedStatement stmt;
-  ResultSet resultSet;
-  Schema schema;
 
   public JdbcSourceTask() {
     this.time = new SystemTime();
@@ -86,6 +81,15 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
                                         e);
     }
 
+    List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
+    if (tables.isEmpty()) {
+      throw new CopycatRuntimeException("Invalid configuration: each JdbcSourceTask must have at "
+                                        + "least one table assigned to it");
+    }
+    for(String tableName : tables) {
+      tableQueue.add(new TableState(tableName));
+    }
+
     String dbUrl = connectorConfig.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     log.debug("Trying to connect to {}", dbUrl);
     try {
@@ -96,7 +100,6 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
     }
 
     stop = new AtomicBoolean(false);
-    lastUpdate = 0;
   }
 
   @Override
@@ -112,16 +115,12 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
 
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
-    List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
-    if (tables.size() > 1) {
-      throw new CopycatRuntimeException("JdbcSourceTask currently only supports a single table");
-    }
-
     long now = time.milliseconds();
     while (!stop.get()) {
       // If not in the middle of an update, wait for next update time
-      if (resultSet == null) {
-        long nextUpdate = lastUpdate +
+      TableState state = tableQueue.peek();
+      if (state.resultSet == null) {
+        long nextUpdate = state.lastUpdate +
                           connectorConfig.getInt(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG);
         long untilNext = nextUpdate - now;
         if (untilNext > 0) {
@@ -132,30 +131,36 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
         }
       }
 
-      String tableName = tables.get(0);
       List<SourceRecord> results = new ArrayList<SourceRecord>();
       try {
-        if (resultSet == null) {
-          PreparedStatement stmt = getPreparedStatement(tableName);
-          resultSet = stmt.executeQuery();
-          schema = getSchema(tableName, resultSet.getMetaData());
+        if (state.resultSet == null) {
+          PreparedStatement stmt = state.getPreparedStatement(db);
+          state.resultSet = stmt.executeQuery();
+          state.schema = getSchema(state.name, state.resultSet.getMetaData());
         }
 
         int batchMaxRows = connectorConfig.getInt(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
-        while (results.size() < batchMaxRows && (hadNext = resultSet.next())) {
-          GenericRecord record = buildRecordFromDBResult(schema, resultSet);
+        while (results.size() < batchMaxRows && (hadNext = state.resultSet.next())) {
+          GenericRecord record = buildRecordFromDBResult(state.schema, state.resultSet);
           // TODO: input stream offset, key if available. partition?
-          results.add(new SourceRecord(tableName, null, tableName, null, null, record));
+          results.add(new SourceRecord(state.name, null, state.name, null, null, record));
         }
 
         // If we finished processing the results from this query, we can clear it out
         if (!hadNext) {
-          resultSet.close();
-          resultSet = null;
+          state.resultSet.close();
+          state.resultSet = null;
           // TODO: Can we cache this and quickly check that it's identical for the next query
           // instead of constructing from scratch since it's almost always the same
-          schema = null;
+          state.schema = null;
+
+          // Updates are only marked once the query has completed
+          TableState removedState = tableQueue.poll();
+          assert removedState == state;
+          state.lastUpdate = time.milliseconds();
+          tableQueue.add(state);
+          now = state.lastUpdate;
         }
 
         if (results.isEmpty()) {
@@ -164,23 +169,13 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
 
         return results;
       } catch (SQLException e) {
-        log.error("Failed to run query for table {}: {}", tableName, e);
+        log.error("Failed to run query for table {}: {}", state.name, e);
         return null;
-      } finally {
-        lastUpdate = time.milliseconds();
-        now = lastUpdate;
       }
     }
 
     // Only in case of shutdown
     return null;
-  }
-
-  private PreparedStatement getPreparedStatement(String tableName) throws SQLException {
-    if (stmt == null) {
-      stmt = db.prepareStatement("SELECT * FROM \"" + tableName + "\"");
-    }
-    return stmt;
   }
 
   private Schema getSchema(String tableName, ResultSetMetaData metadata) throws SQLException {
@@ -543,5 +538,39 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
     // FIXME: Would passing in some extra info about the schema so we can get the Field by index
     // be faster than setting this by name?
     builder.set(fieldName, colValue);
+  }
+
+
+  private static class TableState implements Comparable<TableState> {
+    String name;
+    long lastUpdate;
+    PreparedStatement stmt;
+    ResultSet resultSet;
+    Schema schema;
+
+    TableState(String name) {
+      this.name = name;
+      this.lastUpdate = 0;
+    }
+
+    @Override
+    public int compareTo(TableState other) {
+      if (this.lastUpdate < other.lastUpdate) {
+        return -1;
+      } else if (this.lastUpdate > other.lastUpdate) {
+        return 1;
+      } else {
+        return this.name.compareTo(other.name);
+      }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection db)
+        throws SQLException {
+      if (stmt == null) {
+        stmt = db.prepareStatement("SELECT * FROM \"" + name + "\"");
+      }
+      return stmt;
+    }
+
   }
 }

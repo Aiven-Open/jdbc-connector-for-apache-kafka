@@ -28,6 +28,10 @@ public class JdbcSourceTaskTestBase {
   protected static EmbeddedDerby.TableName SINGLE_TABLE
       = new EmbeddedDerby.TableName(SINGLE_TABLE_NAME);
 
+  protected static String SECOND_TABLE_NAME = "test2";
+  protected static EmbeddedDerby.TableName SECOND_TABLE
+      = new EmbeddedDerby.TableName(SECOND_TABLE_NAME);
+
   protected Time time;
   protected JdbcSourceTask task;
   protected EmbeddedDerby db;
@@ -49,6 +53,14 @@ public class JdbcSourceTaskTestBase {
     Properties props = new Properties();
     props.setProperty(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
     props.setProperty(JdbcSourceTaskConfig.TABLES_CONFIG, SINGLE_TABLE_NAME);
+    return props;
+  }
+
+  protected Properties twoTableConfig() {
+    Properties props = new Properties();
+    props.setProperty(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    props.setProperty(JdbcSourceTaskConfig.TABLES_CONFIG,
+                      SINGLE_TABLE_NAME + "," + SECOND_TABLE_NAME);
     return props;
   }
 }
