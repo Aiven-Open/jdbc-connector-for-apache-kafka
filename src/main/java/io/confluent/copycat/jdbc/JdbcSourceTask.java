@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.confluent.common.config.ConfigException;
 import io.confluent.common.utils.SystemTime;
 import io.confluent.common.utils.Time;
+import io.confluent.copycat.data.GenericData;
 import io.confluent.copycat.data.GenericRecord;
 import io.confluent.copycat.data.GenericRecordBuilder;
 import io.confluent.copycat.data.Schema;
@@ -64,6 +65,8 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
   // TODO: This state should be kept per-table
   long lastUpdate;
   PreparedStatement stmt;
+  ResultSet resultSet;
+  Schema schema;
 
   public JdbcSourceTask() {
     this.time = new SystemTime();
@@ -116,30 +119,47 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
 
     long now = time.milliseconds();
     while (!stop.get()) {
-      // Wait for next update time
-      long nextUpdate = lastUpdate +
-                        connectorConfig.getInt(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG);
-      long untilNext = nextUpdate - now;
-      if (untilNext > 0) {
-        time.sleep(untilNext);
-        now = time.milliseconds();
-        // Handle spurious wakeups
-        continue;
+      // If not in the middle of an update, wait for next update time
+      if (resultSet == null) {
+        long nextUpdate = lastUpdate +
+                          connectorConfig.getInt(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG);
+        long untilNext = nextUpdate - now;
+        if (untilNext > 0) {
+          time.sleep(untilNext);
+          now = time.milliseconds();
+          // Handle spurious wakeups
+          continue;
+        }
       }
 
       String tableName = tables.get(0);
       List<SourceRecord> results = new ArrayList<SourceRecord>();
       try {
-        PreparedStatement stmt = getPreparedStatement(tableName);
-        ResultSet resultSet = stmt.executeQuery();
-        Schema schema = getSchema(tableName, resultSet.getMetaData());
+        if (resultSet == null) {
+          PreparedStatement stmt = getPreparedStatement(tableName);
+          resultSet = stmt.executeQuery();
+          schema = getSchema(tableName, resultSet.getMetaData());
+        }
 
-        // TODO: We probably want to be able to break up this loop across multiple calls to poll
-        // to keep memory usage in check.
-        while (resultSet.next()) {
+        int batchMaxRows = connectorConfig.getInt(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG);
+        boolean hadNext = true;
+        while (results.size() < batchMaxRows && (hadNext = resultSet.next())) {
           GenericRecord record = buildRecordFromDBResult(schema, resultSet);
           // TODO: input stream offset, key if available. partition?
           results.add(new SourceRecord(tableName, null, tableName, null, null, record));
+        }
+
+        // If we finished processing the results from this query, we can clear it out
+        if (!hadNext) {
+          resultSet.close();
+          resultSet = null;
+          // TODO: Can we cache this and quickly check that it's identical for the next query
+          // instead of constructing from scratch since it's almost always the same
+          schema = null;
+        }
+
+        if (results.isEmpty()) {
+          continue;
         }
 
         return results;

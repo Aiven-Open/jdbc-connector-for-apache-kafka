@@ -24,9 +24,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.List;
 import java.util.Properties;
 
 import io.confluent.copycat.errors.CopycatRuntimeException;
+import io.confluent.copycat.source.SourceRecord;
 
 import static org.junit.Assert.assertEquals;
 
@@ -74,6 +76,8 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
     // Here we just want to verify behavior of the poll method, not any loading of data, so we
     // specifically want an empty
     db.createTable(SINGLE_TABLE_NAME, "id", "INT");
+    // Need data or poll() never returns
+    db.insert(SINGLE_TABLE_NAME, "id", 1);
 
     long startTime = time.milliseconds();
     task.start(singleTableConfig());
@@ -93,4 +97,33 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
     task.stop();
   }
 
+
+  @Test
+  public void testSingleUpdateMultiplePoll() throws Exception {
+    // Test that splitting up a table update query across multiple poll() calls works
+
+    db.createTable(SINGLE_TABLE_NAME, "id", "INT");
+
+    Properties taskConfig = singleTableConfig();
+    taskConfig.setProperty(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG, "1");
+    long startTime = time.milliseconds();
+    task.start(taskConfig);
+
+    // Two entries should get split across three poll() calls with no delay
+    db.insert(SINGLE_TABLE_NAME, "id", 1);
+    db.insert(SINGLE_TABLE_NAME, "id", 2);
+
+    List<SourceRecord> records = task.poll();
+    assertEquals(startTime, time.milliseconds());
+    assertEquals(1, records.size());
+    records = task.poll();
+    assertEquals(startTime, time.milliseconds());
+    assertEquals(1, records.size());
+
+    // Subsequent poll should wait for next timeout
+    task.poll();
+    assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
+                 time.milliseconds());
+
+  }
 }
