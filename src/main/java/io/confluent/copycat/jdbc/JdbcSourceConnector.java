@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.Properties;
 
 import io.confluent.common.config.ConfigException;
-import io.confluent.copycat.connector.Connector;
 import io.confluent.copycat.connector.Task;
 import io.confluent.copycat.errors.CopycatException;
 import io.confluent.copycat.errors.CopycatRuntimeException;
+import io.confluent.copycat.source.SourceConnector;
 import io.confluent.copycat.util.ConnectorUtils;
 import io.confluent.copycat.util.StringUtils;
 
@@ -36,7 +36,7 @@ import io.confluent.copycat.util.StringUtils;
  * JdbcConnector is a Copycat Connector implementation that watches a JDBC database and generates
  * Copycat tasks to ingest database contents.
  */
-public class JdbcSourceConnector extends Connector {
+public class JdbcSourceConnector extends SourceConnector {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceConnector.class);
 
