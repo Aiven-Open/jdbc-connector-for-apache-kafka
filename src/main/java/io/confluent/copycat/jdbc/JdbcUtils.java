@@ -42,6 +42,9 @@ public class JdbcUtils {
   private static final int GET_TABLES_TYPE_COLUMN = 4;
   private static final int GET_TABLES_NAME_COLUMN = 3;
 
+  private static final int GET_COLUMNS_COLUMN_NAME = 4;
+  private static final int GET_COLUMNS_IS_AUTOINCREMENT = 23;
+
   /**
    * Get a list of tables in the database. This uses the default filters, which only include
    * user-defined tables.
@@ -69,5 +72,28 @@ public class JdbcUtils {
       }
     }
     return tableNames;
+  }
+
+  /**
+   * Look up the autoincrement column for the specified table.
+   * @param conn database connection
+   * @param table the table to
+   * @return the name of the column that is an autoincrement column, or null if there is no
+   *         autoincrement column or more than one exists
+   * @throws SQLException
+   */
+  public static String getAutoincrementColumn(Connection conn, String table) throws SQLException {
+    String result = null;
+    ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%");
+    while(rs.next()) {
+      if (rs.getString(GET_COLUMNS_IS_AUTOINCREMENT).equals("YES")) {
+        if (result != null) {
+          // More than one
+          return null;
+        }
+        result = rs.getString(GET_COLUMNS_COLUMN_NAME);
+      }
+    }
+    return result;
   }
 }

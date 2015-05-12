@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class JdbcUtilsTest {
 
@@ -58,5 +59,27 @@ public class JdbcUtilsTest {
     assertEquals(
         new HashSet<String>(Arrays.asList("test", "foo", "zab")),
         new HashSet<String>(JdbcUtils.getTables(db.getConnection())));
+  }
+
+  @Test
+  public void testGetAutoincrement() throws Exception {
+    // Normal case
+    db.createTable("test", "id", "INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY", "bar", "INTEGER");
+    assertEquals("id", JdbcUtils.getAutoincrementColumn(db.getConnection(), "test"));
+
+    // No auto increment
+    db.createTable("none", "id", "INTEGER", "bar", "INTEGER");
+    assertNull(JdbcUtils.getAutoincrementColumn(db.getConnection(), "none"));
+
+    // We can't check multiple columns because Derby ties auto increment to identity and
+    // disallows multiple auto increment columns. This is probably ok, multiple auto increment
+    // columns should be very unusual anyway
+
+    // Normal case, mixed in and not the first column
+    db.createTable("mixed",
+                   "foo", "INTEGER",
+                   "id", "INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY",
+                   "bar", "INTEGER");
+    assertEquals("id", JdbcUtils.getAutoincrementColumn(db.getConnection(), "mixed"));
   }
 }

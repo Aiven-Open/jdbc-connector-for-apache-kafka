@@ -14,13 +14,22 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
+import org.powermock.api.easymock.PowerMock;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import io.confluent.common.utils.MockTime;
 import io.confluent.common.utils.Time;
+import io.confluent.copycat.data.Schema;
+import io.confluent.copycat.data.SchemaBuilder;
+import io.confluent.copycat.source.SourceTaskContext;
+import io.confluent.copycat.storage.OffsetStorageReader;
 
 public class JdbcSourceTaskTestBase {
 
@@ -32,7 +41,10 @@ public class JdbcSourceTaskTestBase {
   protected static EmbeddedDerby.TableName SECOND_TABLE
       = new EmbeddedDerby.TableName(SECOND_TABLE_NAME);
 
+  protected static Schema offsetSchema = SchemaBuilder.builder().longType();
+
   protected Time time;
+  protected SourceTaskContext taskContext;
   protected JdbcSourceTask task;
   protected EmbeddedDerby db;
 
@@ -40,6 +52,7 @@ public class JdbcSourceTaskTestBase {
   public void setup() throws Exception {
     time = new MockTime();
     task = new JdbcSourceTask(time);
+    taskContext = PowerMock.createMock(SourceTaskContext.class);
     db = new EmbeddedDerby();
   }
 
@@ -63,4 +76,24 @@ public class JdbcSourceTaskTestBase {
                       SINGLE_TABLE_NAME + "," + SECOND_TABLE_NAME);
     return props;
   }
+
+  protected void expectInitialize(Collection<Object> streams, Map<Object, Object> offsets) {
+    OffsetStorageReader reader = PowerMock.createMock(OffsetStorageReader.class);
+    EasyMock.expect(taskContext.getOffsetStorageReader()).andReturn(reader);
+    EasyMock.expect(reader.getOffsets(EasyMock.eq(streams), EasyMock.eq(offsetSchema)))
+        .andReturn(offsets);
+  }
+
+  protected void expectInitializeNoOffsets(Collection<Object> streams) {
+    HashMap<Object, Object> offsets = new HashMap<Object, Object>();
+    for(Object stream : streams) {
+      offsets.put(stream, null);
+    }
+    expectInitialize(streams, offsets);
+  }
+
+  protected void initializeTask() {
+    task.initialize(taskContext);
+  }
+
 }
