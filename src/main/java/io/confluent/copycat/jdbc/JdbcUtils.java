@@ -14,10 +14,15 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +34,8 @@ import java.util.Set;
  * Utilties for interacting with a JDBC database.
  */
 public class JdbcUtils {
+
+  private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
   /**
    * The default table types to include when listing tables if none are specified. Valid values
@@ -68,7 +75,13 @@ public class JdbcUtils {
     List<String> tableNames = new ArrayList<String>();
     while (rs.next()) {
       if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
-        tableNames.add(rs.getString(GET_TABLES_NAME_COLUMN));
+        String colName = rs.getString(GET_TABLES_NAME_COLUMN);
+        // SQLite JDBC driver does not correctly mark these as system tables
+        if (metadata.getDatabaseProductName().equals("SQLite") && colName.startsWith("sqlite_")) {
+          continue;
+        }
+
+        tableNames.add(colName);
       }
     }
     return tableNames;
@@ -84,16 +97,38 @@ public class JdbcUtils {
    */
   public static String getAutoincrementColumn(Connection conn, String table) throws SQLException {
     String result = null;
+    int matches = 0;
+
     ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%");
-    while(rs.next()) {
-      if (rs.getString(GET_COLUMNS_IS_AUTOINCREMENT).equals("YES")) {
-        if (result != null) {
-          // More than one
-          return null;
+    // Some database drivers (SQLite) don't include all the columns
+    if (rs.getMetaData().getColumnCount() >= GET_COLUMNS_IS_AUTOINCREMENT) {
+      while(rs.next()) {
+        if (rs.getString(GET_COLUMNS_IS_AUTOINCREMENT).equals("YES")) {
+          result = rs.getString(GET_COLUMNS_COLUMN_NAME);
+          matches++;
         }
-        result = rs.getString(GET_COLUMNS_COLUMN_NAME);
       }
+      return (matches == 1 ? result : null);
     }
-    return result;
+
+    // Fallback approach is to query for a single row. This unfortunately does not work with any
+    // empty table
+    log.trace("Falling back to SELECT detection of auto-increment column for {}:{}", conn, table);
+    Statement stmt = conn.createStatement();
+    try {
+      rs = stmt.executeQuery("SELECT * FROM \"" + table + "\" LIMIT 1");
+      ResultSetMetaData rsmd = rs.getMetaData();
+      for(int i = 1; i < rsmd.getColumnCount(); i++) {
+        if (rsmd.isAutoIncrement(i)) {
+          result = rsmd.getColumnName(i);
+          matches++;
+        }
+      }
+    } finally {
+      rs.close();
+      stmt.close();
+    }
+    return (matches == 1 ? result : null);
   }
 }
+

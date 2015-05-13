@@ -126,6 +126,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
     long now = time.milliseconds();
+    log.trace("{} Polling for new data");
     while (!stop.get()) {
       // If not in the middle of an update, wait for next update time
       TableQuerier querier = tableQueue.peek();
@@ -133,6 +134,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
         long nextUpdate = querier.getLastUpdate() +
                           connectorConfig.getInt(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG);
         long untilNext = nextUpdate - now;
+        log.trace("Waiting {} ms to poll {} next", untilNext, querier.getName());
         if (untilNext > 0) {
           time.sleep(untilNext);
           now = time.milliseconds();
@@ -143,6 +145,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
 
       List<SourceRecord> results = new ArrayList<SourceRecord>();
       try {
+        log.trace("Checking for next block of results from {}", querier.getName());
         querier.maybeStartQuery(db);
 
         int batchMaxRows = connectorConfig.getInt(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG);
@@ -153,6 +156,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
 
         // If we finished processing the results from this query, we can clear it out
         if (!hadNext) {
+          log.trace("Closing this query for {}", querier.getName());
           TableQuerier removedQuerier = tableQueue.poll();
           assert removedQuerier == querier;
           now = time.milliseconds();
@@ -161,9 +165,11 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
         }
 
         if (results.isEmpty()) {
+          log.trace("No updates for {}", querier.getName());
           continue;
         }
 
+        log.trace("Returning {} records for {}", results.size(), querier.getName());
         return results;
       } catch (SQLException e) {
         log.error("Failed to run query for table {}: {}", querier.getName(), e);
