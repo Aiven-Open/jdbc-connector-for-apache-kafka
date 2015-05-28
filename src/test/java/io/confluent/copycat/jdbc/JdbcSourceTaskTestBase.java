@@ -41,8 +41,6 @@ public class JdbcSourceTaskTestBase {
   protected static EmbeddedDerby.TableName SECOND_TABLE
       = new EmbeddedDerby.TableName(SECOND_TABLE_NAME);
 
-  protected static Schema offsetSchema = SchemaBuilder.builder().longType();
-
   protected Time time;
   protected SourceTaskContext taskContext;
   protected JdbcSourceTask task;
@@ -80,8 +78,8 @@ public class JdbcSourceTaskTestBase {
   protected void expectInitialize(Collection<Object> streams, Map<Object, Object> offsets) {
     OffsetStorageReader reader = PowerMock.createMock(OffsetStorageReader.class);
     EasyMock.expect(taskContext.getOffsetStorageReader()).andReturn(reader);
-    EasyMock.expect(reader.getOffsets(EasyMock.eq(streams), EasyMock.eq(offsetSchema)))
-        .andReturn(offsets);
+    EasyMock.expect(reader.getOffsets(EasyMock.eq(streams),
+                                      EasyMock.eq(JdbcSourceTask.offsetSchema))).andReturn(offsets);
   }
 
   protected void expectInitializeNoOffsets(Collection<Object> streams) {

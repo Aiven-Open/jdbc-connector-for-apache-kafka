@@ -27,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLXML;
+import java.sql.Timestamp;
 import java.sql.Types;
 
 import io.confluent.copycat.data.GenericRecord;
@@ -222,8 +223,13 @@ public class DataConverter {
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        // FIXME Dates/times are hard
-        log.warn("JDBC type TIMESTAMP not currently supported");
+        // Current approach uses UNIX time in milliseconds. May lose nanosecond precision
+        // available in source type
+        if (nullableBuilder != null) {
+          nullableBuilder.longType().endUnion().noDefault();
+        } else {
+          builder.type().longType().noDefault();
+        }
         break;
       }
 
@@ -339,9 +345,11 @@ public class DataConverter {
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        // FIXME Dates/times are hard
-        log.warn("Skipping TIMESTAMP field");
-        return;
+        // Current approach is to use UNIX timestamp in milliseconds. This loses potential
+        // nanosecond precision.
+        Timestamp ts = resultSet.getTimestamp(col);
+        colValue = ts.getTime();
+        break;
       }
 
       // Datalink is basically a URL -> string

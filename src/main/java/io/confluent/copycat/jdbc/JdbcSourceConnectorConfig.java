@@ -14,6 +14,7 @@
 
 package io.confluent.copycat.jdbc;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 import io.confluent.common.config.AbstractConfig;
@@ -36,13 +37,36 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "setting can be used to limit the amount of data buffered internally in the connector.";
   public static final int BATCH_MAX_ROWS_DEFAULT = 100;
 
-  public static final String AUTOINCREMENT_CONFIG = "autoincrement";
-  private static final String AUTOINCREMENT_DOC =
-      "If true, use autoincrement columns to perform incremental loading of data by limiting each"
-      + " query to newer IDs than the last one seen in the previous query. Note that in this mode"
-      + " it is not possible to detect modifications to or deletions of existing rows. This mode "
-      + "also requires sorting each queries results to ensure at least once delivery.";
-  public static final boolean AUTOINCREMENT_DEFAULT = false;
+  public static final String MODE_CONFIG = "mode";
+  private static final String MODE_DOC =
+      "The mode for updating a table each time it is polled. Options include:\n"
+      + "  * bulk - perform a bulk load of the entire table each time it is polled\n"
+      + "  * increasing - use a strictly increasing column on each table to "
+      + "detect only new rows. Note that this will not detect modifications or "
+      + "deletions of existing rows.\n"
+      + "  * timestamp - use a timestamp (or timestamp-like) column to detect new and modified "
+      + "rows. This assumes the column is updated with each write, and that values are "
+      + "monotonically increasing, but not necessarily unique.\n"
+      + "  * timestamp+increasing - use two columns, a timestamp column that detects new and "
+      + "modified rows and a strictly increasing column which provides a globally unique ID for "
+      + "updates so each row can be assigned a unique stream offset.";
+  public static final String MODE_DEFAULT = "bulk";
+
+  public static final String MODE_BULK = "bulk";
+  public static final String MODE_TIMESTAMP = "timestamp";
+  public static final String MODE_INCREASING = "increasing";
+  public static final String MODE_TIMESTAMP_INCREASING = "timestamp+increasing";
+
+  public static final String INCREASING_COLUMN_NAME_CONFIG = "increasing.column.name";
+  private static final String INCREASING_COLUMN_NAME_DOC =
+      "The name of the strictly increasing column to use to detect new rows. Any empty value "
+      + "indicates the column should be autodetected by looking for an auto-incrementing column.";
+  public static final String INCREASING_COLUMN_NAME_DEFAULT = "";
+
+  public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
+  private static final String TIMESTAMP_COLUMN_NAME_DOC =
+      "The name of the timestamp column to use to detect new or modified rows.";
+  public static final String TIMESTAMP_COLUMN_NAME_DEFAULT = "";
 
   static ConfigDef config = new ConfigDef()
       .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
@@ -50,8 +74,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
               POLL_INTERVAL_MS_DOC)
       .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW,
               BATCH_MAX_ROWS_DOC)
-      .define(AUTOINCREMENT_CONFIG, Type.BOOLEAN, AUTOINCREMENT_DEFAULT, Importance.HIGH,
-              AUTOINCREMENT_DOC);
+      .define(MODE_CONFIG, Type.STRING, MODE_DEFAULT,
+              ConfigDef.ValidString.in(Arrays.asList("bulk", "increasing", "timestamp",
+                                                     "timestamp+increasing")),
+              Importance.HIGH, MODE_DOC)
+      .define(INCREASING_COLUMN_NAME_CONFIG, Type.STRING, INCREASING_COLUMN_NAME_DEFAULT,
+              Importance.MEDIUM, INCREASING_COLUMN_NAME_DOC)
+      .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
+              Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC);
 
   JdbcSourceConnectorConfig(Properties props) {
     super(config, props);

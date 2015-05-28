@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.confluent.common.config.ConfigException;
 import io.confluent.common.utils.SystemTime;
 import io.confluent.common.utils.Time;
+import io.confluent.copycat.data.GenericRecord;
 import io.confluent.copycat.data.Schema;
 import io.confluent.copycat.data.SchemaBuilder;
 import io.confluent.copycat.errors.CopycatException;
@@ -45,7 +46,12 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
-  private static final Schema offsetSchema = SchemaBuilder.builder().longType();
+  static final String INCREASING_FIELD = "increasing";
+  static final String TIMESTAMP_FIELD = "timestamp";
+  static final Schema offsetSchema = SchemaBuilder.builder().record("offset").fields()
+      .nullableLong(INCREASING_FIELD, -1)
+      .nullableLong(TIMESTAMP_FIELD, -1)
+      .endRecord();
 
   private Time time;
   private JdbcSourceConnectorConfig connectorConfig;
@@ -78,21 +84,40 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
                                         + "least one table assigned to it");
     }
 
-    boolean autoIncrementMode = connectorConfig.getBoolean(
-        JdbcSourceConnectorConfig.AUTOINCREMENT_CONFIG);
+    String mode = connectorConfig.getString(JdbcSourceConnectorConfig.MODE_CONFIG);
     Map<Object, Object> offsets = null;
-    if (autoIncrementMode) {
+    if (mode.equals(JdbcSourceConnectorConfig.MODE_INCREASING) ||
+        mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
+        mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) {
       List<Object> streams = new ArrayList<Object>(tables.size());
       for(String table : tables) {
         streams.add(table);
       }
       offsets = context.getOffsetStorageReader().getOffsets(streams, offsetSchema);
     }
+
     for(String tableName : tables) {
-      if (autoIncrementMode) {
-        tableQueue.add(new AutoincrementTableQuerier(tableName, (Integer)offsets.get(tableName)));
-      } else {
+      String increasingColumn
+          = connectorConfig.getString(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG);
+      String timestampColumn
+          = connectorConfig.getString(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+      GenericRecord offset = offsets == null ? null : (GenericRecord)offsets.get(tableName);
+      Long increasingOffset = offset == null ? null :
+                              (Long)offset.get(INCREASING_FIELD);
+      Long timestampOffset = offset == null ? null :
+                             (Long)offset.get(TIMESTAMP_FIELD);
+
+      if (mode.equals(JdbcSourceConnectorConfig.MODE_BULK)) {
         tableQueue.add(new BulkTableQuerier(tableName));
+      } else if (mode.equals(JdbcSourceConnectorConfig.MODE_INCREASING)) {
+        tableQueue.add(new TimestampIncreasingTableQuerier(
+            tableName, null, null, increasingColumn, increasingOffset));
+      } else if (mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)) {
+        tableQueue.add(new TimestampIncreasingTableQuerier(
+            tableName, timestampColumn, timestampOffset, null, null));
+      } else if (mode.endsWith(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) {
+        tableQueue.add(new TimestampIncreasingTableQuerier(
+            tableName, timestampColumn, timestampOffset, increasingColumn, increasingOffset));
       }
     }
 
