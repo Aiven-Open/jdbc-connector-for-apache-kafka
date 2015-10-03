@@ -16,15 +16,17 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.data.Struct;
+import org.apache.kafka.copycat.errors.CopycatException;
+import org.apache.kafka.copycat.source.SourceRecord;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-
-import io.confluent.copycat.data.GenericRecord;
-import io.confluent.copycat.data.GenericRecordBuilder;
-import io.confluent.copycat.errors.CopycatRuntimeException;
-import io.confluent.copycat.source.SourceRecord;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -132,21 +134,20 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
 
   @Override
   public SourceRecord extractRecord() throws SQLException {
-    GenericRecord record = DataConverter.convertRecord(schema, resultSet);
-    GenericRecordBuilder offsetBuilder = new GenericRecordBuilder(JdbcSourceTask.offsetSchema);
-
+    Struct record = DataConverter.convertRecord(schema, resultSet);
+    Map<String, Long> offset = new HashMap<>();
     if (increasingColumn != null) {
       Long id;
-      switch (schema.getField(increasingColumn).schema().getType()) {
-        case INT:
+      switch (schema.field(increasingColumn).schema().type()) {
+        case INT32:
           id = (long) (Integer) record.get(increasingColumn);
           break;
-        case LONG:
+        case INT64:
           id = (Long) record.get(increasingColumn);
           break;
         default:
-          throw new CopycatRuntimeException("Invalid type for increasing column: "
-                                            + schema.getField(increasingColumn).schema().getType());
+          throw new CopycatException("Invalid type for increasing column: "
+                                            + schema.field(increasingColumn).schema().type());
       }
 
       // If we are only using an increasing column, then this must be increasing. If we are also
@@ -154,7 +155,7 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       assert (increasingOffset == null || id > increasingOffset) || timestampColumn != null;
       increasingOffset = id;
 
-      offsetBuilder.set(JdbcSourceTask.INCREASING_FIELD, id);
+      offset.put(JdbcSourceTask.INCREASING_FIELD, id);
     }
 
 
@@ -162,11 +163,12 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       Long timestamp = (Long)record.get(timestampColumn);
       assert timestampOffset == null || timestamp >= timestampOffset;
       timestampOffset = timestamp;
-      offsetBuilder.set(JdbcSourceTask.TIMESTAMP_FIELD, timestampOffset);
+      offset.put(JdbcSourceTask.TIMESTAMP_FIELD, timestampOffset);
     }
 
-    GenericRecord offset = offsetBuilder.build();
     // TODO: Key?
-    return new SourceRecord(name, offset, name, null, null, record);
+    Map<String, String> partition =
+        Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
+    return new SourceRecord(partition, offset, name, null, null, record);
   }
 }

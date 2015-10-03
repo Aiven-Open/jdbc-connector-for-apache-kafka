@@ -14,6 +14,9 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.errors.CopycatException;
+import org.apache.kafka.copycat.source.SourceRecord;
+import org.apache.kafka.copycat.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +24,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -30,28 +34,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.confluent.common.config.ConfigException;
 import io.confluent.common.utils.SystemTime;
 import io.confluent.common.utils.Time;
-import io.confluent.copycat.data.GenericRecord;
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.data.SchemaBuilder;
-import io.confluent.copycat.errors.CopycatException;
-import io.confluent.copycat.errors.CopycatRuntimeException;
-import io.confluent.copycat.source.SourceRecord;
-import io.confluent.copycat.source.SourceTask;
 
 /**
  * JdbcSourceTask is a Copycat SourceTask implementation that reads from JDBC databases and
  * generates Copycat records.
  */
-public class JdbcSourceTask extends SourceTask<Object, Object> {
+public class JdbcSourceTask extends SourceTask {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
   static final String INCREASING_FIELD = "increasing";
   static final String TIMESTAMP_FIELD = "timestamp";
-  static final Schema offsetSchema = SchemaBuilder.builder().record("offset").fields()
-      .nullableLong(INCREASING_FIELD, -1)
-      .nullableLong(TIMESTAMP_FIELD, -1)
-      .endRecord();
 
   private Time time;
   private JdbcSourceConnectorConfig connectorConfig;
@@ -74,34 +67,38 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
       connectorConfig = new JdbcSourceConnectorConfig(properties);
       config = new JdbcSourceTaskConfig(properties);
     } catch (ConfigException e) {
-      throw new CopycatRuntimeException("Couldn't start JdbcSourceTask due to configuration error",
+      throw new CopycatException("Couldn't start JdbcSourceTask due to configuration error",
                                         e);
     }
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     if (tables.isEmpty()) {
-      throw new CopycatRuntimeException("Invalid configuration: each JdbcSourceTask must have at "
+      throw new CopycatException("Invalid configuration: each JdbcSourceTask must have at "
                                         + "least one table assigned to it");
     }
 
     String mode = connectorConfig.getString(JdbcSourceConnectorConfig.MODE_CONFIG);
-    Map<Object, Object> offsets = null;
+    Map<Map<String, String>, Map<String, Object>> offsets = null;
     if (mode.equals(JdbcSourceConnectorConfig.MODE_INCREASING) ||
         mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
         mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) {
-      List<Object> streams = new ArrayList<Object>(tables.size());
-      for(String table : tables) {
-        streams.add(table);
+      List<Map<String, String>> partitions = new ArrayList<>(tables.size());
+      for (String table : tables) {
+        Map<String, String> partition =
+            Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, table);
+        partitions.add(partition);
       }
-      offsets = context.getOffsetStorageReader().getOffsets(streams, offsetSchema);
+      offsets = context.offsetStorageReader().offsets(partitions);
     }
 
-    for(String tableName : tables) {
+    for (String tableName : tables) {
       String increasingColumn
           = connectorConfig.getString(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG);
       String timestampColumn
           = connectorConfig.getString(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
-      GenericRecord offset = offsets == null ? null : (GenericRecord)offsets.get(tableName);
+      Map<String, String> partition =
+          Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableName);
+      Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
       Long increasingOffset = offset == null ? null :
                               (Long)offset.get(INCREASING_FIELD);
       Long timestampOffset = offset == null ? null :
@@ -127,7 +124,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
       db = DriverManager.getConnection(dbUrl);
     } catch (SQLException e) {
       log.error("Couldn't open connection to {}: {}", dbUrl, e);
-      throw new CopycatRuntimeException(e);
+      throw new CopycatException(e);
     }
 
     stop = new AtomicBoolean(false);
@@ -168,7 +165,7 @@ public class JdbcSourceTask extends SourceTask<Object, Object> {
         }
       }
 
-      List<SourceRecord> results = new ArrayList<SourceRecord>();
+      List<SourceRecord> results = new ArrayList<>();
       try {
         log.trace("Checking for next block of results from {}", querier.getName());
         querier.maybeStartQuery(db);

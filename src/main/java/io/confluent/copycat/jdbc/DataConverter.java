@@ -16,6 +16,9 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.data.SchemaBuilder;
+import org.apache.kafka.copycat.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +33,6 @@ import java.sql.SQLXML;
 import java.sql.Timestamp;
 import java.sql.Types;
 
-import io.confluent.copycat.data.GenericRecord;
-import io.confluent.copycat.data.GenericRecordBuilder;
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.data.SchemaBuilder;
 
 /**
  * DataConverter handles translating table schemas to Copycat schemas and row data to Copycat
@@ -45,21 +44,20 @@ public class DataConverter {
   public static Schema convertSchema(String tableName, ResultSetMetaData metadata)
       throws SQLException {
     // TODO: Detect changes to metadata, which will require schema updates
-    SchemaBuilder.RecordBuilder<Schema> builder = SchemaBuilder.record(tableName);
-    SchemaBuilder.FieldAssembler<Schema> fields = builder.fields();
+    SchemaBuilder builder = SchemaBuilder.struct().name(tableName);
     for (int col = 1; col <= metadata.getColumnCount(); col++) {
-      addFieldSchema(metadata, col, fields);
+      addFieldSchema(metadata, col, builder);
     }
-    return fields.endRecord();
+    return builder.build();
   }
 
-  public static GenericRecord convertRecord(Schema schema, ResultSet resultSet)
+  public static Struct convertRecord(Schema schema, ResultSet resultSet)
       throws SQLException {
     ResultSetMetaData metadata = resultSet.getMetaData();
-    GenericRecordBuilder builder = new GenericRecordBuilder(schema);
+    Struct struct = new Struct(schema);
     for (int col = 1; col <= metadata.getColumnCount(); col++) {
       try {
-        convertFieldValue(resultSet, col, metadata.getColumnType(col), builder,
+        convertFieldValue(resultSet, col, metadata.getColumnType(col), struct,
                           metadata.getColumnLabel(col));
       } catch (IOException e) {
         log.warn("Ignoring record because processing failed:", e);
@@ -67,81 +65,86 @@ public class DataConverter {
         log.warn("Ignoring record due to SQL error:", e);
       }
     }
-    return builder.build();
+    return struct;
   }
 
 
   private static void addFieldSchema(ResultSetMetaData metadata, int col,
-                                     SchemaBuilder.FieldAssembler<Schema> fields)
+                                     SchemaBuilder builder)
       throws SQLException {
     // Label is what the query requested the column name be using an "AS" clause, name is the
     // original
     String label = metadata.getColumnLabel(col);
     String name = metadata.getColumnName(col);
     String fieldName = label != null && !label.isEmpty() ? label : name;
-    // Create the field for each type case to handle
-    SchemaBuilder.FieldBuilder<Schema> builder = fields.name(fieldName);
-    // FIXME builder.aliases() or builder.doc()?
 
     int sqlType = metadata.getColumnType(col);
-
-    // We can check for nullable types at once here, but because of the DSL for schema builder
-    // each block for handling a type needs to know whether it's been nulled. However, we can
-    // reduce
-    // TODO: This approach doesn't properly handle the case where the type isn't handled and we
-    // don't setup the the field if the column is nullable since we'll start setting up the
-    // nullable field but not finish.
-    SchemaBuilder.BaseTypeBuilder<SchemaBuilder.UnionAccumulator<SchemaBuilder.NullDefault<Schema>>>
-        nullableBuilder = null;
+    boolean optional = false;
     if (metadata.isNullable(col) == ResultSetMetaData.columnNullable ||
         metadata.isNullable(col) == ResultSetMetaData.columnNullableUnknown) {
-      // Setup the start of the nullable union
-      nullableBuilder = builder.type().unionOf().nullType().and();
+      optional = true;
     }
     switch (sqlType) {
       case Types.NULL: {
-        builder.type().nullType().noDefault();
+        log.warn("JDBC type {} not currently supported", sqlType);
         break;
       }
 
       case Types.BOOLEAN: {
-        if (nullableBuilder != null) {
-          nullableBuilder.booleanType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_BOOLEAN_SCHEMA);
         } else {
-          builder.type().booleanType().noDefault();
+          builder.field(fieldName, Schema.BOOLEAN_SCHEMA);
         }
         break;
       }
 
-      // ints <= 32 bits
+      // ints <= 8 bits
       case Types.BIT:
-      case Types.TINYINT:
-      case Types.SMALLINT:
-      case Types.INTEGER: {
-        if (nullableBuilder != null) {
-          nullableBuilder.intType().endUnion().noDefault();
+      case Types.TINYINT: {
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_INT8_SCHEMA);
         } else {
-          builder.type().intType().noDefault();
+          builder.field(fieldName, Schema.INT8_SCHEMA);
+        }
+        break;
+      }
+      // 16 bit ints
+      case Types.SMALLINT: {
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_INT16_SCHEMA);
+        } else {
+          builder.field(fieldName, Schema.INT16_SCHEMA);
+        }
+        break;
+      }
+
+      // 32 bit ints
+      case Types.INTEGER: {
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_INT32_SCHEMA);
+        } else {
+          builder.field(fieldName, Schema.INT32_SCHEMA);
         }
         break;
       }
 
       // 64 bit ints
       case Types.BIGINT: {
-        if (nullableBuilder != null) {
-          nullableBuilder.longType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_INT64_SCHEMA);
         } else {
-          builder.type().longType().noDefault();
+          builder.field(fieldName, Schema.INT64_SCHEMA);
         }
         break;
       }
 
       // REAL is a single precision floating point value, i.e. a Java float
       case Types.REAL: {
-        if (nullableBuilder != null) {
-          nullableBuilder.floatType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_FLOAT32_SCHEMA);
         } else {
-          builder.type().floatType().noDefault();
+          builder.field(fieldName, Schema.FLOAT32_SCHEMA);
         }
         break;
       }
@@ -150,10 +153,10 @@ public class DataConverter {
       // for single precision
       case Types.FLOAT:
       case Types.DOUBLE: {
-        if (nullableBuilder != null) {
-          nullableBuilder.doubleType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_FLOAT64_SCHEMA);
         } else {
-          builder.type().doubleType().noDefault();
+          builder.field(fieldName, Schema.FLOAT64_SCHEMA);
         }
         break;
       }
@@ -177,32 +180,24 @@ public class DataConverter {
       case Types.SQLXML: {
         // Some of these types will have fixed size, but we drop this from the schema conversion
         // since only fixed byte arrays can have a fixed size
-        if (nullableBuilder != null) {
-          nullableBuilder.stringType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_STRING_SCHEMA);
         } else {
-          builder.type().stringType().noDefault();
+          builder.field(fieldName, Schema.STRING_SCHEMA);
         }
         break;
       }
 
       // Binary == fixed bytes
-      case Types.BINARY: {
-        int fixedSize = metadata.getPrecision(col);
-        if (nullableBuilder != null) {
-          nullableBuilder.fixed(fieldName).size(fixedSize).endUnion().noDefault();
-        } else {
-          builder.type().fixed(fieldName).size(fixedSize).noDefault();
-        }
-        break;
-      }
       // BLOB, VARBINARY, LONGVARBINARY == bytes
+      case Types.BINARY:
       case Types.BLOB:
       case Types.VARBINARY:
       case Types.LONGVARBINARY: {
-        if (nullableBuilder != null) {
-          nullableBuilder.bytesType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_BYTES_SCHEMA);
         } else {
-          builder.type().bytesType().noDefault();
+          builder.field(fieldName, Schema.BYTES_SCHEMA);
         }
         break;
       }
@@ -225,10 +220,10 @@ public class DataConverter {
       case Types.TIMESTAMP: {
         // Current approach uses UNIX time in milliseconds. May lose nanosecond precision
         // available in source type
-        if (nullableBuilder != null) {
-          nullableBuilder.longType().endUnion().noDefault();
+        if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_INT64_SCHEMA);
         } else {
-          builder.type().longType().noDefault();
+          builder.field(fieldName, Schema.INT64_SCHEMA);
         }
         break;
       }
@@ -248,7 +243,7 @@ public class DataConverter {
   }
 
   private static void convertFieldValue(ResultSet resultSet, int col, int colType,
-                                        GenericRecordBuilder builder, String fieldName)
+                                        Struct struct, String fieldName)
       throws SQLException, IOException {
     final Object colValue;
     switch (colType) {
@@ -272,14 +267,25 @@ public class DataConverter {
         break;
       }
 
-      // ints <= 32 bits
-      case Types.TINYINT:
-      case Types.SMALLINT:
+      // 8 bits int
+      case Types.TINYINT: {
+        colValue = resultSet.getByte(col);
+        break;
+      }
+
+      // 16 bits int
+      case Types.SMALLINT:{
+        colValue = resultSet.getShort(col);
+        break;
+      }
+
+      // 32 bits int
       case Types.INTEGER: {
         colValue = resultSet.getInt(col);
         break;
       }
 
+      // 64 bits int
       case Types.BIGINT: {
         colValue = resultSet.getLong(col);
         break;
@@ -411,7 +417,7 @@ public class DataConverter {
 
     // FIXME: Would passing in some extra info about the schema so we can get the Field by index
     // be faster than setting this by name?
-    builder.set(fieldName, colValue);
+    struct.put(fieldName, colValue);
   }
 
 }

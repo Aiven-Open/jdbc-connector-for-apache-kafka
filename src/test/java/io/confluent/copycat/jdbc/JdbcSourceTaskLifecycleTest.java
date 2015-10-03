@@ -14,6 +14,8 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.errors.CopycatException;
+import org.apache.kafka.copycat.source.SourceRecord;
 import org.easymock.EasyMock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,9 +29,6 @@ import java.sql.DriverManager;
 import java.util.List;
 import java.util.Properties;
 
-import io.confluent.copycat.errors.CopycatRuntimeException;
-import io.confluent.copycat.source.SourceRecord;
-
 import static org.junit.Assert.assertEquals;
 
 @RunWith(PowerMockRunner.class)
@@ -37,14 +36,14 @@ import static org.junit.Assert.assertEquals;
 @PowerMockIgnore("javax.management.*")
 public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
-  @Test(expected = CopycatRuntimeException.class)
+  @Test(expected = CopycatException.class)
   public void testMissingParentConfig() {
     Properties props = singleTableConfig();
     props.remove(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     task.start(props);
   }
 
-  @Test(expected = CopycatRuntimeException.class)
+  @Test(expected = CopycatException.class)
   public void testMissingTables() {
     Properties props = singleTableConfig();
     props.remove(JdbcSourceTaskConfig.TABLES_CONFIG);
@@ -142,11 +141,11 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
     List<SourceRecord> records = task.poll();
     assertEquals(startTime, time.milliseconds());
     assertEquals(1, records.size());
-    assertEquals(SINGLE_TABLE_NAME, records.get(0).getStream());
+    assertEquals(SINGLE_TABLE_PARTITION, records.get(0).sourcePartition());
     records = task.poll();
     assertEquals(startTime, time.milliseconds());
     assertEquals(1, records.size());
-    assertEquals(SECOND_TABLE_NAME, records.get(0).getStream());
+    assertEquals(SECOND_TABLE_PARTITION, records.get(0).sourcePartition());
 
     // Subsequent poll should wait for next timeout
     records = task.poll();
@@ -209,7 +208,7 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
                                               int expected, String table) {
     assertEquals(expected, records.size());
     for (SourceRecord record : records) {
-      assertEquals(table, record.getStream());
+      assertEquals(table, record.sourcePartition().get(JdbcSourceConnectorConstants.TABLE_NAME_KEY));
     }
   }
 }

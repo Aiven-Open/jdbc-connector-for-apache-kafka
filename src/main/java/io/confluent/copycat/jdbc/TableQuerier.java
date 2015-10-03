@@ -16,13 +16,13 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.source.SourceRecord;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.source.SourceRecord;
 
 /**
  * TableQuerier executes queries against a specific table. Implementations handle different types
