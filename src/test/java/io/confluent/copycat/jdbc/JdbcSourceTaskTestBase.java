@@ -14,6 +14,8 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.source.SourceTaskContext;
+import org.apache.kafka.copycat.storage.OffsetStorageReader;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -26,18 +28,26 @@ import java.util.Properties;
 
 import io.confluent.common.utils.MockTime;
 import io.confluent.common.utils.Time;
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.data.SchemaBuilder;
-import io.confluent.copycat.source.SourceTaskContext;
-import io.confluent.copycat.storage.OffsetStorageReader;
 
 public class JdbcSourceTaskTestBase {
 
   protected static String SINGLE_TABLE_NAME = "test";
+  protected static Map<String, Object> SINGLE_TABLE_PARTITION = new HashMap<>();
+
+  static {
+    SINGLE_TABLE_PARTITION.put(JdbcSourceConnectorConstants.TABLE_NAME_KEY, SINGLE_TABLE_NAME);
+  }
+
   protected static EmbeddedDerby.TableName SINGLE_TABLE
       = new EmbeddedDerby.TableName(SINGLE_TABLE_NAME);
 
   protected static String SECOND_TABLE_NAME = "test2";
+  protected static Map<String, Object> SECOND_TABLE_PARTITION = new HashMap<>();
+
+  static {
+    SECOND_TABLE_PARTITION.put(JdbcSourceConnectorConstants.TABLE_NAME_KEY, SECOND_TABLE_NAME);
+  }
+
   protected static EmbeddedDerby.TableName SECOND_TABLE
       = new EmbeddedDerby.TableName(SECOND_TABLE_NAME);
 
@@ -75,19 +85,19 @@ public class JdbcSourceTaskTestBase {
     return props;
   }
 
-  protected void expectInitialize(Collection<Object> streams, Map<Object, Object> offsets) {
+  protected <T> void expectInitialize(Collection<Map<String, T>> partitions, Map<Map<String, T>, Map<String, Object>> offsets) {
     OffsetStorageReader reader = PowerMock.createMock(OffsetStorageReader.class);
-    EasyMock.expect(taskContext.getOffsetStorageReader()).andReturn(reader);
-    EasyMock.expect(reader.getOffsets(EasyMock.eq(streams),
-                                      EasyMock.eq(JdbcSourceTask.offsetSchema))).andReturn(offsets);
+    EasyMock.expect(taskContext.offsetStorageReader()).andReturn(reader);
+    EasyMock.expect(reader.offsets(EasyMock.eq(partitions))).andReturn(offsets);
   }
 
-  protected void expectInitializeNoOffsets(Collection<Object> streams) {
-    HashMap<Object, Object> offsets = new HashMap<Object, Object>();
-    for(Object stream : streams) {
-      offsets.put(stream, null);
+  protected <T> void expectInitializeNoOffsets(Collection<Map<String, T>> partitions) {
+    Map<Map<String, T>, Map<String, Object>> offsets = new HashMap<>();
+
+    for(Map<String, T> partition : partitions) {
+      offsets.put(partition, null);
     }
-    expectInitialize(streams, offsets);
+    expectInitialize(partitions, offsets);
   }
 
   protected void initializeTask() {

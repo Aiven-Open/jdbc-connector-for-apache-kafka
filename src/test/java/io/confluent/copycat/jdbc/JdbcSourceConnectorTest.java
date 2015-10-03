@@ -14,6 +14,7 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.errors.CopycatException;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -28,8 +29,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 import java.util.Properties;
-
-import io.confluent.copycat.errors.CopycatRuntimeException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -58,15 +57,15 @@ public class JdbcSourceConnectorTest {
 
   @Test
   public void testTaskClass() {
-    assertEquals(JdbcSourceTask.class, connector.getTaskClass());
+    assertEquals(JdbcSourceTask.class, connector.taskClass());
   }
 
-  @Test(expected = CopycatRuntimeException.class)
+  @Test(expected = CopycatException.class)
   public void testMissingConfig() throws Exception {
     connector.start(new Properties());
   }
 
-  @Test(expected = CopycatRuntimeException.class)
+  @Test(expected = CopycatException.class)
   public void testStartConnectionFailure() throws Exception {
     Properties props = new Properties();
     // Invalid URL
@@ -99,7 +98,7 @@ public class JdbcSourceConnectorTest {
     // if there aren't enough tables for the max # of tasks
     db.createTable("test", "id", "INT NOT NULL");
     connector.start(connProps);
-    List<Properties> configs = connector.getTaskConfigs(10);
+    List<Properties> configs = connector.taskConfigs(10);
     assertEquals(1, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
     assertEquals("test", configs.get(0).getProperty(JdbcSourceTaskConfig.TABLES_CONFIG));
@@ -114,7 +113,7 @@ public class JdbcSourceConnectorTest {
     db.createTable("test3", "id", "INT NOT NULL");
     db.createTable("test4", "id", "INT NOT NULL");
     connector.start(connProps);
-    List<Properties> configs = connector.getTaskConfigs(3);
+    List<Properties> configs = connector.taskConfigs(3);
     assertEquals(3, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
 

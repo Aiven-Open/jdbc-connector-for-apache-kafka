@@ -51,7 +51,7 @@
 
     <properties>
         <confluent.version>2.0-SNAPSHOT</confluent.version>
-        <copycat.version>2.0-SNAPSHOT</copycat.version>
+        <kafka.version>0.9.0.0-SNAPSHOT</kafka.version>
         <junit.version>4.11</junit.version>
         <easymock.version>3.0</easymock.version>
         <powermock.version>1.6.2</powermock.version>
@@ -70,9 +70,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.confluent</groupId>
+            <groupId>org.apache.kafka</groupId>
             <artifactId>copycat-api</artifactId>
-            <version>${copycat.version}</version>
+            <version>${kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>

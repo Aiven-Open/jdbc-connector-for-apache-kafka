@@ -14,6 +14,10 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.connector.Task;
+import org.apache.kafka.copycat.errors.CopycatException;
+import org.apache.kafka.copycat.source.SourceConnector;
+import org.apache.kafka.copycat.util.ConnectorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +29,7 @@ import java.util.List;
 import java.util.Properties;
 
 import io.confluent.common.config.ConfigException;
-import io.confluent.copycat.connector.Task;
-import io.confluent.copycat.errors.CopycatException;
-import io.confluent.copycat.errors.CopycatRuntimeException;
-import io.confluent.copycat.source.SourceConnector;
-import io.confluent.copycat.util.ConnectorUtils;
-import io.confluent.copycat.util.StringUtils;
+import io.confluent.copycat.jdbc.util.StringUtils;
 
 /**
  * JdbcConnector is a Copycat Connector implementation that watches a JDBC database and generates
@@ -50,8 +49,8 @@ public class JdbcSourceConnector extends SourceConnector {
       configProperties = properties;
       config = new JdbcSourceConnectorConfig(configProperties);
     } catch (ConfigException e) {
-      throw new CopycatRuntimeException("Couldn't start JdbcSourceConnector due to configuration "
-                                        + "error", e);
+      throw new CopycatException("Couldn't start JdbcSourceConnector due to configuration "
+                                 + "error", e);
     }
 
     String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
@@ -60,17 +59,17 @@ public class JdbcSourceConnector extends SourceConnector {
       db = DriverManager.getConnection(dbUrl);
     } catch (SQLException e) {
       log.error("Couldn't open connection to {}: {}", dbUrl, e);
-      throw new CopycatRuntimeException(e);
+      throw new CopycatException(e);
     }
   }
 
   @Override
-  public Class<? extends Task> getTaskClass() {
+  public Class<? extends Task> taskClass() {
     return JdbcSourceTask.class;
   }
 
   @Override
-  public List<Properties> getTaskConfigs(int maxTasks) {
+  public List<Properties> taskConfigs(int maxTasks) {
     try {
       // TODO: getTables should run periodically in the background and request reconfiguration if
       // it changes
@@ -87,7 +86,7 @@ public class JdbcSourceConnector extends SourceConnector {
       }
       return taskConfigs;
     } catch (SQLException e) {
-      throw new CopycatRuntimeException();
+      throw new CopycatException(e);
     }
   }
 

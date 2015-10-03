@@ -14,6 +14,11 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.data.Field;
+import org.apache.kafka.copycat.data.Schema;
+import org.apache.kafka.copycat.data.Schema.Type;
+import org.apache.kafka.copycat.data.Struct;
+import org.apache.kafka.copycat.source.SourceRecord;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,15 +27,8 @@ import java.util.List;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-import io.confluent.copycat.data.GenericRecord;
-import io.confluent.copycat.data.Schema;
-import io.confluent.copycat.data.Schema.Field;
-import io.confluent.copycat.data.Schema.Type;
-import io.confluent.copycat.source.SourceRecord;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 // Tests conversion of data types and schemas. These use the types supported by Derby, which
 // might not cover everything in the SQL standards and definitely doesn't cover any non-standard
@@ -61,52 +59,52 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testSmallInt() throws Exception {
-    typeConversion("SMALLINT", null, false, 1, Type.INT);
+    typeConversion("SMALLINT", null, false, 1, Type.INT16);
   }
 
   @Test
   public void testNullableSmallInt() throws Exception {
-    typeConversion("SMALLINT", null, true, 1, Type.INT);
+    typeConversion("SMALLINT", null, true, 1, Type.INT16);
   }
 
   @Test
   public void testInt() throws Exception {
-    typeConversion("INTEGER", null, false, 1, Type.INT);
+    typeConversion("INTEGER", null, false, 1, Type.INT32);
   }
 
   @Test
   public void testNullableInt() throws Exception {
-    typeConversion("INTEGER", null, true, 1, Type.INT);
+    typeConversion("INTEGER", null, true, 1, Type.INT32);
   }
 
   @Test
   public void testBigInt() throws Exception {
-    typeConversion("BIGINT", null, false, Long.MAX_VALUE, Type.LONG);
+    typeConversion("BIGINT", null, false, Long.MAX_VALUE, Type.INT64);
   }
 
   @Test
   public void testNullableBigInt() throws Exception {
-    typeConversion("BIGINT", null, true, Long.MAX_VALUE, Type.LONG);
+    typeConversion("BIGINT", null, true, Long.MAX_VALUE, Type.INT64);
   }
 
   @Test
   public void testReal() throws Exception {
-    typeConversion("REAL", null, false, 1, Type.FLOAT);
+    typeConversion("REAL", null, false, 1, Type.FLOAT32);
   }
 
   @Test
   public void testNullableReal() throws Exception {
-    typeConversion("REAL", null, true, 1, Type.FLOAT);
+    typeConversion("REAL", null, true, 1, Type.FLOAT32);
   }
 
   @Test
   public void testDouble() throws Exception {
-    typeConversion("DOUBLE", null, false, 1, Type.DOUBLE);
+    typeConversion("DOUBLE", null, false, 1, Type.FLOAT64);
   }
 
   @Test
   public void testNullableDouble() throws Exception {
-    typeConversion("DOUBLE", null, true, 1, Type.DOUBLE);
+    typeConversion("DOUBLE", null, true, 1, Type.FLOAT64);
   }
 
   @Test
@@ -159,12 +157,12 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testBinary() throws Exception {
-    typeConversion("CHAR(5) FOR BIT DATA", 5, false, "a".getBytes(), Type.FIXED);
+    typeConversion("CHAR(5) FOR BIT DATA", 5, false, "a".getBytes(), Type.BYTES);
   }
 
   @Test
   public void testNullableBinary() throws Exception {
-    typeConversion("CHAR(5) FOR BIT DATA", 5, true, "a".getBytes(), Type.FIXED);
+    typeConversion("CHAR(5) FOR BIT DATA", 5, true, "a".getBytes(), Type.BYTES);
   }
 
   // FIXME DATE, TIME, and TIMESTAMP still need to be implemented in JdbcSourceTask
@@ -193,33 +191,22 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
                                boolean nullable, Integer fixedSize) {
     // Validate # of records and object type
     assertEquals(1, records.size());
-    Object objValue = records.get(0).getValue();
-    assertTrue(objValue instanceof GenericRecord);
-    GenericRecord value = (GenericRecord) objValue;
+    Object objValue = records.get(0).value();
+    assertTrue(objValue instanceof Struct);
+    Struct value = (Struct) objValue;
 
     // Validate schema
-    Schema schema = value.getSchema();
-    assertEquals(Type.RECORD, schema.getType());
-    List<Field> fields = schema.getFields();
+    Schema schema = value.schema();
+    assertEquals(Type.STRUCT, schema.type());
+    List<Field> fields = schema.fields();
+
     assertEquals(1, fields.size());
 
     Schema fieldSchema = fields.get(0).schema();
     if (nullable) {
-      assertEquals(Type.UNION, fieldSchema.getType());
-      List<Schema> unionSchemas = fieldSchema.getTypes();
-      assertEquals(2, unionSchemas.size());
-      Schema nullSchema = unionSchemas.get(0);
-      assertEquals(Type.NULL, nullSchema.getType());
-      // Now treat the non-null schema as if it were the schema in a non-nullable schema
-      fieldSchema = unionSchemas.get(1);
+      assertTrue(fieldSchema.isOptional());
     }
 
-    assertEquals(type, fieldSchema.getType());
-    if (fixedSize != null) {
-      assertEquals((long) fixedSize, (long) fieldSchema.getFixedSize());
-    } else if (type == Type.FIXED) {
-      fail("Types that generate a fixed field should provide the size of the fixed byte[] to "
-           + "validate");
-    }
+    assertEquals(type, fieldSchema.type());
   }
 }
