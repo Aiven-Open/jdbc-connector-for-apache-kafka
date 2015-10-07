@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -160,9 +161,9 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
 
 
     if (timestampColumn != null) {
-      Long timestamp = (Long)record.get(timestampColumn);
-      assert timestampOffset == null || timestamp >= timestampOffset;
-      timestampOffset = timestamp;
+      Date timestamp = (Date) record.get(timestampColumn);
+      assert timestampOffset == null || timestamp.getTime() >= timestampOffset;
+      timestampOffset = timestamp.getTime();
       offset.put(JdbcSourceTask.TIMESTAMP_FIELD, timestampOffset);
     }
 

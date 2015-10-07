@@ -16,9 +16,12 @@
 
 package io.confluent.copycat.jdbc;
 
+import org.apache.kafka.copycat.data.Date;
+import org.apache.kafka.copycat.data.Decimal;
 import org.apache.kafka.copycat.data.Schema;
 import org.apache.kafka.copycat.data.SchemaBuilder;
 import org.apache.kafka.copycat.data.Struct;
+import org.apache.kafka.copycat.data.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +33,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLXML;
-import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 
 /**
@@ -40,6 +45,8 @@ import java.sql.Types;
  */
 public class DataConverter {
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
+
+  private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 
   public static Schema convertSchema(String tableName, ResultSetMetaData metadata)
       throws SQLException {
@@ -163,8 +170,7 @@ public class DataConverter {
 
       case Types.NUMERIC:
       case Types.DECIMAL: {
-        // FIXME This should use Avro's decimal logical type
-        log.warn("JDBC type {} not currently supported", sqlType);
+        builder.field(fieldName, Decimal.schema(metadata.getScale(col)));
         break;
       }
 
@@ -204,27 +210,31 @@ public class DataConverter {
 
       // Date is day + moth + year
       case Types.DATE: {
-        // FIXME Dates/times are hard
-        log.warn("JDBC type DATE not currently supported");
+        SchemaBuilder dateSchemaBuilder = Date.builder();
+        if (optional) {
+          dateSchemaBuilder.optional();
+        }
+        builder.field(fieldName, dateSchemaBuilder.build());
         break;
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        // FIXME Dates/times are hard
-        log.warn("JDBC type TIME not currently supported");
+        SchemaBuilder timeSchemaBuilder = Time.builder();
+        if (optional) {
+          timeSchemaBuilder.optional();
+        }
+        builder.field(fieldName, timeSchemaBuilder.build());
         break;
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        // Current approach uses UNIX time in milliseconds. May lose nanosecond precision
-        // available in source type
+        SchemaBuilder tsSchemaBuilder = org.apache.kafka.copycat.data.Timestamp.builder();
         if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_INT64_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.INT64_SCHEMA);
+          tsSchemaBuilder.optional();
         }
+        builder.field(fieldName, tsSchemaBuilder.build());
         break;
       }
 
@@ -307,10 +317,8 @@ public class DataConverter {
 
       case Types.NUMERIC:
       case Types.DECIMAL: {
-        // FIXME This should use Avro's decimal logical type
-        // resultSet.getBigDecimal(col);
-        log.warn("Skipping NUMERIC or DECIMAL field");
-        return;
+        colValue = resultSet.getBigDecimal(col);
+        break;
       }
 
       case Types.CHAR:
@@ -337,24 +345,19 @@ public class DataConverter {
 
       // Date is day + moth + year
       case Types.DATE: {
-        // FIXME Dates/times are hard
-        log.warn("Skipping DATE field");
-        return;
+        colValue = resultSet.getDate(col, UTC_CALENDAR);
+        break;
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        // FIXME Dates/times are hard
-        log.warn("Skipping TIME field");
-        return;
+        colValue = resultSet.getTime(col, UTC_CALENDAR);
+        break;
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        // Current approach is to use UNIX timestamp in milliseconds. This loses potential
-        // nanosecond precision.
-        Timestamp ts = resultSet.getTimestamp(col);
-        colValue = ts.getTime();
+        colValue = resultSet.getTimestamp(col);
         break;
       }
 

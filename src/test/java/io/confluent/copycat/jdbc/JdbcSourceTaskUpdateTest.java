@@ -313,7 +313,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     List<SourceRecord> records = task.poll();
     assertEquals(1, records.size());
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
-    assertEquals(Collections.singletonMap(10L, 1), countLongValues(records, "modified"));
+    assertEquals(Collections.singletonMap(10L, 1), countTimestampValues(records, "modified"));
     assertTimestampOffsets(records);
     return records;
   }
@@ -346,6 +346,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   private enum Field {
     KEY,
     VALUE,
+    TIMESTAMP_VALUE,
     INCREASING_OFFSET,
     TIMESTAMP_OFFSET
   }
@@ -361,12 +362,20 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         case VALUE:
           extracted = (T)((Struct)record.value()).get(fieldName);
           break;
+        case TIMESTAMP_VALUE: {
+          java.util.Date rawTimestamp = (java.util.Date) ((Struct)record.value()).get(fieldName);
+          extracted = (T) (Long) rawTimestamp.getTime();
+          break;
+        }
         case INCREASING_OFFSET:
           extracted = (T)(record.sourceOffset()).get(JdbcSourceTask.INCREASING_FIELD);
           break;
-        case TIMESTAMP_OFFSET:
-          extracted = (T)(record.sourceOffset()).get(JdbcSourceTask.TIMESTAMP_FIELD);
+        case TIMESTAMP_OFFSET: {
+          java.util.Date rawTimestamp
+              = (java.util.Date) record.sourceOffset().get(JdbcSourceTask.TIMESTAMP_FIELD);
+          extracted = (T) (Long) rawTimestamp.getTime();
           break;
+        }
         default:
           throw new RuntimeException("Invalid field");
       }
@@ -381,8 +390,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     return countInts(records, Field.VALUE, fieldName);
   }
 
-  private Map<Long, Integer> countLongValues(List<SourceRecord> records, String fieldName) {
-    return countInts(records, Field.VALUE, fieldName);
+  private Map<Long, Integer> countTimestampValues(List<SourceRecord> records, String fieldName) {
+    return countInts(records, Field.TIMESTAMP_VALUE, fieldName);
   }
 
   private Map<Long, Integer> countIntIncreasingOffsets(List<SourceRecord> records, String fieldName) {
@@ -405,7 +414,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   private void assertTimestampOffsets(List<SourceRecord> records) {
     // Should use timestamps as offsets
     for(SourceRecord record : records) {
-      long timestampValue = (Long)((Struct)record.value()).get("modified");
+      long timestampValue = ((java.util.Date) ((Struct)record.value()).get("modified")).getTime();
       long offsetValue = (Long)(record.sourceOffset()
           .get(JdbcSourceTask.TIMESTAMP_FIELD));
       assertEquals(timestampValue, offsetValue);
