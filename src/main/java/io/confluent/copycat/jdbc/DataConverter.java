@@ -357,7 +357,7 @@ public class DataConverter {
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        colValue = resultSet.getTimestamp(col);
+        colValue = resultSet.getTimestamp(col, UTC_CALENDAR);
         break;
       }
 

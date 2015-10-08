@@ -23,12 +23,15 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 
 /**
  * Utilties for interacting with a JDBC database.
@@ -51,6 +54,16 @@ public class JdbcUtils {
 
   private static final int GET_COLUMNS_COLUMN_NAME = 4;
   private static final int GET_COLUMNS_IS_AUTOINCREMENT = 23;
+
+
+  private static ThreadLocal<SimpleDateFormat> DATE_FORMATTER = new ThreadLocal<SimpleDateFormat>() {
+    @Override
+    protected SimpleDateFormat initialValue() {
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+      sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+      return sdf;
+    }
+  };
 
   /**
    * Get a list of tables in the database. This uses the default filters, which only include
@@ -129,6 +142,15 @@ public class JdbcUtils {
       stmt.close();
     }
     return (matches == 1 ? result : null);
+  }
+
+  /**
+   * Format the given Date assuming UTC timezone in a format supported by SQL.
+   * @param date the date to convert to a String
+   * @return the formatted string
+   */
+  public static String formatUTC(Date date) {
+    return DATE_FORMATTER.get().format(date);
   }
 }
 
