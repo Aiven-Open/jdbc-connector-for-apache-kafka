@@ -22,6 +22,7 @@ import org.apache.kafka.copycat.data.Schema;
 import org.apache.kafka.copycat.data.SchemaBuilder;
 import org.apache.kafka.copycat.data.Struct;
 import org.apache.kafka.copycat.data.Time;
+import org.apache.kafka.copycat.data.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -230,7 +231,7 @@ public class DataConverter {
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        SchemaBuilder tsSchemaBuilder = org.apache.kafka.copycat.data.Timestamp.builder();
+        SchemaBuilder tsSchemaBuilder = Timestamp.builder();
         if (optional) {
           tsSchemaBuilder.optional();
         }
