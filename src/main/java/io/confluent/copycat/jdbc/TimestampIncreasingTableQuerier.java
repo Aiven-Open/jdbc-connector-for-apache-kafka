@@ -24,9 +24,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * <p>
@@ -46,6 +50,8 @@ import java.util.Map;
  * </p>
  */
 public class TimestampIncreasingTableQuerier extends TableQuerier {
+  private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+
   private String timestampColumn;
   private Long timestampOffset;
   private String increasingColumn;
@@ -121,13 +127,15 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
   @Override
   protected ResultSet executeQuery() throws SQLException {
     if (increasingColumn != null && timestampColumn != null) {
-      stmt.setTimestamp(1, new Timestamp(timestampOffset == null ? 0 : timestampOffset));
+      Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      stmt.setTimestamp(1, ts, UTC_CALENDAR);
       stmt.setLong(2, (increasingOffset == null ? -1 : increasingOffset));
-      stmt.setTimestamp(3, new Timestamp(timestampOffset == null ? 0 : timestampOffset));
+      stmt.setTimestamp(3, ts, UTC_CALENDAR);
     } else if (increasingColumn != null) {
       stmt.setLong(1, (increasingOffset == null ? -1 : increasingOffset));
     } else if (timestampColumn != null) {
-      stmt.setTimestamp(1, new Timestamp(timestampOffset == null ? 0 : timestampOffset));
+      Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      stmt.setTimestamp(1, ts, UTC_CALENDAR);
     }
     return stmt.executeQuery();
   }
@@ -160,9 +168,9 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
 
 
     if (timestampColumn != null) {
-      Long timestamp = (Long)record.get(timestampColumn);
-      assert timestampOffset == null || timestamp >= timestampOffset;
-      timestampOffset = timestamp;
+      Date timestamp = (Date) record.get(timestampColumn);
+      assert timestampOffset == null || timestamp.getTime() >= timestampOffset;
+      timestampOffset = timestamp.getTime();
       offset.put(JdbcSourceTask.TIMESTAMP_FIELD, timestampOffset);
     }
 
