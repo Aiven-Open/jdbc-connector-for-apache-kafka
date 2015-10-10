@@ -67,7 +67,7 @@ public class TableMonitorThread extends Thread {
   }
 
   public List<String> tables() {
-    final long TIMEOUT = 10000;
+    final long TIMEOUT = 10000L;
     synchronized (db) {
       long started = System.currentTimeMillis();
       long now = started;

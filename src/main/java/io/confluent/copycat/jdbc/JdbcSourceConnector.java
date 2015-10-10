@@ -39,6 +39,8 @@ public class JdbcSourceConnector extends SourceConnector {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceConnector.class);
 
+  private static final long MAX_TIMEOUT = 10000L;
+
   private Properties configProperties;
   private JdbcSourceConnectorConfig config;
   private Connection db;
@@ -94,7 +96,7 @@ public class JdbcSourceConnector extends SourceConnector {
     log.info("Stopping table monitoring thread");
     tableMonitorThread.shutdown();
     try {
-      tableMonitorThread.join(10000);
+      tableMonitorThread.join(MAX_TIMEOUT);
     } catch (InterruptedException e) {
       // Ignore, shouldn't be interrupted
     }
