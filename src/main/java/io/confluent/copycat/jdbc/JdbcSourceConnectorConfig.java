@@ -28,7 +28,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String CONNECTION_URL_DOC = "JDBC connection URL for the database to load.";
 
   public static final String POLL_INTERVAL_MS_CONFIG = "poll.interval.ms";
-  private static final String POLL_INTERVAL_MS_DOC = "";
+  private static final String POLL_INTERVAL_MS_DOC = "Frequency in ms to poll for new data in "
+                                                     + "each table.";
   public static final int POLL_INTERVAL_MS_DEFAULT = 5000;
 
   public static final String BATCH_MAX_ROWS_CONFIG = "batch.max.rows";
@@ -68,6 +69,13 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "The name of the timestamp column to use to detect new or modified rows.";
   public static final String TIMESTAMP_COLUMN_NAME_DEFAULT = "";
 
+  public static final String TABLE_POLL_INTERVAL_MS_CONFIG = "table.poll.interval.ms";
+  private static final String TABLE_POLL_INTERVAL_MS_DOC =
+      "Frequency in ms to poll for new or removed tables, which may result in updated task "
+      + "configurations to start polling for data in added tables or stop polling for data in "
+      + "removed tables.";
+  public static final long TABLE_POLL_INTERVAL_MS_DEFAULT = 60 * 1000;
+
   static ConfigDef config = new ConfigDef()
       .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
       .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH,
@@ -81,7 +89,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       .define(INCREASING_COLUMN_NAME_CONFIG, Type.STRING, INCREASING_COLUMN_NAME_DEFAULT,
               Importance.MEDIUM, INCREASING_COLUMN_NAME_DOC)
       .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
-              Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC);
+              Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
+      .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,
+              Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC);
 
   JdbcSourceConnectorConfig(Properties props) {
     super(config, props);

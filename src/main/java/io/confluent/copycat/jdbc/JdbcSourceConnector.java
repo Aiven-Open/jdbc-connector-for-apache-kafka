@@ -39,9 +39,12 @@ public class JdbcSourceConnector extends SourceConnector {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceConnector.class);
 
-  Properties configProperties;
-  JdbcSourceConnectorConfig config;
-  Connection db;
+  private static final long MAX_TIMEOUT = 10000L;
+
+  private Properties configProperties;
+  private JdbcSourceConnectorConfig config;
+  private Connection db;
+  private TableMonitorThread tableMonitorThread;
 
   @Override
   public void start(Properties properties) throws CopycatException {
@@ -61,6 +64,10 @@ public class JdbcSourceConnector extends SourceConnector {
       log.error("Couldn't open connection to {}: {}", dbUrl, e);
       throw new CopycatException(e);
     }
+
+    long tablePollMs = config.getLong(JdbcSourceConnectorConfig.TABLE_POLL_INTERVAL_MS_CONFIG);
+    tableMonitorThread = new TableMonitorThread(db, context, tablePollMs);
+    tableMonitorThread.start();
   }
 
   @Override
@@ -70,28 +77,30 @@ public class JdbcSourceConnector extends SourceConnector {
 
   @Override
   public List<Properties> taskConfigs(int maxTasks) {
-    try {
-      // TODO: getTables should run periodically in the background and request reconfiguration if
-      // it changes
-      List<String> tables = JdbcUtils.getTables(db);
-      int numGroups = Math.min(tables.size(), maxTasks);
-      List<List<String>> tablesGrouped = ConnectorUtils.groupPartitions(tables, numGroups);
-      List<Properties> taskConfigs = new ArrayList<Properties>(tablesGrouped.size());
-      for (List<String> taskTables : tablesGrouped) {
-        Properties taskProps = new Properties();
-        taskProps.putAll(configProperties);
-        taskProps.setProperty(JdbcSourceTaskConfig.TABLES_CONFIG,
-                              StringUtils.join(taskTables, ","));
-        taskConfigs.add(taskProps);
-      }
-      return taskConfigs;
-    } catch (SQLException e) {
-      throw new CopycatException(e);
+    List<String> currentTables = tableMonitorThread.tables();
+    int numGroups = Math.min(currentTables.size(), maxTasks);
+    List<List<String>> tablesGrouped = ConnectorUtils.groupPartitions(currentTables, numGroups);
+    List<Properties> taskConfigs = new ArrayList<Properties>(tablesGrouped.size());
+    for (List<String> taskTables : tablesGrouped) {
+      Properties taskProps = new Properties();
+      taskProps.putAll(configProperties);
+      taskProps.setProperty(JdbcSourceTaskConfig.TABLES_CONFIG,
+                            StringUtils.join(taskTables, ","));
+      taskConfigs.add(taskProps);
     }
+    return taskConfigs;
   }
 
   @Override
   public void stop() throws CopycatException {
+    log.info("Stopping table monitoring thread");
+    tableMonitorThread.shutdown();
+    try {
+      tableMonitorThread.join(MAX_TIMEOUT);
+    } catch (InterruptedException e) {
+      // Ignore, shouldn't be interrupted
+    }
+
     log.debug("Trying to close database connection");
     try {
       db.close();
