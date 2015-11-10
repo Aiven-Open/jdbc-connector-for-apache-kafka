@@ -14,9 +14,9 @@
  * limitations under the License.
  **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.connector.ConnectorContext;
+import org.apache.kafka.connect.connector.ConnectorContext;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;

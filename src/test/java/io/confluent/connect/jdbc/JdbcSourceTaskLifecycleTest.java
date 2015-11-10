@@ -1,21 +1,23 @@
 /**
  * Copyright 2015 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.errors.CopycatException;
-import org.apache.kafka.copycat.source.SourceRecord;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.easymock.EasyMock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,16 +38,16 @@ import static org.junit.Assert.assertEquals;
 @PowerMockIgnore("javax.management.*")
 public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
-  @Test(expected = CopycatException.class)
+  @Test(expected = ConnectException.class)
   public void testMissingParentConfig() {
-    Properties props = singleTableConfig();
+    Map<String, String> props = singleTableConfig();
     props.remove(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     task.start(props);
   }
 
-  @Test(expected = CopycatException.class)
+  @Test(expected = ConnectException.class)
   public void testMissingTables() {
-    Properties props = singleTableConfig();
+    Map<String, String> props = singleTableConfig();
     props.remove(JdbcSourceTaskConfig.TABLES_CONFIG);
     task.start(props);
   }
@@ -103,8 +105,8 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
     db.createTable(SINGLE_TABLE_NAME, "id", "INT");
 
-    Properties taskConfig = singleTableConfig();
-    taskConfig.setProperty(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG, "1");
+    Map<String, String> taskConfig = singleTableConfig();
+    taskConfig.put(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG, "1");
     long startTime = time.milliseconds();
     task.start(taskConfig);
 
@@ -167,8 +169,8 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
     db.createTable(SINGLE_TABLE_NAME, "id", "INT");
     db.createTable(SECOND_TABLE_NAME, "id", "INT");
 
-    Properties taskConfig = twoTableConfig();
-    taskConfig.setProperty(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG, "1");
+    Map<String, String> taskConfig = twoTableConfig();
+    taskConfig.put(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG, "1");
     long startTime = time.milliseconds();
     task.start(taskConfig);
 

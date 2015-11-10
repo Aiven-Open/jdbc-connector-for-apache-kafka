@@ -1,20 +1,22 @@
 /**
  * Copyright 2015 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.errors.CopycatException;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -27,8 +29,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -39,14 +43,14 @@ public class JdbcSourceConnectorTest {
 
   private JdbcSourceConnector connector;
   private EmbeddedDerby db;
-  private Properties connProps;
+  private Map<String, String> connProps;
 
   @Before
   public void setup() {
     connector = new JdbcSourceConnector();
     db = new EmbeddedDerby();
-    connProps = new Properties();
-    connProps.setProperty(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    connProps = new HashMap<>();
+    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
   }
 
   @After
@@ -60,17 +64,15 @@ public class JdbcSourceConnectorTest {
     assertEquals(JdbcSourceTask.class, connector.taskClass());
   }
 
-  @Test(expected = CopycatException.class)
+  @Test(expected = ConnectException.class)
   public void testMissingConfig() throws Exception {
-    connector.start(new Properties());
+    connector.start(Collections.<String, String>emptyMap());
   }
 
-  @Test(expected = CopycatException.class)
+  @Test(expected = ConnectException.class)
   public void testStartConnectionFailure() throws Exception {
-    Properties props = new Properties();
     // Invalid URL
-    props.setProperty(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, "jdbc:foo");
-    connector.start(props);
+    connector.start(Collections.singletonMap(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, "jdbc:foo"));
   }
 
   @Test
@@ -98,10 +100,10 @@ public class JdbcSourceConnectorTest {
     // if there aren't enough tables for the max # of tasks
     db.createTable("test", "id", "INT NOT NULL");
     connector.start(connProps);
-    List<Properties> configs = connector.taskConfigs(10);
+    List<Map<String, String>> configs = connector.taskConfigs(10);
     assertEquals(1, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
-    assertEquals("test", configs.get(0).getProperty(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals("test", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     connector.stop();
   }
 
@@ -113,21 +115,21 @@ public class JdbcSourceConnectorTest {
     db.createTable("test3", "id", "INT NOT NULL");
     db.createTable("test4", "id", "INT NOT NULL");
     connector.start(connProps);
-    List<Properties> configs = connector.taskConfigs(3);
+    List<Map<String, String>> configs = connector.taskConfigs(3);
     assertEquals(3, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
 
-    assertEquals("test1,test2", configs.get(0).getProperty(JdbcSourceTaskConfig.TABLES_CONFIG));
-    assertEquals("test3", configs.get(1).getProperty(JdbcSourceTaskConfig.TABLES_CONFIG));
-    assertEquals("test4", configs.get(2).getProperty(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals("test1,test2", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals("test3", configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals("test4", configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
 
     connector.stop();
   }
 
-  private void assertTaskConfigsHaveParentConfigs(List<Properties> configs) {
-    for (Properties config : configs) {
+  private void assertTaskConfigsHaveParentConfigs(List<Map<String, String>> configs) {
+    for (Map<String, String> config : configs) {
       assertEquals(this.db.getUrl(),
-                   config.getProperty(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
+                   config.get(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
     }
   }
 }

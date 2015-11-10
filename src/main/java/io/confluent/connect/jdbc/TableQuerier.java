@@ -14,10 +14,10 @@
  * limitations under the License.
  **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.data.Schema;
-import org.apache.kafka.copycat.source.SourceRecord;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

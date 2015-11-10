@@ -1,22 +1,24 @@
 /**
  * Copyright 2015 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.errors.CopycatException;
-import org.apache.kafka.copycat.source.SourceRecord;
-import org.apache.kafka.copycat.source.SourceTask;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +30,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.confluent.common.config.ConfigException;
 import io.confluent.common.utils.SystemTime;
 import io.confluent.common.utils.Time;
+import io.confluent.connect.jdbc.util.Version;
 
 /**
- * JdbcSourceTask is a Copycat SourceTask implementation that reads from JDBC databases and
- * generates Copycat records.
+ * JdbcSourceTask is a Kafka Connect SourceTask implementation that reads from JDBC databases and
+ * generates Kafka Connect records.
  */
 public class JdbcSourceTask extends SourceTask {
 
@@ -62,18 +64,22 @@ public class JdbcSourceTask extends SourceTask {
   }
 
   @Override
-  public void start(Properties properties) {
+  public String version() {
+    return Version.getVersion();
+  }
+
+  @Override
+  public void start(Map<String, String> properties) {
     try {
       connectorConfig = new JdbcSourceConnectorConfig(properties);
       config = new JdbcSourceTaskConfig(properties);
     } catch (ConfigException e) {
-      throw new CopycatException("Couldn't start JdbcSourceTask due to configuration error",
-                                        e);
+      throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     if (tables.isEmpty()) {
-      throw new CopycatException("Invalid configuration: each JdbcSourceTask must have at "
+      throw new ConnectException("Invalid configuration: each JdbcSourceTask must have at "
                                         + "least one table assigned to it");
     }
 
@@ -124,14 +130,14 @@ public class JdbcSourceTask extends SourceTask {
       db = DriverManager.getConnection(dbUrl);
     } catch (SQLException e) {
       log.error("Couldn't open connection to {}: {}", dbUrl, e);
-      throw new CopycatException(e);
+      throw new ConnectException(e);
     }
 
     stop = new AtomicBoolean(false);
   }
 
   @Override
-  public void stop() throws CopycatException {
+  public void stop() throws ConnectException {
     if (stop != null) {
       stop.set(true);
     }
