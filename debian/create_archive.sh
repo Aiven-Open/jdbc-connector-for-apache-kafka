@@ -25,7 +25,6 @@ mkdir -p ${DESTDIR}${SYSCONFDIR}
 
 PREPACKAGED="target/kafka-connect-jdbc-${VERSION}-package"
 pushd ${PREPACKAGED}
-find bin/ -type f | grep -v README[.]rpm | xargs -I XXX ${INSTALL_X} -o root -g root XXX ${DESTDIR}${PREFIX}/XXX
 find share/ -type f | grep -v README[.]rpm | xargs -I XXX ${INSTALL} -o root -g root XXX ${DESTDIR}${PREFIX}/XXX
 pushd etc/connect-jdbc/
 find . -type f | grep -v README[.]rpm | xargs -I XXX ${INSTALL} -o root -g root XXX ${DESTDIR}${SYSCONFDIR}/XXX
