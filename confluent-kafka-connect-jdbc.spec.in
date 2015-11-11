@@ -48,9 +48,9 @@ exit 0
 
 %files
 %defattr(-,root,root)
-/etc/connect-jdbc
-/usr/share/java/connect-jdbc
-/usr/share/doc/connect-jdbc
+/etc/kafka-connect-jdbc
+/usr/share/java/kafka-connect-jdbc
+/usr/share/doc/kafka-connect-jdbc
 
 %clean
 #used to cleanup things outside the build area and possibly inside.
