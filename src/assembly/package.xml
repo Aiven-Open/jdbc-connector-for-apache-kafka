@@ -11,7 +11,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.basedir}</directory>
-            <outputDirectory>share/doc/connect-jdbc/</outputDirectory>
+            <outputDirectory>share/doc/kafka-connect-jdbc/</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -21,7 +21,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/config</directory>
-            <outputDirectory>etc/connect-jdbc</outputDirectory>
+            <outputDirectory>etc/kafka-connect-jdbc</outputDirectory>
             <includes>
                 <include>*</include>
             </includes>
@@ -29,7 +29,7 @@
     </fileSets>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>share/java/connect-jdbc</outputDirectory>
+            <outputDirectory>share/java/kafka-connect-jdbc</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
