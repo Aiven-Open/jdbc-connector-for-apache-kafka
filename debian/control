@@ -1,0 +1,15 @@
+Source: confluent-kafka-connect-jdbc
+Section: misc
+Priority: optional
+Maintainer: Confluent Packaging <packages@confluent.io>
+Build-Depends: debhelper (>= 9), java6-jdk, javahelper (>= 0.40),
+ make, maven
+Standards-Version: 3.9.3
+Homepage: http://confluent.io
+
+Package: confluent-kafka-connect-jdbc
+Architecture: all
+Depends: confluent-common
+Description: Kafka Connect connector for JDBC-compatible databases
+ Kafka Connect JDBC is a Kafka Connector for loading data from any JDBC-compatible
+ database.
