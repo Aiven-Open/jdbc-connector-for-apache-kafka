@@ -48,7 +48,6 @@ exit 0
 
 %files
 %defattr(-,root,root)
-/usr/bin/*
 /etc/connect-jdbc
 /usr/share/java/connect-jdbc
 /usr/share/doc/connect-jdbc
