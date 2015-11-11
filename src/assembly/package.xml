@@ -11,7 +11,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.basedir}</directory>
-            <outputDirectory>share/doc/copycat-jdbc/</outputDirectory>
+            <outputDirectory>share/doc/connect-jdbc/</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -21,7 +21,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/config</directory>
-            <outputDirectory>etc/copycat-jdbc</outputDirectory>
+            <outputDirectory>etc/connect-jdbc</outputDirectory>
             <includes>
                 <include>*</include>
             </includes>
@@ -29,11 +29,11 @@
     </fileSets>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>share/java/copycat-jdbc</outputDirectory>
+            <outputDirectory>share/java/connect-jdbc</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
-                <exclude>io.confluent:copycat</exclude>
+                <exclude>io.confluent:connect</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

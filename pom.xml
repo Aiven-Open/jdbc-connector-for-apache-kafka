@@ -21,17 +21,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.confluent</groupId>
-    <artifactId>copycat-jdbc</artifactId>
+    <artifactId>kafka-connect-jdbc</artifactId>
     <packaging>jar</packaging>
     <version>2.0.0-SNAPSHOT</version>
-    <name>copycat-jdbc</name>
+    <name>kafka-connect-jdbc</name>
     <organization>
         <name>Confluent, Inc.</name>
         <url>http://confluent.io</url>
     </organization>
     <url>http://confluent.io</url>
     <description>
-        A Copycat JDBC connector for copying data between databases and Kafka.
+        A Kafka Connect JDBC connector for copying data between databases and Kafka.
     </description>
 
     <licenses>
@@ -43,15 +43,15 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git://github.com/confluentinc/copycat-jdbc.git</connection>
-        <developerConnection>scm:git:git@github.com:confluentinc/copycat-jdbc.git</developerConnection>
-        <url>https://github.com/confluentinc/copycat-jdbc</url>
+        <connection>scm:git:git://github.com/confluentinc/kafka-connect-jdbc.git</connection>
+        <developerConnection>scm:git:git@github.com:confluentinc/kafka-connect-jdbc.git</developerConnection>
+        <url>https://github.com/confluentinc/kafka-connect-jdbc</url>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
         <confluent.version>2.0.0-SNAPSHOT</confluent.version>
-        <kafka.version>0.9.0.0-SNAPSHOT</kafka.version>
+        <kafka.version>0.9.0.0</kafka.version>
         <junit.version>4.11</junit.version>
         <easymock.version>3.0</easymock.version>
         <powermock.version>1.6.2</powermock.version>
@@ -71,7 +71,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>copycat-api</artifactId>
+            <artifactId>connect-api</artifactId>
             <version>${kafka.version}</version>
         </dependency>
         <dependency>
@@ -158,6 +158,13 @@
                 </configuration>
             </plugin>
         </plugins>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 
     <profiles>

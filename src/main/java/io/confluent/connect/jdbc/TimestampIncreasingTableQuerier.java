@@ -14,11 +14,11 @@
  * limitations under the License.
  **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.data.Struct;
-import org.apache.kafka.copycat.errors.CopycatException;
-import org.apache.kafka.copycat.source.SourceRecord;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -154,7 +154,7 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
           id = (Long) record.get(increasingColumn);
           break;
         default:
-          throw new CopycatException("Invalid type for increasing column: "
+          throw new ConnectException("Invalid type for increasing column: "
                                             + schema.field(increasingColumn).schema().type());
       }
 

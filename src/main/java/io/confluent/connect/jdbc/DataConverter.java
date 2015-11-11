@@ -14,15 +14,15 @@
  * limitations under the License.
  **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.data.Date;
-import org.apache.kafka.copycat.data.Decimal;
-import org.apache.kafka.copycat.data.Schema;
-import org.apache.kafka.copycat.data.SchemaBuilder;
-import org.apache.kafka.copycat.data.Struct;
-import org.apache.kafka.copycat.data.Time;
-import org.apache.kafka.copycat.data.Timestamp;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +41,8 @@ import java.util.TimeZone;
 
 
 /**
- * DataConverter handles translating table schemas to Copycat schemas and row data to Copycat
- * records.
+ * DataConverter handles translating table schemas to Kafka Connect schemas and row data to Kafka
+ * Connect records.
  */
 public class DataConverter {
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);

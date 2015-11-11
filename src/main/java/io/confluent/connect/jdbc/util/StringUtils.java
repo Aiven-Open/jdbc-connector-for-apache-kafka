@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package io.confluent.copycat.jdbc.util;
+package io.confluent.connect.jdbc.util;
 
 /**
  * General string utilities that are missing from the standard library and may commonly be

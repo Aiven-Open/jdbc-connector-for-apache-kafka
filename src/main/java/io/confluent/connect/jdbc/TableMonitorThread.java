@@ -14,10 +14,10 @@
  * limitations under the License.
  **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.connector.ConnectorContext;
-import org.apache.kafka.copycat.errors.CopycatException;
+import org.apache.kafka.connect.connector.ConnectorContext;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +80,7 @@ public class TableMonitorThread extends Thread {
         now = System.currentTimeMillis();
       }
       if (tables == null) {
-        throw new CopycatException("Tables could not be updated quickly enough.");
+        throw new ConnectException("Tables could not be updated quickly enough.");
       }
       return tables;
     }

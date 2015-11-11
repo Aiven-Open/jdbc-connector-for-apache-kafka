@@ -1,21 +1,23 @@
 /**
  * Copyright 2015 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 
-package io.confluent.copycat.jdbc;
+package io.confluent.connect.jdbc;
 
-import org.apache.kafka.copycat.data.Struct;
-import org.apache.kafka.copycat.source.SourceRecord;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.After;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
@@ -26,10 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-
-import io.confluent.copycat.jdbc.EmbeddedDerby.ColumnName;
-import io.confluent.copycat.jdbc.EmbeddedDerby.EqualsCondition;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -46,7 +44,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testBulkPeriodicLoad() throws Exception {
-    ColumnName column = new ColumnName("id");
+    EmbeddedDerby.ColumnName column = new EmbeddedDerby.ColumnName("id");
     db.createTable(SINGLE_TABLE_NAME, "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "id", 1);
 
@@ -66,7 +64,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     twoRecords.put(2, 1);
     assertEquals(twoRecords, countIntValues(records, "id"));
 
-    db.delete(SINGLE_TABLE_NAME, new EqualsCondition(column, 1));
+    db.delete(SINGLE_TABLE_NAME, new EmbeddedDerby.EqualsCondition(column, 1));
     records = task.poll();
     assertEquals(Collections.singletonMap(2, 1), countIntValues(records, "id"));
   }
@@ -288,14 +286,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
       fail("Invalid task config");
     }
     initializeTask();
-    Properties taskConfig = singleTableConfig();
-    taskConfig.setProperty(JdbcSourceConnectorConfig.MODE_CONFIG, mode);
+    Map<String, String> taskConfig = singleTableConfig();
+    taskConfig.put(JdbcSourceConnectorConfig.MODE_CONFIG, mode);
     if (timestampColumn != null) {
-      taskConfig.setProperty(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG,
+      taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG,
                              timestampColumn);
     }
     if (increasingColumn != null) {
-      taskConfig.setProperty(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG,
+      taskConfig.put(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG,
                              increasingColumn);
     }
     task.start(taskConfig);
