@@ -178,6 +178,6 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
     // TODO: Key?
     Map<String, String> partition =
         Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
-    return new SourceRecord(partition, offset, name, null, null, record);
+    return new SourceRecord(partition, offset, name, record.schema(), record);
   }
 }
