@@ -167,5 +167,15 @@ public class JdbcUtils {
     quoteString = quoteString == null ? "" : quoteString;
     return quoteString;
   }
+
+  /**
+   * Quote the given string.
+   * @param orig the string to quote
+   * @param quote the quote character
+   * @return the quoted string
+   */
+  public static String quoteString(String orig, String quote) {
+    return quote + orig + quote;
+  }
 }
 

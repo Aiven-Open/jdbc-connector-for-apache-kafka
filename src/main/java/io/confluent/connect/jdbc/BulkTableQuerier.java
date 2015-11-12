@@ -37,7 +37,7 @@ public class BulkTableQuerier extends TableQuerier {
   @Override
   protected void createPreparedStatement(Connection db) throws SQLException {
     String quoteString = JdbcUtils.getIdentifierQuoteString(db);
-    stmt = db.prepareStatement("SELECT * FROM " + quoteString + name + quoteString);
+    stmt = db.prepareStatement("SELECT * FROM " + JdbcUtils.quoteString(name, quoteString));
   }
 
   @Override

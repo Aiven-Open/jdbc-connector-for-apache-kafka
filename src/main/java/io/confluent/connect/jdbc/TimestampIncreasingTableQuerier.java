@@ -77,9 +77,8 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
     String quoteString = JdbcUtils.getIdentifierQuoteString(db);
 
     StringBuilder builder = new StringBuilder();
-    builder.append("SELECT * FROM " + quoteString);
-    builder.append(name);
-    builder.append(quoteString);
+    builder.append("SELECT * FROM ");
+    builder.append(JdbcUtils.quoteString(name, quoteString));
     if (increasingColumn != null && timestampColumn != null) {
       // This version combines two possible conditions. The first checks timestamp == last
       // timestamp and increasing > last increasing. The timestamp alone would include
@@ -95,49 +94,31 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       //  timestamp 1236, id 23
       // We should capture both id = 22 (an update) and id = 23 (a new row)
       builder.append(" WHERE (");
-      builder.append(quoteString);
-      builder.append(timestampColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" = ? AND ");
-      builder.append(quoteString);
-      builder.append(increasingColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
       builder.append(" > ?");
       builder.append(") OR ");
-      builder.append(quoteString);
-      builder.append(timestampColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ?");
       builder.append(" ORDER BY ");
-      builder.append(quoteString);
-      builder.append(timestampColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(",");
-      builder.append(quoteString);
-      builder.append(increasingColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
       builder.append(" ASC");
     } else if (increasingColumn != null) {
       builder.append(" WHERE ");
-      builder.append(quoteString);
-      builder.append(increasingColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
       builder.append(" > ?");
       builder.append(" ORDER BY ");
-      builder.append(quoteString);
-      builder.append(increasingColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
       builder.append(" ASC");
     } else if (timestampColumn != null) {
       builder.append(" WHERE ");
-      builder.append(quoteString);
-      builder.append(timestampColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ?");
       builder.append(" ORDER BY ");
-      builder.append(quoteString);
-      builder.append(timestampColumn);
-      builder.append(quoteString);
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
     }
 
