@@ -131,7 +131,8 @@ public class JdbcUtils {
     log.trace("Falling back to SELECT detection of auto-increment column for {}:{}", conn, table);
     Statement stmt = conn.createStatement();
     try {
-      rs = stmt.executeQuery("SELECT * FROM \"" + table + "\" LIMIT 1");
+      String quoteString = getIdentifierQuoteString(conn);
+      rs = stmt.executeQuery("SELECT * FROM " + quoteString + table + quoteString + " LIMIT 1");
       ResultSetMetaData rsmd = rs.getMetaData();
       for(int i = 1; i < rsmd.getColumnCount(); i++) {
         if (rsmd.isAutoIncrement(i)) {
@@ -153,6 +154,18 @@ public class JdbcUtils {
    */
   public static String formatUTC(Date date) {
     return DATE_FORMATTER.get().format(date);
+  }
+
+  /**
+   * Get the string used for quoting identifiers in this database's SQL dialect.
+   * @param connection the database connection
+   * @return the quote string
+   * @throws SQLException
+   */
+  public static String getIdentifierQuoteString(Connection connection) throws SQLException {
+    String quoteString = connection.getMetaData().getIdentifierQuoteString();
+    quoteString = quoteString == null ? "" : quoteString;
+    return quoteString;
   }
 }
 
