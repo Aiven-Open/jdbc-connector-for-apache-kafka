@@ -274,7 +274,7 @@ public class DataConverter {
          * TODO: Postgres handles this differently, returning a string "t" or "f". See the
          * elasticsearch-jdbc plugin for an example of how this is handled
          */
-        colValue = resultSet.getInt(col);
+        colValue = resultSet.getByte(col);
         break;
       }
 

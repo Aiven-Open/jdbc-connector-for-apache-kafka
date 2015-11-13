@@ -93,14 +93,16 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       //  timestamp 1235, id 22
       //  timestamp 1236, id 23
       // We should capture both id = 22 (an update) and id = 23 (a new row)
-      builder.append(" WHERE (");
+      builder.append(" WHERE ");
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
+      builder.append(" < CURRENT_TIMESTAMP AND ((");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" = ? AND ");
       builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
       builder.append(" > ?");
       builder.append(") OR ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
-      builder.append(" > ?");
+      builder.append(" > ?)");
       builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(",");
@@ -116,8 +118,9 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
     } else if (timestampColumn != null) {
       builder.append(" WHERE ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
-      builder.append(" > ?");
-      builder.append(" ORDER BY ");
+      builder.append(" > ? AND ");
+      builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
+      builder.append(" < CURRENT_TIMESTAMP ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
     }
@@ -178,6 +181,6 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
     // TODO: Key?
     Map<String, String> partition =
         Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
-    return new SourceRecord(partition, offset, name, null, null, record);
+    return new SourceRecord(partition, offset, name, record.schema(), record);
   }
 }

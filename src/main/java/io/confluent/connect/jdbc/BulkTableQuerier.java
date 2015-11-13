@@ -51,6 +51,6 @@ public class BulkTableQuerier extends TableQuerier {
     // TODO: key from primary key? partition?
     Map<String, String> partition =
         Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
-    return new SourceRecord(partition, null, name, null, null, record);
+    return new SourceRecord(partition, null, name, record.schema(), record);
   }
 }
