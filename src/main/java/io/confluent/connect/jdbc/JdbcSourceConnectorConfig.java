@@ -23,6 +23,7 @@ import io.confluent.common.config.AbstractConfig;
 import io.confluent.common.config.ConfigDef;
 import io.confluent.common.config.ConfigDef.Importance;
 import io.confluent.common.config.ConfigDef.Type;
+import io.confluent.common.config.ConfigException;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
 
@@ -53,8 +54,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "  * timestamp+increasing - use two columns, a timestamp column that detects new and "
       + "modified rows and a strictly increasing column which provides a globally unique ID for "
       + "updates so each row can be assigned a unique stream offset.";
-  public static final String MODE_DEFAULT = "bulk";
 
+  public static final String MODE_UNSPECIFIED = "";
   public static final String MODE_BULK = "bulk";
   public static final String MODE_TIMESTAMP = "timestamp";
   public static final String MODE_INCREASING = "increasing";
@@ -84,9 +85,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
               POLL_INTERVAL_MS_DOC)
       .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW,
               BATCH_MAX_ROWS_DOC)
-      .define(MODE_CONFIG, Type.STRING, MODE_DEFAULT,
-              ConfigDef.ValidString.in(Arrays.asList("bulk", "increasing", "timestamp",
-                                                     "timestamp+increasing")),
+      .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED,
+              ConfigDef.ValidString.in(Arrays.asList(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP,
+                                                     MODE_INCREASING, MODE_TIMESTAMP_INCREASING)),
               Importance.HIGH, MODE_DOC)
       .define(INCREASING_COLUMN_NAME_CONFIG, Type.STRING, INCREASING_COLUMN_NAME_DEFAULT,
               Importance.MEDIUM, INCREASING_COLUMN_NAME_DOC)
@@ -97,5 +98,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   JdbcSourceConnectorConfig(Map<String, String> props) {
     super(config, props);
+    String mode = getString(JdbcSourceConnectorConfig.MODE_CONFIG);
+    if (mode.equals(JdbcSourceConnectorConfig.MODE_UNSPECIFIED))
+      throw new ConfigException("Query mode must be specified");
   }
 }
