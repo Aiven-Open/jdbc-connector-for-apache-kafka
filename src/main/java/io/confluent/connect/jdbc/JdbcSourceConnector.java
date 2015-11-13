@@ -28,8 +28,10 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.confluent.common.config.ConfigException;
 import io.confluent.connect.jdbc.util.StringUtils;
@@ -75,7 +77,16 @@ public class JdbcSourceConnector extends SourceConnector {
     }
 
     long tablePollMs = config.getLong(JdbcSourceConnectorConfig.TABLE_POLL_INTERVAL_MS_CONFIG);
-    tableMonitorThread = new TableMonitorThread(db, context, tablePollMs);
+    List<String> whitelist = config.getList(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG);
+    Set<String> whitelistSet = whitelist.isEmpty() ? null : new HashSet<>(whitelist);
+    List<String> blacklist = config.getList(JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG);
+    Set<String> blacklistSet = blacklist.isEmpty() ? null : new HashSet<>(blacklist);
+    if (whitelistSet != null && blacklistSet != null)
+      throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
+                                 + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG+ " are "
+                                 + "exclusive.");
+    tableMonitorThread = new TableMonitorThread(db, context, tablePollMs, whitelistSet,
+                                                blacklistSet);
     tableMonitorThread.start();
   }
 

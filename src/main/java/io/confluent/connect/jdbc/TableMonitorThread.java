@@ -23,7 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -38,13 +40,18 @@ public class TableMonitorThread extends Thread {
   private final ConnectorContext context;
   private final CountDownLatch shutdownLatch;
   private final long pollMs;
+  private Set<String> whitelist;
+  private Set<String> blacklist;
   private List<String> tables;
 
-  public TableMonitorThread(Connection db, ConnectorContext context, long pollMs) {
+  public TableMonitorThread(Connection db, ConnectorContext context, long pollMs,
+                            Set<String> whitelist, Set<String> blacklist) {
     this.db = db;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
     this.pollMs = pollMs;
+    this.whitelist = whitelist;
+    this.blacklist = blacklist;
     this.tables = null;
   }
 
@@ -102,11 +109,28 @@ public class TableMonitorThread extends Thread {
         return false;
       }
 
-      // TODO: Any filtering like whitelists/blacklists or regex matches should be applied here.
+      final List<String> filteredTables;
+      if (whitelist != null) {
+        filteredTables = new ArrayList<>(tables.size());
+        for (String table : tables) {
+          if (whitelist.contains(table)) {
+            filteredTables.add(table);
+          }
+        }
+      } else if (blacklist != null) {
+        filteredTables = new ArrayList<>(tables.size());
+        for (String table : tables) {
+          if (!blacklist.contains(table)) {
+            filteredTables.add(table);
+          }
+        }
+      } else {
+        filteredTables = tables;
+      }
 
-      if (!tables.equals(this.tables)) {
+      if (!filteredTables.equals(this.tables)) {
         List<String> previousTables = this.tables;
-        this.tables = tables;
+        this.tables = filteredTables;
         db.notifyAll();
         // Only return true if the table list wasn't previously null, i.e. if this was not the
         // first table lookup
