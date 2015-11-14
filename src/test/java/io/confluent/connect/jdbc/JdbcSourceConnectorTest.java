@@ -51,6 +51,7 @@ public class JdbcSourceConnectorTest {
     db = new EmbeddedDerby();
     connProps = new HashMap<>();
     connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
   }
 
   @After
@@ -65,7 +66,16 @@ public class JdbcSourceConnectorTest {
   }
 
   @Test(expected = ConnectException.class)
-  public void testMissingConfig() throws Exception {
+  public void testMissingUrlConfig() throws Exception {
+    HashMap<String, String> connProps = new HashMap<>();
+    connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
+    connector.start(connProps);
+  }
+
+  @Test(expected = ConnectException.class)
+  public void testMissingModeConfig() throws Exception {
+    HashMap<String, String> connProps = new HashMap<>();
+    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
     connector.start(Collections.<String, String>emptyMap());
   }
 
