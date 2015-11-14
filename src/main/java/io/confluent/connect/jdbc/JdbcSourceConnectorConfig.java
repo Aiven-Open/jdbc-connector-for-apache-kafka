@@ -78,6 +78,16 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "removed tables.";
   public static final long TABLE_POLL_INTERVAL_MS_DEFAULT = 60 * 1000;
 
+  public static final String TABLE_WHITELIST_CONFIG = "table.whitelist";
+  private static final String TABLE_WHITELIST_DOC =
+      "List of tables to include in copying. If specified, table.blacklist may not be set.";
+  public static final String TABLE_WHITELIST_DEFAULT = "";
+
+  public static final String TABLE_BLACKLIST_CONFIG = "table.blacklist";
+  private static final String TABLE_BLACKLIST_DOC =
+      "List of tables to exclude from copying. If specified, table.whitelist may not be set.";
+  public static final String TABLE_BLACKLIST_DEFAULT = "";
+
   static ConfigDef config = new ConfigDef()
       .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
       .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH,
@@ -93,7 +103,11 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
               Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
       .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,
-              Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC);
+              Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC)
+      .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT,
+              Importance.MEDIUM, TABLE_WHITELIST_DOC)
+      .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT,
+              Importance.MEDIUM, TABLE_BLACKLIST_DOC);
 
   JdbcSourceConnectorConfig(Map<String, String> props) {
     super(config, props);

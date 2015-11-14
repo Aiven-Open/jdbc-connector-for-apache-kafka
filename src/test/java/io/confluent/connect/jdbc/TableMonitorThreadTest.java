@@ -33,6 +33,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -45,6 +46,7 @@ public class TableMonitorThreadTest {
 
   private static final List<String> FIRST_TOPIC_LIST = Arrays.asList("foo");
   private static final List<String> SECOND_TOPIC_LIST = Arrays.asList("foo", "bar");
+  private static final List<String> THIRD_TOPIC_LIST = Arrays.asList("foo", "bar", "baz");
 
   private EmbeddedDerby db;
   private Connection dbConn;
@@ -55,7 +57,6 @@ public class TableMonitorThreadTest {
   public void setUp() throws SQLException {
     db = new EmbeddedDerby();
     dbConn = DriverManager.getConnection(db.getUrl());
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL);
 
     PowerMock.mockStatic(JdbcUtils.class);
   }
@@ -68,6 +69,8 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testSingleLookup() throws Exception {
+    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null);
+
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
@@ -86,7 +89,53 @@ public class TableMonitorThreadTest {
   }
 
   @Test
+  public void testWhitelist() throws Exception {
+    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL,
+                                                new HashSet<>(Arrays.asList("foo", "bar")), null);
+
+    EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
+      @Override
+      public List<String> answer() throws Throwable {
+        tableMonitorThread.shutdown();
+        return THIRD_TOPIC_LIST;
+      }
+    });
+
+    PowerMock.replayAll();
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    assertEquals(Arrays.asList("foo", "bar"), tableMonitorThread.tables());
+
+    PowerMock.verifyAll();
+  }
+
+  @Test
+  public void testBlacklist() throws Exception {
+    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL,
+                                                null, new HashSet<>(Arrays.asList("bar", "baz")));
+
+    EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
+      @Override
+      public List<String> answer() throws Throwable {
+        tableMonitorThread.shutdown();
+        return THIRD_TOPIC_LIST;
+      }
+    });
+
+    PowerMock.replayAll();
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    assertEquals(Arrays.asList("foo"), tableMonitorThread.tables());
+
+    PowerMock.verifyAll();
+  }
+
+  @Test
   public void testReconfigOnUpdate() throws Exception {
+    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null);
+
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andReturn(FIRST_TOPIC_LIST);
     // Returning same list should not change results
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
