@@ -3,7 +3,7 @@
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2
           http://maven.apache.org/xsd/assembly-1.1.2.xsd">
     <!-- Assembles a packaged jar that includes all dependencies. This still requires the Connect
-     runtime, but allows running with a connector plugin using only a couple of jars. -->
+     runtime, but allows running kafka connect with a connector plugin using only a couple of jars. -->
     <id>standalone</id>
     <formats>
         <format>jar</format>
