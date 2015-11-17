@@ -34,6 +34,9 @@ import static org.junit.Assert.assertEquals;
 // Tests of polling that return data updates, i.e. verifies the different behaviors for getting
 // incremental data updates from the database
 public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
+  private static final Map<String, String> QUERY_SOURCE_PARTITION
+      = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                                 JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
 
   @After
   public void tearDown() throws Exception {
@@ -298,6 +301,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     recordUserIdCounts.put(1, 1);
     assertEquals(recordUserIdCounts, countIntValues(records, "id"));
     assertRecordsTopic(records, TOPIC_PREFIX);
+    assertRecordsSourcePartition(records, QUERY_SOURCE_PARTITION);
 
     db.insert(SINGLE_TABLE_NAME, "id", 2, "user_id", 1);
     db.insert(SINGLE_TABLE_NAME, "id", 3, "user_id", 2);
@@ -310,6 +314,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     recordUserIdCounts.put(2, 2);
     assertEquals(recordUserIdCounts, countIntValues(records, "user_id"));
     assertRecordsTopic(records, TOPIC_PREFIX);
+    assertRecordsSourcePartition(records, QUERY_SOURCE_PARTITION);
   }
 
   @Test
@@ -504,4 +509,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
       assertEquals(topic, record.topic());
     }
   }
+
+  private void assertRecordsSourcePartition(List<SourceRecord> records,
+                                            Map<String, String> partition) {
+    for (SourceRecord record : records) {
+      assertEquals(partition, record.sourcePartition());
+    }
+  }
+
 }

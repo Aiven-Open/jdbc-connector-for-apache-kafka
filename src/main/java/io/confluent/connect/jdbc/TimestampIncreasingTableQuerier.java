@@ -203,7 +203,8 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
         topic = topicPrefix + name;
         break;
       case QUERY:
-        partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
+        partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                                             JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
         topic = topicPrefix;
         break;
       default:
