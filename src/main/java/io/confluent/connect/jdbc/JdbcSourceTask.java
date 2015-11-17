@@ -113,8 +113,19 @@ public class JdbcSourceTask extends SourceTask {
     String timestampColumn
         = config.getString(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
     for (String tableOrQuery : tablesOrQuery) {
-      Map<String, String> partition =
-          Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
+      final Map<String, String> partition;
+      switch (queryMode) {
+        case TABLE:
+          partition = Collections.singletonMap(
+              JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
+          break;
+        case QUERY:
+          partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                                               JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+          break;
+        default:
+          throw new ConnectException("Unexpected query mode: " + queryMode);
+      }
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
       Long increasingOffset = offset == null ? null :
                               (Long)offset.get(INCREASING_FIELD);
