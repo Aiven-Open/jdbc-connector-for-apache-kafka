@@ -19,6 +19,8 @@ package io.confluent.connect.jdbc;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -50,6 +52,8 @@ import java.util.TimeZone;
  * </p>
  */
 public class TimestampIncreasingTableQuerier extends TableQuerier {
+  private static final Logger log = LoggerFactory.getLogger(TimestampIncreasingTableQuerier.class);
+
   private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 
   private String timestampColumn;
@@ -135,7 +139,9 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
     }
-    stmt = db.prepareStatement(builder.toString());
+    String queryString = builder.toString();
+    log.debug("{} prepared SQL query: {}", this, queryString);
+    stmt = db.prepareStatement(queryString);
   }
 
   @Override

@@ -19,6 +19,8 @@ package io.confluent.connect.jdbc;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,6 +32,7 @@ import java.util.Map;
  * BulkTableQuerier always returns the entire table.
  */
 public class BulkTableQuerier extends TableQuerier {
+  private static final Logger log = LoggerFactory.getLogger(BulkTableQuerier.class);
 
   public BulkTableQuerier(QueryMode mode, String name, String topicPrefix) {
     super(mode, name, topicPrefix);
@@ -40,9 +43,12 @@ public class BulkTableQuerier extends TableQuerier {
     switch (mode) {
       case TABLE:
         String quoteString = JdbcUtils.getIdentifierQuoteString(db);
-        stmt = db.prepareStatement("SELECT * FROM " + JdbcUtils.quoteString(name, quoteString));
+        String queryString = "SELECT * FROM " + JdbcUtils.quoteString(name, quoteString);
+        log.debug("{} prepared SQL query: {}", this, queryString);
+        stmt = db.prepareStatement(queryString);
         break;
       case QUERY:
+        log.debug("{} prepared SQL query: {}", this, query);
         stmt = db.prepareStatement(query);
         break;
     }
