@@ -17,6 +17,7 @@
 package io.confluent.connect.jdbc;
 
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.After;
 import org.junit.Test;
@@ -75,9 +76,36 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
   }
 
+  @Test(expected = ConnectException.class)
+  public void testIncreasingInvalidColumn() throws Exception {
+    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+
+    PowerMock.replayAll();
+
+    // Increasing column must be NOT NULL
+    db.createTable(SINGLE_TABLE_NAME, "id", "INT");
+
+    startTask(null, "id", null);
+
+    PowerMock.verifyAll();
+  }
+
+  @Test(expected = ConnectException.class)
+  public void testTimestampInvalidColumn() throws Exception {
+    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+
+    PowerMock.replayAll();
+
+    // Timestamp column must be NOT NULL
+    db.createTable(SINGLE_TABLE_NAME, "modified", "TIMESTAMP");
+
+    startTask("modified", null, null);
+
+    PowerMock.verifyAll();
+  }
+
   @Test
   public void testManualIncreasing() throws Exception {
-
     expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
 
     PowerMock.replayAll();

@@ -25,7 +25,9 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class JdbcUtilsTest {
 
@@ -83,5 +85,20 @@ public class JdbcUtilsTest {
                    "id", "INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY",
                    "bar", "INTEGER");
     assertEquals("id", JdbcUtils.getAutoincrementColumn(db.getConnection(), "mixed"));
+  }
+
+  @Test
+  public void testIsColumnNullable() throws Exception {
+    db.createTable("test", "id", "INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY", "bar", "INTEGER");
+    assertFalse(JdbcUtils.isColumnNullable(db.getConnection(), "test", "id"));
+    assertTrue(JdbcUtils.isColumnNullable(db.getConnection(), "test", "bar"));
+
+    // Derby does not seem to allow null
+    db.createTable("tstest", "ts", "TIMESTAMP NOT NULL", "tsdefault", "TIMESTAMP",
+                   "tsnull", "TIMESTAMP DEFAULT NULL");
+    assertFalse(JdbcUtils.isColumnNullable(db.getConnection(), "tstest", "ts"));
+    // The default for TIMESTAMP columns can vary between databases, but for Derby it is nullable
+    assertTrue(JdbcUtils.isColumnNullable(db.getConnection(), "tstest", "tsdefault"));
+    assertTrue(JdbcUtils.isColumnNullable(db.getConnection(), "tstest", "tsnull"));
   }
 }

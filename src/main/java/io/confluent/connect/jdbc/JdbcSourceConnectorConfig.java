@@ -64,12 +64,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String INCREASING_COLUMN_NAME_CONFIG = "increasing.column.name";
   private static final String INCREASING_COLUMN_NAME_DOC =
       "The name of the strictly increasing column to use to detect new rows. Any empty value "
-      + "indicates the column should be autodetected by looking for an auto-incrementing column.";
+      + "indicates the column should be autodetected by looking for an auto-incrementing column. "
+      + "This column may not be nullable.";
   public static final String INCREASING_COLUMN_NAME_DEFAULT = "";
 
   public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
   private static final String TIMESTAMP_COLUMN_NAME_DOC =
-      "The name of the timestamp column to use to detect new or modified rows.";
+      "The name of the timestamp column to use to detect new or modified rows. This column may "
+      + "not be nullable.";
   public static final String TIMESTAMP_COLUMN_NAME_DEFAULT = "";
 
   public static final String TABLE_POLL_INTERVAL_MS_CONFIG = "table.poll.interval.ms";
