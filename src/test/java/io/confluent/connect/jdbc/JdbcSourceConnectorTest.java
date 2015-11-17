@@ -154,7 +154,7 @@ public class JdbcSourceConnectorTest {
     assertEquals(1, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
 
-    assertNull(configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals("", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertEquals(sample_query, configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
 
     connector.stop();

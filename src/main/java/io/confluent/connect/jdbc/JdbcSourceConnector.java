@@ -111,6 +111,7 @@ public class JdbcSourceConnector extends SourceConnector {
     if (!query.isEmpty()) {
       List<Map<String, String>> taskConfigs = new ArrayList<>(1);
       Map<String, String> taskProps = new HashMap<>(configProperties);
+      taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG, "");
       taskConfigs.add(taskProps);
       return taskConfigs;
     } else {
