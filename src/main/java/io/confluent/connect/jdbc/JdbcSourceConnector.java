@@ -27,6 +27,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,6 +86,15 @@ public class JdbcSourceConnector extends SourceConnector {
       throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
                                  + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG+ " are "
                                  + "exclusive.");
+    String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
+    if (!query.isEmpty()) {
+      if (whitelistSet != null || blacklistSet != null)
+        throw new ConnectException(JdbcSourceConnectorConfig.QUERY_CONFIG + " may not be combined"
+                                   + " with whole-table copying settings.");
+      // Force filtering out the entire set of tables since the one task we'll generate is for the
+      // query.
+      whitelistSet = Collections.emptySet();
+    }
     tableMonitorThread = new TableMonitorThread(db, context, tablePollMs, whitelistSet,
                                                 blacklistSet);
     tableMonitorThread.start();
@@ -97,17 +107,25 @@ public class JdbcSourceConnector extends SourceConnector {
 
   @Override
   public List<Map<String, String>> taskConfigs(int maxTasks) {
-    List<String> currentTables = tableMonitorThread.tables();
-    int numGroups = Math.min(currentTables.size(), maxTasks);
-    List<List<String>> tablesGrouped = ConnectorUtils.groupPartitions(currentTables, numGroups);
-    List<Map<String, String>> taskConfigs = new ArrayList<>(tablesGrouped.size());
-    for (List<String> taskTables : tablesGrouped) {
+    String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
+    if (!query.isEmpty()) {
+      List<Map<String, String>> taskConfigs = new ArrayList<>(1);
       Map<String, String> taskProps = new HashMap<>(configProperties);
-      taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG,
-                    StringUtils.join(taskTables, ","));
       taskConfigs.add(taskProps);
+      return taskConfigs;
+    } else {
+      List<String> currentTables = tableMonitorThread.tables();
+      int numGroups = Math.min(currentTables.size(), maxTasks);
+      List<List<String>> tablesGrouped = ConnectorUtils.groupPartitions(currentTables, numGroups);
+      List<Map<String, String>> taskConfigs = new ArrayList<>(tablesGrouped.size());
+      for (List<String> taskTables : tablesGrouped) {
+        Map<String, String> taskProps = new HashMap<>(configProperties);
+        taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG,
+                      StringUtils.join(taskTables, ","));
+        taskConfigs.add(taskProps);
+      }
+      return taskConfigs;
     }
-    return taskConfigs;
   }
 
   @Override

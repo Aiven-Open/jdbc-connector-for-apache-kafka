@@ -52,6 +52,18 @@ public class JdbcSourceTaskTestBase {
   protected static EmbeddedDerby.TableName SECOND_TABLE
       = new EmbeddedDerby.TableName(SECOND_TABLE_NAME);
 
+  protected static String JOIN_TABLE_NAME = "users";
+  protected static Map<String, Object> JOIN_QUERY_PARTITION = new HashMap<>();
+
+  static {
+    JOIN_QUERY_PARTITION.put(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                             JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+  }
+  protected static EmbeddedDerby.TableName JOIN_TABLE
+      = new EmbeddedDerby.TableName(JOIN_TABLE_NAME);
+
+  protected static final String TOPIC_PREFIX = "test-";
+
   protected Time time;
   protected SourceTaskContext taskContext;
   protected JdbcSourceTask task;
@@ -76,6 +88,7 @@ public class JdbcSourceTaskTestBase {
     props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
     props.put(JdbcSourceTaskConfig.TABLES_CONFIG, SINGLE_TABLE_NAME);
     props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
+    props.put(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG, TOPIC_PREFIX);
     return props;
   }
 
@@ -84,6 +97,7 @@ public class JdbcSourceTaskTestBase {
     props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
     props.put(JdbcSourceTaskConfig.TABLES_CONFIG, SINGLE_TABLE_NAME + "," + SECOND_TABLE_NAME);
     props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
+    props.put(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG, TOPIC_PREFIX);
     return props;
   }
 

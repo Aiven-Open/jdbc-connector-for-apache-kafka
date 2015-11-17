@@ -27,15 +27,15 @@ import io.confluent.common.config.ConfigDef.Type;
  * Configuration options for a single JdbcSourceTask. These are processed after all
  * Connector-level configs have been parsed.
  */
-public class JdbcSourceTaskConfig extends AbstractConfig {
+public class JdbcSourceTaskConfig extends JdbcSourceConnectorConfig {
 
   public static final String TABLES_CONFIG = "tables";
   private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
-  static ConfigDef config = new ConfigDef()
+  static ConfigDef config = baseConfigDef()
       .define(TABLES_CONFIG, Type.LIST, Importance.HIGH, TABLES_DOC);
 
-  JdbcSourceTaskConfig(Map<String, String> props) {
+  public JdbcSourceTaskConfig(Map<String, String> props) {
     super(config, props);
   }
 }

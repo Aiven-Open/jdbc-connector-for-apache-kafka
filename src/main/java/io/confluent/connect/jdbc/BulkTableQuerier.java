@@ -17,6 +17,7 @@
 package io.confluent.connect.jdbc;
 
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.Connection;
@@ -30,14 +31,21 @@ import java.util.Map;
  */
 public class BulkTableQuerier extends TableQuerier {
 
-  public BulkTableQuerier(String name) {
-    super(name);
+  public BulkTableQuerier(QueryMode mode, String name, String topicPrefix) {
+    super(mode, name, topicPrefix);
   }
 
   @Override
   protected void createPreparedStatement(Connection db) throws SQLException {
-    String quoteString = JdbcUtils.getIdentifierQuoteString(db);
-    stmt = db.prepareStatement("SELECT * FROM " + JdbcUtils.quoteString(name, quoteString));
+    switch (mode) {
+      case TABLE:
+        String quoteString = JdbcUtils.getIdentifierQuoteString(db);
+        stmt = db.prepareStatement("SELECT * FROM " + JdbcUtils.quoteString(name, quoteString));
+        break;
+      case QUERY:
+        stmt = db.prepareStatement(query);
+        break;
+    }
   }
 
   @Override
@@ -49,8 +57,30 @@ public class BulkTableQuerier extends TableQuerier {
   public SourceRecord extractRecord() throws SQLException {
     Struct record = DataConverter.convertRecord(schema, resultSet);
     // TODO: key from primary key? partition?
-    Map<String, String> partition =
-        Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
-    return new SourceRecord(partition, null, name, record.schema(), record);
+    final String topic;
+    final Map<String, String> partition;
+    switch (mode) {
+      case TABLE:
+        partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
+        topic = topicPrefix + name;
+        break;
+      case QUERY:
+        partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
+        topic = topicPrefix;
+        break;
+      default:
+        throw new ConnectException("Unexpected query mode: " + mode);
+    }
+    return new SourceRecord(partition, null, topic, record.schema(), record);
   }
+
+  @Override
+  public String toString() {
+    return "BulkTableQuerier{" +
+           "name='" + name + '\'' +
+           ", query='" + query + '\'' +
+           ", topicPrefix='" + topicPrefix + '\'' +
+           '}';
+  }
+
 }

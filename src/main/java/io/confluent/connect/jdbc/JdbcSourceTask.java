@@ -49,7 +49,6 @@ public class JdbcSourceTask extends SourceTask {
   static final String TIMESTAMP_FIELD = "timestamp";
 
   private Time time;
-  private JdbcSourceConnectorConfig connectorConfig;
   private JdbcSourceTaskConfig config;
   private Connection db;
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
@@ -71,60 +70,75 @@ public class JdbcSourceTask extends SourceTask {
   @Override
   public void start(Map<String, String> properties) {
     try {
-      connectorConfig = new JdbcSourceConnectorConfig(properties);
       config = new JdbcSourceTaskConfig(properties);
     } catch (ConfigException e) {
       throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
-    if (tables.isEmpty()) {
+    String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
+    if ((tables.isEmpty() && query.isEmpty()) || (!tables.isEmpty() && !query.isEmpty())) {
       throw new ConnectException("Invalid configuration: each JdbcSourceTask must have at "
-                                        + "least one table assigned to it");
+                                        + "least one table assigned to it or one query specified");
     }
+    TableQuerier.QueryMode queryMode = !query.isEmpty() ? TableQuerier.QueryMode.QUERY :
+                                       TableQuerier.QueryMode.TABLE;
+    List<String> tablesOrQuery = queryMode == TableQuerier.QueryMode.QUERY ?
+                                 Collections.singletonList(query) : tables;
 
-    String mode = connectorConfig.getString(JdbcSourceConnectorConfig.MODE_CONFIG);
+    String mode = config.getString(JdbcSourceTaskConfig.MODE_CONFIG);
     Map<Map<String, String>, Map<String, Object>> offsets = null;
-    if (mode.equals(JdbcSourceConnectorConfig.MODE_INCREASING) ||
-        mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
-        mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) {
+    if (mode.equals(JdbcSourceTaskConfig.MODE_INCREASING) ||
+        mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP) ||
+        mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREASING)) {
       List<Map<String, String>> partitions = new ArrayList<>(tables.size());
-      for (String table : tables) {
-        Map<String, String> partition =
-            Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, table);
-        partitions.add(partition);
+      switch (queryMode) {
+        case TABLE:
+          for (String table : tables) {
+            Map<String, String> partition =
+                Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, table);
+            partitions.add(partition);
+          }
+          break;
+        case QUERY:
+          partitions.add(Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                                                  JdbcSourceConnectorConstants.QUERY_NAME_VALUE));
+          break;
       }
       offsets = context.offsetStorageReader().offsets(partitions);
     }
 
-    for (String tableName : tables) {
-      String increasingColumn
-          = connectorConfig.getString(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG);
-      String timestampColumn
-          = connectorConfig.getString(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+    String increasingColumn
+        = config.getString(JdbcSourceTaskConfig.INCREASING_COLUMN_NAME_CONFIG);
+    String timestampColumn
+        = config.getString(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+    for (String tableOrQuery : tablesOrQuery) {
       Map<String, String> partition =
-          Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableName);
+          Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
       Long increasingOffset = offset == null ? null :
                               (Long)offset.get(INCREASING_FIELD);
       Long timestampOffset = offset == null ? null :
                              (Long)offset.get(TIMESTAMP_FIELD);
 
-      if (mode.equals(JdbcSourceConnectorConfig.MODE_BULK)) {
-        tableQueue.add(new BulkTableQuerier(tableName));
-      } else if (mode.equals(JdbcSourceConnectorConfig.MODE_INCREASING)) {
+      String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
+
+      if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
+        tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, topicPrefix));
+      } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREASING)) {
         tableQueue.add(new TimestampIncreasingTableQuerier(
-            tableName, null, null, increasingColumn, increasingOffset));
-      } else if (mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)) {
+            queryMode, tableOrQuery, topicPrefix, null, null, increasingColumn, increasingOffset));
+      } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
         tableQueue.add(new TimestampIncreasingTableQuerier(
-            tableName, timestampColumn, timestampOffset, null, null));
-      } else if (mode.endsWith(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) {
+            queryMode, tableOrQuery, topicPrefix, timestampColumn, timestampOffset, null, null));
+      } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREASING)) {
         tableQueue.add(new TimestampIncreasingTableQuerier(
-            tableName, timestampColumn, timestampOffset, increasingColumn, increasingOffset));
+            queryMode, tableOrQuery, topicPrefix, timestampColumn, timestampOffset,
+            increasingColumn, increasingOffset));
       }
     }
 
-    String dbUrl = connectorConfig.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    String dbUrl = config.getString(JdbcSourceTaskConfig.CONNECTION_URL_CONFIG);
     log.debug("Trying to connect to {}", dbUrl);
     try {
       db = DriverManager.getConnection(dbUrl);
@@ -160,9 +174,9 @@ public class JdbcSourceTask extends SourceTask {
       TableQuerier querier = tableQueue.peek();
       if (!querier.querying()) {
         long nextUpdate = querier.getLastUpdate() +
-                          connectorConfig.getInt(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG);
+                          config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
         long untilNext = nextUpdate - now;
-        log.trace("Waiting {} ms to poll {} next", untilNext, querier.getName());
+        log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
         if (untilNext > 0) {
           time.sleep(untilNext);
           now = time.milliseconds();
@@ -173,10 +187,10 @@ public class JdbcSourceTask extends SourceTask {
 
       List<SourceRecord> results = new ArrayList<>();
       try {
-        log.trace("Checking for next block of results from {}", querier.getName());
+        log.trace("Checking for next block of results from {}", querier.toString());
         querier.maybeStartQuery(db);
 
-        int batchMaxRows = connectorConfig.getInt(JdbcSourceConnectorConfig.BATCH_MAX_ROWS_CONFIG);
+        int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
         while (results.size() < batchMaxRows && (hadNext = querier.next())) {
           results.add(querier.extractRecord());
@@ -184,7 +198,7 @@ public class JdbcSourceTask extends SourceTask {
 
         // If we finished processing the results from this query, we can clear it out
         if (!hadNext) {
-          log.trace("Closing this query for {}", querier.getName());
+          log.trace("Closing this query for {}", querier.toString());
           TableQuerier removedQuerier = tableQueue.poll();
           assert removedQuerier == querier;
           now = time.milliseconds();
@@ -193,14 +207,14 @@ public class JdbcSourceTask extends SourceTask {
         }
 
         if (results.isEmpty()) {
-          log.trace("No updates for {}", querier.getName());
+          log.trace("No updates for {}", querier.toString());
           continue;
         }
 
-        log.trace("Returning {} records for {}", results.size(), querier.getName());
+        log.trace("Returning {} records for {}", results.size(), querier.toString());
         return results;
       } catch (SQLException e) {
-        log.error("Failed to run query for table {}: {}", querier.getName(), e);
+        log.error("Failed to run query for table {}: {}", querier.toString(), e);
         return null;
       }
     }

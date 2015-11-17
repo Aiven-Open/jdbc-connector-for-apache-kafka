@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JdbcSourceConnector.class})
@@ -52,6 +53,7 @@ public class JdbcSourceConnectorTest {
     connProps = new HashMap<>();
     connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
     connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
+    connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
   }
 
   @After
@@ -114,6 +116,7 @@ public class JdbcSourceConnectorTest {
     assertEquals(1, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
     assertEquals("test", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
     connector.stop();
   }
 
@@ -130,10 +133,39 @@ public class JdbcSourceConnectorTest {
     assertTaskConfigsHaveParentConfigs(configs);
 
     assertEquals("test1,test2", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
     assertEquals("test3", configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertNull(configs.get(1).get(JdbcSourceTaskConfig.QUERY_CONFIG));
     assertEquals("test4", configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertNull(configs.get(2).get(JdbcSourceTaskConfig.QUERY_CONFIG));
 
     connector.stop();
+  }
+
+  @Test
+  public void testPartitioningQuery() throws Exception {
+    // Tests "partitioning" when config specifies running a custom query
+    db.createTable("test1", "id", "INT NOT NULL");
+    db.createTable("test2", "id", "INT NOT NULL");
+    final String sample_query = "SELECT foo, bar FROM sample_table";
+    connProps.put(JdbcSourceConnectorConfig.QUERY_CONFIG, sample_query);
+    connector.start(connProps);
+    List<Map<String, String>> configs = connector.taskConfigs(3);
+    assertEquals(1, configs.size());
+    assertTaskConfigsHaveParentConfigs(configs);
+
+    assertNull(configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(sample_query, configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+
+    connector.stop();
+  }
+
+  @Test(expected = ConnectException.class)
+  public void testConflictingQueryTableSettings() {
+    final String sample_query = "SELECT foo, bar FROM sample_table";
+    connProps.put(JdbcSourceConnectorConfig.QUERY_CONFIG, sample_query);
+    connProps.put(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG, "foo,bar");
+    connector.start(connProps);
   }
 
   private void assertTaskConfigsHaveParentConfigs(List<Map<String, String>> configs) {
