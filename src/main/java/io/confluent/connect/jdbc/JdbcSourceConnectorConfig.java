@@ -89,31 +89,59 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "List of tables to exclude from copying. If specified, table.whitelist may not be set.";
   public static final String TABLE_BLACKLIST_DEFAULT = "";
 
-  static ConfigDef config = new ConfigDef()
-      .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
-      .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH,
-              POLL_INTERVAL_MS_DOC)
-      .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW,
-              BATCH_MAX_ROWS_DOC)
-      .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED,
-              ConfigDef.ValidString.in(Arrays.asList(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP,
-                                                     MODE_INCREASING, MODE_TIMESTAMP_INCREASING)),
-              Importance.HIGH, MODE_DOC)
-      .define(INCREASING_COLUMN_NAME_CONFIG, Type.STRING, INCREASING_COLUMN_NAME_DEFAULT,
-              Importance.MEDIUM, INCREASING_COLUMN_NAME_DOC)
-      .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
-              Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
-      .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,
-              Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC)
-      .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT,
-              Importance.MEDIUM, TABLE_WHITELIST_DOC)
-      .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT,
-              Importance.MEDIUM, TABLE_BLACKLIST_DOC);
+  public static final String QUERY_CONFIG = "query";
+  private static final String QUERY_DOC =
+      "If specified, the query to perform to select new or updated rows. Use this setting if you "
+      + "want to join tables, select subsets of columns in a table, or filter data. If used, this"
+      + " connector will only copy data using this query -- whole-table copying will be disabled."
+      + " Different query modes may still be used for incremental updates, but in order to "
+      + "properly construct the incremental query, it must be possible to append a WHERE clause "
+      + "to this query (i.e. no WHERE clauses may be used). If you use a WHERE clause, it must "
+      + "handle incremental queries itself.";
+  public static final String QUERY_DEFAULT = "";
 
-  JdbcSourceConnectorConfig(Map<String, String> props) {
+  public static final String TOPIC_PREFIX_CONFIG = "topic.prefix";
+  private static final String TOPIC_PREFIX_DOC =
+      "Prefix to prepend to table names to generate the name of the Kafka topic to publish data "
+      + "to, or in the case of a custom query, the full name of the topic to publish to.";
+
+  public static ConfigDef baseConfigDef() {
+    return new ConfigDef()
+        .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
+        .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH,
+                POLL_INTERVAL_MS_DOC)
+        .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW,
+                BATCH_MAX_ROWS_DOC)
+        .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED,
+                ConfigDef.ValidString.in(Arrays.asList(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP,
+                                                       MODE_INCREASING, MODE_TIMESTAMP_INCREASING)),
+                Importance.HIGH, MODE_DOC)
+        .define(INCREASING_COLUMN_NAME_CONFIG, Type.STRING, INCREASING_COLUMN_NAME_DEFAULT,
+                Importance.MEDIUM, INCREASING_COLUMN_NAME_DOC)
+        .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
+                Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
+        .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,
+                Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC)
+        .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT,
+                Importance.MEDIUM, TABLE_WHITELIST_DOC)
+        .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT,
+                Importance.MEDIUM, TABLE_BLACKLIST_DOC)
+        .define(QUERY_CONFIG, Type.STRING, QUERY_DEFAULT,
+                Importance.MEDIUM, QUERY_DOC)
+        .define(TOPIC_PREFIX_CONFIG, Type.STRING,
+                Importance.HIGH, TOPIC_PREFIX_DOC);
+  }
+
+  static ConfigDef config = baseConfigDef();
+
+  public JdbcSourceConnectorConfig(Map<String, String> props) {
     super(config, props);
     String mode = getString(JdbcSourceConnectorConfig.MODE_CONFIG);
     if (mode.equals(JdbcSourceConnectorConfig.MODE_UNSPECIFIED))
       throw new ConfigException("Query mode must be specified");
+  }
+
+  protected JdbcSourceConnectorConfig(ConfigDef subclassConfigDef, Map<String, String> props) {
+    super(subclassConfigDef, props);
   }
 }

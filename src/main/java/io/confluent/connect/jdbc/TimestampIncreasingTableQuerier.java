@@ -19,6 +19,8 @@ package io.confluent.connect.jdbc;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -50,6 +52,8 @@ import java.util.TimeZone;
  * </p>
  */
 public class TimestampIncreasingTableQuerier extends TableQuerier {
+  private static final Logger log = LoggerFactory.getLogger(TimestampIncreasingTableQuerier.class);
+
   private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 
   private String timestampColumn;
@@ -57,10 +61,10 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
   private String increasingColumn;
   private Long increasingOffset = null;
 
-  public TimestampIncreasingTableQuerier(String name,
+  public TimestampIncreasingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                          String timestampColumn, Long timestampOffset,
                                          String increasingColumn, Long increasingOffset) {
-    super(name);
+    super(mode, name, topicPrefix);
     this.timestampColumn = timestampColumn;
     this.timestampOffset = timestampOffset;
     this.increasingColumn = increasingColumn;
@@ -77,8 +81,19 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
     String quoteString = JdbcUtils.getIdentifierQuoteString(db);
 
     StringBuilder builder = new StringBuilder();
-    builder.append("SELECT * FROM ");
-    builder.append(JdbcUtils.quoteString(name, quoteString));
+
+    switch (mode) {
+      case TABLE:
+        builder.append("SELECT * FROM ");
+        builder.append(JdbcUtils.quoteString(name, quoteString));
+        break;
+      case QUERY:
+        builder.append(query);
+        break;
+      default:
+        throw new ConnectException("Unknown mode encountered when preparing query: " + mode.toString());
+    }
+
     if (increasingColumn != null && timestampColumn != null) {
       // This version combines two possible conditions. The first checks timestamp == last
       // timestamp and increasing > last increasing. The timestamp alone would include
@@ -124,8 +139,9 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
     }
-
-    stmt = db.prepareStatement(builder.toString());
+    String queryString = builder.toString();
+    log.debug("{} prepared SQL query: {}", this, queryString);
+    stmt = db.prepareStatement(queryString);
   }
 
   @Override
@@ -179,8 +195,32 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
     }
 
     // TODO: Key?
-    Map<String, String> partition =
-        Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
-    return new SourceRecord(partition, offset, name, record.schema(), record);
+    final String topic;
+    final Map<String, String> partition;
+    switch (mode) {
+      case TABLE:
+        partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
+        topic = topicPrefix + name;
+        break;
+      case QUERY:
+        partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                                             JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+        topic = topicPrefix;
+        break;
+      default:
+        throw new ConnectException("Unexpected query mode: " + mode);
+    }
+    return new SourceRecord(partition, offset, topic, record.schema(), record);
+  }
+
+  @Override
+  public String toString() {
+    return "TimestampIncreasingTableQuerier{" +
+           "name='" + name + '\'' +
+           ", query='" + query + '\'' +
+           ", topicPrefix='" + topicPrefix + '\'' +
+           ", timestampColumn='" + timestampColumn + '\'' +
+           ", increasingColumn='" + increasingColumn + '\'' +
+           '}';
   }
 }

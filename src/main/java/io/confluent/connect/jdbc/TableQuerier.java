@@ -30,19 +30,26 @@ import java.sql.SQLException;
  * loads using timestamps, etc.
  */
 abstract class TableQuerier implements Comparable<TableQuerier> {
+  public enum QueryMode {
+    TABLE, // Copying whole tables, with queries constructed automatically
+    QUERY // User-specified query
+  }
+
+  protected final QueryMode mode;
   protected final String name;
+  protected final String query;
+  protected final String topicPrefix;
   protected long lastUpdate;
   protected PreparedStatement stmt;
   protected ResultSet resultSet;
   protected Schema schema;
 
-  public TableQuerier(String name) {
-    this.name = name;
+  public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix) {
+    this.mode = mode;
+    this.name = mode.equals(QueryMode.TABLE) ? nameOrQuery : null;
+    this.query = mode.equals(QueryMode.QUERY) ? nameOrQuery : null;
+    this.topicPrefix = topicPrefix;
     this.lastUpdate = 0;
-  }
-
-  public String getName() {
-    return name;
   }
 
   public long getLastUpdate() {

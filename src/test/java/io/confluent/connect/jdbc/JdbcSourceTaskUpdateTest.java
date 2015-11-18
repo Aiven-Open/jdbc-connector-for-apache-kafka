@@ -30,11 +30,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 // Tests of polling that return data updates, i.e. verifies the different behaviors for getting
 // incremental data updates from the database
 public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
+  private static final Map<String, String> QUERY_SOURCE_PARTITION
+      = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+                                 JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
 
   @After
   public void tearDown() throws Exception {
@@ -53,9 +55,11 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     List<SourceRecord> records = task.poll();
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
+    assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     records = task.poll();
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
+    assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     db.insert(SINGLE_TABLE_NAME, "id", 2);
     records = task.poll();
@@ -63,10 +67,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     twoRecords.put(1, 1);
     twoRecords.put(2, 1);
     assertEquals(twoRecords, countIntValues(records, "id"));
+    assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     db.delete(SINGLE_TABLE_NAME, new EmbeddedDerby.EqualsCondition(column, 1));
     records = task.poll();
     assertEquals(Collections.singletonMap(2, 1), countIntValues(records, "id"));
+    assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
   }
 
   @Test
@@ -80,14 +86,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                    "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "id", 1);
 
-    startTask(null, "id");
-    verifyIncreasingFirstPoll();
+    startTask(null, "id", null);
+    verifyIncreasingFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // Adding records should result in only those records during the next poll()
     db.insert(SINGLE_TABLE_NAME, "id", 2);
     db.insert(SINGLE_TABLE_NAME, "id", 3);
 
-    verifyPoll(2, "id", Arrays.asList(2, 3), false, true);
+    verifyPoll(2, "id", Arrays.asList(2, 3), false, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -105,14 +111,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                    extraColumn, "FLOAT");
     db.insert(SINGLE_TABLE_NAME, extraColumn, 32.4f);
 
-    startTask(null, ""); // auto-incrementing
-    verifyIncreasingFirstPoll();
+    startTask(null, "", null); // auto-incrementing
+    verifyIncreasingFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // Adding records should result in only those records during the next poll()
     db.insert(SINGLE_TABLE_NAME, extraColumn, 33.4f);
     db.insert(SINGLE_TABLE_NAME, extraColumn, 35.4f);
 
-    verifyPoll(2, "id", Arrays.asList(2, 3), false, true);
+    verifyPoll(2, "id", Arrays.asList(2, 3), false, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -129,8 +135,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                    "id", "INT");
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1);
 
-    startTask("modified", null);
-    verifyTimestampFirstPoll();
+    startTask("modified", null, null);
+    verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // If there isn't enough resolution, this could miss some rows. In this case, we'll only see
     // IDs 3 & 4.
@@ -138,7 +144,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 3);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(12L)), "id", 4);
 
-    verifyPoll(2, "id", Arrays.asList(3, 4), true, false);
+    verifyPoll(2, "id", Arrays.asList(3, 4), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -155,15 +161,15 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                    "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1);
 
-    startTask("modified", "id");
-    verifyIncreasingAndTimestampFirstPoll();
+    startTask("modified", "id", null);
+    verifyIncreasingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // Should be able to pick up id 2 because of ID despite same timestamp.
     // Note this is setup so we can reuse some validation code
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 3);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 1);
 
-    verifyPoll(2, "id", Arrays.asList(3, 1), true, true);
+    verifyPoll(2, "id", Arrays.asList(3, 1), true, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -184,10 +190,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "id", 2);
     db.insert(SINGLE_TABLE_NAME, "id", 3);
 
-    startTask(null, "id");
+    startTask(null, "id", null);
 
     // Effectively skips first poll
-    verifyPoll(2, "id", Arrays.asList(2, 3), false, true);
+    verifyPoll(2, "id", Arrays.asList(2, 3), false, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -210,10 +216,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, extraColumn, 33.4f);
     db.insert(SINGLE_TABLE_NAME, extraColumn, 35.4f);
 
-    startTask(null, ""); // autoincrementing
+    startTask(null, "", null); // autoincrementing
 
     // Effectively skips first poll
-    verifyPoll(2, "id", Arrays.asList(2L, 3L), false, true);
+    verifyPoll(2, "id", Arrays.asList(2L, 3L), false, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -236,10 +242,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 3);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(12L)), "id", 4);
 
-    startTask("modified", null);
+    startTask("modified", null, null);
 
     // Effectively skips first poll
-    verifyPoll(2, "id", Arrays.asList(3, 4), true, false);
+    verifyPoll(2, "id", Arrays.asList(3, 4), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
@@ -266,15 +272,89 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(12L)), "id", 5);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(13L)), "id", 1);
 
-    startTask("modified", "id");
+    startTask("modified", "id", null);
 
-    verifyPoll(3, "id", Arrays.asList(4, 5, 1), true, true);
+    verifyPoll(3, "id", Arrays.asList(4, 5, 1), true, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
+
+    PowerMock.verifyAll();
+  }
+
+  @Test
+  public void testCustomQueryBulk() throws Exception {
+    db.createTable(JOIN_TABLE_NAME, "user_id", "INT", "name", "VARCHAR(64)");
+    db.insert(JOIN_TABLE_NAME, "user_id", 1, "name", "Alice");
+    db.insert(JOIN_TABLE_NAME, "user_id", 2, "name", "Bob");
+
+    // Manage these manually so we can verify the emitted values
+    db.createTable(SINGLE_TABLE_NAME,
+                   "id", "INT",
+                   "user_id", "INT");
+    db.insert(SINGLE_TABLE_NAME, "id", 1, "user_id", 1);
+
+    startTask(null, null, "SELECT \"test\".\"id\", \"test\""
+                          + ".\"user_id\", \"users\".\"name\" FROM \"test\" JOIN \"users\" "
+                          + "ON (\"test\".\"user_id\" = \"users\".\"user_id\")");
+
+    List<SourceRecord> records = task.poll();
+    assertEquals(1, records.size());
+    Map<Integer, Integer> recordUserIdCounts = new HashMap<>();
+    recordUserIdCounts.put(1, 1);
+    assertEquals(recordUserIdCounts, countIntValues(records, "id"));
+    assertRecordsTopic(records, TOPIC_PREFIX);
+    assertRecordsSourcePartition(records, QUERY_SOURCE_PARTITION);
+
+    db.insert(SINGLE_TABLE_NAME, "id", 2, "user_id", 1);
+    db.insert(SINGLE_TABLE_NAME, "id", 3, "user_id", 2);
+    db.insert(SINGLE_TABLE_NAME, "id", 4, "user_id", 2);
+
+    records = task.poll();
+    assertEquals(4, records.size());
+    recordUserIdCounts = new HashMap<>();
+    recordUserIdCounts.put(1, 2);
+    recordUserIdCounts.put(2, 2);
+    assertEquals(recordUserIdCounts, countIntValues(records, "user_id"));
+    assertRecordsTopic(records, TOPIC_PREFIX);
+    assertRecordsSourcePartition(records, QUERY_SOURCE_PARTITION);
+  }
+
+  @Test
+  public void testCustomQueryWithTimestamp() throws Exception {
+    expectInitializeNoOffsets(Arrays.asList(JOIN_QUERY_PARTITION));
+
+    PowerMock.replayAll();
+
+    db.createTable(JOIN_TABLE_NAME, "user_id", "INT", "name", "VARCHAR(64)");
+    db.insert(JOIN_TABLE_NAME, "user_id", 1, "name", "Alice");
+    db.insert(JOIN_TABLE_NAME, "user_id", 2, "name", "Bob");
+
+    // Manage these manually so we can verify the emitted values
+    db.createTable(SINGLE_TABLE_NAME,
+                   "modified", "TIMESTAMP NOT NULL",
+                   "id", "INT",
+                   "user_id", "INT");
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1,
+              "user_id", 1);
+
+    startTask("modified", null, "SELECT \"test\".\"modified\", \"test\".\"id\", \"test\""
+                                + ".\"user_id\", \"users\".\"name\" FROM \"test\" JOIN \"users\" "
+                                + "ON (\"test\".\"user_id\" = \"users\".\"user_id\")");
+
+    verifyTimestampFirstPoll(TOPIC_PREFIX);
+
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 2,
+              "user_id", 1);
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 3,
+              "user_id", 2);
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(12L)), "id", 4,
+              "user_id", 2);
+
+    verifyPoll(2, "id", Arrays.asList(3, 4), true, false, TOPIC_PREFIX);
 
     PowerMock.verifyAll();
   }
 
 
-  private void startTask(String timestampColumn, String increasingColumn) {
+  private void startTask(String timestampColumn, String increasingColumn, String query) {
     String mode = null;
     if (timestampColumn != null && increasingColumn != null) {
       mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING;
@@ -283,45 +363,49 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     } else if (increasingColumn != null) {
       mode = JdbcSourceConnectorConfig.MODE_INCREASING;
     } else {
-      fail("Invalid task config");
+      mode = JdbcSourceConnectorConfig.MODE_BULK;
     }
     initializeTask();
     Map<String, String> taskConfig = singleTableConfig();
     taskConfig.put(JdbcSourceConnectorConfig.MODE_CONFIG, mode);
+    if (query != null) {
+      taskConfig.put(JdbcSourceTaskConfig.QUERY_CONFIG, query);
+      taskConfig.put(JdbcSourceTaskConfig.TABLES_CONFIG, "");
+    }
     if (timestampColumn != null) {
-      taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG,
-                             timestampColumn);
+      taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG, timestampColumn);
     }
     if (increasingColumn != null) {
-      taskConfig.put(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG,
-                             increasingColumn);
+      taskConfig.put(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG, increasingColumn);
     }
     task.start(taskConfig);
   }
 
-  private void verifyIncreasingFirstPoll() throws Exception {
+  private void verifyIncreasingFirstPoll(String topic) throws Exception {
     List<SourceRecord> records = task.poll();
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
     assertEquals(Collections.singletonMap(1L, 1), countIntIncreasingOffsets(records, "id"));
     assertIncreasingOffsets(records);
+    assertRecordsTopic(records, topic);
   }
 
-  private List<SourceRecord> verifyTimestampFirstPoll() throws Exception {
+  private List<SourceRecord> verifyTimestampFirstPoll(String topic) throws Exception {
     List<SourceRecord> records = task.poll();
     assertEquals(1, records.size());
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
     assertEquals(Collections.singletonMap(10L, 1), countTimestampValues(records, "modified"));
     assertTimestampOffsets(records);
+    assertRecordsTopic(records, topic);
     return records;
   }
 
-  private void verifyIncreasingAndTimestampFirstPoll() throws Exception {
-    List<SourceRecord> records = verifyTimestampFirstPoll();
+  private void verifyIncreasingAndTimestampFirstPoll(String topic) throws Exception {
+    List<SourceRecord> records = verifyTimestampFirstPoll(topic);
     assertIncreasingOffsets(records);
   }
 
   private <T> void verifyPoll(int numRecords, String valueField, List<T> values,
-                          boolean timestampOffsets, boolean increasingOffsets)
+                          boolean timestampOffsets, boolean increasingOffsets, String topic)
       throws Exception {
     List<SourceRecord> records = task.poll();
     assertEquals(numRecords, records.size());
@@ -338,6 +422,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     if (increasingOffsets) {
       assertIncreasingOffsets(records);
     }
+
+    assertRecordsTopic(records, topic);
   }
 
   private enum Field {
@@ -417,4 +503,18 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
       assertEquals(timestampValue, offsetValue);
     }
   }
+
+  private void assertRecordsTopic(List<SourceRecord> records, String topic) {
+    for (SourceRecord record : records) {
+      assertEquals(topic, record.topic());
+    }
+  }
+
+  private void assertRecordsSourcePartition(List<SourceRecord> records,
+                                            Map<String, String> partition) {
+    for (SourceRecord record : records) {
+      assertEquals(partition, record.sourcePartition());
+    }
+  }
+
 }
