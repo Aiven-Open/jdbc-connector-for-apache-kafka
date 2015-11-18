@@ -108,14 +108,27 @@ public class JdbcSourceTask extends SourceTask {
       offsets = context.offsetStorageReader().offsets(partitions);
     }
 
+    // Must setup the connection now to validate NOT NULL columns. At this point we've already
+    // caught any easy-to-find errors so deferring the connection creation won't save any effort
+    String dbUrl = config.getString(JdbcSourceTaskConfig.CONNECTION_URL_CONFIG);
+    log.debug("Trying to connect to {}", dbUrl);
+    try {
+      db = DriverManager.getConnection(dbUrl);
+    } catch (SQLException e) {
+      log.error("Couldn't open connection to {}: {}", dbUrl, e);
+      throw new ConnectException(e);
+    }
+
     String increasingColumn
         = config.getString(JdbcSourceTaskConfig.INCREASING_COLUMN_NAME_CONFIG);
     String timestampColumn
         = config.getString(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+
     for (String tableOrQuery : tablesOrQuery) {
       final Map<String, String> partition;
       switch (queryMode) {
         case TABLE:
+          validateNonNullable(mode, tableOrQuery, increasingColumn, timestampColumn);
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
           break;
@@ -147,15 +160,6 @@ public class JdbcSourceTask extends SourceTask {
             queryMode, tableOrQuery, topicPrefix, timestampColumn, timestampOffset,
             increasingColumn, increasingOffset));
       }
-    }
-
-    String dbUrl = config.getString(JdbcSourceTaskConfig.CONNECTION_URL_CONFIG);
-    log.debug("Trying to connect to {}", dbUrl);
-    try {
-      db = DriverManager.getConnection(dbUrl);
-    } catch (SQLException e) {
-      log.error("Couldn't open connection to {}: {}", dbUrl, e);
-      throw new ConnectException(e);
     }
 
     stop = new AtomicBoolean(false);
@@ -234,4 +238,29 @@ public class JdbcSourceTask extends SourceTask {
     return null;
   }
 
+  private void validateNonNullable(String incrementalMode, String table, String increasingColumn,
+                                   String timestampColumn) {
+    try {
+      // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
+      // for table-based copying because custom query mode doesn't allow this to be looked up
+      // without a query or parsing the query since we don't have a table name.
+      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREASING) ||
+           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) &&
+          JdbcUtils.isColumnNullable(db, table, increasingColumn)) {
+        throw new ConnectException("Cannot make incremental queries using incrementing column " +
+                                   increasingColumn + " on " + table + " because this column is "
+                                   + "nullable.");
+      }
+      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
+           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) &&
+          JdbcUtils.isColumnNullable(db, table, timestampColumn)) {
+        throw new ConnectException("Cannot make incremental queries using timestamp column " +
+                                   timestampColumn + " on " + table + " because this column is "
+                                   + "nullable.");
+      }
+    } catch (SQLException e) {
+      throw new ConnectException("Failed trying to validate that columns used for offsets are NOT"
+                                 + " NULL", e);
+    }
+  }
 }

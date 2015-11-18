@@ -55,6 +55,7 @@ public class JdbcUtils {
   private static final int GET_TABLES_NAME_COLUMN = 3;
 
   private static final int GET_COLUMNS_COLUMN_NAME = 4;
+  private static final int GET_COLUMNS_IS_NULLABLE = 18;
   private static final int GET_COLUMNS_IS_AUTOINCREMENT = 23;
 
 
@@ -145,6 +146,21 @@ public class JdbcUtils {
       stmt.close();
     }
     return (matches == 1 ? result : null);
+  }
+
+  public static boolean isColumnNullable(Connection conn, String table, String column)
+      throws SQLException {
+    ResultSet rs = conn.getMetaData().getColumns(null, null, table, column);
+    if (rs.getMetaData().getColumnCount() > GET_COLUMNS_IS_NULLABLE) {
+      // Should only be one match
+      if (!rs.next()) {
+        return false;
+      }
+      String val = rs.getString(GET_COLUMNS_IS_NULLABLE);
+      return rs.getString(GET_COLUMNS_IS_NULLABLE).equals("YES");
+    }
+
+    return false;
   }
 
   /**
