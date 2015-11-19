@@ -244,7 +244,9 @@ public class EmbeddedDerby {
   }
 
   private static String formatLiteral(Object value) throws SQLException {
-    if (value instanceof CharSequence) {
+    if (value == null) {
+      return "NULL";
+    } else if (value instanceof CharSequence) {
       return "'" + value + "'";
     } else if (value instanceof Blob) {
       Blob blob = ((Blob) value);
@@ -305,6 +307,20 @@ public class EmbeddedDerby {
     @Override
     public String toString() {
       return left.toString() + " = " + right.toString();
+    }
+  }
+
+  // Literal value that should be used directly without any additional formatting.
+  public static class Literal {
+    String value;
+
+    public Literal(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return value;
     }
   }
 }

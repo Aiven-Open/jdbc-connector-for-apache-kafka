@@ -171,7 +171,11 @@ public class DataConverter {
 
       case Types.NUMERIC:
       case Types.DECIMAL: {
-        builder.field(fieldName, Decimal.schema(metadata.getScale(col)));
+        SchemaBuilder fieldBuilder = Decimal.builder(metadata.getScale(col));
+        if (optional) {
+          fieldBuilder.optional();
+        }
+        builder.field(fieldName, fieldBuilder.build());
         break;
       }
 
@@ -421,7 +425,7 @@ public class DataConverter {
 
     // FIXME: Would passing in some extra info about the schema so we can get the Field by index
     // be faster than setting this by name?
-    struct.put(fieldName, colValue);
+    struct.put(fieldName, resultSet.wasNull() ? null : colValue);
   }
 
 }
