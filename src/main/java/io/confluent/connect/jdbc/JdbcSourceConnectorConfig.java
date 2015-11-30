@@ -146,4 +146,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   protected JdbcSourceConnectorConfig(ConfigDef subclassConfigDef, Map<String, String> props) {
     super(subclassConfigDef, props);
   }
+
+
+  public static void main(String[] args) {
+    System.out.println(config.toRst());
+  }
 }
