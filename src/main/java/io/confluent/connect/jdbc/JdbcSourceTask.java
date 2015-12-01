@@ -45,7 +45,7 @@ public class JdbcSourceTask extends SourceTask {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
-  static final String INCREASING_FIELD = "increasing";
+  static final String INCREMENTING_FIELD = "incrementing";
   static final String TIMESTAMP_FIELD = "timestamp";
 
   private Time time;
@@ -88,9 +88,9 @@ public class JdbcSourceTask extends SourceTask {
 
     String mode = config.getString(JdbcSourceTaskConfig.MODE_CONFIG);
     Map<Map<String, String>, Map<String, Object>> offsets = null;
-    if (mode.equals(JdbcSourceTaskConfig.MODE_INCREASING) ||
+    if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING) ||
         mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP) ||
-        mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREASING)) {
+        mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
       List<Map<String, String>> partitions = new ArrayList<>(tables.size());
       switch (queryMode) {
         case TABLE:
@@ -119,8 +119,8 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException(e);
     }
 
-    String increasingColumn
-        = config.getString(JdbcSourceTaskConfig.INCREASING_COLUMN_NAME_CONFIG);
+    String incrementingColumn
+        = config.getString(JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
     String timestampColumn
         = config.getString(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
 
@@ -128,7 +128,7 @@ public class JdbcSourceTask extends SourceTask {
       final Map<String, String> partition;
       switch (queryMode) {
         case TABLE:
-          validateNonNullable(mode, tableOrQuery, increasingColumn, timestampColumn);
+          validateNonNullable(mode, tableOrQuery, incrementingColumn, timestampColumn);
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
           break;
@@ -140,8 +140,8 @@ public class JdbcSourceTask extends SourceTask {
           throw new ConnectException("Unexpected query mode: " + queryMode);
       }
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
-      Long increasingOffset = offset == null ? null :
-                              (Long)offset.get(INCREASING_FIELD);
+      Long incrementingOffset = offset == null ? null :
+                              (Long)offset.get(INCREMENTING_FIELD);
       Long timestampOffset = offset == null ? null :
                              (Long)offset.get(TIMESTAMP_FIELD);
 
@@ -149,16 +149,16 @@ public class JdbcSourceTask extends SourceTask {
 
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
         tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, topicPrefix));
-      } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREASING)) {
-        tableQueue.add(new TimestampIncreasingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, null, null, increasingColumn, increasingOffset));
+      } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
+        tableQueue.add(new TimestampIncrementingTableQuerier(
+            queryMode, tableOrQuery, topicPrefix, null, null, incrementingColumn, incrementingOffset));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
-        tableQueue.add(new TimestampIncreasingTableQuerier(
+        tableQueue.add(new TimestampIncrementingTableQuerier(
             queryMode, tableOrQuery, topicPrefix, timestampColumn, timestampOffset, null, null));
-      } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREASING)) {
-        tableQueue.add(new TimestampIncreasingTableQuerier(
+      } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
+        tableQueue.add(new TimestampIncrementingTableQuerier(
             queryMode, tableOrQuery, topicPrefix, timestampColumn, timestampOffset,
-            increasingColumn, increasingOffset));
+            incrementingColumn, incrementingOffset));
       }
     }
 
@@ -238,21 +238,21 @@ public class JdbcSourceTask extends SourceTask {
     return null;
   }
 
-  private void validateNonNullable(String incrementalMode, String table, String increasingColumn,
+  private void validateNonNullable(String incrementalMode, String table, String incrementingColumn,
                                    String timestampColumn) {
     try {
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
       // for table-based copying because custom query mode doesn't allow this to be looked up
       // without a query or parsing the query since we don't have a table name.
-      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREASING) ||
-           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) &&
-          JdbcUtils.isColumnNullable(db, table, increasingColumn)) {
+      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING) ||
+           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
+          JdbcUtils.isColumnNullable(db, table, incrementingColumn)) {
         throw new ConnectException("Cannot make incremental queries using incrementing column " +
-                                   increasingColumn + " on " + table + " because this column is "
+                                   incrementingColumn + " on " + table + " because this column is "
                                    + "nullable.");
       }
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
-           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING)) &&
+           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
           JdbcUtils.isColumnNullable(db, table, timestampColumn)) {
         throw new ConnectException("Cannot make incremental queries using timestamp column " +
                                    timestampColumn + " on " + table + " because this column is "

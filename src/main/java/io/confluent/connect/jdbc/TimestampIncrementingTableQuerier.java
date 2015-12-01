@@ -36,46 +36,46 @@ import java.util.TimeZone;
 
 /**
  * <p>
- *   TimestampIncreasingTableQuerier performs incremental loading of data using two mechanisms: a
- *   timestamp column provides monotonically increasing values that can be used to detect new or
- *   modified rows and a strictly increasing (e.g. auto increment) column allows detecting new rows
+ *   TimestampIncrementingTableQuerier performs incremental loading of data using two mechanisms: a
+ *   timestamp column provides monotonically incrementing values that can be used to detect new or
+ *   modified rows and a strictly incrementing (e.g. auto increment) column allows detecting new rows
  *   or combined with the timestamp provide a unique identifier for each update to the row.
  * </p>
  * <p>
- *   At least one of the two columns must be specified (or left as "" for the increasing column
+ *   At least one of the two columns must be specified (or left as "" for the incrementing column
  *   to indicate use of an auto-increment column). If both columns are provided, they are both
  *   used to ensure only new or updated rows are reported and to totally order updates so
- *   recovery can occur no matter when offsets were committed. If only the increasing fields is
+ *   recovery can occur no matter when offsets were committed. If only the incrementing fields is
  *   provided, new rows will be detected but not updates. If only the timestamp field is
  *   provided, both new and updated rows will be detected, but stream offsets will not be unique
  *   so failures may cause duplicates or losses.
  * </p>
  */
-public class TimestampIncreasingTableQuerier extends TableQuerier {
-  private static final Logger log = LoggerFactory.getLogger(TimestampIncreasingTableQuerier.class);
+public class TimestampIncrementingTableQuerier extends TableQuerier {
+  private static final Logger log = LoggerFactory.getLogger(TimestampIncrementingTableQuerier.class);
 
   private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 
   private String timestampColumn;
   private Long timestampOffset;
-  private String increasingColumn;
-  private Long increasingOffset = null;
+  private String incrementingColumn;
+  private Long incrementingOffset = null;
 
-  public TimestampIncreasingTableQuerier(QueryMode mode, String name, String topicPrefix,
-                                         String timestampColumn, Long timestampOffset,
-                                         String increasingColumn, Long increasingOffset) {
+  public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
+                                           String timestampColumn, Long timestampOffset,
+                                           String incrementingColumn, Long incrementingOffset) {
     super(mode, name, topicPrefix);
     this.timestampColumn = timestampColumn;
     this.timestampOffset = timestampOffset;
-    this.increasingColumn = increasingColumn;
-    this.increasingOffset = increasingOffset;
+    this.incrementingColumn = incrementingColumn;
+    this.incrementingOffset = incrementingOffset;
   }
 
   @Override
   protected void createPreparedStatement(Connection db) throws SQLException {
     // Default when unspecified uses an autoincrementing column
-    if (increasingColumn != null && increasingColumn.isEmpty()) {
-      increasingColumn = JdbcUtils.getAutoincrementColumn(db, name);
+    if (incrementingColumn != null && incrementingColumn.isEmpty()) {
+      incrementingColumn = JdbcUtils.getAutoincrementColumn(db, name);
     }
 
     String quoteString = JdbcUtils.getIdentifierQuoteString(db);
@@ -94,10 +94,10 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
         throw new ConnectException("Unknown mode encountered when preparing query: " + mode.toString());
     }
 
-    if (increasingColumn != null && timestampColumn != null) {
+    if (incrementingColumn != null && timestampColumn != null) {
       // This version combines two possible conditions. The first checks timestamp == last
-      // timestamp and increasing > last increasing. The timestamp alone would include
-      // duplicates, but adding the increasing condition ensures no duplicates, e.g. you would
+      // timestamp and incrementing > last incrementing. The timestamp alone would include
+      // duplicates, but adding the incrementing condition ensures no duplicates, e.g. you would
       // get only the row with id = 23:
       //  timestamp 1234, id 22 <- last
       //  timestamp 1234, id 23
@@ -113,7 +113,7 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       builder.append(" < CURRENT_TIMESTAMP AND ((");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" = ? AND ");
-      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
+      builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" > ?");
       builder.append(") OR ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
@@ -121,14 +121,14 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
       builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(",");
-      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
+      builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
-    } else if (increasingColumn != null) {
+    } else if (incrementingColumn != null) {
       builder.append(" WHERE ");
-      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
+      builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" > ?");
       builder.append(" ORDER BY ");
-      builder.append(JdbcUtils.quoteString(increasingColumn, quoteString));
+      builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
     } else if (timestampColumn != null) {
       builder.append(" WHERE ");
@@ -146,13 +146,13 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
 
   @Override
   protected ResultSet executeQuery() throws SQLException {
-    if (increasingColumn != null && timestampColumn != null) {
+    if (incrementingColumn != null && timestampColumn != null) {
       Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
       stmt.setTimestamp(1, ts, UTC_CALENDAR);
-      stmt.setLong(2, (increasingOffset == null ? -1 : increasingOffset));
+      stmt.setLong(2, (incrementingOffset == null ? -1 : incrementingOffset));
       stmt.setTimestamp(3, ts, UTC_CALENDAR);
-    } else if (increasingColumn != null) {
-      stmt.setLong(1, (increasingOffset == null ? -1 : increasingOffset));
+    } else if (incrementingColumn != null) {
+      stmt.setLong(1, (incrementingOffset == null ? -1 : incrementingOffset));
     } else if (timestampColumn != null) {
       Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
       stmt.setTimestamp(1, ts, UTC_CALENDAR);
@@ -164,26 +164,26 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
   public SourceRecord extractRecord() throws SQLException {
     Struct record = DataConverter.convertRecord(schema, resultSet);
     Map<String, Long> offset = new HashMap<>();
-    if (increasingColumn != null) {
+    if (incrementingColumn != null) {
       Long id;
-      switch (schema.field(increasingColumn).schema().type()) {
+      switch (schema.field(incrementingColumn).schema().type()) {
         case INT32:
-          id = (long) (Integer) record.get(increasingColumn);
+          id = (long) (Integer) record.get(incrementingColumn);
           break;
         case INT64:
-          id = (Long) record.get(increasingColumn);
+          id = (Long) record.get(incrementingColumn);
           break;
         default:
-          throw new ConnectException("Invalid type for increasing column: "
-                                            + schema.field(increasingColumn).schema().type());
+          throw new ConnectException("Invalid type for incrementing column: "
+                                            + schema.field(incrementingColumn).schema().type());
       }
 
-      // If we are only using an increasing column, then this must be increasing. If we are also
+      // If we are only using an incrementing column, then this must be incrementing. If we are also
       // using a timestamp, then we may see updates to older rows.
-      assert (increasingOffset == null || id > increasingOffset) || timestampColumn != null;
-      increasingOffset = id;
+      assert (incrementingOffset == null || id > incrementingOffset) || timestampColumn != null;
+      incrementingOffset = id;
 
-      offset.put(JdbcSourceTask.INCREASING_FIELD, id);
+      offset.put(JdbcSourceTask.INCREMENTING_FIELD, id);
     }
 
 
@@ -215,12 +215,12 @@ public class TimestampIncreasingTableQuerier extends TableQuerier {
 
   @Override
   public String toString() {
-    return "TimestampIncreasingTableQuerier{" +
+    return "TimestampIncrementingTableQuerier{" +
            "name='" + name + '\'' +
            ", query='" + query + '\'' +
            ", topicPrefix='" + topicPrefix + '\'' +
            ", timestampColumn='" + timestampColumn + '\'' +
-           ", increasingColumn='" + increasingColumn + '\'' +
+           ", incrementingColumn='" + incrementingColumn + '\'' +
            '}';
   }
 }
