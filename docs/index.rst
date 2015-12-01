@@ -18,8 +18,15 @@ Quickstart
 
 To see the basic functionality of the connector, we'll copy a single table from a local SQLite
 database. In this simple example, we'll assume each entry in the table is assigned a unique ID
-and is not modified after creation. Start by creating a database (you'll need to install SQLite
-if you haven't already)::
+and is not modified after creation.
+
+.. note:: You can use your favorite database instead of SQLite.
+   Follow the same steps, but adjust the ``connection.url`` setting for your database.
+   Confluent Platform includes JDBC drivers for SQLite, PostgreSQL, and MariaDB/MySQL, but if
+   you're using a different database you'll also need to make sure the JDBC driver is available on
+   the Kafka Connect process's ``CLASSPATH``.
+
+Start by creating a database (you'll need to install SQLite if you haven't already)::
 
    $ sqlite3 test.db
    SQLite version 3.8.10.2 2015-05-20 18:17:19
@@ -28,7 +35,7 @@ if you haven't already)::
 
 Next in the SQLite command prompt, create a table and seed it with some data::
 
-   sqlite> CREATE TABLE accounts(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name VARCHAR(255) NOT NULL);
+   sqlite> CREATE TABLE accounts(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name VARCHAR(255));
    sqlite> INSERT INTO accounts(name) VALUES('alice');
    sqlite> INSERT INTO accounts(name) VALUES('bob');
 
@@ -39,16 +46,16 @@ Now, create a configuration file that will load data from this database in
    connector.class=io.confluent.connect.jdbc.JdbcSourceConnector
    tasks.max=1
    connection.url=jdbc:sqlite:test.db
-   mode=increasing
-   increasing.column.name=id
+   mode=incrementing
+   incrementing.column.name=id
    topic.prefix=test-sqlite-jdbc-
 
 The first few settings are common settings you'll specify for all connectors. The ``connection.url``
 specifies the database to connect to, in this case a local SQLite database file. The ``mode``
 indicates how we want to query the data. In this case, we have an auto-incrementing unique
-ID, so we select ``increasing`` mode where each query uses the largest ID previously seen to limit
-new results to newly created rows. The ``increasing.column.name`` setting specifies the column in
-the table that contains the auto-incrementing ID. Finally, we can control the names of the topics
+ID, so we select ``incrementing`` mode and set ``incrementing.column.name``. In this mode,
+each query for new data will only return rows with IDs larger than the maximum ID seen in
+previous queries. Finally, we can control the names of the topics
 that each table's output is sent to with the ``topic.prefix`` setting. Since we only have one
 table, the only output topic in this example will be ``test-sqlite-jdbc-accounts``.
 
@@ -66,8 +73,15 @@ the topic::
    {"id":1,"name":{"string":"alice"}}
    {"id":2,"name":{"string":"bob"}}
 
-The output shows the two records as expected, in the JSON encoding of the Avro records. Now,
-keeping that running, add another record via the SQLite command prompt::
+The output shows the two records as expected, one per line, in the JSON encoding of the Avro
+records. Each row is represented as an Avro record and each column is a field in the record. We
+can see both columns in the table, ``id`` and ``name``. The IDs were auto-generated and the column
+is of type ``INTEGER NOT NULL`, which can be encoded directly as an integer. The ``name`` column
+has type ``STRING`` and can be ``NULL``. The JSON encoding of Avro encodes the strings in the
+format ``{"type": value}``, so we can see that both rows have ``string`` values with the names
+specified when we inserted the data.
+
+Now, keeping the consumer process running, add another record via the SQLite command prompt::
 
    sqlite> INSERT INTO accounts(name) VALUES('cathy');
 
@@ -80,7 +94,8 @@ Note that the default polling interval is 5 seconds, so it may take a few second
 Depending on your expected rate up updates or desired latency, a smaller poll interval could be
 used to deliver updates more quickly.
 
-Of course, all the normal features of Kafka Connect, including offset management and fault
+Of course, :ref:`all the features of Kafka Connect <connect_userguide>`_, including offset
+management and fault
 tolerance, work with the JDBC connector. You can restart and kill the processes and they will
 pick up where they left off, copying only new data (as defined by the ``mode`` setting).
 
@@ -92,68 +107,51 @@ tables from the database dynamically, whitelists and blacklists, varying polling
 other settings. However, the most important features for most users are the settings controlling
 how data is incrementally copied from the database.
 
-Mapping to Kafka Connect Partitioned Streams & Offsets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Kafka Connect uses `partitioned streams` as its core data model. In order to map to Kafka Connect
-records, the JDBC connector must model its data as a set of partitions, each with an ordered
-sequence of updates with unique offsets. In the case of a process restart or failure, these
-offsets are used to resume reading from the last position that the system can guarantee has been
-processed.
-
-To map to this model, the JDBC connector must map partitions and offsets. Partitions is
-handled on a per-table basis: each table represents a single partition and every insertion or
-update of a row corresponds to a single record in that partition. As a special case, custom
-queries (which disable table-based processing) are treated as a single-partition stream.
-
-Offsets now must be defined for each table's stream. The JDBC connector supports multiple options
-depending on the format of data within your tables. However, at their core, all settings share a
-common approach. A column or set of columns is used to define and order offsets. A simple example
-uses only unique, auto-incrementing IDs in a table where rows are only inserted, never updated.
-In this mode, offsets are a single integer ID and are naturally ordered. Querying for
-only new data is trivially handled by checking for IDs with larger values than the
-largest seen so far. "Rewinding" upon failure simply requires looking up the largest ID
-previously seen and starting queries with that value.
-
-However, many tables cannot be guaranteed to only have insertions and have a unique,
-auto-incrementing ID. In order to support a variety of tables with different properties, multiple
-different approaches to defining offsets & queries for new or updated rows are supported.
+Kafka Connect tracks the latest record it retrieved from each table, so it can start in the correct
+location on the next iteration (or in case of a crash). The JDBC connector uses this
+functionality to only get updated rows from a table (or from the output of a custom query) on each
+iteration. Several modes are supported, each of which differs in how modified rows are detected.
 
 Incremental Query Modes
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-* **Increasing Column**: In this mode, a single column is specified and contains a unique ID for
-  each row which increases with each insertion. Although it could be implemented differently, this
-  type of column is most frequently implemented as an ``AUTOINCREMENT`` column in a table where rows
-  are only inserted, but not updated. (Note that updates will *not* be handled properly in this
-  mode because they cannot be detected once the row has been processed for the first time.)
+Each incremental query mode tracks a set of columns for each row, which it uses to keep track of
+which rows have been processed and which rows are new or have been updated. The ``mode`` setting
+controls this behavior and supports the following options:
 
-* **Timestamp Column**: In this mode, a single column is specified and contains a modification
-  timestamp for each row. Using a timestamp makes it simple to query for updated data by simply
-  requesting any rows with newer timestamps than the most recent timestamp previously observed.
-  However, these timestamps are also used as offsets and therefore technically violate the
-  uniqueness requirement for offsets. Because of this, this mode cannot guarantee all updated data
-  will be delivered: if 2 rows share the same offset and are returned by an incremental query, but
-  only one has been processed before a crash, the second update will be missed when the system
-  recovers.
+* **Incrementing Column**: A single column containing a unique ID for each row, where newer rows are
+  guaranteed to have larger IDs, i.e. an ``AUTOINCREMENT`` column. Note that this mode can only
+  detect *new* rows. *Updates* to existing rows cannot be detected, so this mode should only be
+  used for immutable data. One example where you might use this mode is when streaming fact
+  tables in a data warehouse, since those are typically insert-only.
 
-* **Timestamp and Increasing Columns**: This is the most robust and accurate mode, combining an
-  increasing column with a timestamp column. By combining the two, as long as the timestamp is
-  sufficiently granular, each (id, timestamp) tuple will uniquely identify a row update. Even if an
-  update fails midway, when the system recovers, unprocessed updates will still be correctly
-  detected and delivered.
+* **Timestamp Column**: In this mode, a single column containing a modification timestamp is used
+  to track the last time data was processed and to query only for rows that have been modified
+  since that time. Note that because timestamps are no necessarily unique, this mode cannot
+  guarantee all updated data will be delivered: if 2 rows share the same timestamp and are
+  returned by an incremental query, but only one has been processed before a crash, the second
+  update will be missed when the system recovers.
+
+* **Timestamp and Incrementing Columns**: This is the most robust and accurate mode, combining an
+  incrementing column with a timestamp column. By combining the two, as long as the timestamp is
+  sufficiently granular, each (id, timestamp) tuple will uniquely identify an update to a row. Even
+  if an update fails after partially completing, unprocessed updates will are still correctly
+  detected and delivered when the system recovers.
 
 * **Custom Query**: The JDBC connector supports using custom queries instead of copying whole
   tables. With a custom query, one of the other update automatic update modes can be used as long
-  as the necessary ``WHERE`` clause can be correctly appended (set the appropriate ``mode``
-  configuration). Alternatively, the specified query may handle filtering to new updates itself;
+  as the necessary ``WHERE`` clause can be correctly appended to the query. Alternatively, the
+  specified query may handle filtering to new updates itself;
   however, note that no offset tracking will be performed (unlike the automatic modes where
-  ``increasing`` and/or ``timestamp`` column values are recorded for each record), so the query
+  ``incrementing`` and/or ``timestamp`` column values are recorded for each record), so the query
   must track offsets itself.
 
 * **Bulk**: This mode is unfiltered and therefore not incremental at all. It will load all rows
   from a table on each iteration. This can be useful if you want to periodically dump an entire
   table where entries are eventually deleted and the downstream system can safely handle duplicates.
+
+Note that all incremental query modes that use certain columns to detect changes will require
+indexes on those columns to efficiently perform the queries.
 
 Configuration
 -------------
@@ -206,9 +204,9 @@ middle of an incremental update query. ::
    connection.url=jdbc:mysql://mysql.example.com:3306/my_database?user=alice&password=secret
    table.whitelist=users,products,transactions
 
-   mode=timestamp+increasing
+   mode=timestamp+incrementing
    timestamp.column.name=modified
-   increasing.column.name=id
+   incrementing.column.name=id
 
    topic.prefix=mysql-
 
@@ -251,11 +249,11 @@ Configuration Options
 
     * bulk - perform a bulk load of the entire table each time it is polled
 
-    * increasing - use a strictly increasing column on each table to detect only new rows. Note that this will not detect modifications or deletions of existing rows.
+    * incrementing - use a strictly incrementing column on each table to detect only new rows. Note that this will not detect modifications or deletions of existing rows.
 
-    * timestamp - use a timestamp (or timestamp-like) column to detect new and modified rows. This assumes the column is updated with each write, and that values are monotonically increasing, but not necessarily unique.
+    * timestamp - use a timestamp (or timestamp-like) column to detect new and modified rows. This assumes the column is updated with each write, and that values are monotonically incrementing, but not necessarily unique.
 
-    * timestamp+increasing - use two columns, a timestamp column that detects new and modified rows and a strictly increasing column which provides a globally unique ID for updates so each row can be assigned a unique stream offset.
+    * timestamp+incrementing - use two columns, a timestamp column that detects new and modified rows and a strictly incrementing column which provides a globally unique ID for updates so each row can be assigned a unique stream offset.
 
   * Type: string
   * Default: ""
@@ -268,8 +266,8 @@ Configuration Options
   * Default: 5000
   * Importance: high
 
-``increasing.column.name``
-  The name of the strictly increasing column to use to detect new rows. Any empty value indicates the column should be autodetected by looking for an auto-incrementing column. This column may not be nullable.
+``incrementing.column.name``
+  The name of the strictly incrementing column to use to detect new rows. Any empty value indicates the column should be autodetected by looking for an auto-incrementing column. This column may not be nullable.
 
   * Type: string
   * Default: ""

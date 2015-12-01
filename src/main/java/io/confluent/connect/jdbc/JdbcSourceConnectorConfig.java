@@ -45,28 +45,28 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String MODE_DOC =
       "The mode for updating a table each time it is polled. Options include:\n"
       + "  * bulk - perform a bulk load of the entire table each time it is polled\n"
-      + "  * increasing - use a strictly increasing column on each table to "
+      + "  * incrementing - use a strictly incrementing column on each table to "
       + "detect only new rows. Note that this will not detect modifications or "
       + "deletions of existing rows.\n"
       + "  * timestamp - use a timestamp (or timestamp-like) column to detect new and modified "
       + "rows. This assumes the column is updated with each write, and that values are "
-      + "monotonically increasing, but not necessarily unique.\n"
-      + "  * timestamp+increasing - use two columns, a timestamp column that detects new and "
-      + "modified rows and a strictly increasing column which provides a globally unique ID for "
+      + "monotonically incrementing, but not necessarily unique.\n"
+      + "  * timestamp+incrementing - use two columns, a timestamp column that detects new and "
+      + "modified rows and a strictly incrementing column which provides a globally unique ID for "
       + "updates so each row can be assigned a unique stream offset.";
 
   public static final String MODE_UNSPECIFIED = "";
   public static final String MODE_BULK = "bulk";
   public static final String MODE_TIMESTAMP = "timestamp";
-  public static final String MODE_INCREASING = "increasing";
-  public static final String MODE_TIMESTAMP_INCREASING = "timestamp+increasing";
+  public static final String MODE_INCREMENTING = "incrementing";
+  public static final String MODE_TIMESTAMP_INCREMENTING = "timestamp+incrementing";
 
-  public static final String INCREASING_COLUMN_NAME_CONFIG = "increasing.column.name";
-  private static final String INCREASING_COLUMN_NAME_DOC =
-      "The name of the strictly increasing column to use to detect new rows. Any empty value "
+  public static final String INCREMENTING_COLUMN_NAME_CONFIG = "incrementing.column.name";
+  private static final String INCREMENTING_COLUMN_NAME_DOC =
+      "The name of the strictly incrementing column to use to detect new rows. Any empty value "
       + "indicates the column should be autodetected by looking for an auto-incrementing column. "
       + "This column may not be nullable.";
-  public static final String INCREASING_COLUMN_NAME_DEFAULT = "";
+  public static final String INCREMENTING_COLUMN_NAME_DEFAULT = "";
 
   public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
   private static final String TIMESTAMP_COLUMN_NAME_DOC =
@@ -116,10 +116,11 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
                 BATCH_MAX_ROWS_DOC)
         .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED,
                 ConfigDef.ValidString.in(Arrays.asList(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP,
-                                                       MODE_INCREASING, MODE_TIMESTAMP_INCREASING)),
+                                                       MODE_INCREMENTING,
+                                                       MODE_TIMESTAMP_INCREMENTING)),
                 Importance.HIGH, MODE_DOC)
-        .define(INCREASING_COLUMN_NAME_CONFIG, Type.STRING, INCREASING_COLUMN_NAME_DEFAULT,
-                Importance.MEDIUM, INCREASING_COLUMN_NAME_DOC)
+        .define(INCREMENTING_COLUMN_NAME_CONFIG, Type.STRING, INCREMENTING_COLUMN_NAME_DEFAULT,
+                Importance.MEDIUM, INCREMENTING_COLUMN_NAME_DOC)
         .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
                 Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,

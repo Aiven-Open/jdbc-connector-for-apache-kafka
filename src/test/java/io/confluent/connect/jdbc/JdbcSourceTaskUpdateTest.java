@@ -77,12 +77,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test(expected = ConnectException.class)
-  public void testIncreasingInvalidColumn() throws Exception {
+  public void testIncrementingInvalidColumn() throws Exception {
     expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
 
     PowerMock.replayAll();
 
-    // Increasing column must be NOT NULL
+    // Incrementing column must be NOT NULL
     db.createTable(SINGLE_TABLE_NAME, "id", "INT");
 
     startTask(null, "id", null);
@@ -105,7 +105,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testManualIncreasing() throws Exception {
+  public void testManualIncrementing() throws Exception {
     expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
 
     PowerMock.replayAll();
@@ -115,7 +115,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "id", 1);
 
     startTask(null, "id", null);
-    verifyIncreasingFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
+    verifyIncrementingFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // Adding records should result in only those records during the next poll()
     db.insert(SINGLE_TABLE_NAME, "id", 2);
@@ -140,7 +140,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, extraColumn, 32.4f);
 
     startTask(null, "", null); // auto-incrementing
-    verifyIncreasingFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
+    verifyIncrementingFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // Adding records should result in only those records during the next poll()
     db.insert(SINGLE_TABLE_NAME, extraColumn, 33.4f);
@@ -178,7 +178,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testTimestampAndIncreasing() throws Exception {
+  public void testTimestampAndIncrementing() throws Exception {
     expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
 
     PowerMock.replayAll();
@@ -190,7 +190,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1);
 
     startTask("modified", "id", null);
-    verifyIncreasingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
+    verifyIncrementingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     // Should be able to pick up id 2 because of ID despite same timestamp.
     // Note this is setup so we can reuse some validation code
@@ -203,9 +203,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testManualIncreasingRestoreOffset() throws Exception {
+  public void testManualIncrementingRestoreOffset() throws Exception {
     Map<String, Object> offset = new HashMap<>();
-    offset.put(JdbcSourceTask.INCREASING_FIELD, 1L);
+    offset.put(JdbcSourceTask.INCREMENTING_FIELD, 1L);
 
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
                      Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
@@ -229,7 +229,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   @Test
   public void testAutoincrementRestoreOffset() throws Exception {
     Map<String, Object> offset = new HashMap<>();
-    offset.put(JdbcSourceTask.INCREASING_FIELD, 1L);
+    offset.put(JdbcSourceTask.INCREMENTING_FIELD, 1L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
                      Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
 
@@ -279,10 +279,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testTimestampAndIncreasingRestoreOffset() throws Exception {
+  public void testTimestampAndIncrementingRestoreOffset() throws Exception {
     Map<String, Object> offset = new HashMap<>();
     offset.put(JdbcSourceTask.TIMESTAMP_FIELD, 10L);
-    offset.put(JdbcSourceTask.INCREASING_FIELD, 3L);
+    offset.put(JdbcSourceTask.INCREMENTING_FIELD, 3L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
                      Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
 
@@ -382,14 +382,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
 
-  private void startTask(String timestampColumn, String increasingColumn, String query) {
+  private void startTask(String timestampColumn, String incrementingColumn, String query) {
     String mode = null;
-    if (timestampColumn != null && increasingColumn != null) {
-      mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREASING;
+    if (timestampColumn != null && incrementingColumn != null) {
+      mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
     } else if (timestampColumn != null) {
       mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP;
-    } else if (increasingColumn != null) {
-      mode = JdbcSourceConnectorConfig.MODE_INCREASING;
+    } else if (incrementingColumn != null) {
+      mode = JdbcSourceConnectorConfig.MODE_INCREMENTING;
     } else {
       mode = JdbcSourceConnectorConfig.MODE_BULK;
     }
@@ -403,17 +403,17 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     if (timestampColumn != null) {
       taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG, timestampColumn);
     }
-    if (increasingColumn != null) {
-      taskConfig.put(JdbcSourceConnectorConfig.INCREASING_COLUMN_NAME_CONFIG, increasingColumn);
+    if (incrementingColumn != null) {
+      taskConfig.put(JdbcSourceConnectorConfig.INCREMENTING_COLUMN_NAME_CONFIG, incrementingColumn);
     }
     task.start(taskConfig);
   }
 
-  private void verifyIncreasingFirstPoll(String topic) throws Exception {
+  private void verifyIncrementingFirstPoll(String topic) throws Exception {
     List<SourceRecord> records = task.poll();
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
-    assertEquals(Collections.singletonMap(1L, 1), countIntIncreasingOffsets(records, "id"));
-    assertIncreasingOffsets(records);
+    assertEquals(Collections.singletonMap(1L, 1), countIntIncrementingOffsets(records, "id"));
+    assertIncrementingOffsets(records);
     assertRecordsTopic(records, topic);
   }
 
@@ -427,13 +427,13 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     return records;
   }
 
-  private void verifyIncreasingAndTimestampFirstPoll(String topic) throws Exception {
+  private void verifyIncrementingAndTimestampFirstPoll(String topic) throws Exception {
     List<SourceRecord> records = verifyTimestampFirstPoll(topic);
-    assertIncreasingOffsets(records);
+    assertIncrementingOffsets(records);
   }
 
   private <T> void verifyPoll(int numRecords, String valueField, List<T> values,
-                          boolean timestampOffsets, boolean increasingOffsets, String topic)
+                          boolean timestampOffsets, boolean incrementingOffsets, String topic)
       throws Exception {
     List<SourceRecord> records = task.poll();
     assertEquals(numRecords, records.size());
@@ -447,8 +447,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     if (timestampOffsets) {
       assertTimestampOffsets(records);
     }
-    if (increasingOffsets) {
-      assertIncreasingOffsets(records);
+    if (incrementingOffsets) {
+      assertIncrementingOffsets(records);
     }
 
     assertRecordsTopic(records, topic);
@@ -458,7 +458,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     KEY,
     VALUE,
     TIMESTAMP_VALUE,
-    INCREASING_OFFSET,
+    INCREMENTING_OFFSET,
     TIMESTAMP_OFFSET
   }
 
@@ -478,8 +478,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
           extracted = (T) (Long) rawTimestamp.getTime();
           break;
         }
-        case INCREASING_OFFSET:
-          extracted = (T)(record.sourceOffset()).get(JdbcSourceTask.INCREASING_FIELD);
+        case INCREMENTING_OFFSET:
+          extracted = (T)(record.sourceOffset()).get(JdbcSourceTask.INCREMENTING_FIELD);
           break;
         case TIMESTAMP_OFFSET: {
           java.util.Date rawTimestamp
@@ -505,20 +505,20 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     return countInts(records, Field.TIMESTAMP_VALUE, fieldName);
   }
 
-  private Map<Long, Integer> countIntIncreasingOffsets(List<SourceRecord> records, String fieldName) {
-    return countInts(records, Field.INCREASING_OFFSET, fieldName);
+  private Map<Long, Integer> countIntIncrementingOffsets(List<SourceRecord> records, String fieldName) {
+    return countInts(records, Field.INCREMENTING_OFFSET, fieldName);
   }
 
 
-  private void assertIncreasingOffsets(List<SourceRecord> records) {
-    // Should use increasing field as offsets
+  private void assertIncrementingOffsets(List<SourceRecord> records) {
+    // Should use incrementing field as offsets
     for(SourceRecord record : records) {
-      Object increasing = ((Struct)record.value()).get("id");
-      long increasingValue = increasing instanceof Integer ? (long)(Integer)increasing
-                                                           : (Long)increasing;
+      Object incrementing = ((Struct)record.value()).get("id");
+      long incrementingValue = incrementing instanceof Integer ? (long)(Integer)incrementing
+                                                           : (Long)incrementing;
       long offsetValue = (Long)(record.sourceOffset())
-          .get(JdbcSourceTask.INCREASING_FIELD);
-      assertEquals(increasingValue, offsetValue);
+          .get(JdbcSourceTask.INCREMENTING_FIELD);
+      assertEquals(incrementingValue, offsetValue);
     }
   }
 
