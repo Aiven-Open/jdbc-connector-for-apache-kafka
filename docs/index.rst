@@ -22,7 +22,7 @@ and is not modified after creation.
 
 .. note:: You can use your favorite database instead of SQLite.
    Follow the same steps, but adjust the ``connection.url`` setting for your database.
-   Confluent Platform includes JDBC drivers for SQLite, PostgreSQL, and MariaDB/MySQL, but if
+   Confluent Platform includes JDBC drivers for SQLite and PostgreSQL, but if
    you're using a different database you'll also need to make sure the JDBC driver is available on
    the Kafka Connect process's ``CLASSPATH``.
 

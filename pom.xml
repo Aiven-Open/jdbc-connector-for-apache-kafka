@@ -93,15 +93,6 @@
             <version>9.4-1206-jdbc41</version>
             <scope>runtime</scope>
         </dependency>
-        <!-- temporarily disabled because it causes failures when trying to load
-             data from mysql
-        <dependency>
-            <groupId>org.mariadb.jdbc</groupId>
-            <artifactId>mariadb-java-client</artifactId>
-            <version>1.3.2</version>
-            <scope>runtime</scope>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>junit</groupId>
