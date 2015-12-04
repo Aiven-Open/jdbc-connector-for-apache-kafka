@@ -63,7 +63,7 @@ table, the only output topic in this example will be ``test-sqlite-jdbc-accounts
 Now, run the connector in a standalone Kafka Connect worker in another terminal (this assumes
 Avro settings and that Kafka and the Schema Registry are running locally on the default ports)::
 
-   $ ./bin/connect-standalone ./config/connect-standalone.properties etc/kafka-connect-jdbc/quickstart-sqlite.properties
+   $ ./bin/connect-standalone etc/schema-registry/connect-avro-standalone.properties etc/kafka-connect-jdbc/quickstart-sqlite.properties
 
 You should see the process start up and log some messages, and then it will begin executing
 queries and sending the results to Kafka. In order to check that it has copied the data that was
