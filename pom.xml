@@ -58,13 +58,14 @@
         <derby.version>10.11.1.1</derby.version>
         <commons-io.version>2.4</commons-io.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
 
     <repositories>
         <repository>
             <id>confluent</id>
             <name>Confluent</name>
-            <url>http://packages.confluent.io/maven/</url>
+            <url>${confluent.maven.repo}</url>
         </repository>
     </repositories>
 
