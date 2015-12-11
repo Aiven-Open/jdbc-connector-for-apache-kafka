@@ -77,7 +77,7 @@ the topic::
 The output shows the two records as expected, one per line, in the JSON encoding of the Avro
 records. Each row is represented as an Avro record and each column is a field in the record. We
 can see both columns in the table, ``id`` and ``name``. The IDs were auto-generated and the column
-is of type ``INTEGER NOT NULL`, which can be encoded directly as an integer. The ``name`` column
+is of type ``INTEGER NOT NULL``, which can be encoded directly as an integer. The ``name`` column
 has type ``STRING`` and can be ``NULL``. The JSON encoding of Avro encodes the strings in the
 format ``{"type": value}``, so we can see that both rows have ``string`` values with the names
 specified when we inserted the data.
@@ -95,7 +95,7 @@ Note that the default polling interval is 5 seconds, so it may take a few second
 Depending on your expected rate up updates or desired latency, a smaller poll interval could be
 used to deliver updates more quickly.
 
-Of course, :ref:`all the features of Kafka Connect <connect_userguide>`_, including offset
+Of course, :ref:`all the features of Kafka Connect<connect_userguide>`, including offset
 management and fault
 tolerance, work with the JDBC connector. You can restart and kill the processes and they will
 pick up where they left off, copying only new data (as defined by the ``mode`` setting).
