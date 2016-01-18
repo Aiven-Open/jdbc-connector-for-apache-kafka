@@ -108,7 +108,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "to, or in the case of a custom query, the full name of the topic to publish to.";
 
 
-  public static final String TABLE_TYPE_DEFAULT = "TABLES";
+  public static final String TABLE_TYPE_DEFAULT = "TABLE";
   public static final String TABLE_TYPE_CONFIG = "table.types";
   private static final String TABLE_TYPE_DOC =
           "Comma delimited list of Table Types to include";

@@ -32,9 +32,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,7 +45,9 @@ public class TableMonitorThreadTest {
   private static final List<String> FIRST_TOPIC_LIST = Arrays.asList("foo");
   private static final List<String> SECOND_TOPIC_LIST = Arrays.asList("foo", "bar");
   private static final List<String> THIRD_TOPIC_LIST = Arrays.asList("foo", "bar", "baz");
-
+  public static final Set<String> DEFAULT_TABLE_TYPES = Collections.unmodifiableSet(
+          new HashSet<String>(Arrays.asList("TABLE"))
+  );
   private EmbeddedDerby db;
   private Connection dbConn;
   private TableMonitorThread tableMonitorThread;
@@ -69,7 +69,7 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testSingleLookup() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null);
+    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null,DEFAULT_TABLE_TYPES);
 
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
       @Override
@@ -91,7 +91,7 @@ public class TableMonitorThreadTest {
   @Test
   public void testWhitelist() throws Exception {
     tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL,
-                                                new HashSet<>(Arrays.asList("foo", "bar")), null);
+                                                new HashSet<>(Arrays.asList("foo", "bar")), null,DEFAULT_TABLE_TYPES);
 
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
       @Override
@@ -113,7 +113,7 @@ public class TableMonitorThreadTest {
   @Test
   public void testBlacklist() throws Exception {
     tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL,
-                                                null, new HashSet<>(Arrays.asList("bar", "baz")));
+                                                null, new HashSet<>(Arrays.asList("bar", "baz")),DEFAULT_TABLE_TYPES);
 
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andAnswer(new IAnswer<List<String>>() {
       @Override
@@ -134,7 +134,7 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testReconfigOnUpdate() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null);
+    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null,DEFAULT_TABLE_TYPES);
 
     EasyMock.expect(JdbcUtils.getTables(dbConn)).andReturn(FIRST_TOPIC_LIST);
     // Returning same list should not change results
