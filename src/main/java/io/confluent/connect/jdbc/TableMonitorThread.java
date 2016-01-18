@@ -21,6 +21,7 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.print.DocFlavor;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -43,9 +44,10 @@ public class TableMonitorThread extends Thread {
   private Set<String> whitelist;
   private Set<String> blacklist;
   private List<String> tables;
+  private Set<String> table_types;
 
   public TableMonitorThread(Connection db, ConnectorContext context, long pollMs,
-                            Set<String> whitelist, Set<String> blacklist) {
+                            Set<String> whitelist, Set<String> blacklist, Set<String> table_types) {
     this.db = db;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
@@ -53,6 +55,7 @@ public class TableMonitorThread extends Thread {
     this.whitelist = whitelist;
     this.blacklist = blacklist;
     this.tables = null;
+    this.table_types = table_types;
   }
 
   @Override
@@ -102,7 +105,7 @@ public class TableMonitorThread extends Thread {
     synchronized (db) {
       final List<String> tables;
       try {
-        tables = JdbcUtils.getTables(db);
+        tables = JdbcUtils.getTables(db,table_types);
       } catch (SQLException e) {
         log.error("Error while trying to get updated table list, ignoring and waiting for next "
                   + "table poll interval", e);

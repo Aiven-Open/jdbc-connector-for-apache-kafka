@@ -107,6 +107,12 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "Prefix to prepend to table names to generate the name of the Kafka topic to publish data "
       + "to, or in the case of a custom query, the full name of the topic to publish to.";
 
+
+  public static final String TABLE_TYPE_DEFAULT = "TABLES";
+  public static final String TABLE_TYPE_CONFIG = "table.types";
+  private static final String TABLE_TYPE_DOC =
+          "Comma delimited list of Table Types to include";
+
   public static ConfigDef baseConfigDef() {
     return new ConfigDef()
         .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
@@ -132,7 +138,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(QUERY_CONFIG, Type.STRING, QUERY_DEFAULT,
                 Importance.MEDIUM, QUERY_DOC)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING,
-                Importance.HIGH, TOPIC_PREFIX_DOC);
+                Importance.HIGH, TOPIC_PREFIX_DOC)
+        .define(TABLE_TYPE_CONFIG, Type.LIST,TABLE_TYPE_DEFAULT,
+                    Importance.HIGH, TABLE_TYPE_DOC);
   }
 
   static ConfigDef config = baseConfigDef();
