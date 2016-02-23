@@ -202,7 +202,7 @@ public class JdbcSourceTask extends SourceTask {
 
       List<SourceRecord> results = new ArrayList<>();
       try {
-        log.trace("Checking for next block of results from {}", querier.toString());
+        log.debug("Checking for next block of results from {}", querier.toString());
         querier.maybeStartQuery(db);
 
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
@@ -211,9 +211,10 @@ public class JdbcSourceTask extends SourceTask {
           results.add(querier.extractRecord());
         }
 
+
         // If we finished processing the results from this query, we can clear it out
         if (!hadNext) {
-          log.trace("Closing this query for {}", querier.toString());
+          log.debug("Closing this query for {}", querier.toString());
           TableQuerier removedQuerier = tableQueue.poll();
           assert removedQuerier == querier;
           now = time.milliseconds();
@@ -226,7 +227,7 @@ public class JdbcSourceTask extends SourceTask {
           continue;
         }
 
-        log.trace("Returning {} records for {}", results.size(), querier.toString());
+        log.debug("Returning {} records for {}", results.size(), querier.toString());
         return results;
       } catch (SQLException e) {
         log.error("Failed to run query for table {}: {}", querier.toString(), e);
