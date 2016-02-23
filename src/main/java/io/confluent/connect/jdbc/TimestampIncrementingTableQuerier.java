@@ -151,11 +151,14 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       stmt.setTimestamp(1, ts, UTC_CALENDAR);
       stmt.setLong(2, (incrementingOffset == null ? -1 : incrementingOffset));
       stmt.setTimestamp(3, ts, UTC_CALENDAR);
+      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " and incrementing value = " + incrementingOffset);
     } else if (incrementingColumn != null) {
       stmt.setLong(1, (incrementingOffset == null ? -1 : incrementingOffset));
+      log.debug("Executing prepared statement with incrementing value = " + incrementingOffset);
     } else if (timestampColumn != null) {
       Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
       stmt.setTimestamp(1, ts, UTC_CALENDAR);
+      log.debug("Executing prepared statement with timestamp value = " + timestampOffset);
     }
     return stmt.executeQuery();
   }
