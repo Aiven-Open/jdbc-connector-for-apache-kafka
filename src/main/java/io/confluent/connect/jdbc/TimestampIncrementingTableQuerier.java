@@ -60,15 +60,17 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   private Long timestampOffset;
   private String incrementingColumn;
   private Long incrementingOffset = null;
+  private Long timestampDelay;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, Long timestampOffset,
-                                           String incrementingColumn, Long incrementingOffset) {
+                                           String incrementingColumn, Long incrementingOffset, Long timestampDelay) {
     super(mode, name, topicPrefix);
     this.timestampColumn = timestampColumn;
     this.timestampOffset = timestampOffset;
     this.incrementingColumn = incrementingColumn;
     this.incrementingOffset = incrementingOffset;
+    this.timestampDelay = timestampDelay == null ? 0L : timestampDelay;
   }
 
   @Override
@@ -147,18 +149,21 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   @Override
   protected ResultSet executeQuery() throws SQLException {
     if (incrementingColumn != null && timestampColumn != null) {
-      Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      Timestamp ts = new Timestamp(timestampOffset == null ? timestampDelay : timestampOffset + timestampDelay);
       stmt.setTimestamp(1, ts, UTC_CALENDAR);
       stmt.setLong(2, (incrementingOffset == null ? -1 : incrementingOffset));
       stmt.setTimestamp(3, ts, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " and incrementing value = " + incrementingOffset);
+      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " delay of "
+              + timestampDelay + "ms" + " (" + ts.toString() + ") "
+              + " and incrementing value = " + incrementingOffset);
     } else if (incrementingColumn != null) {
       stmt.setLong(1, (incrementingOffset == null ? -1 : incrementingOffset));
       log.debug("Executing prepared statement with incrementing value = " + incrementingOffset);
     } else if (timestampColumn != null) {
-      Timestamp ts = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      Timestamp ts = new Timestamp(timestampOffset == null ? timestampDelay : timestampOffset + timestampDelay);
       stmt.setTimestamp(1, ts, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + timestampOffset);
+      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " delay of "
+              + timestampDelay + "ms" + " (" + ts.toString() + ") ");
     }
     return stmt.executeQuery();
   }

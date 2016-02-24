@@ -74,6 +74,12 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "not be nullable.";
   public static final String TIMESTAMP_COLUMN_NAME_DEFAULT = "";
 
+  public static final String TIMESTAMP_DELAY_INTERVAL_MS_CONFIG = "timestamp.delay.interval.ms";
+  private static final String TIMESTAMP_DELAY_INTERVAL_MS_DOC = "How long to wait after a row with certain timestamp appears before we include it in the result. You may choose to add some delay to allow transactions with earlier timestamp to complete.";
+  public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
+
+
+
   public static final String TABLE_POLL_INTERVAL_MS_CONFIG = "table.poll.interval.ms";
   private static final String TABLE_POLL_INTERVAL_MS_DOC =
       "Frequency in ms to poll for new or removed tables, which may result in updated task "
@@ -123,6 +129,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
                 Importance.MEDIUM, INCREMENTING_COLUMN_NAME_DOC)
         .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
                 Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
+        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT,
+                Importance.LOW, TIMESTAMP_DELAY_INTERVAL_MS_DOC)
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,
                 Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC)
         .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT,
