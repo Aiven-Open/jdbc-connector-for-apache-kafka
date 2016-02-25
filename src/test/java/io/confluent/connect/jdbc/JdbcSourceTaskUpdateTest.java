@@ -444,7 +444,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     if (incrementingColumn != null) {
       taskConfig.put(JdbcSourceConnectorConfig.INCREMENTING_COLUMN_NAME_CONFIG, incrementingColumn);
     }
-    taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, delay.toString());
+    taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, delay == null ? "0" : delay.toString());
     task.start(taskConfig);
   }
 
