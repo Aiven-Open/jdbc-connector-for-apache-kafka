@@ -112,7 +112,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       // We should capture both id = 22 (an update) and id = 23 (a new row)
       builder.append(" WHERE ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
-      builder.append(" < CURRENT_TIMESTAMP AND ((");
+      builder.append(" < ? AND ((");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" = ? AND ");
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
@@ -137,7 +137,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ? AND ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
-      builder.append(" < CURRENT_TIMESTAMP ORDER BY ");
+      builder.append(" < ? ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
     }
@@ -149,21 +149,25 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   @Override
   protected ResultSet executeQuery() throws SQLException {
     if (incrementingColumn != null && timestampColumn != null) {
-      Timestamp ts = new Timestamp(timestampOffset == null ? timestampDelay : timestampOffset + timestampDelay);
-      stmt.setTimestamp(1, ts, UTC_CALENDAR);
-      stmt.setLong(2, (incrementingOffset == null ? -1 : incrementingOffset));
-      stmt.setTimestamp(3, ts, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " delay of "
-              + timestampDelay + "ms" + " (" + ts.toString() + ") "
+      Timestamp startTime = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      Timestamp endTime = new Timestamp(new Date().getTime() - timestampDelay);
+      stmt.setTimestamp(1, endTime, UTC_CALENDAR);
+      stmt.setTimestamp(2, startTime, UTC_CALENDAR);
+      stmt.setLong(3, (incrementingOffset == null ? -1 : incrementingOffset));
+      stmt.setTimestamp(4, startTime, UTC_CALENDAR);
+      log.debug("Executing prepared statement with start time value = " + timestampOffset + " (" + startTime.toString() + ") "
+              + " end time " + endTime.toString()
               + " and incrementing value = " + incrementingOffset);
     } else if (incrementingColumn != null) {
       stmt.setLong(1, (incrementingOffset == null ? -1 : incrementingOffset));
       log.debug("Executing prepared statement with incrementing value = " + incrementingOffset);
     } else if (timestampColumn != null) {
-      Timestamp ts = new Timestamp(timestampOffset == null ? timestampDelay : timestampOffset + timestampDelay);
-      stmt.setTimestamp(1, ts, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " delay of "
-              + timestampDelay + "ms" + " (" + ts.toString() + ") ");
+      Timestamp startTime = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      Timestamp endTime = new Timestamp(new Date().getTime() - timestampDelay);
+      stmt.setTimestamp(1, startTime, UTC_CALENDAR);
+      stmt.setTimestamp(2, endTime, UTC_CALENDAR);
+      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " (" + startTime.toString() + ") "
+              + " end time " + endTime.toString());
     }
     return stmt.executeQuery();
   }

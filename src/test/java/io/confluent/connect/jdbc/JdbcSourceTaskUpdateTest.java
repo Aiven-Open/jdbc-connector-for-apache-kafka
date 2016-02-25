@@ -26,6 +26,7 @@ import org.powermock.api.easymock.PowerMock;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -187,19 +188,25 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.createTable(SINGLE_TABLE_NAME,
             "modified", "TIMESTAMP NOT NULL",
             "id", "INT");
+
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1);
 
     startTask("modified", null, null, 4L);
     verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-    // Validate that we are NOT seeing 2, 3 and 4. Due to delay, we should see 5 and 6
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 2);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 3);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(12L)), "id", 4);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(15L)), "id", 5);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(16L)), "id", 6);
+    Long currentTime = new Date().getTime();
 
-    verifyPoll(2, "id", Arrays.asList(5, 6), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
+    // Validate that we are seeing 2,3 but not 4,5 as they are getting delayed to the next round
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime)), "id", 2);
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime+1L)), "id", 3);
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime+500L)), "id", 4);
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime+501L)), "id", 5);
+
+    verifyPoll(2, "id", Arrays.asList(2, 3), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
+
+    // make sure we get the rest
+    Thread.sleep(500);
+    verifyPoll(2, "id", Arrays.asList(4, 5), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
   }
