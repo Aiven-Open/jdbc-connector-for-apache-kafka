@@ -28,9 +28,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -57,20 +55,18 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 
   private String timestampColumn;
-  private Long timestampOffset;
   private String incrementingColumn;
-  private Long incrementingOffset = null;
   private long timestampDelay;
+  private TimestampIncrementingOffset offset;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
-                                           String timestampColumn, Long timestampOffset,
-                                           String incrementingColumn, Long incrementingOffset, Long timestampDelay) {
+                                           String timestampColumn, String incrementingColumn,
+                                           Map<String, Object> offsetMap, Long timestampDelay) {
     super(mode, name, topicPrefix);
     this.timestampColumn = timestampColumn;
-    this.timestampOffset = timestampOffset;
     this.incrementingColumn = incrementingColumn;
-    this.incrementingOffset = incrementingOffset;
     this.timestampDelay = timestampDelay;
+    this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
   }
 
   @Override
@@ -151,24 +147,26 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   @Override
   protected ResultSet executeQuery() throws SQLException {
     if (incrementingColumn != null && timestampColumn != null) {
-      Timestamp startTime = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      Timestamp tsOffset = offset.getTimestampOffset();
+      Long incOffset = offset.getIncrementingOffset();
       Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
       stmt.setTimestamp(1, endTime, UTC_CALENDAR);
-      stmt.setTimestamp(2, startTime, UTC_CALENDAR);
-      stmt.setLong(3, (incrementingOffset == null ? -1 : incrementingOffset));
-      stmt.setTimestamp(4, startTime, UTC_CALENDAR);
-      log.debug("Executing prepared statement with start time value = " + timestampOffset + " (" + startTime.toString() + ") "
+      stmt.setTimestamp(2, tsOffset, UTC_CALENDAR);
+      stmt.setLong(3, incOffset);
+      stmt.setTimestamp(4, tsOffset, UTC_CALENDAR);
+      log.debug("Executing prepared statement with start time value = " + tsOffset.toString()
               + " end time " + endTime.toString()
-              + " and incrementing value = " + incrementingOffset);
+              + " and incrementing value = " + incOffset.toString());
     } else if (incrementingColumn != null) {
-      stmt.setLong(1, (incrementingOffset == null ? -1 : incrementingOffset));
-      log.debug("Executing prepared statement with incrementing value = " + incrementingOffset);
+      Long incOffset = offset.getIncrementingOffset();
+      stmt.setLong(1, incOffset);
+      log.debug("Executing prepared statement with incrementing value = {}", incOffset);
     } else if (timestampColumn != null) {
-      Timestamp startTime = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
+      Timestamp tsOffset = offset.getTimestampOffset();
       Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
-      stmt.setTimestamp(1, startTime, UTC_CALENDAR);
+      stmt.setTimestamp(1, tsOffset, UTC_CALENDAR);
       stmt.setTimestamp(2, endTime, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " (" + JdbcUtils.formatUTC(startTime) + ") "
+      log.debug("Executing prepared statement with timestamp value = " + JdbcUtils.formatUTC(tsOffset)
               + " end time " + JdbcUtils.formatUTC(endTime));
     }
     return stmt.executeQuery();
@@ -177,7 +175,6 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   @Override
   public SourceRecord extractRecord() throws SQLException {
     Struct record = DataConverter.convertRecord(schema, resultSet);
-    Map<String, Long> offset = new HashMap<>();
     if (incrementingColumn != null) {
       Long id;
       switch (schema.field(incrementingColumn).schema().type()) {
@@ -194,18 +191,17 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
       // If we are only using an incrementing column, then this must be incrementing. If we are also
       // using a timestamp, then we may see updates to older rows.
-      assert (incrementingOffset == null || id > incrementingOffset) || timestampColumn != null;
-      incrementingOffset = id;
-
-      offset.put(JdbcSourceTask.INCREMENTING_FIELD, id);
+      long incrementingOffset = offset.getIncrementingOffset();
+      assert (incrementingOffset == -1 || id > incrementingOffset) || timestampColumn != null;
+      offset.setIncrementingOffset(id);
     }
 
 
     if (timestampColumn != null) {
-      Date timestamp = (Date) record.get(timestampColumn);
-      assert timestampOffset == null || timestamp.getTime() >= timestampOffset;
-      timestampOffset = timestamp.getTime();
-      offset.put(JdbcSourceTask.TIMESTAMP_FIELD, timestampOffset);
+      Timestamp latest = (Timestamp) record.get(timestampColumn);
+      Timestamp timestampOffset = offset.getTimestampOffset();
+      assert timestampOffset != null && timestampOffset.compareTo(latest) <= 0;
+      offset.setTimestampOffset(latest);
     }
 
     // TODO: Key?
@@ -224,7 +220,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       default:
         throw new ConnectException("Unexpected query mode: " + mode);
     }
-    return new SourceRecord(partition, offset, topic, record.schema(), record);
+    return new SourceRecord(partition, offset.toMap(), topic, record.schema(), record);
   }
 
   @Override
