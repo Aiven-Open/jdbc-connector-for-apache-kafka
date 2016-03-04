@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -61,6 +62,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   private String incrementingColumn;
   private Long incrementingOffset = null;
   private Long timestampDelay;
+  private PreparedStatement currentTimeStmt;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, Long timestampOffset,
@@ -146,11 +148,13 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
     stmt = db.prepareStatement(queryString);
   }
 
+
+
   @Override
   protected ResultSet executeQuery() throws SQLException {
     if (incrementingColumn != null && timestampColumn != null) {
       Timestamp startTime = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
-      Timestamp endTime = new Timestamp(new Date().getTime() - timestampDelay);
+      Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
       stmt.setTimestamp(1, endTime, UTC_CALENDAR);
       stmt.setTimestamp(2, startTime, UTC_CALENDAR);
       stmt.setLong(3, (incrementingOffset == null ? -1 : incrementingOffset));
