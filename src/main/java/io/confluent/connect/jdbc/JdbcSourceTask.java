@@ -123,12 +123,16 @@ public class JdbcSourceTask extends SourceTask {
         = config.getString(JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
     String timestampColumn
         = config.getString(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+    boolean validateNonNulls
+        = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
 
     for (String tableOrQuery : tablesOrQuery) {
       final Map<String, String> partition;
       switch (queryMode) {
         case TABLE:
-          validateNonNullable(mode, tableOrQuery, incrementingColumn, timestampColumn);
+          if (validateNonNulls) {
+            validateNonNullable(mode, tableOrQuery, incrementingColumn, timestampColumn);
+          }
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
           break;
