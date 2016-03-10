@@ -75,11 +75,6 @@
             <artifactId>connect-api</artifactId>
             <version>${kafka.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>common-config</artifactId>
-            <version>${confluent.version}</version>
-        </dependency>
 
         <!-- JDBC drivers, only included in runtime so they get packaged -->
         <dependency>

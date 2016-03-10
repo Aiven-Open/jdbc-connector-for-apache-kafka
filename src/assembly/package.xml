@@ -33,7 +33,6 @@
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
-                <exclude>io.confluent:common-*</exclude>
                 <exclude>org.apache.kafka:connect-api</exclude>
             </excludes>
         </dependencySet>
