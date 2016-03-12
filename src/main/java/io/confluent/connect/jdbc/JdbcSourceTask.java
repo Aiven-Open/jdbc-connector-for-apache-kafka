@@ -154,7 +154,7 @@ public class JdbcSourceTask extends SourceTask {
         tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, topicPrefix));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, null, null, incrementingColumn, incrementingOffset, null));
+            queryMode, tableOrQuery, topicPrefix, null, null, incrementingColumn, incrementingOffset, timestampDelayInterval));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
             queryMode, tableOrQuery, topicPrefix, timestampColumn, timestampOffset, null, null, timestampDelayInterval));
@@ -234,6 +234,15 @@ public class JdbcSourceTask extends SourceTask {
         return results;
       } catch (SQLException e) {
         log.error("Failed to run query for table {}: {}", querier.toString(), e);
+        // clear out the query if we had errors, this also handles backoff in case of errors
+        if (querier != null) {
+          now = time.milliseconds();
+          try {
+            querier.close(now);
+          } catch (SQLException e1) {
+            log.error("Failed to close result set for failed query ", e);
+          }
+        }
         return null;
       }
     }

@@ -61,7 +61,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   private Long timestampOffset;
   private String incrementingColumn;
   private Long incrementingOffset = null;
-  private Long timestampDelay;
+  private long timestampDelay;
   private PreparedStatement currentTimeStmt;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
@@ -72,7 +72,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
     this.timestampOffset = timestampOffset;
     this.incrementingColumn = incrementingColumn;
     this.incrementingOffset = incrementingOffset;
-    this.timestampDelay = timestampDelay == null ? 0L : timestampDelay;
+    this.timestampDelay = timestampDelay;
   }
 
   @Override
@@ -167,11 +167,11 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       log.debug("Executing prepared statement with incrementing value = " + incrementingOffset);
     } else if (timestampColumn != null) {
       Timestamp startTime = new Timestamp(timestampOffset == null ? 0 : timestampOffset);
-      Timestamp endTime = new Timestamp(new Date().getTime() - timestampDelay);
+      Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
       stmt.setTimestamp(1, startTime, UTC_CALENDAR);
       stmt.setTimestamp(2, endTime, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " (" + startTime.toString() + ") "
-              + " end time " + endTime.toString());
+      log.debug("Executing prepared statement with timestamp value = " + timestampOffset + " (" + JdbcUtils.formatUTC(startTime) + ") "
+              + " end time " + JdbcUtils.formatUTC(endTime));
     }
     return stmt.executeQuery();
   }

@@ -206,7 +206,7 @@ public class JdbcUtils {
   public static Timestamp getCurrentTimeOnDB(Connection conn, Calendar cal) throws SQLException, ConnectException {
 
     Statement stmt = conn.createStatement();
-    ResultSet rs;
+    ResultSet rs = null;
     String query;
 
     // This is ugly, but to run a function, everyone does 'select function()'
@@ -218,9 +218,10 @@ public class JdbcUtils {
     else if ("Apache Derby".equals(dbProduct))
       query = "values(CURRENT_TIMESTAMP)";
     else
-      query = "select CURRENT_TIMESTAMP ";
+      query = "select CURRENT_TIMESTAMP;";
 
     try {
+        log.debug("executing query " + query + " to get current time from database");
         rs = stmt.executeQuery(query);
         if (rs.next())
           return rs.getTimestamp(1, cal);
@@ -229,6 +230,11 @@ public class JdbcUtils {
     } catch (SQLException e) {
       log.error("Failed to get current time from DB using query " + query + " on database " + dbProduct, e);
       throw e;
+    } finally {
+      if (rs != null)
+        rs.close();
+      if (stmt != null)
+        stmt.close();
     }
 
   }

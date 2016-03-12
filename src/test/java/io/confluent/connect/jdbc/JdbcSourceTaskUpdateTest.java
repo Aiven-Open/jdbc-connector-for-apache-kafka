@@ -197,10 +197,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     Long currentTime = new Date().getTime();
 
     // Validate that we are seeing 2,3 but not 4,5 as they are getting delayed to the next round
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime)), "id", 2);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime+1L)), "id", 3);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime+500L)), "id", 4);
-    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(currentTime+501L)), "id", 5);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime).toString(), "id", 2);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+1L).toString(), "id", 3);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+500L).toString(), "id", 4);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+501L).toString(), "id", 5);
 
     verifyPoll(2, "id", Arrays.asList(2, 3), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
