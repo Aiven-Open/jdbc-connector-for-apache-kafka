@@ -197,6 +197,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     Long currentTime = new Date().getTime();
 
     // Validate that we are seeing 2,3 but not 4,5 as they are getting delayed to the next round
+    // Using "toString" and not UTC because Derby's current_timestamp is always local time (i.e. doesn't honor Calendar settings)
     db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime).toString(), "id", 2);
     db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+1L).toString(), "id", 3);
     db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+500L).toString(), "id", 4);

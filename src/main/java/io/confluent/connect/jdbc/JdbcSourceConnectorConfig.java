@@ -117,6 +117,13 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "Prefix to prepend to table names to generate the name of the Kafka topic to publish data "
       + "to, or in the case of a custom query, the full name of the topic to publish to.";
 
+  public static final String VALIDATE_NON_NULL_CONFIG = "validate.non.null";
+  private static final String VALIDATE_NON_NULL_DOC =
+      "By default, the JDBC connector will validate that all incrementing and timestamp tables have NOT NULL set for "
+      + "the columns being used as their ID/timestamp. If the tables don't, JDBC connector will fail to start. Setting "
+      + "this to false will disable these checks.";
+  public static final boolean VALIDATE_NON_NULL_DEFAULT = true;
+
   public static ConfigDef baseConfigDef() {
     return new ConfigDef()
         .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
@@ -144,7 +151,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(QUERY_CONFIG, Type.STRING, QUERY_DEFAULT,
                 Importance.MEDIUM, QUERY_DOC)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING,
-                Importance.HIGH, TOPIC_PREFIX_DOC);
+                Importance.HIGH, TOPIC_PREFIX_DOC)
+        .define(VALIDATE_NON_NULL_CONFIG, Type.BOOLEAN, VALIDATE_NON_NULL_DEFAULT,
+                Importance.LOW, VALIDATE_NON_NULL_DOC);
   }
 
   static ConfigDef config = baseConfigDef();
