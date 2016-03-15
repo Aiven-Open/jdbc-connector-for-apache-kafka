@@ -87,7 +87,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   public abstract SourceRecord extractRecord() throws SQLException;
 
   public void close(long now) throws SQLException {
-    resultSet.close();
+    if (resultSet != null)
+      resultSet.close();
     resultSet = null;
     // TODO: Can we cache this and quickly check that it's identical for the next query
     // instead of constructing from scratch since it's almost always the same

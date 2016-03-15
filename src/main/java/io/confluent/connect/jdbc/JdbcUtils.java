@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc;
 
+import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +26,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -192,6 +195,48 @@ public class JdbcUtils {
    */
   public static String quoteString(String orig, String quote) {
     return quote + orig + quote;
+  }
+
+  /**
+   * Return current time at the database
+   * @param conn
+   * @param cal
+   * @return
+   */
+  public static Timestamp getCurrentTimeOnDB(Connection conn, Calendar cal) throws SQLException, ConnectException {
+
+    Statement stmt = conn.createStatement();
+    ResultSet rs = null;
+    String query;
+
+    // This is ugly, but to run a function, everyone does 'select function()'
+    // except Oracle that does 'select function() from dual'
+    // and Derby uses either the dummy table SYSIBM.SYSDUMMY1  or values expression (I chose to use values)
+    String dbProduct = conn.getMetaData().getDatabaseProductName();
+    if ("Oracle".equals(dbProduct))
+      query = "select CURRENT_TIMESTAMP from dual";
+    else if ("Apache Derby".equals(dbProduct))
+      query = "values(CURRENT_TIMESTAMP)";
+    else
+      query = "select CURRENT_TIMESTAMP;";
+
+    try {
+        log.debug("executing query " + query + " to get current time from database");
+        rs = stmt.executeQuery(query);
+        if (rs.next())
+          return rs.getTimestamp(1, cal);
+        else
+          throw new ConnectException("Unable to get current time from DB using query " + query + " on database " + dbProduct);
+    } catch (SQLException e) {
+      log.error("Failed to get current time from DB using query " + query + " on database " + dbProduct, e);
+      throw e;
+    } finally {
+      if (rs != null)
+        rs.close();
+      if (stmt != null)
+        stmt.close();
+    }
+
   }
 }
 
