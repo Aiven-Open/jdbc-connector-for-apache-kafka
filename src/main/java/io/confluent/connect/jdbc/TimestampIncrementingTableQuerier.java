@@ -62,7 +62,6 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   private String incrementingColumn;
   private Long incrementingOffset = null;
   private long timestampDelay;
-  private PreparedStatement currentTimeStmt;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, Long timestampOffset,
