@@ -75,13 +75,14 @@ public class TableMonitorThread extends Thread {
   }
 
   public List<String> tables() {
-    final long TIMEOUT = 10000L;
+    //TODO: Timeout should probably be user-configurable or class-level constant
+    final long timeout = 10000L;
     synchronized (db) {
       long started = System.currentTimeMillis();
       long now = started;
-      while (tables == null && now - started < TIMEOUT) {
+      while (tables == null && now - started < timeout) {
         try {
-          db.wait(TIMEOUT - (now - started));
+          db.wait(timeout - (now - started));
         } catch (InterruptedException e) {
           // Ignore
         }

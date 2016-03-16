@@ -289,7 +289,7 @@ public class DataConverter {
       }
 
       // 16 bits int
-      case Types.SMALLINT:{
+      case Types.SMALLINT: {
         colValue = resultSet.getShort(col);
         break;
       }
