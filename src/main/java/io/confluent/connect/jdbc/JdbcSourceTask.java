@@ -16,6 +16,9 @@
 
 package io.confluent.connect.jdbc;
 
+import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.utils.SystemTime;
+import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -32,9 +35,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.confluent.common.config.ConfigException;
-import io.confluent.common.utils.SystemTime;
-import io.confluent.common.utils.Time;
 import io.confluent.connect.jdbc.util.Version;
 
 /**

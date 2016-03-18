@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc;
 
+import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.easymock.EasyMock;
@@ -26,9 +27,6 @@ import org.powermock.api.easymock.PowerMock;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.confluent.common.utils.MockTime;
-import io.confluent.common.utils.Time;
 
 public class JdbcSourceTaskTestBase {
 

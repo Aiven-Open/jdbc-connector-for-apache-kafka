@@ -16,6 +16,8 @@
 
 package io.confluent.connect.jdbc;
 
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -34,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.jdbc.util.StringUtils;
 import io.confluent.connect.jdbc.util.Version;
 
@@ -145,5 +146,10 @@ public class JdbcSourceConnector extends SourceConnector {
     } catch (SQLException e) {
       log.error("Failed to close database connection: ", e);
     }
+  }
+
+  @Override
+  public ConfigDef config() {
+    return JdbcSourceTaskConfig.config;
   }
 }

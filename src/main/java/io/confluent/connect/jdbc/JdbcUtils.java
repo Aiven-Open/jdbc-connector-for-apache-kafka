@@ -51,7 +51,7 @@ public class JdbcUtils {
    * The default only includes standard, user-defined tables.
    */
   public static final Set<String> DEFAULT_TABLE_TYPES = Collections.unmodifiableSet(
-      new HashSet<String>(Arrays.asList("TABLE"))
+      new HashSet<>(Arrays.asList("TABLE"))
   );
 
   private static final int GET_TABLES_TYPE_COLUMN = 4;
@@ -91,7 +91,7 @@ public class JdbcUtils {
   public static List<String> getTables(Connection conn, Set<String> types) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
     ResultSet rs = metadata.getTables(null, null, "%", null);
-    List<String> tableNames = new ArrayList<String>();
+    List<String> tableNames = new ArrayList<>();
     while (rs.next()) {
       if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
         String colName = rs.getString(GET_TABLES_NAME_COLUMN);
