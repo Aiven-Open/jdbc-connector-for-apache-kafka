@@ -85,7 +85,7 @@ public class JdbcSourceConnector extends SourceConnector {
     Set<String> blacklistSet = blacklist.isEmpty() ? null : new HashSet<>(blacklist);
     if (whitelistSet != null && blacklistSet != null)
       throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
-                                 + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG+ " are "
+                                 + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + " are "
                                  + "exclusive.");
     String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
     if (!query.isEmpty()) {
