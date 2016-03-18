@@ -18,7 +18,6 @@ package io.confluent.connect.jdbc;
 
 import java.util.Map;
 
-import io.confluent.common.config.AbstractConfig;
 import io.confluent.common.config.ConfigDef;
 import io.confluent.common.config.ConfigDef.Importance;
 import io.confluent.common.config.ConfigDef.Type;

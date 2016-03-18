@@ -147,9 +147,9 @@ public class JdbcSourceTask extends SourceTask {
       }
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
       Long incrementingOffset = offset == null ? null :
-                              (Long)offset.get(INCREMENTING_FIELD);
+                              (Long) offset.get(INCREMENTING_FIELD);
       Long timestampOffset = offset == null ? null :
-                             (Long)offset.get(TIMESTAMP_FIELD);
+                             (Long) offset.get(TIMESTAMP_FIELD);
 
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
 
