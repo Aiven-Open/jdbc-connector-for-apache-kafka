@@ -49,7 +49,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "Maximum number of rows to include in a single batch when polling for new data. This "
       + "setting can be used to limit the amount of data buffered internally in the connector.";
   public static final int BATCH_MAX_ROWS_DEFAULT = 100;
-  private static final String BATCH_MAX_ROWS_DISPLAY = "Batch Max Rows";
+  private static final String BATCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
 
   public static final String MODE_CONFIG = "mode";
   private static final String MODE_DOC =
@@ -64,7 +64,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "  * timestamp+incrementing - use two columns, a timestamp column that detects new and "
       + "modified rows and a strictly incrementing column which provides a globally unique ID for "
       + "updates so each row can be assigned a unique stream offset.";
-  private static final String MODE_DISPLAY = "Mode";
+  private static final String MODE_DISPLAY = "Table Loading Mode";
 
   public static final String MODE_UNSPECIFIED = "";
   public static final String MODE_BULK = "bulk";
@@ -93,7 +93,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "configurations to start polling for data in added tables or stop polling for data in "
       + "removed tables.";
   public static final long TABLE_POLL_INTERVAL_MS_DEFAULT = 60 * 1000;
-  private static final String TABLE_POLL_INTERVAL_MS_DISPLAY = "Table Poll Interval (ms)";
+  private static final String TABLE_POLL_INTERVAL_MS_DISPLAY = "Metadata Change Monitoring Interval (ms)";
 
   public static final String TABLE_WHITELIST_CONFIG = "table.whitelist";
   private static final String TABLE_WHITELIST_DOC =
@@ -140,7 +140,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "The first execution will fetch all available records (i.e. starting at timestamp 0) until current time minus the delay. "
       + "Every following execution will get data from the last time we fetched until current time minus the delay.";
   public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
-  private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Timestamp delay interval (ms)";
+  private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
 
   public static final String DATABASE_GROUP = "Database";
   public static final String MODE_GROUP = "Mode";
