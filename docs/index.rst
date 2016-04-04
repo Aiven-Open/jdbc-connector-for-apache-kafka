@@ -315,3 +315,45 @@ Configuration Options
   * Type: long
   * Default: 60000
   * Importance: low
+
+
+Schema Evolution
+----------------
+
+The JDBC connector supports schema evolution when the Avro converter is used. When there is a
+change in a database table schema, the JDBC connector can detect the change, create a new Kafka
+Connect schema and try to register a new Avro schema in the Schema Registry. Whether we can
+successfully register the schema or not depends on the compatibility level of the Schema Registry,
+which is backward by default.
+
+For example, if we remove a column from a table, the change is backward compatible and the
+corresponding Avro schema can be successfully registered in the Schema Registry. If we modify
+the database table schema to change a column type or add a column, when the Avro schema is
+registered to the Schema Registry, it will be rejected as the changes are not backward compatible.
+
+You can change the compatibility level of Schema Registry to allow incompatible schemas or other
+compatibility levels. There are two ways to do this:
+
+* Set the compatibility level for subjects which are used by the connector using
+  ``PUT /config/(string: subject)``. The subjects have format of ``topic-key`` and ``topic-value``
+  where the ``topic`` is determined by ``topic.prefix`` config and table name.
+
+* Configure the Schema Registry to use other schema compatibility level by setting
+  ``avro.compatibility.level`` in Schema Registry. Note that this is a global setting that applies
+  to all schemas in the Schema Registry.
+
+However, due to the limitation of the JDBC API, some compatible schema changes may be treated as
+incompatible change. For example, adding a column with default value is a backward compatible
+change. However, limitations of the JDBC API make it difficult to map this to default
+values of the correct type in a Kafka Connect schema, so the default values are currently omitted.
+The implications is that even some changes of the database table schema is backward compatible, the
+schema registered in the Schema Registry is not backward compatible as it doesn't contain a default
+value.
+
+If the JDBC connector is used together with the HDFS connector, there are some restrictions to schema
+compatibility as well. When Hive integration is enabled, schema compatibility is required to be
+backward, forward and full to ensure that the Hive schema is able to query the whole data under a
+topic. As some compatible schema change will be treated as incompatible schema change, those
+changes will not work as the resulting Hive schema will not be able to query the whole data for a
+topic.
+
