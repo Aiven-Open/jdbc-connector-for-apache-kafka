@@ -1,0 +1,142 @@
+buildscript {
+    ext.kotlinVersion = "1.0.1-2"
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        //classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath 'com.github.maiflai:gradle-scalatest:0.9'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+String kotlinVersion = "1.0.1-2"
+String scalaVersion = '2.11'
+String scala = '2.11.7'
+String scalaCheck = '1.11.1'
+String scalaTest = '2.2.6'
+String junit = '4.11'
+String guavaVersion = '19.0'
+String confluentVersion = '2.0.1'
+String scalaLoggingVersion = '2.1.2'
+String kafkaVersion = '0.9.0.1'
+String mockitoVersion = '1.10.19'
+String jacksonDatabind = '2.7.0'
+String avroVersion = '1.8.0'
+String jacksonxmlVersion = '2.6.5'
+
+
+allprojects {
+    version = '0.1'
+    group = 'com.datamountaineer.streamreactor'
+    apply plugin: 'java'
+    apply plugin: 'scala'
+    apply plugin: 'maven'
+    apply plugin: "com.github.maiflai.scalatest"
+    apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: "maven-publish"
+    apply plugin: 'distribution'
+    apply plugin: 'kotlin'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+
+    distributions {
+        main {}
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://repository.cloudera.com/artifactory/cloudera-repos/" }
+        maven { url "http://packages.confluent.io/maven/" }
+        maven { url "http://repo.typesafe.com/typesafe/releases/" }
+    }
+
+    dependencies {
+        compile "org.scala-lang:scala-library:$scala"
+        compile "org.scala-lang:scala-compiler:$scala"
+        compile "org.apache.kafka:connect-api:$kafkaVersion"
+        compile "com.typesafe.scala-logging:scala-logging-slf4j_$scalaVersion:$scalaLoggingVersion"
+        compile "org.apache.kafka:connect-json:$kafkaVersion"
+        compile("io.confluent:kafka-connect-avro-converter:$confluentVersion") {
+            exclude group: "org.jboss.netty", module: "netty"
+        }
+
+        compile "com.fasterxml.jackson.core:jackson-core:$jacksonxmlVersion"
+        testCompile "org.mockito:mockito-all:$mockitoVersion"
+        testCompile "org.scalacheck:scalacheck_$scalaVersion:$scalaCheck"
+        testCompile "org.scalatest:scalatest_$scalaVersion:$scalaTest"
+        testCompile "junit:junit:$junit"
+        testRuntime 'org.pegdown:pegdown:1.1.0'
+    }
+
+    test {
+        maxParallelForks = 1
+        minHeapSize '256m'
+        maxHeapSize '2048m'
+    }
+
+    task testJar(type: Jar, dependsOn: testClasses) {
+        baseName = "test-${project.archivesBaseName}"
+        from sourceSets.test.output
+    }
+
+    configurations {
+        tests
+    }
+
+    artifacts {
+        tests testJar
+    }
+
+    tasks.withType(Tar) {
+        compression Compression.GZIP
+        extension = 'tgz'
+    }
+
+    task compile(dependsOn: 'compileScala')
+
+    task fatJar(dependsOn: ['test', 'shadowJar'])
+    task fatJarNoTest(dependsOn: 'shadowJar')
+
+    shadowJar {
+        transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) {
+            resource = 'reference.conf'
+        }
+
+    }
+
+    //version = project.hasProperty('version.number') ? project.getProperty('version.number') : "0.0.0"
+
+    println "Building ${name}-${version}"
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+}
+
+
+project(":kafka-connect-common") {
+    dependencies {
+        //compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    }
+}
+
+project(":kafka-connect-jdbc-sink") {
+    dependencies {
+        compile project(':kafka-connect-common')
+    }
+}
+
+project(":kafka-connect-utils") {
+    dependencies {
+    }
+}
+
