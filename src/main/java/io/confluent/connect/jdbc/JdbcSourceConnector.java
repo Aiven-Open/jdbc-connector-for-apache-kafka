@@ -150,6 +150,6 @@ public class JdbcSourceConnector extends SourceConnector {
 
   @Override
   public ConfigDef config() {
-    return JdbcSourceTaskConfig.config;
+    return JdbcSourceConnectorConfig.config;
   }
 }
