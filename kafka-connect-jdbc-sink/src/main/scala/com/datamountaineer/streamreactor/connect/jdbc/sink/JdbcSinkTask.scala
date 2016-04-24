@@ -2,9 +2,8 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink
 
 import java.util
 
-import com.datamountaineer.streamreactor.connect.StructFieldsExtractor
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.{JdbcSinkConfig, JdbcSinkSettings}
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer._
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
@@ -54,7 +53,9 @@ class JdbcSinkTask extends SinkTask with StrictLogging {
       s"""Settings:
           |$settings
       """.stripMargin)
-    writer = Some(JdbcDbWriter(settings.connection, StructFieldsExtractor(settings.fields.includeAllFields, settings.fields.fieldsMappings)))
+
+
+    writer = Some(JdbcDbWriter(settings))
   }
 
   /**

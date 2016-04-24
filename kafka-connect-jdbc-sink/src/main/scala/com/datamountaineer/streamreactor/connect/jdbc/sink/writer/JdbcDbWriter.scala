@@ -1,40 +1,95 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer
 
-import com.datamountaineer.streamreactor.connect.StructFieldsExtractor
+import java.sql.{DriverManager, SQLException}
+
+import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.{ErrorPolicyEnum, JdbcSinkSettings}
 import com.datamountaineer.streamreactor.connect.sink._
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import org.apache.kafka.connect.data.Struct
 import org.apache.kafka.connect.sink.SinkRecord
 
-import scala.collection.JavaConverters._
+import scala.util.Try
 
 /**
+  *
   * Responsible for taking a sequence of SinkRecord and write them to the database
+  *
+  * @param connectionStr       - The database connection string
+  * @param statementBuilder    - Returns a sequence of PreparedStatement to process
+  * @param errorHandlingPolicy - An instance of the error handling approach
   */
-case class JdbcDbWriter(connection: String,
-                        fieldsExtractor: StructFieldsExtractor) extends DbWriter with StrictLogging {
+case class JdbcDbWriter(connectionStr: String,
+                        statementBuilder: PreparedStatementBuilder,
+                        errorHandlingPolicy: ErrorHandlingPolicy) extends DbWriter with StrictLogging {
 
+  val connection = DriverManager.getConnection(connectionStr)
+
+  /**
+    * Writes the given records to the database
+    *
+    * @param records - The sequence of records to insert
+    */
   override def write(records: Seq[SinkRecord]): Unit = {
     if (records.isEmpty)
       logger.warn("Received empty sequence of SinkRecord")
     else {
-      records.foreach { record =>
+      val statemens = statementBuilder.build(records)(connection)
+      if (statemens.nonEmpty) {
+        try {
+          //begin transaction
+          connection.setAutoCommit(false)
+          statemens.foreach { statement =>
+            statement.execute()
+          }
+          //commit the transaction
+          connection.commit()
+        }
+        catch {
+          case sqlException: SQLException =>
+            logger.error(
+              s"""
+                 | Following error has occurred inserting data starting at
+                 | topic:${records.head.topic()}
+                 | offset:${records.head.kafkaOffset()}
+                 | partition:${records.head.kafkaPartition()}""".stripMargin)
 
-        logger.debug(s"Received record from topic:${record.topic()} partition:${record.kafkaPartition()} and offset:${record.kafkaOffset()}")
-        require(record.value() != null && record.value().getClass == classOf[Struct], "The SinkRecord payload should be of type Struct")
-
-        val fieldsAndValues = fieldsExtractor.get(record.value.asInstanceOf[Struct])
-
-        if (fieldsAndValues.nonEmpty) {
-          val map = fieldsAndValues.toMap.asJava
-          //TODO: here add the Statement and bindings
+            //rollback the transaction
+            connection.rollback()
+            errorHandlingPolicy.handle(records, sqlException)(connection)
+        }
+        finally {
+          Try {
+            statemens.foreach(_.close())
+          }
         }
       }
     }
   }
 
   override def close(): Unit = {
-
+    connection.close()
   }
+
 }
 
+object JdbcDbWriter {
+  def apply(settings: JdbcSinkSettings): JdbcDbWriter = {
+    val fieldsValuesExtractor = StructFieldsDataExtractor(settings.fields.includeAllFields, settings.fields.fieldsMappings)
+    val statementBuilder = if (settings.batching) {
+      BatchedPreparedStatementBuilder(settings.tableName, fieldsValuesExtractor)
+    } else {
+      SinglePreparedStatementBuilder(settings.tableName, fieldsValuesExtractor)
+    }
+
+    val errorHandlingPolicy = settings.errorPolicy match {
+      case ErrorPolicyEnum.NOOP => NoopErrorHandlingPolicy
+      case ErrorPolicyEnum.THROW => ThrowErrorHandlingPolicy
+    }
+
+    JdbcDbWriter(
+      settings.connection,
+      statementBuilder,
+      errorHandlingPolicy
+    )
+  }
+}

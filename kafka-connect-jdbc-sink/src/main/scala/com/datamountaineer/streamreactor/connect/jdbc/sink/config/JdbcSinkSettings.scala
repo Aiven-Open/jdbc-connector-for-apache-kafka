@@ -11,7 +11,11 @@ import scala.util.Try
 /**
   * Holds the Jdbc Sink settings
   */
-case class JdbcSinkSettings(connection: String, fields: PayloadFields)
+case class JdbcSinkSettings(connection: String,
+                            tableName: String,
+                            fields: PayloadFields,
+                            batching: Boolean,
+                            errorPolicy: ErrorPolicyEnum)
 
 
 object JdbcSinkSettings {
@@ -33,7 +37,11 @@ object JdbcSinkSettings {
 
     JdbcSinkSettings(
       config.getString(DATABASE_CONNECTION),
-      PayloadFields(Try(config.getString(FIELDS)).toOption.flatMap(v => Option(v))))
+      config.getString(DATABASE_TABLE),
+      PayloadFields(Try(config.getString(FIELDS)).toOption.flatMap(v => Option(v))),
+      config.getBoolean(DATABASE_IS_BATCHING),
+      ErrorPolicyEnum.valueOf(config.getString(ERROR_POLICY))
+    )
   }
 
 }

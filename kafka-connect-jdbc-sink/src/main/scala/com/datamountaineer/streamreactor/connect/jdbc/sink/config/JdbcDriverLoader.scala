@@ -16,7 +16,7 @@ object JdbcDriverLoader extends StrictLogging {
   def apply(driver: String, jar: File): Boolean = {
     require(jar != null && jar.exists())
     if (Enumerators(DriverManager.getDrivers)
-      .collectFirst { case dw if dw.getClass == classOf[DriverWrapper] && dw.asInstanceOf[DriverWrapper].driver.getClass.getCanonicalName == driver => dw}.isEmpty) {
+      .collectFirst { case dw if dw.getClass == classOf[DriverWrapper] && dw.asInstanceOf[DriverWrapper].driver.getClass.getCanonicalName == driver => dw }.isEmpty) {
       logger.debug(s"Loading Jdbc driver: $driver")
       val ucl = new URLClassLoader(Array(jar.toURL), classOf[System].getClassLoader)
 
@@ -26,7 +26,10 @@ object JdbcDriverLoader extends StrictLogging {
       logger.debug("$driver has been loaded")
       true
     }
-    else false
+    else {
+      logger.debug(s"Ther driver $driver is already loaded.")
+      false
+    }
   }
 
   case class DriverWrapper(driver: Driver) extends Driver {

@@ -132,6 +132,8 @@ project(":kafka-connect-common") {
 project(":kafka-connect-jdbc-sink") {
     dependencies {
         compile project(':kafka-connect-common')
+
+        testCompile 'org.xerial:sqlite-jdbc:3.8.11.2'
     }
 }
 
