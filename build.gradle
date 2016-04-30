@@ -1,47 +1,35 @@
 buildscript {
-    ext.kotlinVersion = "1.0.1-2"
     repositories {
         jcenter()
         mavenCentral()
     }
     dependencies {
         //classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
-        classpath 'com.github.maiflai:gradle-scalatest:0.9'
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
-String kotlinVersion = "1.0.1-2"
-String scalaVersion = '2.11'
-String scala = '2.11.7'
-String scalaCheck = '1.11.1'
-String scalaTest = '2.2.6'
-String junit = '4.11'
+String junit = '4.12'
 String guavaVersion = '19.0'
 String confluentVersion = '2.0.1'
-String scalaLoggingVersion = '2.1.2'
 String kafkaVersion = '0.9.0.1'
 String mockitoVersion = '1.10.19'
 String jacksonDatabind = '2.7.0'
 String avroVersion = '1.8.0'
 String jacksonxmlVersion = '2.6.5'
 
-
 allprojects {
     version = '0.1'
     group = 'com.datamountaineer.streamreactor'
     apply plugin: 'java'
-    apply plugin: 'scala'
+    //apply plugin: 'scala'
     apply plugin: 'maven'
-    apply plugin: "com.github.maiflai.scalatest"
     apply plugin: 'com.github.johnrengelman.shadow'
     apply plugin: "maven-publish"
     apply plugin: 'distribution'
-    apply plugin: 'kotlin'
 
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
 
 
     distributions {
@@ -56,20 +44,20 @@ allprojects {
     }
 
     dependencies {
-        compile "org.scala-lang:scala-library:$scala"
-        compile "org.scala-lang:scala-compiler:$scala"
+        compile "com.google.guava:guava:$guavaVersion"
         compile "org.apache.kafka:connect-api:$kafkaVersion"
-        compile "com.typesafe.scala-logging:scala-logging-slf4j_$scalaVersion:$scalaLoggingVersion"
         compile "org.apache.kafka:connect-json:$kafkaVersion"
         compile("io.confluent:kafka-connect-avro-converter:$confluentVersion") {
             exclude group: "org.jboss.netty", module: "netty"
         }
 
         compile "com.fasterxml.jackson.core:jackson-core:$jacksonxmlVersion"
-        testCompile "org.mockito:mockito-all:$mockitoVersion"
-        testCompile "org.scalacheck:scalacheck_$scalaVersion:$scalaCheck"
-        testCompile "org.scalatest:scalatest_$scalaVersion:$scalaTest"
+
         testCompile "junit:junit:$junit"
+
+        testCompile ("org.mockito:mockito-all:$mockitoVersion"){
+           // exclude group: "org.hamcrest", module:"hamcrest-core"
+        }
         testRuntime 'org.pegdown:pegdown:1.1.0'
     }
 
@@ -97,7 +85,7 @@ allprojects {
         extension = 'tgz'
     }
 
-    task compile(dependsOn: 'compileScala')
+    task compile(dependsOn: 'compileJava')
 
     task fatJar(dependsOn: ['test', 'shadowJar'])
     task fatJarNoTest(dependsOn: 'shadowJar')
@@ -137,9 +125,3 @@ project(":kafka-connect-jdbc-sink") {
         testCompile 'org.xerial:sqlite-jdbc:3.8.11.2'
     }
 }
-
-project(":kafka-connect-utils") {
-    dependencies {
-    }
-}
-
