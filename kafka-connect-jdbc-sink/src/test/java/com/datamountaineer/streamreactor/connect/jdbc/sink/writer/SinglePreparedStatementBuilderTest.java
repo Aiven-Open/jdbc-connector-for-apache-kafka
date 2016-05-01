@@ -1,8 +1,7 @@
-package com.datamountaineer.streamreactor.connect.jdbc.sink.config.writer;
+package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 
 import com.datamountaineer.streamreactor.connect.Pair;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.IStructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.*;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.SinglePreparedStatementBuilder;

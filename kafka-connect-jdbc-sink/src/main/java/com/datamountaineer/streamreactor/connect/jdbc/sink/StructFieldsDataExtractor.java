@@ -32,7 +32,7 @@ public class StructFieldsDataExtractor {
             fields = Collections2.filter(schema.fields(), new Predicate<Field>() {
                 @Override
                 public boolean apply(Field input) {
-                    return fieldsAliasMap.containsKey(input.name());
+                    return fieldsAliasMap.containsKey(input.name()) || includeAllFields;
                 }
 
                 @Override
@@ -46,7 +46,12 @@ public class StructFieldsDataExtractor {
         for (final Field field : fields) {
             final PreparedStatementBinder binder = getFieldValue(field, struct);
             if (binder != null) {
-                binders.add(new Pair(field.name(), binder));
+                String fieldName;
+                if (fieldsAliasMap.containsKey(field.name()))
+                    fieldName = fieldsAliasMap.get(field.name());
+                else
+                    fieldName = field.name();
+                binders.add(new Pair(fieldName, binder));
             }
         }
 

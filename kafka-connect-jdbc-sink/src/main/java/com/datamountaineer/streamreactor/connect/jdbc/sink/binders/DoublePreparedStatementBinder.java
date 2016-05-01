@@ -14,4 +14,9 @@ public final class DoublePreparedStatementBinder implements PreparedStatementBin
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setDouble(index, value);
     }
+
+
+    public double getValue(){
+        return value;
+    }
 }

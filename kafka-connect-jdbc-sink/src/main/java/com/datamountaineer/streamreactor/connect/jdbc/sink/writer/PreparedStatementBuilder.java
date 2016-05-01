@@ -12,6 +12,8 @@ import java.util.*;
 
 public interface PreparedStatementBuilder {
     List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException;
+
+    boolean isBatching();
 }
 
 final class PreparedStatementBuilderHelper {

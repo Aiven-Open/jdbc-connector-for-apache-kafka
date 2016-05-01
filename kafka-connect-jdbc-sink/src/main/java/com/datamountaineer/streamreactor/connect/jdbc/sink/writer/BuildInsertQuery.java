@@ -10,7 +10,14 @@ import java.util.List;
  * Prepares an instance of PrepareStatement for inserting into the given table the fields present in the map
  */
 public final class BuildInsertQuery {
-    public static String apply(final String tableName, final List<String> columns) {
+    /**
+     * Creates the insert  SQL statement for the given table and given columns
+     *
+     * @param tableName - The target database table
+     * @param columns   - The list of columns for which values would be inserted
+     * @return - The SQL insert statement used to create the PreparedStatement
+     */
+    public static String get(final String tableName, final List<String> columns) {
         if (tableName == null || tableName.trim().length() == 0)
             throw new IllegalArgumentException("tableName parameter is not a valid.");
         if (columns == null || columns.isEmpty())

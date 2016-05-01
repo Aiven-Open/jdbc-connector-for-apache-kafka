@@ -14,4 +14,9 @@ public final class LongPreparedStatementBinder implements PreparedStatementBinde
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setLong(index, value);
     }
+
+
+    public long getValue(){
+        return value;
+    }
 }

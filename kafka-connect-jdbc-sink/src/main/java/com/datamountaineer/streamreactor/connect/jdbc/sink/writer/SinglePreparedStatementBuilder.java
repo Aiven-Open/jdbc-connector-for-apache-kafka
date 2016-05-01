@@ -71,7 +71,7 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
                 });
 
 
-                final String query = BuildInsertQuery.apply(tableName, columns);
+                final String query = BuildInsertQuery.get(tableName, columns);
                 final PreparedStatement statement = connection.prepareStatement(query);
                 PreparedStatementBindData.apply(statement, binders);
                 statements.add(statement);
@@ -79,5 +79,10 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
         }
 
         return statements;
+    }
+
+    @Override
+    public boolean isBatching() {
+        return false;
     }
 }

@@ -1,8 +1,8 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.Pair;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -72,19 +72,21 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
                 });
 
                 if (!mapStatements.containsKey(statementKey)) {
-                    final String query = BuildInsertQuery.apply(tableName, columns);
+                    final String query = BuildInsertQuery.get(tableName, columns);
                     final PreparedStatement statement = connection.prepareStatement(query);
-                    PreparedStatementBindData.apply(statement, binders);
-                    statement.addBatch();
                     mapStatements.put(statementKey, statement);
-                } else {
-                    final PreparedStatement statement = mapStatements.get(statementKey);
-                    PreparedStatementBindData.apply(statement, binders);
-                    statement.addBatch();
                 }
+                final PreparedStatement statement = mapStatements.get(statementKey);
+                PreparedStatementBindData.apply(statement, binders);
+                statement.addBatch();
             }
         }
 
         return Lists.newArrayList(mapStatements.values());
+    }
+
+    @Override
+    public boolean isBatching() {
+        return true;
     }
 }

@@ -14,4 +14,8 @@ public final class ShortPreparedStatementBinder implements PreparedStatementBind
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setShort(index, value);
     }
+
+    public short getValue(){
+        return value;
+    }
 }

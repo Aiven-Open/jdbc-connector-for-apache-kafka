@@ -14,4 +14,9 @@ public final class BooleanPreparedStatementBinder implements PreparedStatementBi
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setBoolean(index, value);
     }
+
+
+    public boolean getValue(){
+        return value;
+    }
 }

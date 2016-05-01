@@ -14,4 +14,9 @@ public final class BytePreparedStatementBinder implements PreparedStatementBinde
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setByte(index, value);
     }
+
+
+    public byte getValue(){
+        return value;
+    }
 }

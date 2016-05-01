@@ -64,7 +64,11 @@ public final class JdbcDbWriter implements DbWriter {
                     //begin transaction
                     connection.setAutoCommit(false);
                     for (final PreparedStatement statement : statements) {
-                        statement.execute();
+                        if (statementBuilder.isBatching()) {
+                            statement.executeBatch();
+                        } else {
+                            statement.execute();
+                        }
                     }
                     //commit the transaction
                     connection.commit();

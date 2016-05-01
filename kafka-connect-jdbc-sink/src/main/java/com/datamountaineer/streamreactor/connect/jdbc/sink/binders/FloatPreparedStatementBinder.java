@@ -14,4 +14,8 @@ public final class FloatPreparedStatementBinder implements PreparedStatementBind
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setFloat(index, value);
     }
+
+    public float getValue(){
+        return value;
+    }
 }

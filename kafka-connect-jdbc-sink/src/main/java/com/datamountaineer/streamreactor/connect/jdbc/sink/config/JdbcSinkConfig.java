@@ -27,8 +27,8 @@ public class JdbcSinkConfig extends AbstractConfig {
 
 
     public final static String DATABASE_IS_BATCHING = "connect.jdbc.sink.batching.enabled";
-    public final static String DATABASE_IS_BATCHING_DOC = "Specifies if for a given sequence of SinkRecords are batched or not.\n"+
-            "<true> the data insert is batched;\n"+
+    public final static String DATABASE_IS_BATCHING_DOC = "Specifies if for a given sequence of SinkRecords are batched or not.\n" +
+            "<true> the data insert is batched;\n" +
             "<false> for each record a sql statement is created";
 
     public final static String JAR_FILE = "connect.jdbc.sink.driver.jar";
@@ -38,10 +38,10 @@ public class JdbcSinkConfig extends AbstractConfig {
     public final static String DRIVER_MANAGER_CLASS_DOC = "Specifies the canonical class name for the driver manager.";
 
     public final static String FIELDS = "connect.jdbc.sink.fields";
-    public final static String FIELDS_DOC = "Specifies which fields to consider when inserting the new Redis entry.\n"+
-            "If is not set it will use insert all the payload fields present in the payload.\n"+
-            "Field mapping is supported; this way an avro record field can be inserted into a 'mapped' column.\n"+
-            "Examples:\n"+
+    public final static String FIELDS_DOC = "Specifies which fields to consider when inserting the new Redis entry.\n" +
+            "If is not set it will use insert all the payload fields present in the payload.\n" +
+            "Field mapping is supported; this way an avro record field can be inserted into a 'mapped' column.\n" +
+            "Examples:\n" +
             "* fields to be used:field1,field2,field3 \n" +
             "** fields with mapping: field1=alias1,field2,field3=alias3";
 
@@ -55,7 +55,7 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(DATABASE_TABLE, Type.STRING, Importance.HIGH, DATABASE_CONNECTION_DOC)
             .define(JAR_FILE, Type.STRING, Importance.HIGH, JAR_FILE_DOC)
             .define(DRIVER_MANAGER_CLASS, Type.STRING, Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
-            .define(FIELDS, Type.STRING, Importance.LOW, FIELDS_DOC)
+            .define(FIELDS, Type.STRING, "*", Importance.LOW, FIELDS_DOC)
             .define(DATABASE_IS_BATCHING, Type.BOOLEAN, true, Importance.LOW, DATABASE_IS_BATCHING_DOC)
             .define(ERROR_POLICY, Type.STRING, "throw", Importance.HIGH, ERROR_POLICY_DOC);
 }

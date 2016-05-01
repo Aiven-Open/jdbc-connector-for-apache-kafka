@@ -14,4 +14,8 @@ public final class StringPreparedStatementBinder implements PreparedStatementBin
     public void bind(int index, PreparedStatement statement) throws SQLException {
         statement.setString(index, value);
     }
+
+    public String getValue(){
+        return value;
+    }
 }
