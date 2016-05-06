@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
 import org.junit.Test;
 
 import java.io.File;

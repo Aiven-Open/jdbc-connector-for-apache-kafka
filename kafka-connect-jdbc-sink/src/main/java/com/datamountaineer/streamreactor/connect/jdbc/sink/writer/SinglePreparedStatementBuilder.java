@@ -1,3 +1,19 @@
+/**
+ * Copyright 2015 Datamountaineer.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.Pair;
@@ -44,32 +60,34 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
      * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
      */
     @Override
-    public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
+    public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection)
+            throws SQLException {
         final List<PreparedStatement> statements = new ArrayList<>(records.size());
         for (final SinkRecord record : records) {
 
-
-            logger.debug("Received record from topic:%s partition:%d and offset:$d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
+            logger.debug("Received record from topic:%s partition:%d and offset:$d", record.topic(),
+                    record.kafkaPartition(), record.kafkaOffset());
             if (record.value() == null || record.value().getClass() != Struct.class)
                 throw new IllegalArgumentException("The SinkRecord payload should be of type Struct");
 
             final List<Pair<String, PreparedStatementBinder>> fieldsAndBinders = fieldsExtractor.get((Struct) record.value());
 
             if (!fieldsAndBinders.isEmpty()) {
-                final List<String> columns = Lists.transform(fieldsAndBinders, new Function<Pair<String, PreparedStatementBinder>, String>() {
+                final List<String> columns = Lists.transform(fieldsAndBinders,
+                        new Function<Pair<String, PreparedStatementBinder>, String>() {
                     @Override
                     public String apply(Pair<String, PreparedStatementBinder> input) {
                         return input.first;
                     }
                 });
 
-                final List<PreparedStatementBinder> binders = Lists.transform(fieldsAndBinders, new Function<Pair<String, PreparedStatementBinder>, PreparedStatementBinder>() {
+                final List<PreparedStatementBinder> binders = Lists.transform(fieldsAndBinders,
+                        new Function<Pair<String, PreparedStatementBinder>, PreparedStatementBinder>() {
                     @Override
                     public PreparedStatementBinder apply(Pair<String, PreparedStatementBinder> input) {
                         return input.second;
                     }
                 });
-
 
                 final String query = BuildInsertQuery.get(tableName, columns);
                 final PreparedStatement statement = connection.prepareStatement(query);

@@ -4,7 +4,6 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 import com.datamountaineer.streamreactor.connect.Pair;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.SinglePreparedStatementBuilder;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;

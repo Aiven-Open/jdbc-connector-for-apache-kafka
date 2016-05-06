@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-import io.confluent.common.config.ConfigDef;
 import org.junit.Test;
 
 import java.util.HashMap;
