@@ -1,7 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.PreparedStatementBindData;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 

@@ -1,3 +1,19 @@
+/**
+ * Copyright 2015 Datamountaineer.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import io.confluent.common.config.AbstractConfig;
@@ -19,7 +35,7 @@ public class JdbcSinkConfig extends AbstractConfig {
     }
 
     public final static String DATABASE_CONNECTION = "connect.jdbc.connection";
-    public final static String DATABASE_CONNECTION_DOC = "Specifies the database connection";
+    public final static String DATABASE_CONNECTION_DOC = "Specifies the database connection.";
 
 
     public final static String DATABASE_TABLE = "connect.jdbc.table";
@@ -29,16 +45,16 @@ public class JdbcSinkConfig extends AbstractConfig {
     public final static String DATABASE_IS_BATCHING = "connect.jdbc.sink.batching.enabled";
     public final static String DATABASE_IS_BATCHING_DOC = "Specifies if for a given sequence of SinkRecords are batched or not.\n" +
             "<true> the data insert is batched;\n" +
-            "<false> for each record a sql statement is created";
+            "<false> for each record a sql statement is created.";
 
     public final static String JAR_FILE = "connect.jdbc.sink.driver.jar";
-    public final static String JAR_FILE_DOC = " Specifies the jar file to be loaded at runtime containing the jdbc driver";
+    public final static String JAR_FILE_DOC = "Specifies the jar file to be loaded at runtime containing the jdbc driver.";
 
     public final static String DRIVER_MANAGER_CLASS = "connect.jdbc.sink.driver.manager.class";
     public final static String DRIVER_MANAGER_CLASS_DOC = "Specifies the canonical class name for the driver manager.";
 
     public final static String FIELDS = "connect.jdbc.sink.fields";
-    public final static String FIELDS_DOC = "Specifies which fields to consider when inserting the new Redis entry.\n" +
+    public final static String FIELDS_DOC = "Specifies which fields to consider when inserting the new JDBC entry.\n" +
             "If is not set it will use insert all the payload fields present in the payload.\n" +
             "Field mapping is supported; this way an avro record field can be inserted into a 'mapped' column.\n" +
             "Examples:\n" +
