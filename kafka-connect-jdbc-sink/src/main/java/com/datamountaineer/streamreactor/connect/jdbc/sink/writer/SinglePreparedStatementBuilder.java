@@ -16,10 +16,10 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.Pair;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -39,17 +39,24 @@ import java.util.List;
 public final class SinglePreparedStatementBuilder implements PreparedStatementBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(SinglePreparedStatementBuilder.class);
-
+    private static final Function<PreparedStatementBinder, String> fieldNamesFunc = new Function<PreparedStatementBinder, String>() {
+        @Override
+        public String apply(PreparedStatementBinder input) {
+            return input.getFieldName();
+        }
+    };
     private final String tableName;
     private final StructFieldsDataExtractor fieldsExtractor;
+    private final QueryBuilder queryBuilder;
 
     /**
      * @param tableName       - The name of the database tabled
      * @param fieldsExtractor - An instance of the SinkRecord fields value extractor
      */
-    public SinglePreparedStatementBuilder(String tableName, StructFieldsDataExtractor fieldsExtractor) {
+    public SinglePreparedStatementBuilder(String tableName, StructFieldsDataExtractor fieldsExtractor, QueryBuilder queryBuilder) {
         this.tableName = tableName;
         this.fieldsExtractor = fieldsExtractor;
+        this.queryBuilder = queryBuilder;
     }
 
     /**
@@ -60,38 +67,25 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
      * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
      */
     @Override
-    public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection)
-            throws SQLException {
+    public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
         final List<PreparedStatement> statements = new ArrayList<>(records.size());
         for (final SinkRecord record : records) {
 
-            logger.debug("Received record from topic:%s partition:%d and offset:$d", record.topic(),
-                    record.kafkaPartition(), record.kafkaOffset());
+
+            logger.debug("Received record from topic:%s partition:%d and offset:$d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
             if (record.value() == null || record.value().getClass() != Struct.class)
                 throw new IllegalArgumentException("The SinkRecord payload should be of type Struct");
 
-            final List<Pair<String, PreparedStatementBinder>> fieldsAndBinders = fieldsExtractor.get((Struct) record.value());
+            final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsExtractor.get((Struct) record.value());
 
-            if (!fieldsAndBinders.isEmpty()) {
-                final List<String> columns = Lists.transform(fieldsAndBinders,
-                        new Function<Pair<String, PreparedStatementBinder>, String>() {
-                    @Override
-                    public String apply(Pair<String, PreparedStatementBinder> input) {
-                        return input.first;
-                    }
-                });
+            if (!binders.isEmpty()) {
 
-                final List<PreparedStatementBinder> binders = Lists.transform(fieldsAndBinders,
-                        new Function<Pair<String, PreparedStatementBinder>, PreparedStatementBinder>() {
-                    @Override
-                    public PreparedStatementBinder apply(Pair<String, PreparedStatementBinder> input) {
-                        return input.second;
-                    }
-                });
-
-                final String query = BuildInsertQuery.get(tableName, columns);
+                final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
+                final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
+                final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
                 final PreparedStatement statement = connection.prepareStatement(query);
-                PreparedStatementBindData.apply(statement, binders);
+                PreparedStatementBindData.apply(statement,
+                        Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
                 statements.add(statement);
             }
         }

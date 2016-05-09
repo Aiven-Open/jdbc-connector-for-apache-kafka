@@ -61,7 +61,7 @@ class JdbcSinkTask extends SinkTask {
         JdbcSinkConfig.config.parse(props);
         final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
         final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
-        logger.info(String.format("Settings:" + settings.toString()));
+        logger.info("Settings:" + settings.toString());
 
         //Set up the writer
         writer = JdbcDbWriter.from(settings);

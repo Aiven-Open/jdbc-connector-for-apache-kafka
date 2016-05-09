@@ -23,10 +23,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Floats for a prepared statement
  * */
-public final class FloatPreparedStatementBinder implements PreparedStatementBinder {
+public final class FloatPreparedStatementBinder extends BasePreparedStatementBinder {
     private final float value;
 
-    public FloatPreparedStatementBinder(float value) {
+    public FloatPreparedStatementBinder(String name, float value) {
+        super(name);
         this.value = value;
     }
 
@@ -45,7 +46,7 @@ public final class FloatPreparedStatementBinder implements PreparedStatementBind
     /**
      * @return The value to be bound.
      * */
-    public float getValue(){
+    public float getValue() {
         return value;
     }
 }

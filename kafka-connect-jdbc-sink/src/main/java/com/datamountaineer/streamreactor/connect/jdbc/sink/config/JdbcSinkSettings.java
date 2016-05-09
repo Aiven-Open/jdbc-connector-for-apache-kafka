@@ -17,11 +17,16 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
+
+import com.datamountaineer.streamreactor.connect.FieldAlias;
 import com.datamountaineer.streamreactor.connect.config.PayloadFields;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialectTypeEnum;
+import com.google.common.base.Joiner;
 import io.confluent.common.config.ConfigException;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Holds the Jdbc Sink settings
@@ -31,14 +36,21 @@ public final class JdbcSinkSettings {
     private final String tableName;
     private final PayloadFields fields;
     private final boolean batching;
+    private final DbDialectTypeEnum dialectType;
     private final ErrorPolicyEnum errorPolicy;
 
-    public JdbcSinkSettings(String connection, String tableName, PayloadFields fields, boolean batching, ErrorPolicyEnum errorPolicy) {
+    public JdbcSinkSettings(String connection,
+                            String tableName,
+                            PayloadFields fields,
+                            boolean batching,
+                            ErrorPolicyEnum errorPolicy,
+                            DbDialectTypeEnum dialectType) {
         this.connection = connection;
         this.tableName = tableName;
         this.fields = fields;
         this.batching = batching;
         this.errorPolicy = errorPolicy;
+        this.dialectType = dialectType;
     }
 
     public String getConnection() {
@@ -61,6 +73,11 @@ public final class JdbcSinkSettings {
         return errorPolicy;
     }
 
+
+    public DbDialectTypeEnum getDialectType() {
+        return dialectType;
+    }
+
     @Override
     public String toString() {
         return String.format("JdbcSinkSettings(\n" +
@@ -68,8 +85,9 @@ public final class JdbcSinkSettings {
                         "table name=%s\n" +
                         "fields=%s\n" +
                         "error policy=%s\n" +
+                        "dialect type=%s\n" +
                         ")"
-                , connection, tableName, fields.toString(), errorPolicy.toString());
+                , connection, tableName, fields.toString(), errorPolicy.toString(), dialectType);
     }
 
     /**
@@ -87,11 +105,34 @@ public final class JdbcSinkSettings {
 
         JdbcDriverLoader.load(driverClass, jarFile);
 
+        DbDialectTypeEnum dialectType;
+        try {
+            dialectType = DbDialectTypeEnum.valueOf(config.getString(JdbcSinkConfig.SQL_DIALECT));
+        } catch (IllegalArgumentException e) {
+            throw new ConfigException(JdbcSinkConfig.SQL_DIALECT + " has an invalid value. Valid options are:" +
+                    Joiner.on(",").join(DbDialectTypeEnum.values()));
+        }
+
+        final PayloadFields fields = PayloadFields.from(config.getString(JdbcSinkConfig.FIELDS));
+        boolean hasPK = false;
+
+        for (Map.Entry<String, FieldAlias> e : fields.getFieldsMappings().entrySet()) {
+            if (e.getValue().isPrimaryKey()) {
+                hasPK = true;
+                break;
+            }
+        }
+
+        //TODO: should pick up the dialect from the db connection !?
+        if (hasPK && dialectType == DbDialectTypeEnum.NONE)
+            throw new ConfigException("Primary fields have been defined. You need to specify a SQL dialect to be used");
+
         return new JdbcSinkSettings(
                 config.getString(JdbcSinkConfig.DATABASE_CONNECTION),
                 config.getString(JdbcSinkConfig.DATABASE_TABLE),
-                PayloadFields.from(config.getString(JdbcSinkConfig.FIELDS)),
+                fields,
                 config.getBoolean(JdbcSinkConfig.DATABASE_IS_BATCHING),
-                ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY)));
+                ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY)),
+                dialectType);
     }
 }

@@ -22,10 +22,11 @@ import java.sql.SQLException;
 /**
  * Handles binding a Byte for a prepared statement
  * */
-public final class BytePreparedStatementBinder implements PreparedStatementBinder {
+public final class BytePreparedStatementBinder extends BasePreparedStatementBinder {
     private final byte value;
 
-    public BytePreparedStatementBinder(byte value) {
+    public BytePreparedStatementBinder(String name, byte value) {
+        super(name);
         this.value = value;
     }
 

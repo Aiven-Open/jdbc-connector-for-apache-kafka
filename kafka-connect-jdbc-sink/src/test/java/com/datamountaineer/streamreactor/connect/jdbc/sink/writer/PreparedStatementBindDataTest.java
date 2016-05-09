@@ -14,15 +14,15 @@ public class PreparedStatementBindDataTest {
     @Test
     public void bindAllGivenValuesToTheSqlStatement() throws SQLException {
         PreparedStatement statement = mock(PreparedStatement.class);
-        List<PreparedStatementBinder> values = Lists.newArrayList(
-                new BooleanPreparedStatementBinder(true),
-                new BytePreparedStatementBinder((byte) 8),
-                new ShortPreparedStatementBinder((byte) -24),
-                new IntPreparedStatementBinder(3),
-                new LongPreparedStatementBinder(612111),
-                new FloatPreparedStatementBinder((float) 15.12),
-                new DoublePreparedStatementBinder(-235426.6677),
-                new StringPreparedStatementBinder("some value")
+        List<PreparedStatementBinder> values = Lists.<PreparedStatementBinder>newArrayList(
+                new BooleanPreparedStatementBinder("", true),
+                new BytePreparedStatementBinder("", (byte) 8),
+                new ShortPreparedStatementBinder("", (byte) -24),
+                new IntPreparedStatementBinder("", 3),
+                new LongPreparedStatementBinder("", 612111),
+                new FloatPreparedStatementBinder("", (float) 15.12),
+                new DoublePreparedStatementBinder("", -235426.6677),
+                new StringPreparedStatementBinder("", "some value")
         );
 
         PreparedStatementBindData.apply(statement, values);

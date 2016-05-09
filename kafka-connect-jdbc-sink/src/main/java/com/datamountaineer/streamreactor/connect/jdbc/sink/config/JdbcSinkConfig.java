@@ -57,6 +57,8 @@ public class JdbcSinkConfig extends AbstractConfig {
     public final static String FIELDS_DOC = "Specifies which fields to consider when inserting the new JDBC entry.\n" +
             "If is not set it will use insert all the payload fields present in the payload.\n" +
             "Field mapping is supported; this way an avro record field can be inserted into a 'mapped' column.\n" +
+            "To specify a field that is primary key you would have to specify [FIELD];this can still be aliased:\n" +
+            "[FIELD_PK]=ALIAS_PK\n" +
             "Examples:\n" +
             "* fields to be used:field1,field2,field3 \n" +
             "** fields with mapping: field1=alias1,field2,field3=alias3";
@@ -66,12 +68,17 @@ public class JdbcSinkConfig extends AbstractConfig {
             "There are two available options: <noop> - the error is swallowed <throw> - the error is allowed to propagate. \n" +
             "The error will be logged automatically";
 
+    public final static String SQL_DIALECT = "connect.jdbc.sink.sql.dialect";
+    public final static String SQL_DIALECT_DOC = "Specifies which SQL dialect it should use. This is used for UPSERT.\n" +
+            "Valid options are: mysql,oracle,sqlserver,sqlite";
+
     public final static ConfigDef config = new ConfigDef()
             .define(DATABASE_CONNECTION, Type.STRING, Importance.HIGH, DATABASE_CONNECTION_DOC)
-            .define(DATABASE_TABLE, Type.STRING, Importance.HIGH, DATABASE_CONNECTION_DOC)
+            .define(DATABASE_TABLE, Type.STRING, Importance.HIGH, DATABASE_TABLE_DOC)
             .define(JAR_FILE, Type.STRING, Importance.HIGH, JAR_FILE_DOC)
             .define(DRIVER_MANAGER_CLASS, Type.STRING, Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
             .define(FIELDS, Type.STRING, "*", Importance.LOW, FIELDS_DOC)
             .define(DATABASE_IS_BATCHING, Type.BOOLEAN, true, Importance.LOW, DATABASE_IS_BATCHING_DOC)
-            .define(ERROR_POLICY, Type.STRING, "throw", Importance.HIGH, ERROR_POLICY_DOC);
+            .define(ERROR_POLICY, Type.STRING, "throw", Importance.HIGH, ERROR_POLICY_DOC)
+            .define(SQL_DIALECT, Type.STRING, "NONE", Importance.LOW, SQL_DIALECT_DOC);
 }

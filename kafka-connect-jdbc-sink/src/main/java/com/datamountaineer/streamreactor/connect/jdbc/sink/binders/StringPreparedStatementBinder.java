@@ -23,10 +23,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Strings for a prepared statement
  * */
-public final class StringPreparedStatementBinder implements PreparedStatementBinder {
+public final class StringPreparedStatementBinder extends BasePreparedStatementBinder {
     private final String value;
 
-    public StringPreparedStatementBinder(String value) {
+    public StringPreparedStatementBinder(String name, String value) {
+        super(name);
         this.value = value;
     }
 

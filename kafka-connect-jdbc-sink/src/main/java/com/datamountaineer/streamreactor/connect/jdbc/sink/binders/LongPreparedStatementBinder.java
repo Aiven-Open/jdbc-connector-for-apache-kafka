@@ -24,10 +24,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Longs for a prepared statement
  * */
-public final class LongPreparedStatementBinder implements PreparedStatementBinder {
+public final class LongPreparedStatementBinder extends BasePreparedStatementBinder {
     private final long value;
 
-    public LongPreparedStatementBinder(long value) {
+    public LongPreparedStatementBinder(final String name, long value) {
+        super(name);
         this.value = value;
     }
 

@@ -23,10 +23,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Bytes for a prepared statement
  * */
-public final class BytesPreparedStatementBinder implements PreparedStatementBinder {
+public final class BytesPreparedStatementBinder extends BasePreparedStatementBinder {
     private final byte[] value;
 
-    public BytesPreparedStatementBinder(byte[] value) {
+    public BytesPreparedStatementBinder(String name, byte[] value) {
+        super(name);
         this.value = value;
     }
 
@@ -46,6 +47,8 @@ public final class BytesPreparedStatementBinder implements PreparedStatementBind
      * @return The value to be bound.
      * */
     public byte[] getValue(){
+
+    public byte[] getValue() {
         return value;
     }
 }

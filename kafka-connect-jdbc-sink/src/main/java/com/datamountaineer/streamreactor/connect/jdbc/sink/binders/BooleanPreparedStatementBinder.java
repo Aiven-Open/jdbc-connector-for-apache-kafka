@@ -22,10 +22,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Booleans for a prepared statement
  * */
-public final class BooleanPreparedStatementBinder implements PreparedStatementBinder {
+public final class BooleanPreparedStatementBinder extends BasePreparedStatementBinder {
     private final boolean value;
 
-    public BooleanPreparedStatementBinder(boolean value) {
+    public BooleanPreparedStatementBinder(String name,boolean value) {
+        super(name);
         this.value = value;
     }
 

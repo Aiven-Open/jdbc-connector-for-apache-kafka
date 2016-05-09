@@ -23,10 +23,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Doubles for a prepared statement
  * */
-public final class DoublePreparedStatementBinder implements PreparedStatementBinder {
+public final class DoublePreparedStatementBinder extends BasePreparedStatementBinder {
     private final double value;
 
-    public DoublePreparedStatementBinder(double value) {
+    public DoublePreparedStatementBinder(String name, double value) {
+        super(name);
         this.value = value;
     }
 
@@ -42,6 +43,8 @@ public final class DoublePreparedStatementBinder implements PreparedStatementBin
         statement.setDouble(index, value);
     }
 
+
+    public double getValue() {
     /**
      * @return The value to be bound.
      * */

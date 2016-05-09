@@ -16,6 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -23,7 +24,8 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
 public interface PreparedStatementBuilder {
 
@@ -34,7 +36,8 @@ public interface PreparedStatementBuilder {
      * @param connection The database connection to create the prepared statements on.
      * @return A list of prepared statements for the sink records.
      * */
-    List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException;
+    List<PreparedStatement> build(final Collection<SinkRecord> records,
+                                  final Connection connection) throws SQLException;
 
     boolean isBatching();
 }
@@ -48,13 +51,17 @@ final class PreparedStatementBuilderHelper {
      * non-batched inserts
      */
     public static PreparedStatementBuilder from(final JdbcSinkSettings settings) {
-        final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(settings.getFields().getIncludeAllFields(),
+        final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(
+                settings.getFields().getIncludeAllFields(),
                 settings.getFields().getFieldsMappings());
+
+        final QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
+
         if (settings.isBatching()) {
-            return new BatchedPreparedStatementBuilder(settings.getTableName(), fieldsValuesExtractor);
+            return new BatchedPreparedStatementBuilder(settings.getTableName(), fieldsValuesExtractor, queryBuilder);
         }
 
-        return new SinglePreparedStatementBuilder(settings.getTableName(), fieldsValuesExtractor);
+        return new SinglePreparedStatementBuilder(settings.getTableName(), fieldsValuesExtractor, queryBuilder);
     }
 }
 

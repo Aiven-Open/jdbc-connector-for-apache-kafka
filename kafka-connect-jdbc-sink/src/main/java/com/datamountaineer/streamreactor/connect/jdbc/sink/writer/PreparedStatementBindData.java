@@ -20,7 +20,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedState
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.List;
 
 /**
  * Binds the SinkRecord entries to the sql PreparedStatement.
@@ -32,7 +31,7 @@ public final class PreparedStatementBindData {
      * @param statement - the sql prepared statement to be executed
      * @param binders   -  The SinkRecord values to be bound to the sql statement
      */
-    public static void apply(PreparedStatement statement, List<PreparedStatementBinder> binders) throws SQLException {
+    public static void apply(PreparedStatement statement, Iterable<PreparedStatementBinder> binders) throws SQLException {
 
         int index = 1;
         for (final PreparedStatementBinder binder : binders) {

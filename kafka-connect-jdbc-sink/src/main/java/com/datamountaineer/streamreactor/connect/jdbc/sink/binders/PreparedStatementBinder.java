@@ -27,13 +27,18 @@ import java.sql.SQLException;
 public interface PreparedStatementBinder {
 
     /**
+     * Returns the column name for which the value is inserted
+     * @return
+     */
+    String getFieldName();
+
+    /**
      * Bind the value to the prepared statement.
      *
      * @param index The ordinal position to bind the variable to.
      * @param statement The prepared statement to bind to.
      * @return The statement with the value bound.
      * */
+
     void bind(int index, PreparedStatement statement) throws SQLException;
 }
-
-

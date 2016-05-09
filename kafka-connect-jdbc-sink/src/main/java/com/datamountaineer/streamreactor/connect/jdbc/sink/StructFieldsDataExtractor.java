@@ -17,7 +17,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.Pair;
+
+import com.datamountaineer.streamreactor.connect.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.*;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -27,6 +28,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -41,35 +43,33 @@ import java.util.Map;
  * (statement.setString(index, value))
  * */
 public class StructFieldsDataExtractor {
-    private final boolean includeAllFields;
-    private final Map<String, String> fieldsAliasMap;
+    private final static Comparator<PreparedStatementBinder> sorter = new Comparator<PreparedStatementBinder>() {
+        @Override
+        public int compare(PreparedStatementBinder left, PreparedStatementBinder right) {
+            return left.getFieldName().compareTo(right.getFieldName());
+        }
+    };
 
-    public StructFieldsDataExtractor(boolean includeAllFields, Map<String, String> fieldsAliasMap) {
+    private final boolean includeAllFields;
+    private final Map<String, FieldAlias> fieldsAliasMap;
+
+    public StructFieldsDataExtractor(boolean includeAllFields, Map<String, FieldAlias> fieldsAliasMap) {
         this.includeAllFields = includeAllFields;
         this.fieldsAliasMap = fieldsAliasMap;
     }
 
-    /**
-     * For a Struct record build list of PreparedStatementBinders based on the structs fields.
-     *
-     * @param struct A Connect Struct record to extract fields from
-     * @return A list if mappings of field name to PreparedStatementBinder for each field in the struct.
-     * */
-    public List<Pair<String, PreparedStatementBinder>> get(final Struct struct) {
-        //get the records schema
+    public PreparedStatementBinders get(final Struct struct) {
         final Schema schema = struct.schema();
         final Collection<Field> fields;
-
-        //if all fields take all the fields from the schema else filter out the fields based on the provided map
         if (includeAllFields)
             fields = schema.fields();
         else {
             fields = Collections2.filter(schema.fields(), new Predicate<Field>() {
                 @Override
                 public boolean apply(Field input) {
-                    //filter for field name in map
                     return fieldsAliasMap.containsKey(input.name()) || includeAllFields;
                 }
+
                 @Override
                 public boolean equals(Object object) {
                     return false;
@@ -77,23 +77,29 @@ public class StructFieldsDataExtractor {
             });
         }
 
-        //For each field convert the Connect schema type and extract the value, add to list and return
-        final List<Pair<String, PreparedStatementBinder>> binders = Lists.newArrayList();
+        final List<PreparedStatementBinder> nonPrimaryKeyBinders = Lists.newLinkedList();
+        final List<PreparedStatementBinder> primaryKeyBinders = Lists.newLinkedList();
         for (final Field field : fields) {
-            //get the correct binder based on the struct fields type
             final PreparedStatementBinder binder = getFieldValue(field, struct);
             if (binder != null) {
-                String fieldName;
+                boolean isPk = false;
                 if (fieldsAliasMap.containsKey(field.name())) {
-                    fieldName = fieldsAliasMap.get(field.name());
+                    final FieldAlias fa = fieldsAliasMap.get(field.name());
+                    isPk = fa.isPrimaryKey();
                 }
-                else {
-                    fieldName = field.name();
-                }
-                binders.add(new Pair(fieldName, binder));
+
+                //final Pair<String, PreparedStatementBinder> pair = new Pair<>(fieldName, binder);
+                if (isPk)
+                    primaryKeyBinders.add(binder);
+                else
+                    nonPrimaryKeyBinders.add(binder);
             }
         }
-        return binders;
+
+        nonPrimaryKeyBinders.sort(sorter);
+
+        primaryKeyBinders.sort(sorter);
+        return new PreparedStatementBinders(nonPrimaryKeyBinders, primaryKeyBinders);
     }
 
     /**
@@ -105,46 +111,73 @@ public class StructFieldsDataExtractor {
      * */
     private PreparedStatementBinder getFieldValue(final Field field, final Struct struct) {
         final Object value = struct.get(field);
-        if (value == null) {
+        if (value == null)
             return null;
-        }
 
-        final String fieldName = field.name();
+
+        final String fieldName;
+        if (fieldsAliasMap.containsKey(field.name()))
+            fieldName = fieldsAliasMap.get(field.name()).getName();
+        else
+            fieldName = field.name();
 
         //match on fields schema type to find the correct casting.
         PreparedStatementBinder binder;
         switch (field.schema().type()) {
             case INT8:
-                binder = new BytePreparedStatementBinder(struct.getInt8(fieldName));
+                binder = new BytePreparedStatementBinder(fieldName, struct.getInt8(field.name()));
                 break;
             case INT16:
-                binder = new ShortPreparedStatementBinder(struct.getInt16(fieldName));
+                binder = new ShortPreparedStatementBinder(fieldName, struct.getInt16(field.name()));
                 break;
             case INT32:
-                binder = new IntPreparedStatementBinder(struct.getInt32(fieldName));
+                binder = new IntPreparedStatementBinder(fieldName, struct.getInt32(field.name()));
                 break;
             case INT64:
-                binder = new LongPreparedStatementBinder(struct.getInt64(fieldName));
+                binder = new LongPreparedStatementBinder(fieldName, struct.getInt64(field.name()));
                 break;
             case FLOAT32:
-                binder = new FloatPreparedStatementBinder(struct.getFloat32(fieldName));
+                binder = new FloatPreparedStatementBinder(fieldName, struct.getFloat32(field.name()));
                 break;
             case FLOAT64:
-                binder = new DoublePreparedStatementBinder(struct.getFloat64(fieldName));
+                binder = new DoublePreparedStatementBinder(fieldName, struct.getFloat64(field.name()));
                 break;
             case BOOLEAN:
-                binder = new BooleanPreparedStatementBinder(struct.getBoolean(fieldName));
+                binder = new BooleanPreparedStatementBinder(fieldName, struct.getBoolean(field.name()));
                 break;
             case STRING:
-                binder = new StringPreparedStatementBinder(struct.getString(fieldName));
+                binder = new StringPreparedStatementBinder(fieldName, struct.getString(field.name()));
                 break;
             case BYTES:
-                binder = new BytesPreparedStatementBinder(struct.getBytes(fieldName));
+                binder = new BytesPreparedStatementBinder(fieldName, struct.getBytes(field.name()));
                 break;
             default:
                 throw new IllegalArgumentException("Following schema type " + struct.schema().type() + " is not supported");
         }
         return binder;
+    }
+
+
+    public static class PreparedStatementBinders {
+        private final List<PreparedStatementBinder> nonKeyColumns;
+        private final List<PreparedStatementBinder> keyColumns;
+
+        public PreparedStatementBinders(List<PreparedStatementBinder> nonKeyColumns, List<PreparedStatementBinder> keyColumns) {
+            this.nonKeyColumns = nonKeyColumns;
+            this.keyColumns = keyColumns;
+        }
+
+        public List<PreparedStatementBinder> getNonKeyColumns() {
+            return nonKeyColumns;
+        }
+
+        public List<PreparedStatementBinder> getKeyColumns() {
+            return keyColumns;
+        }
+
+        public boolean isEmpty() {
+            return nonKeyColumns.isEmpty() && keyColumns.isEmpty();
+        }
     }
 }
 

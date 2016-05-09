@@ -23,10 +23,11 @@ import java.sql.SQLException;
 /**
  * Handles binding Shorts for a prepared statement
  * */
-public final class ShortPreparedStatementBinder implements PreparedStatementBinder {
+public final class ShortPreparedStatementBinder extends BasePreparedStatementBinder {
     private final short value;
 
-    public ShortPreparedStatementBinder(short value) {
+    public ShortPreparedStatementBinder(String name,short value) {
+        super(name);
         this.value = value;
     }
 
