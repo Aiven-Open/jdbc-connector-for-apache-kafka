@@ -39,12 +39,14 @@ import java.util.List;
 public final class SinglePreparedStatementBuilder implements PreparedStatementBuilder {
 
   private static final Logger logger = LoggerFactory.getLogger(SinglePreparedStatementBuilder.class);
+
   private static final Function<PreparedStatementBinder, String> fieldNamesFunc = new Function<PreparedStatementBinder, String>() {
     @Override
     public String apply(PreparedStatementBinder input) {
       return input.getFieldName();
     }
   };
+
   private final String tableName;
   private final StructFieldsDataExtractor fieldsExtractor;
   private final QueryBuilder queryBuilder;

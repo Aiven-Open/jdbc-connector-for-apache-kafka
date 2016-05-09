@@ -1,2 +1,0 @@
-include 'kafka-connect-common',
-        'kafka-connect-jdbc-sink'

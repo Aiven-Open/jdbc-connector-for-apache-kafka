@@ -65,6 +65,12 @@ public class StructFieldsDataExtractor {
     this.fieldsAliasMap = fieldsAliasMap;
   }
 
+  /**
+   * Get a prepared statement for a struct
+   *
+   * @param struct The struct to get a statement for
+   * @return The prepared statement binder
+   * */
   public PreparedStatementBinders get(final Struct struct) {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
@@ -91,6 +97,7 @@ public class StructFieldsDataExtractor {
 
     final List<PreparedStatementBinder> nonPrimaryKeyBinders = Lists.newLinkedList();
     final List<PreparedStatementBinder> primaryKeyBinders = Lists.newLinkedList();
+
     for (final Field field : fields) {
       final PreparedStatementBinder binder = getFieldValue(field, struct);
       if (binder != null) {

@@ -43,7 +43,6 @@ public class UpsertQueryBuilder implements QueryBuilder {
     return dbDialect.getUpsertQuery(table, nonKeyColumns, keyColumns);
   }
 
-
   public DbDialect getDbDialect() {
     return dbDialect;
   }
