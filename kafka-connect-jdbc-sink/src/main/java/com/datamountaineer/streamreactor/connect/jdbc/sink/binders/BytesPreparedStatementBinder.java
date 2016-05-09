@@ -46,7 +46,6 @@ public final class BytesPreparedStatementBinder extends BasePreparedStatementBin
     /**
      * @return The value to be bound.
      * */
-    public byte[] getValue(){
 
     public byte[] getValue() {
         return value;

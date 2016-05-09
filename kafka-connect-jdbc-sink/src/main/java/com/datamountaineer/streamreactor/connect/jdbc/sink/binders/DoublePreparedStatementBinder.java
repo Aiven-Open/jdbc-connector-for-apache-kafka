@@ -43,8 +43,6 @@ public final class DoublePreparedStatementBinder extends BasePreparedStatementBi
         statement.setDouble(index, value);
     }
 
-
-    public double getValue() {
     /**
      * @return The value to be bound.
      * */
