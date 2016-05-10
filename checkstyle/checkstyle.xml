@@ -34,7 +34,7 @@
         <!-- code cleanup -->
         <module name="UnusedImports"/>
         <module name="RedundantImport"/>
-        <module name="IllegalImport" />
+        <module name="IllegalImport"/>
         <module name="EqualsHashCode"/>
         <module name="SimplifyBooleanExpression"/>
         <module name="OneStatementPerLine"/>
@@ -48,9 +48,9 @@
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
         <module name="EmptyStatement"/>
-       <!-- <module name="ConstantName">
-            <property name="format" value="(^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$)|(^log$)"/>
-        </module>-->
+        <!-- <module name="ConstantName">
+             <property name="format" value="(^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$)|(^log$)"/>
+         </module>-->
         <module name="LocalVariableName"/>
         <module name="LocalFinalVariableName"/>
         <module name="MemberName"/>
@@ -69,7 +69,7 @@
         <!-- whitespace -->
         <module name="GenericWhitespace"/>
         <module name="NoWhitespaceBefore"/>
-        <module name="WhitespaceAfter" />
+        <module name="WhitespaceAfter"/>
         <module name="NoWhitespaceAfter"/>
         <module name="WhitespaceAround">
             <property name="allowEmptyConstructors" value="true"/>

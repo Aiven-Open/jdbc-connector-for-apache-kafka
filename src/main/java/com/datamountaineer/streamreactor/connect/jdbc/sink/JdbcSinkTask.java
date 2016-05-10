@@ -37,6 +37,7 @@ import java.util.Map;
  * <p>
  * Kafka Connect Jdbc sink task. Called by framework to put records to the
  * target sink
+ * </p>
  **/
 class JdbcSinkTask extends SinkTask {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);
@@ -92,8 +93,8 @@ class JdbcSinkTask extends SinkTask {
 
   @Override
   public void flush(Map<TopicPartition, OffsetAndMetadata> map) {
-      //TODO
-      //have the writer expose a is busy; can expose an await using a countdownlatch internally
+    //TODO
+    //have the writer expose a is busy; can expose an await using a countdownlatch internally
   }
 
   @Override
