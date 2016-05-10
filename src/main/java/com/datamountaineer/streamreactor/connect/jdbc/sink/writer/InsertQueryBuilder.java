@@ -29,7 +29,7 @@ public final class InsertQueryBuilder implements QueryBuilder {
                       final List<String> nonKeyColumns,
                       final List<String> keyColumns) {
     if (tableName == null || tableName.trim().length() == 0) {
-      throw new IllegalArgumentException("tableName parameter is not a valid.");
+      throw new IllegalArgumentException("tableName parameter is not a valid table name.");
     }
 
     if (nonKeyColumns == null) {
@@ -41,7 +41,7 @@ public final class InsertQueryBuilder implements QueryBuilder {
     }
 
     if (nonKeyColumns.isEmpty() && keyColumns.isEmpty()) {
-      throw new IllegalArgumentException("Illegal arguments. Both nonKey and key columns are empty");
+      throw new IllegalArgumentException("Illegal arguments. Both nonKeyColumns and keyColumns are empty");
     }
 
     final String questionMarks = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));

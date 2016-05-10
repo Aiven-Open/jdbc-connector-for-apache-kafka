@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Responsible for taking a sequence of SinkRecord and write them to the database
+ * Responsible for taking a sequence of SinkRecord and writing them to the database
  */
 public final class JdbcDbWriter implements DbWriter {
   private static final Logger logger = LoggerFactory.getLogger(JdbcDbWriter.class);

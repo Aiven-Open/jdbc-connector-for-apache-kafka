@@ -45,24 +45,22 @@
     <scm>
         <connection>scm:git:git://github.com/datamountaineer/kafka-connect-jdbc-sink.git</connection>
         <developerConnection>scm:git:git@github.com/datamountaineer/kafka-connect-jdbc-sink.git</developerConnection>
-        <url>https://ggithub.com/datamountaineer/kafka-connect-jdbc-sink</url>
+        <url>https://github.com/datamountaineer/kafka-connect-jdbc-sink</url>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
         <confluent.version>2.0.1</confluent.version>
         <kafka.version>0.9.0.1</kafka.version>
-        <junit.version>4.12</junit.version>
-        <easymock.version>3.0</easymock.version>
-        <powermock.version>1.6.2</powermock.version>
-        <derby.version>10.11.1.1</derby.version>
-        <commons-io.version>2.4</commons-io.version>
         <guava.version>19.0</guava.version>
-        <jackson.xml.version>2.6.5</jackson.xml.version>
+        <HikariCP.version>2.4.5</HikariCP.version>
+        <!-- Test scope -->
+        <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
+        <!-- Runtime scope -->
         <sqllite.version>3.8.11.2</sqllite.version>
         <postgre.version>9.4-1206-jdbc41</postgre.version>
-        <HikariCP.version>2.4.5</HikariCP.version>
+        <!-- Properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
