@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,17 +16,18 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.common.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
@@ -37,18 +38,17 @@ import org.apache.kafka.connect.data.Struct;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This class holds the a mappings of fields to extract from
  * a Connect Struct record.
- *
+ * <p>
  * Used to building mappings fro Struct records to JDBC binding statements.
- *
+ * <p>
  * For example, if the struct contains a string field which is part of the aliasMap .i.e.
  * set in configuration to be write to the target, it will return a StringPreparedStatementBinder
  * (statement.setString(index, value))
- * */
+ */
 public class StructFieldsDataExtractor {
   private final static Comparator<PreparedStatementBinder> sorter = new Comparator<PreparedStatementBinder>() {
     @Override
@@ -57,91 +57,85 @@ public class StructFieldsDataExtractor {
     }
   };
 
-  private final boolean includeAllFields;
-  private final Map<String, FieldAlias> fieldsAliasMap;
+  private final FieldsMappings fieldsMappings;
 
-  public StructFieldsDataExtractor(boolean includeAllFields, Map<String, FieldAlias> fieldsAliasMap) {
-    this.includeAllFields = includeAllFields;
-    this.fieldsAliasMap = fieldsAliasMap;
+  public StructFieldsDataExtractor(final FieldsMappings fieldsMappings) {
+    this.fieldsMappings = fieldsMappings;
   }
 
-  /**
-   * Get a prepared statement for a struct
-   *
-   * @param struct The struct to get a statement for
-   * @return The prepared statement binder
-   * */
+  public String getTableName() {
+    return fieldsMappings.getTableName();
+  }
+
+
   public PreparedStatementBinders get(final Struct struct) {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
-    if (includeAllFields) {
+    if (fieldsMappings.areAllFieldsIncluded())
       fields = schema.fields();
-    } else {
+    else {
       fields = Collections2.filter(schema.fields(), new Predicate<Field>() {
         @Override
         public boolean apply(Field input) {
-            return fieldsAliasMap.containsKey(input.name());
+          return fieldsMappings.getMappings().containsKey(input.name()) ||
+                  fieldsMappings.areAllFieldsIncluded();
         }
 
         @Override
         public boolean equals(Object object) {
-              return false;
+          return false;
         }
 
         public int hashCode() {
-          int result = 0;
-          return result;
+          return 0;
         }
       });
     }
 
     final List<PreparedStatementBinder> nonPrimaryKeyBinders = Lists.newLinkedList();
     final List<PreparedStatementBinder> primaryKeyBinders = Lists.newLinkedList();
-
     for (final Field field : fields) {
       final PreparedStatementBinder binder = getFieldValue(field, struct);
       if (binder != null) {
         boolean isPk = false;
-        if (fieldsAliasMap.containsKey(field.name())) {
-          final FieldAlias fa = fieldsAliasMap.get(field.name());
+        if (fieldsMappings.getMappings().containsKey(field.name())) {
+          final FieldAlias fa = fieldsMappings.getMappings().get(field.name());
           isPk = fa.isPrimaryKey();
         }
 
         //final Pair<String, PreparedStatementBinder> pair = new Pair<>(fieldName, binder);
-        if (isPk) {
+        if (isPk)
           primaryKeyBinders.add(binder);
-        } else {
+        else
           nonPrimaryKeyBinders.add(binder);
-        }
       }
     }
 
     nonPrimaryKeyBinders.sort(sorter);
 
     primaryKeyBinders.sort(sorter);
+
     return new PreparedStatementBinders(nonPrimaryKeyBinders, primaryKeyBinders);
   }
 
   /**
    * Return a PreparedStatementBinder for a struct fields.
    *
-   * @param field The struct field to get the binder for.
+   * @param field  The struct field to get the binder for.
    * @param struct The struct which the field belongs to.
    * @return A PreparedStatementBinder for the field.
-   * */
+   */
   private PreparedStatementBinder getFieldValue(final Field field, final Struct struct) {
     final Object value = struct.get(field);
-    if (value == null) {
+    if (value == null)
       return null;
-    }
 
 
     final String fieldName;
-    if (fieldsAliasMap.containsKey(field.name())) {
-      fieldName = fieldsAliasMap.get(field.name()).getName();
-    } else {
+    if (fieldsMappings.getMappings().containsKey(field.name()))
+      fieldName = fieldsMappings.getMappings().get(field.name()).getName();
+    else
       fieldName = field.name();
-    }
 
     //match on fields schema type to find the correct casting.
     PreparedStatementBinder binder;

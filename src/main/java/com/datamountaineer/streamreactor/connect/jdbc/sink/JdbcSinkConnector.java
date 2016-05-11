@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,7 +34,7 @@ import java.util.Map;
  * <p>
  * Sets up JdbcSinkTask and configurations for the tasks.
  **/
-final class JdbcSinkConnector extends SinkConnector {
+public final class JdbcSinkConnector extends SinkConnector {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkConnector.class);
 
   //???
@@ -57,9 +57,8 @@ final class JdbcSinkConnector extends SinkConnector {
   public List<Map<String, String>> taskConfigs(int maxTasks) {
     logger.info("Setting task configurations for " + maxTasks + " workers.");
     final List<Map<String, String>> configs = Lists.newArrayList();
-    for (int i = 0; i < maxTasks; ++i) {
+    for (int i = 0; i < maxTasks; ++i)
       configs.add(configProps);
-    }
     return configs;
   }
 

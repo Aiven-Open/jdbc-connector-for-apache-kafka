@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,14 +31,11 @@ public final class InsertQueryBuilder implements QueryBuilder {
     if (tableName == null || tableName.trim().length() == 0) {
       throw new IllegalArgumentException("tableName parameter is not a valid table name.");
     }
-
-    if (nonKeyColumns == null) {
+    if (nonKeyColumns == null)
       throw new IllegalArgumentException("nonKeyColumns parameter is null.");
-    }
 
-    if (keyColumns == null) {
+    if (keyColumns == null)
       throw new IllegalArgumentException("keyColumns parameter is null");
-    }
 
     if (nonKeyColumns.isEmpty() && keyColumns.isEmpty()) {
       throw new IllegalArgumentException("Illegal arguments. Both nonKeyColumns and keyColumns are empty");
@@ -46,7 +43,7 @@ public final class InsertQueryBuilder implements QueryBuilder {
 
     final String questionMarks = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
     return String.format("INSERT INTO %s(%s) VALUES(%s)",
-      tableName,
-      Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns)), questionMarks);
+            tableName,
+            Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns)), questionMarks);
   }
 }

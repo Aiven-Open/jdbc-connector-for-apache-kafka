@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,12 +28,10 @@ import java.util.List;
 public class SQLiteDialect extends DbDialect {
   @Override
   public String getUpsertQuery(String table, List<String> nonKeyColumns, List<String> keyColumns) {
-    if (table == null || table.trim().length() == 0) {
+    if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table> is not a valid parameter");
-    }
-    if (nonKeyColumns == null || nonKeyColumns.size() == 0) {
+    if (nonKeyColumns == null || nonKeyColumns.size() == 0)
       throw new IllegalArgumentException("<columns> is invalid.Expecting non null and non empty collection");
-    }
     if (keyColumns == null || keyColumns.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
     }

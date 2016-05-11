@@ -14,19 +14,11 @@
  * limitations under the License.
  **/
 
-package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
+package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
-import org.apache.kafka.connect.sink.SinkRecord;
-
-import java.sql.Connection;
-import java.util.Collection;
-
-/**
- * The policy swallows the exception
- */
-public final class NoopErrorHandlingPolicy implements ErrorHandlingPolicy {
+public class SqlServerDialect extends Sql2003Dialect {
   @Override
-  public void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection) {
-    //Do nothing
+  public String getMergeHints() {
+    return " with (HOLDLOCK)";
   }
 }

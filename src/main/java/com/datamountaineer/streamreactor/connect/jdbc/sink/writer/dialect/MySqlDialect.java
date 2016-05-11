@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,11 +26,11 @@ import java.util.List;
  * Provides support for MySql.
  */
 public class MySqlDialect extends DbDialect {
+
   @Override
   public String getUpsertQuery(final String table, final List<String> nonKeyColumns, final List<String> keyColumns) {
-    if (table == null || table.trim().length() == 0) {
+    if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
-    }
 
     if (keyColumns == null || keyColumns.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
@@ -45,7 +45,8 @@ public class MySqlDialect extends DbDialect {
       builder.append(String.format(",%s=values(%s)", nonKeyColumns.get(i), nonKeyColumns.get(i)));
     }
 
-    return String.format("insert into %s(%s) values(%s) " +
+    final String query = String.format("insert into %s(%s) values(%s) " +
             "on duplicate key update %s", table, queryColumns, bindingValues, builder.toString());
+    return query;
   }
 }

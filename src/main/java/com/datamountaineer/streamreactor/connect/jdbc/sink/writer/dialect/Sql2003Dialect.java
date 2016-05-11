@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,16 +22,15 @@ import com.google.common.collect.Iterables;
 import java.util.List;
 
 public class Sql2003Dialect extends DbDialect {
+
   @Override
   public String getUpsertQuery(String table, List<String> columns, List<String> keyColumns) {
-    if (table == null || table.trim().length() == 0) {
+    if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table> is not valid");
-    }
 
     if (keyColumns == null || keyColumns.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
     }
-
     final String select = Joiner.on(", ? ").join(Iterables.concat(columns, keyColumns));
     final StringBuilder joinBuilder = new StringBuilder();
     joinBuilder.append(String.format("%s.%s=incoming.%s", table, keyColumns.get(0), keyColumns.get(0)));
@@ -52,10 +51,10 @@ public class Sql2003Dialect extends DbDialect {
     final String insertColumns = Joiner.on(String.format(",%s.", table)).join(Iterables.concat(columns, keyColumns));
     final String insertValues = Joiner.on(",incoming.").join(Iterables.concat(columns, keyColumns));
 
-    /*
-    https://blogs.oracle.com/cmar/entry/using_merge_to_do_an"
-     */
-    return "merge into " + table +
+        /*
+        https://blogs.oracle.com/cmar/entry/using_merge_to_do_an"
+         */
+    return "merge into " + table + getMergeHints() +
             " using (select ? " + select + ") incoming" +
             " on(" + joinBuilder.toString() + ") " +
             updateSet +
@@ -64,5 +63,9 @@ public class Sql2003Dialect extends DbDialect {
                     insertColumns,
                     insertValues);
 
+  }
+
+  public String getMergeHints() {
+    return "";
   }
 }

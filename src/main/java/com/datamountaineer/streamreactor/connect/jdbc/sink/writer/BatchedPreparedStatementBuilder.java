@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,19 +47,16 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
     }
   };
 
-  private final String tableName;
-  private final StructFieldsDataExtractor fieldsExtractor;
+  private final Map<String, StructFieldsDataExtractor> fieldsExtractorMap;
   private final QueryBuilder queryBuilder;
 
-  /**
-   * @param tableName       - The name of the database tabled
-   * @param fieldsExtractor - An instance of the SinkRecord fields value extractor
-   */
-  public BatchedPreparedStatementBuilder(final String tableName,
-                                         final StructFieldsDataExtractor fieldsExtractor,
+
+  public BatchedPreparedStatementBuilder(final Map<String, StructFieldsDataExtractor> fieldsExtractorMap,
                                          final QueryBuilder queryBuilder) {
-    this.tableName = tableName;
-    this.fieldsExtractor = fieldsExtractor;
+    if (fieldsExtractorMap == null || fieldsExtractorMap.size() == 0) {
+      throw new IllegalArgumentException("Invalid fieldsExtractorMap provided.");
+    }
+    this.fieldsExtractorMap = fieldsExtractorMap;
     this.queryBuilder = queryBuilder;
   }
 
@@ -70,22 +67,48 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
    */
   @Override
   public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
+
     final Map<String, PreparedStatement> mapStatements = new HashMap<>();
     for (final SinkRecord record : records) {
-      logger.debug("Received record from topic:%s partition:%d and offset:$d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
-      if (record.value() == null || record.value().getClass() != Struct.class)
-        throw new IllegalArgumentException("The SinkRecord payload should be of type Struct");
+      logger.debug("Received record from topic:%s partition:%d and offset:$d",
+              record.topic(),
+              record.kafkaPartition(),
+              record.kafkaOffset());
 
-      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsExtractor.get((Struct) record.value());
+      if (record.value() == null || record.value().getClass() != Struct.class) {
+        final String msg = String.format("On topic %s partition %d and offset %d the payload is not of type struct",
+                record.topic(),
+                record.kafkaPartition(),
+                record.kafkaOffset());
+        logger.error(msg);
+        throw new IllegalArgumentException(msg);
+      }
+
+      final String topic = record.topic().toLowerCase();
+      if (!fieldsExtractorMap.containsKey(topic)) {
+        logger.warn(String.format("For topic %s there is no mapping.Skipping record at partition %d and offset %d",
+                record.topic(),
+                record.kafkaPartition(),
+                record.kafkaOffset()));
+        continue;
+      }
+
+      final StructFieldsDataExtractor fieldsDataExtractor = fieldsExtractorMap.get(topic);
+      final Struct struct = (Struct) record.value();
+      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct);
 
       if (!binders.isEmpty()) {
+
         final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
         final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
 
         final String statementKey = Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
 
         if (!mapStatements.containsKey(statementKey)) {
-          final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
+          final String query = queryBuilder.build(fieldsDataExtractor.getTableName(),
+                  nonKeyColumnsName,
+                  keyColumnsName);
+
           final PreparedStatement statement = connection.prepareStatement(query);
           mapStatements.put(statementKey, statement);
         }
@@ -94,6 +117,7 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
         statement.addBatch();
       }
     }
+
     return Lists.newArrayList(mapStatements.values());
   }
 
