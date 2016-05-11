@@ -26,7 +26,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedS
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;

@@ -1,7 +1,10 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.InsertQueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilderHelper;

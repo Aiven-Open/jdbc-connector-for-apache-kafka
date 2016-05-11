@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.*;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.MySqlDialect;

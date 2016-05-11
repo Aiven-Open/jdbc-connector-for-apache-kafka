@@ -16,7 +16,6 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Joiner;
 import io.confluent.common.config.ConfigException;
