@@ -1,3 +1,4 @@
+/docs/build
 /kafka-connect-jdbc.iml
 /kafka-connect-jdbc-sink/sample.db
 /.idea

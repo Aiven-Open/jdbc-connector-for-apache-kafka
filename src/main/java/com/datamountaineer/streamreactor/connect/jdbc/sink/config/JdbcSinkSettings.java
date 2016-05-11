@@ -147,7 +147,7 @@ public final class JdbcSinkSettings {
     return new JdbcSinkSettings(
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION),
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
-            config.getString(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD),
+            config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
             fieldsMappings,
             config.getBoolean(JdbcSinkConfig.DATABASE_IS_BATCHING),
             ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY)),

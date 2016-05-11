@@ -16,10 +16,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-import io.confluent.common.config.AbstractConfig;
-import io.confluent.common.config.ConfigDef;
-import io.confluent.common.config.ConfigDef.Importance;
-import io.confluent.common.config.ConfigDef.Type;
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Map;
 
@@ -75,14 +73,17 @@ public class JdbcSinkConfig extends AbstractConfig {
           "* fields to be used:field1,field2,field3 \n" +
           "** fields with mapping: field1=alias1,field2,field3=alias3";
 
+  private final static String DEFAULT_ERROR_POLICY = "throw";
+  private final static String DEFAULT_INSERT_MODE = "INSERT";
+
   public final static ConfigDef config = new ConfigDef()
-          .define(DATABASE_CONNECTION, Type.STRING, Importance.HIGH, DATABASE_CONNECTION_DOC)
-          .define(DATABASE_CONNECTION_USER, Type.STRING, "", Importance.LOW, DATABASE_CONNECTION_USER_DOC)
-          .define(DATABASE_CONNECTION_PASSWORD, Type.STRING, "", Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
-          .define(JAR_FILE, Type.STRING, Importance.HIGH, JAR_FILE_DOC)
-          .define(DRIVER_MANAGER_CLASS, Type.STRING, Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
-          .define(TOPIC_TABLE_MAPPING, Type.STRING, Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
-          .define(DATABASE_IS_BATCHING, Type.BOOLEAN, true, Importance.LOW, DATABASE_IS_BATCHING_DOC)
-          .define(ERROR_POLICY, Type.STRING, "throw", Importance.HIGH, ERROR_POLICY_DOC)
-          .define(INSERT_MODE, Type.STRING, "INSERT", Importance.HIGH, INSERT_MODE_DOC);
+          .define(DATABASE_CONNECTION, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_DOC)
+          .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
+          .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
+          .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)
+          .define(DRIVER_MANAGER_CLASS, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
+          .define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
+          .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
+          .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
+          .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC);
 }
