@@ -34,6 +34,7 @@ import java.util.Map;
 public final class JdbcSinkSettings {
   private final boolean batching;
   private final String connection;
+  private final String database;
   private final String user;
   private final String password;
   private final List<FieldsMappings> mappings;
@@ -50,6 +51,7 @@ public final class JdbcSinkSettings {
    * @param insertMode  - Specifies how the data is inserted into RDBMS
    */
   public JdbcSinkSettings(String connection,
+                          String database,
                           String user,
                           String password,
                           List<FieldsMappings> mappings,
@@ -65,6 +67,11 @@ public final class JdbcSinkSettings {
     this.batching = batching;
     this.errorPolicy = errorPolicy;
     this.insertMode = insertMode;
+    this.database = database;
+  }
+
+  public String getDatabase() {
+    return database;
   }
 
   public String getConnection() {
@@ -144,8 +151,11 @@ public final class JdbcSinkSettings {
       }
     }
 
+
+
     return new JdbcSinkSettings(
-            config.getString(JdbcSinkConfig.DATABASE_CONNECTION),
+            config.getString(JdbcSinkConfig.DATABASE_CONNECTION_URI),
+            config.getString(JdbcSinkConfig.DATABASE),
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
             config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
             fieldsMappings,
@@ -156,8 +166,11 @@ public final class JdbcSinkSettings {
 
   private static List<FieldsMappings> getTablesMappings(final JdbcSinkConfig config) {
     final String fields = config.getString(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
-    if (fields == null || fields.trim().length() == 0)
+
+    if (fields == null || fields.trim().length() == 0) {
       throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
+    }
+
     return Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, FieldsMappings>() {
       @Override
       public FieldsMappings apply(String input) {
@@ -173,6 +186,7 @@ public final class JdbcSinkSettings {
           throw new ConfigException(input + " is not a valid topic to table mapping");
 
         final String tableMappings = config.getString(String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, tableName));
+
         if (tableMappings == null || tableMappings.trim().length() == 0) {
           return new FieldsMappings(tableName, arr[0].trim());
         }

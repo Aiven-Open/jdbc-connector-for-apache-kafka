@@ -63,6 +63,7 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
+           "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
@@ -80,6 +81,7 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
+            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
@@ -98,6 +100,7 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
+            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
@@ -115,6 +118,7 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
+            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,

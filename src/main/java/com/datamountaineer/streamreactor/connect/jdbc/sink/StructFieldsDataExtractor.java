@@ -71,9 +71,9 @@ public class StructFieldsDataExtractor {
   public PreparedStatementBinders get(final Struct struct) {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
-    if (fieldsMappings.areAllFieldsIncluded())
+    if (fieldsMappings.areAllFieldsIncluded()) {
       fields = schema.fields();
-    else {
+    } else {
       fields = Collections2.filter(schema.fields(), new Predicate<Field>() {
         @Override
         public boolean apply(Field input) {

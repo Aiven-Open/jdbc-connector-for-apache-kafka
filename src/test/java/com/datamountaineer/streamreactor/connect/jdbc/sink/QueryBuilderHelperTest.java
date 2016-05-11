@@ -30,6 +30,7 @@ public class QueryBuilderHelperTest {
     mappings.put("field2", new FieldAlias("field2"));
 
     JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:",
+        "test_db_writer_sqllite",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
@@ -47,6 +48,7 @@ public class QueryBuilderHelperTest {
     Map<String, FieldAlias> mappings = Maps.newHashMap();
 
     JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:",
+        "test_db_writer_sqllite",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
@@ -64,6 +66,7 @@ public class QueryBuilderHelperTest {
     mappings.put("field1", new FieldAlias("field1", true));
     mappings.put("field2", new FieldAlias("field2"));
     JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE",
+            "DATABASE",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
@@ -84,6 +87,7 @@ public class QueryBuilderHelperTest {
     mappings.put("field1", new FieldAlias("field1", true));
     mappings.put("field2", new FieldAlias("field2"));
     JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:oracle:thin:@localhost:1521:xe",
+            "xe",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
@@ -104,6 +108,7 @@ public class QueryBuilderHelperTest {
     mappings.put("field1", new FieldAlias("field1", true));
     mappings.put("field2", new FieldAlias("field2"));
     JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:mysql://HOST/DATABASE",
+            "DATABASE",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
@@ -124,6 +129,7 @@ public class QueryBuilderHelperTest {
     mappings.put("field1", new FieldAlias("field1", true));
     mappings.put("field2", new FieldAlias("field2"));
     JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:sqlite:/folder/db.file",
+            "db",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),

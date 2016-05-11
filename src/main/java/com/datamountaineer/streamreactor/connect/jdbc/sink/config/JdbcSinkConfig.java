@@ -34,8 +34,12 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public final static String TABLE_MAPPINGS_FORMAT = "connect.jdbc.sink.table.%s.mappings";
 
-  public final static String DATABASE_CONNECTION = "connect.jdbc.connection.uri";
-  public final static String DATABASE_CONNECTION_DOC = "Specifies the JDBC database connection URI.";
+  public final static String DATABASE_CONNECTION_URI = "connect.jdbc.connection.uri";
+  public final static String DATABASE_CONNECTION_URI_DOC = "Specifies the JDBC database connection URI.";
+
+  public final static String DATABASE = "connect.jdbc.sink.database";
+  public final static String DATABASE_DOC = "The database to connect to. Used for table monitoring so must be set here " +
+      String.format("and in %s", DATABASE_CONNECTION_URI);
 
   public final static String DATABASE_CONNECTION_USER = "connect.jdbc.connection.user";
   public final static String DATABASE_CONNECTION_USER_DOC = "Specifies the JDBC connection user.";
@@ -64,20 +68,14 @@ public class JdbcSinkConfig extends AbstractConfig {
           "supported:INSERT(default value) and UPSERT.";
 
   public final static String TOPIC_TABLE_MAPPING = "connect.jdbc.sink.topics.to.tables";
-  public final static String TOPIC_TABLE_MAPPING_DOC = "Specifies which topic maps to which table.Example:topic1=table1;topic2=table2 \n" +
-          "For each table a field mappings need to be provided: connect.jdbc.sink.table.[table_name].mappings." +
-          "If is not set it will use all the payload fields present in the payload as columns to be inserted.\n" +
-          "Field mapping is supported; this allows a SinkRecord field to be mapped to a specific database column.\n" +
-          "To specify a field is part of the primary key please enclose it between '[]':[FIELD1_PK],[FIELD2_PK]=ALIAS2_PK\n" +
-          "Examples:\n" +
-          "* fields to be used:field1,field2,field3 \n" +
-          "** fields with mapping: field1=alias1,field2,field3=alias3";
+  public final static String TOPIC_TABLE_MAPPING_DOC = "Specifies which topic maps to which table.Example:topic1=table1;topic2=table2 \n";
 
   private final static String DEFAULT_ERROR_POLICY = "throw";
   private final static String DEFAULT_INSERT_MODE = "INSERT";
 
   public final static ConfigDef config = new ConfigDef()
-          .define(DATABASE_CONNECTION, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_DOC)
+          .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
+          .define(DATABASE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_DOC)
           .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
           .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
           .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)

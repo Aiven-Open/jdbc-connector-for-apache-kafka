@@ -4,6 +4,9 @@ Kafka Connect JDBC Sink
 Kafka Connect JDBC Sink is a connector to write data from Kafka to a
 sink target that supports JDBC.
 
+.. toctree::
+   :maxdepth: 3
+
 Prerequisites
 -------------
 
@@ -16,7 +19,7 @@ Setup
 Sink Connector QuickStart
 -------------------------
 
-Test Date
+Test Data
 ~~~~~~~~~
 
 Deploying the Sink Connector
@@ -174,15 +177,33 @@ Specifies how the data should be landed into the RDBMS. Two options are supporte
 * Type: string
 * Importance: high
 
-Specifies which topic maps to which table.Example:topic1=table1;topic2=table2. For each table a field mappings need to be provided: connect.jdbc.sink.table.[table_name].mappings.If is not set it will use all the payload fields present in the payload as columns to be inserted. Field mapping is supported; this allows a SinkRecord field to be mapped to a specific database column. To specify a field is part of the primary key please enclose it between '[]':[FIELD1_PK],[FIELD2_PK]=ALIAS2_PK 
+Specifies which topic maps to which table.Example:topic1=table1;topic2=table2.
 
-Examples: 
+``connect.jdbc.sink.table.[table].mappings``
 
-1. fields to be used:field1,field2,field3 
-2. fields with mapping: field1=alias1,field2,field3=alias3
+* Type: string
+* Importance: high
 
-Example
-^^^^^^^
+Specifies which fields and there mapping to table columns should be extracted from the SinkRecords.
+
+Examples:
+
+Extract only field1 and field2 from topic A and field3 from topic B
+
+.. code:: bash
+
+    connect.jdbc.sink.table.topicA.mappings=field1,field2
+    connect.jdbc.sink.table.topicB.mappings=field3
+
+Extract only field1 and field2 from topic A and field3 from topic B but with alias mapping to different columns. Field 1 from topic A goes to colZ and field 3 from topic B goes to column Y. The topic to table mapping is controlled by ``connect.jdbc.sink.topics.to.tables``
+
+.. code:: bash
+
+    connect.jdbc.sink.table.topicA.mappings=field1=colZ,field2
+    connect.jdbc.sink.table.topicB.mappings=field3=colY
+
+Example Configurations
+~~~~~~~~~~~~~~~~~~~~~~
 
 Schema Evolution
 ----------------
