@@ -197,11 +197,13 @@ public final class JdbcSinkSettings {
   }
 
   public static JdbcSinkConfig fixConfigLimitationOnDynamicProps(Map<String, String> props) {
-    if (props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING))
+    if (!props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING)) {
       throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is missing.");
+    }
     final String fields = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
-    if (fields == null || fields.trim().length() == 0)
+    if (fields == null || fields.trim().length() == 0) {
       throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
+    }
 
     final List<String> tables = Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, String>() {
       @Override
