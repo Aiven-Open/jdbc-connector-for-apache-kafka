@@ -23,6 +23,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.config.ConfigDef;
 
 import java.io.File;
 import java.util.List;
@@ -193,5 +194,44 @@ public final class JdbcSinkSettings {
         return FieldsMappings.from(arr[1].trim(), arr[0].trim(), tableMappings.trim());
       }
     });
+  }
+
+  public static JdbcSinkConfig fixConfigLimitationOnDynamicProps(Map<String, String> props) {
+    if (props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING))
+      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is missing.");
+    final String fields = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
+    if (fields == null || fields.trim().length() == 0)
+      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
+
+    final List<String> tables = Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, String>() {
+      @Override
+      public String apply(String input) {
+        if (input.trim().length() == 0)
+          throw new ConfigException("Empty topic to table mapping found");
+        //input is topic=table
+        final String[] arr = input.split("=");
+        if (arr.length != 2)
+          throw new ConfigException(input + " is not a valid topic to table mapping");
+
+        final String tableName = arr[1].trim();
+        if (tableName.length() == 0)
+          throw new ConfigException(input + " is not a valid topic to table mapping");
+        return tableName;
+      }
+    });
+
+    //now create a new ConfigDef to have the dynamic values defined otherwise we will end up with exception thrown
+    //in the kafka connect api
+
+    ConfigDef configDefFixed = JdbcSinkConfig.config;
+    for (String table : tables) {
+      configDefFixed = configDefFixed.define(
+              String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
+              ConfigDef.Type.STRING,
+              ConfigDef.Importance.HIGH,
+              String.format("Defines the mapping for table:%s"));
+    }
+
+    return new JdbcSinkConfig(configDefFixed, props);
   }
 }

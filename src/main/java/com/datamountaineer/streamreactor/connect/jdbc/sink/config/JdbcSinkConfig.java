@@ -28,8 +28,13 @@ import java.util.Map;
  **/
 public class JdbcSinkConfig extends AbstractConfig {
 
+
   public JdbcSinkConfig(Map<String, String> props) {
     super(config, props);
+  }
+
+  public JdbcSinkConfig(final ConfigDef configDef, Map<String, String> props) {
+    super(configDef, props);
   }
 
   public final static String TABLE_MAPPINGS_FORMAT = "connect.jdbc.sink.table.%s.mappings";

@@ -16,7 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.connector.Task;
@@ -75,7 +75,7 @@ public final class JdbcSinkConnector extends SinkConnector {
     configProps = props;
 
     try {
-      new JdbcSinkConfig(props);
+      JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     } catch (Throwable t) {
       throw new ConnectException("Couldn't start JDBC Sink due to configuration error.", t);
     }

@@ -58,7 +58,7 @@ public class JdbcSinkTask extends SinkTask {
 
     //Parse and check the configuration
     JdbcSinkConfig.config.parse(props);
-    final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
+    final JdbcSinkConfig sinkConfig = JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
     logger.info("Settings:" + settings.toString());
 
