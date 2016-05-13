@@ -231,7 +231,7 @@ public final class JdbcSinkSettings {
               String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
               ConfigDef.Type.STRING,
               ConfigDef.Importance.HIGH,
-              String.format("Defines the mapping for table:%s"));
+              String.format("Defines the mapping for table:%s",table));
     }
 
     return new JdbcSinkConfig(configDefFixed, props);
