@@ -30,7 +30,7 @@ public class JdbcSinkConfig extends AbstractConfig {
 
 
   public JdbcSinkConfig(Map<String, String> props) {
-    super(config, props);
+    super(getConfigDef(), props);
   }
 
   public JdbcSinkConfig(final ConfigDef configDef, Map<String, String> props) {
@@ -44,7 +44,7 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public final static String DATABASE = "connect.jdbc.sink.database";
   public final static String DATABASE_DOC = "The database to connect to. Used for table monitoring so must be set here " +
-      String.format("and in %s", DATABASE_CONNECTION_URI);
+          String.format("and in %s", DATABASE_CONNECTION_URI);
 
   public final static String DATABASE_CONNECTION_USER = "connect.jdbc.connection.user";
   public final static String DATABASE_CONNECTION_USER_DOC = "Specifies the JDBC connection user.";
@@ -78,6 +78,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   private final static String DEFAULT_ERROR_POLICY = "throw";
   private final static String DEFAULT_INSERT_MODE = "INSERT";
 
+  /*
   public final static ConfigDef config = new ConfigDef()
           .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
           .define(DATABASE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_DOC)
@@ -89,4 +90,18 @@ public class JdbcSinkConfig extends AbstractConfig {
           .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
           .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
           .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC);
+*/
+  public final static ConfigDef getConfigDef() {
+    return new ConfigDef()
+            .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
+            .define(DATABASE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_DOC)
+            .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
+            .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
+            .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)
+            .define(DRIVER_MANAGER_CLASS, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
+            .define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
+            .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
+            .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
+            .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC);
+  }
 }

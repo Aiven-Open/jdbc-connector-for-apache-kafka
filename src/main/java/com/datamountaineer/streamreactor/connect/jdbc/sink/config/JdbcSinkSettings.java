@@ -24,6 +24,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.confluent.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigDef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.Map;
  * Holds the Jdbc Sink settings
  */
 public final class JdbcSinkSettings {
+  private static final Logger logger = LoggerFactory.getLogger(JdbcSinkSettings.class);
   private final boolean batching;
   private final String connection;
   private final String database;
@@ -199,12 +202,12 @@ public final class JdbcSinkSettings {
     if (!props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING)) {
       throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is missing.");
     }
-    final String fields = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
-    if (fields == null || fields.trim().length() == 0) {
+    final String topicToTables = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
+    if (topicToTables == null || topicToTables.trim().length() == 0) {
       throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
     }
 
-    final List<String> tables = Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, String>() {
+    final List<String> tables = Lists.transform(Lists.newArrayList(topicToTables.split(",")), new Function<String, String>() {
       @Override
       public String apply(String input) {
         if (input.trim().length() == 0)
@@ -223,9 +226,14 @@ public final class JdbcSinkSettings {
 
     //now create a new ConfigDef to have the dynamic values defined otherwise we will end up with exception thrown
     //in the kafka connect api
+    ConfigDef configDefFixed = JdbcSinkConfig.getConfigDef();
 
-    ConfigDef configDefFixed = JdbcSinkConfig.config;
+    //Parse and check the configuration
+    configDefFixed.parse(props);
+
     for (String table : tables) {
+      final String key = String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table);
+      logger.info(String.format("Defining dynamic key %s", key));
       configDefFixed = configDefFixed.define(
               String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
               ConfigDef.Type.STRING,

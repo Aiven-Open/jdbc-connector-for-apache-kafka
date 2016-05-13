@@ -56,8 +56,6 @@ public class JdbcSinkTask extends SinkTask {
       logger.warn("Can't load the ascii art!");
     }
 
-    //Parse and check the configuration
-    JdbcSinkConfig.config.parse(props);
     final JdbcSinkConfig sinkConfig = JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
     logger.info("Settings:" + settings.toString());
