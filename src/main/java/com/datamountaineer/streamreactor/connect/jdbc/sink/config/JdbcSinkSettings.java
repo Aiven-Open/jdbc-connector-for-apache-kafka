@@ -106,10 +106,10 @@ public final class JdbcSinkSettings {
   @Override
   public String toString() {
     return String.format("JdbcSinkSettings(\n" +
-                    "connection=%s\n" +
-                    "table columns=%s\n" +
-                    "error policy=%s\n" +
-                    ")", connection, Joiner.on(";").join(mappings), errorPolicy.toString());
+            "connection=%s\n" +
+            "table columns=%s\n" +
+            "error policy=%s\n" +
+            ")", connection, Joiner.on(";").join(mappings), errorPolicy.toString());
   }
 
   /**
@@ -151,7 +151,6 @@ public final class JdbcSinkSettings {
                   "provided for " + tm.getTableName());
       }
     }
-
 
 
     return new JdbcSinkSettings(
@@ -231,7 +230,7 @@ public final class JdbcSinkSettings {
               String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
               ConfigDef.Type.STRING,
               ConfigDef.Importance.HIGH,
-              String.format("Defines the mapping for table:%s",table));
+              String.format("Defines the mapping for table:%s", table));
     }
 
     return new JdbcSinkConfig(configDefFixed, props);
