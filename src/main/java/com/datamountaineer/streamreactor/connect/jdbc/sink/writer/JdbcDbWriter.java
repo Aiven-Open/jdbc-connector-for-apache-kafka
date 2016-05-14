@@ -150,7 +150,9 @@ public final class JdbcDbWriter implements DbWriter {
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings) {
     final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings);
+    logger.info("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName());
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
+    logger.info("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName());
     return new JdbcDbWriter(settings.getConnection(),
             settings.getUser(),
             settings.getPassword(),

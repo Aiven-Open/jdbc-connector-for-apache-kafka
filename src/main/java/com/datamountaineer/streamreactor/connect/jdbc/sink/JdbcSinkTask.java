@@ -75,7 +75,12 @@ public class JdbcSinkTask extends SinkTask {
       logger.info("Empty list of records received.");
     } else {
       assert (writer != null) : "Writer is not set!";
+      final SinkRecord first = records.iterator().next();
+      int recordsCount = records.size();
+      logger.info("Received %d records. First entry topic:%s  partition:%d offset:%s. Writing them to the database...",
+              recordsCount, first.topic(), first.topic(), first.kafkaOffset());
       writer.write(records);
+      logger.info("Finished writing %d records to the database", recordsCount);
     }
   }
 
