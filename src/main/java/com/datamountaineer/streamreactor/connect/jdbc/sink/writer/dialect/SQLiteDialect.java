@@ -50,7 +50,7 @@ public class SQLiteDialect extends DbDialect {
       whereBuilder.append(String.format(" and %s=?", keyColumns.get(i)));
     }
 
-    return String.format("update or ignore %s set %s where %s\n", table, builder, whereBuilder) +
+    return String.format("update or ignore %s set %s where %s\n;", table, builder, whereBuilder) +
             String.format("insert or ignore into %s(%s) values (%s)", table, queryColumns, bindingValues);
   }
 }

@@ -16,27 +16,21 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import org.apache.kafka.connect.sink.SinkRecord;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 
-public interface PreparedStatementBuilder {
-
+/**
+ * Provides the table information for the current database.
+ */
+public interface DbTableInfoProvider {
   /**
-   * Build a list of prepared statements the sink records against this connection.
+   * Returns the current database list of tables and their columns
    *
-   * @param records    The sinkRecords to create prepared statements for.
-   * @param connection The database connection to create the prepared statements on.
-   * @return A list of prepared statements for the sink records.
+   * @param connectionUri - The database connection string
+   * @param user          - The database user
+   * @param password      - The database password
+   * @return A collection of database table information
    */
-  List<PreparedStatement> build(final Collection<SinkRecord> records,
-                                final Connection connection) throws SQLException;
-
-  boolean isBatching();
+  List<DbTable> getTables(final String connectionUri, final String user, final String password);
 }
-
-

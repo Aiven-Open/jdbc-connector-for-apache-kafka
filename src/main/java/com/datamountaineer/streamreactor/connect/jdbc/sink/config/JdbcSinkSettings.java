@@ -237,6 +237,7 @@ public final class JdbcSinkSettings {
       configDefFixed = configDefFixed.define(
               String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
               ConfigDef.Type.STRING,
+              null,
               ConfigDef.Importance.HIGH,
               String.format("Defines the mapping for table:%s", table));
     }

@@ -16,6 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Iterators;
@@ -29,7 +30,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -148,8 +151,14 @@ public final class JdbcDbWriter implements DbWriter {
    * @param settings - Holds the sink settings
    * @return Returns a new instsance of JdbcDbWriter
    */
-  public static JdbcDbWriter from(final JdbcSinkSettings settings) {
-    final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings);
+  public static JdbcDbWriter from(final JdbcSinkSettings settings, final DbTableInfoProvider provider) {
+
+    final Map<String, DbTable> tableMap = new HashMap<>();
+    final List<DbTable> tables = provider.getTables(settings.getConnection(), settings.getUser(), settings.getPassword());
+    for (DbTable table : tables) {
+      tableMap.put(table.getName(), table);
+    }
+    final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings, tableMap);
     logger.info("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName());
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
     logger.info("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName());

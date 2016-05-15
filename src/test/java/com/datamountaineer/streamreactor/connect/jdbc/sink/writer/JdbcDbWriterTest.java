@@ -1,13 +1,16 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -23,9 +26,17 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -60,17 +71,29 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseBatching() {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topica", true, new HashMap<String, FieldAlias>()));
+
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-           "test_db_writer_sqllite",
+            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
+
+    Map<String, DbTableColumn> columnMap = new HashMap<>();
+    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
+    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columnMap);
+
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
+      @Override
+      public List<DbTable> getTables(String connectionUri, String user, String password) {
+        return Lists.newArrayList(tableA);
+      }
+    });
 
     assertEquals(writer.getStatementBuilder().getClass(), BatchedPreparedStatementBuilder.class);
   }
@@ -78,7 +101,7 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseNonBatching() {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
             "test_db_writer_sqllite",
@@ -88,7 +111,17 @@ public class JdbcDbWriterTest {
             false,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
+    Map<String, DbTableColumn> columnMap = new HashMap<>();
+    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
+    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columnMap);
+
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
+      @Override
+      public List<DbTable> getTables(String connectionUri, String user, String password) {
+        return Lists.newArrayList(tableA);
+      }
+    });
 
     assertEquals(writer.getStatementBuilder().getClass(), SinglePreparedStatementBuilder.class);
   }
@@ -107,7 +140,19 @@ public class JdbcDbWriterTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
+
+    Map<String, DbTableColumn> columnMap = new HashMap<>();
+    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
+    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columnMap);
+
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
+      @Override
+      public List<DbTable> getTables(String connectionUri, String user, String password) {
+        return Lists.newArrayList(tableA);
+      }
+    });
+
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
   }
@@ -115,7 +160,7 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseThrowForErrorHandling() {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
             "test_db_writer_sqllite",
@@ -125,7 +170,18 @@ public class JdbcDbWriterTest {
             true,
             ErrorPolicyEnum.THROW,
             InsertModeEnum.INSERT);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
+
+    Map<String, DbTableColumn> columnMap = new HashMap<>();
+    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
+    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columnMap);
+
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
+      @Override
+      public List<DbTable> getTables(String connectionUri, String user, String password) {
+        return Lists.newArrayList(tableA);
+      }
+    });
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
   }
@@ -506,7 +562,7 @@ public class JdbcDbWriterTest {
   public void handleBatchStatementPerRecord() throws SQLException {
     String tableName = "batched_statement_test";
     String createTable = "CREATE TABLE " + tableName + "(" +
-            "    firstName  TEXT," +
+            "    firstName  TEXT PRIMARY_KEY," +
             "    lastName  TEXT," +
             "    age INTEGER," +
             "    bool  NUMERIC," +
@@ -581,11 +637,13 @@ public class JdbcDbWriterTest {
 
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, FieldAlias> aliasMapPK = new HashMap<>();
+    aliasMapPK.put("firstName", new FieldAlias("firstName", true));
     map.put(topic.toLowerCase(),
-            new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, new HashMap<String, FieldAlias>())));
+            new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, aliasMapPK)));
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
-            new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
+            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
             new ThrowErrorHandlingPolicy());
 
     writer.write(records);
@@ -726,13 +784,17 @@ public class JdbcDbWriterTest {
             new SinkRecord(topic2, partition, null, null, schema, struct2, 4));
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, FieldAlias> aliasPKMap = new HashMap<>();
+
+    aliasPKMap.put("firstName", new FieldAlias("firstName", true));
+    aliasPKMap.put("lastName", new FieldAlias("lastName", true));
     map.put(topic1.toLowerCase(),
-            new StructFieldsDataExtractor(new FieldsMappings(tableName1, topic1, true, new HashMap<String, FieldAlias>())));
+            new StructFieldsDataExtractor(new FieldsMappings(tableName1, topic1, true, aliasPKMap)));
     map.put(topic2.toLowerCase(),
-            new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, new HashMap<String, FieldAlias>())));
+            new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, aliasPKMap)));
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
-            new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
+            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
             new ThrowErrorHandlingPolicy());
 
     writer.write(records);
@@ -772,4 +834,203 @@ public class JdbcDbWriterTest {
     });
   }
 
+
+  @Test
+  public void handleBatchStatementPerRecordWhenThePayloadHasMoreFieldsThanTheTable() throws SQLException {
+    String tableName = "batched_statement_more_fields_than_columns_test";
+    String createTable = "CREATE TABLE " + tableName + "(" +
+            "    firstName  TEXT PRIMARY_KEY," +
+            "    lastName  TEXT," +
+            "    age INTEGER," +
+            "    bool  NUMERIC," +
+            "    byte  INTEGER" +
+            ");";
+
+    SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
+
+    Schema schema = SchemaBuilder.struct().name("com.example.Person")
+            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+            .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+
+    final String fName1 = "Alex";
+    final String lName1 = "Smith";
+    final int age1 = 21;
+    final boolean bool1 = true;
+    final short s1 = 1234;
+    final byte b1 = -32;
+    final long l1 = 12425436;
+    final float f1 = (float) 2356.3;
+    final double d1 = -2436546.56457;
+    final byte[] bs1 = new byte[]{-32, 124};
+
+
+    Struct struct1 = new Struct(schema)
+            .put("firstName", fName1)
+            .put("lastName", lName1)
+            .put("bool", bool1)
+            .put("short", s1)
+            .put("byte", b1)
+            .put("long", l1)
+            .put("float", f1)
+            .put("double", d1)
+            .put("bytes", bs1)
+            .put("age", age1);
+
+    final String fName2 = "Christina";
+    final String lName2 = "Brams";
+    final int age2 = 28;
+    final boolean bool2 = false;
+    final byte b2 = -72;
+    final long l2 = 8594;
+    final double d2 = 3256677.56457;
+
+    Struct struct2 = new Struct(schema)
+            .put("firstName", fName2)
+            .put("lastName", lName2)
+            .put("bool", bool2)
+            .put("byte", b2)
+            .put("long", l2)
+            .put("double", d2)
+            .put("age", age2);
+
+    String topic = "topic";
+    int partition = 2;
+    Collection<SinkRecord> records = Lists.newArrayList(
+            new SinkRecord(topic, partition, null, null, schema, struct1, 1),
+            new SinkRecord(topic, partition, null, null, schema, struct2, 2));
+
+
+    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, FieldAlias> aliasMap = new HashMap<>();
+    aliasMap.put("firstName", new FieldAlias("firstName", true));
+    aliasMap.put("lastName", new FieldAlias("lastName", false));
+    aliasMap.put("age", new FieldAlias("age", false));
+    aliasMap.put("bool", new FieldAlias("bool", false));
+    aliasMap.put("byte", new FieldAlias("byte", false));
+
+    map.put(topic.toLowerCase(),
+            new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, false, aliasMap)));
+
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
+            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
+            new ThrowErrorHandlingPolicy());
+
+    writer.write(records);
+
+    String query = "SELECT * FROM " + tableName + " ORDER BY firstName";
+    SqlLiteHelper.ResultSetReadCallback callback = new SqlLiteHelper.ResultSetReadCallback() {
+      int index = 0;
+
+      @Override
+      public void read(ResultSet rs) throws SQLException {
+        if (index == 0) {
+          assertEquals(rs.getString("firstName"), fName1);
+          assertEquals(rs.getString("lastName"), lName1);
+          assertEquals(rs.getBoolean("bool"), bool1);
+          assertEquals(rs.getByte("byte"), b1);
+          assertEquals(rs.getInt("age"), age1);
+        } else if (index == 1) {
+          assertEquals(rs.getString("firstName"), fName2);
+          assertEquals(rs.getString("lastName"), lName2);
+          assertEquals(rs.getBoolean("bool"), bool2);
+          assertEquals(rs.getByte("byte"), b2);
+          assertEquals(rs.getInt("age"), age2);
+        } else throw new RuntimeException(String.format("%d is too high", index));
+        index++;
+      }
+
+    };
+
+    SqlLiteHelper.select(SQL_LITE_URI, query, callback);
+  }
+
+  @Test
+  public void handleSingleStatementPerRecordWhenPayloadHasMoreFieldsThanColumnsMapped() throws SQLException {
+    String tableName1 = "single_statement_test_with_fields_more_than_columns_1";
+    String createTable1 = "CREATE TABLE " + tableName1 + "(" +
+            "    firstName  TEXT," +
+            "    lastName  TEXT," +
+            "    age INTEGER" +
+            ");";
+
+    SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
+
+    Schema schema = SchemaBuilder.struct().name("com.example.Person")
+            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+            .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+
+    final String fName1 = "Alex";
+    final String lName1 = "Smith";
+    final int age1 = 21;
+    final boolean bool1 = true;
+    final short s1 = 1234;
+    final byte b1 = -32;
+    final long l1 = 12425436;
+    final float f1 = (float) 2356.3;
+    final double d1 = -2436546.56457;
+    final byte[] bs1 = new byte[]{-32, 124};
+
+
+    Struct struct1 = new Struct(schema)
+            .put("firstName", fName1)
+            .put("lastName", lName1)
+            .put("bool", bool1)
+            .put("short", s1)
+            .put("byte", b1)
+            .put("long", l1)
+            .put("float", f1)
+            .put("double", d1)
+            .put("bytes", bs1)
+            .put("age", age1);
+
+
+    String topic1 = "topic1";
+    int partition = 2;
+    Collection<SinkRecord> records = Lists.newArrayList(
+            new SinkRecord(topic1, partition, null, null, schema, struct1, 1));
+
+
+    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, FieldAlias> aliasMap = new HashMap<>();
+    aliasMap.put("firstName", new FieldAlias("firstName", false));
+    aliasMap.put("lastName", new FieldAlias("lastName", false));
+    aliasMap.put("age", new FieldAlias("age", false));
+    map.put(topic1.toLowerCase(),
+            new StructFieldsDataExtractor(new FieldsMappings(tableName1, topic1, false, aliasMap)));
+
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
+            new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
+            new ThrowErrorHandlingPolicy());
+
+    writer.write(records);
+
+    String query1 = "SELECT * FROM " + tableName1 + " WHERE firstName='" + fName1 + "'";
+    SqlLiteHelper.ResultSetReadCallback callback1 = new SqlLiteHelper.ResultSetReadCallback() {
+      @Override
+      public void read(ResultSet rs) throws SQLException {
+        assertEquals(fName1, rs.getString("firstName"));
+        assertEquals(lName1, rs.getString("lastName"));
+        assertEquals(age1, rs.getInt("age"));
+      }
+
+    };
+
+    SqlLiteHelper.select(SQL_LITE_URI, query1, callback1);
+  }
 }

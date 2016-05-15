@@ -18,6 +18,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.DbTableInfoProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.io.CharStreams;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,7 +63,12 @@ public class JdbcSinkTask extends SinkTask {
     logger.info("Settings:" + settings.toString());
 
     //Set up the writer
-    writer = JdbcDbWriter.from(settings);
+    writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
+      @Override
+      public List<DbTable> getTables(String connectionUri, String user, String password) {
+        return JdbcHelper.getTablesMetadata(connectionUri, user, password);
+      }
+    });
   }
 
   /**
