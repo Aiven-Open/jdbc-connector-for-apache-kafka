@@ -27,7 +27,12 @@ public enum ErrorPolicyEnum {
   /**
    * The exception is propagate up the stack by rethrowing it.
    */
-  THROW("throw");
+  THROW("throw"),
+
+  /**
+   * The exception causes the Connect framework to retry the message
+   * */
+  RETRY("retry");
 
   private final String value;
 

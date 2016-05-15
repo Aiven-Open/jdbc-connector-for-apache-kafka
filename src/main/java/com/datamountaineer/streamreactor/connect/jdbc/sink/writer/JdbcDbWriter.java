@@ -39,6 +39,7 @@ public final class JdbcDbWriter implements DbWriter {
 
   private final PreparedStatementBuilder statementBuilder;
   private final ErrorHandlingPolicy errorHandlingPolicy;
+  private int retries;
 
   //provides connection pooling
   private final HikariDataSource dataSource;
@@ -54,7 +55,10 @@ public final class JdbcDbWriter implements DbWriter {
                       final String user,
                       final String password,
                       final PreparedStatementBuilder statementBuilder,
-                      final ErrorHandlingPolicy errorHandlingPolicy) {
+                      final ErrorHandlingPolicy errorHandlingPolicy,
+                      final int retries) {
+
+    this.retries = retries;
 
     final HikariConfig config = new HikariConfig();
     config.setJdbcUrl(connectionStr);
@@ -116,7 +120,8 @@ public final class JdbcDbWriter implements DbWriter {
         }
 
         //handle the exception
-        errorHandlingPolicy.handle(records, sqlException, connection);
+        retries--;
+        errorHandlingPolicy.handle(records, sqlException, connection, retries);
       } finally {
         if (statements != null) {
           for (final PreparedStatement statement : statements) {
@@ -157,7 +162,8 @@ public final class JdbcDbWriter implements DbWriter {
             settings.getUser(),
             settings.getPassword(),
             statementBuilder,
-            errorHandlingPolicy);
+            errorHandlingPolicy,
+            settings.getRetries());
   }
 
   /**

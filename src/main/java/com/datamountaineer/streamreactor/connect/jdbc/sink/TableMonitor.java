@@ -17,8 +17,11 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JDBCUrl;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
-import org.apache.kafka.connect.connector.ConnectorContext;
+
+import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -37,33 +40,38 @@ public class TableMonitor {
   private static final Logger log = LoggerFactory.getLogger(TableMonitor.class);
 
   private static final String COLUMN_NAME = "COLUMN_NAME";
-  private static final String COLUMN_TYPE = "COLUMN_TYPE";
+  private static final String COLUMN_TYPE = "DATA_TYPE";
   private static final String TABLE_NAME = "TABLE_NAME";
-  private final Connection db;
-  private final ConnectorContext context;
-  private String database;
+  private Connection db = null;
+  private static String database;
   private HashMap<String, HashMap<String, String>> metadataCached = new HashMap<>();
 
-  public TableMonitor(Connection db, ConnectorContext context, String database, HashMap<String,
-      HashMap<String, String>> columns) {
-    this.db = db;
-    this.context = context;
-    this.database = database;
-    this.metadataCached = columns;
-  }
 
+  public TableMonitor(JdbcSinkSettings settings) {
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(settings.getConnection());
 
-  public TableMonitor from(Connection db, ConnectorContext context, JdbcSinkSettings settings) {
+    try {
+      this.db = new HikariDataSource(config).getConnection();
+    } catch (SQLException e) {
+      log.error(String.format("Unable to connect to database %s.", database), e);
+    }
+
+    String databaseName = JDBCUrl.getDatabaseName(settings.getConnection());
+    this.database = databaseName;
 
     HashMap<String, HashMap<String, String>> map = new HashMap<>();
-
+    //get columns
     for (FieldsMappings mappings : settings.getMappings()) {
       String tableName = mappings.getTableName();
       HashMap<String, String> columns = buildTableMap(tableName);
       map.put(tableName, columns);
     }
+    this.metadataCached = map;
+  }
 
-    return new TableMonitor(db, context, settings.getDatabase(), map);
+  public  HashMap<String, HashMap<String, String>> getCache() {
+    return metadataCached;
   }
 
   /**
@@ -71,12 +79,16 @@ public class TableMonitor {
    *
    * @return a Map of tables columns and column type for the configured tables.
    * */
-  private HashMap<String, String> buildTableMap(String table) {
+  public  HashMap<String, String> buildTableMap(String table) {
     HashMap<String, String> colMap = new HashMap<>();
 
     try {
       DatabaseMetaData meta = db.getMetaData();
-      ResultSet tablesRS = meta.getTables(database, null, null, new String[]{"TABLE"});
+      String   catalog          = database;
+      String   schemaPattern    = null;
+      String   tableNamePattern = null;
+      String[] types            = null;
+      ResultSet tablesRS = meta.getTables(catalog, schemaPattern, tableNamePattern, types);
 
       //collect the columns for our tables
       while (tablesRS.next()) {
@@ -84,7 +96,7 @@ public class TableMonitor {
 
         //filter for our tables
         if (tableRs.equals(table)) {
-          ResultSet colsRs = meta.getColumns(database, null, table, null);
+          ResultSet colsRs = meta.getColumns(catalog, null, table, null);
 
           colMap.clear();
           while (colsRs.next()) {
@@ -101,7 +113,6 @@ public class TableMonitor {
     return colMap;
   }
 
-
   /**
    * Check if the a reconfiguration is required for this table.
    *
@@ -111,7 +122,13 @@ public class TableMonitor {
    * */
   public Boolean doReconfigure(String tableName, Boolean allFields) {
     HashMap<String, String> map = buildTableMap(tableName);
-    return (!map.containsKey(tableName) || !checkColumns(map, tableName, allFields)) ? true : false;
+    if (map.size() == 0) {
+      log.warn(String.format("Removing table %s from TableMonitor Cache.", tableName));
+      metadataCached.remove(tableName);
+      return true;
+    } else {
+      return checkColumns(map, tableName, allFields);
+    }
   }
 
 
@@ -135,6 +152,8 @@ public class TableMonitor {
      * if we have explicit column mappings check those columns still exist
      */
     if (allFields && cachedColumns.size() != current.size()) {
+      log.warn(String.format("Difference in number of columns detected for table %s", tableName));
+      metadataCached.put(tableName, current);
       return true;
     } else {
       //change is columns
@@ -142,19 +161,21 @@ public class TableMonitor {
         //does our column still exist
         if (current.containsKey(col)) {
           //check type
-          String colType = current.get(col);
+          String colType = cachedColumns.get(col);
           String newColType = current.get(col);
           if (!colType.equals(newColType)) {
             //difference in type check compatibility.
-            log.warn(String.format("Difference is column type detected for column %s in tables %s.%s. New: %s. Old %s",
+            log.warn(String.format("Difference in column types detected for column %s in tables %s.%s. New: %s. Old %s",
                 col, database, tableName, newColType, colType));
+            log.warn(String.format("Updating TableMonitor cached for table %s", tableName));
+            metadataCached.put(tableName, current);
             return true;
-          } else {
-            //no change
-            return false;
           }
+
         } else {
           log.warn(String.format("Column %s no longer exists in tables %s.%s", col, database, tableName));
+          log.warn(String.format("Updating TableMonitor cached for table %s", tableName));
+          metadataCached.put(tableName, current);
           return true;
         }
       }
@@ -163,22 +184,12 @@ public class TableMonitor {
     }
   }
 
-//  @Override
-//  public void run() {
-//    while (shutdownLatch.getCount() > 0) {
-//      //we found a change in the target database schema, reconfigure the task. The task will shut down and restart
-//      if (checkColumns()) {
-//        context.requestTaskReconfiguration();
-//      }
-//
-//      try {
-//        boolean shuttingDown = shutdownLatch.await(pollMs, TimeUnit.MILLISECONDS);
-//        if (shuttingDown) {
-//          return;
-//        }
-//      } catch (InterruptedException e) {
-//        log.error("Unexpected InterruptedException, ignoring: ", e);
-//      }
-//    }
-//  }
+  public void closeDbConn() {
+
+    try {
+      db.close();
+    } catch (SQLException e) {
+      log.error(String.format("Error closing connection to database %s", database), e);
+    }
+  }
 }

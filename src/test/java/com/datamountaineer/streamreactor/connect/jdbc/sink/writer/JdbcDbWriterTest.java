@@ -63,13 +63,13 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-           "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
             true,
             ErrorPolicyEnum.NOOP,
-            InsertModeEnum.INSERT);
+            InsertModeEnum.INSERT,
+            10);
     JdbcDbWriter writer = JdbcDbWriter.from(settings);
 
     assertEquals(writer.getStatementBuilder().getClass(), BatchedPreparedStatementBuilder.class);
@@ -81,13 +81,13 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
             false,
             ErrorPolicyEnum.NOOP,
-            InsertModeEnum.INSERT);
+            InsertModeEnum.INSERT,
+            10);
     JdbcDbWriter writer = JdbcDbWriter.from(settings);
 
     assertEquals(writer.getStatementBuilder().getClass(), SinglePreparedStatementBuilder.class);
@@ -100,13 +100,14 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
             true,
             ErrorPolicyEnum.NOOP,
-            InsertModeEnum.INSERT);
+            InsertModeEnum.INSERT,
+            10
+        );
     JdbcDbWriter writer = JdbcDbWriter.from(settings);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
@@ -118,13 +119,13 @@ public class JdbcDbWriterTest {
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-            "test_db_writer_sqllite",
             null,
             null,
             fieldsMappingsList,
             true,
             ErrorPolicyEnum.THROW,
-            InsertModeEnum.INSERT);
+            InsertModeEnum.INSERT,
+            10);
     JdbcDbWriter writer = JdbcDbWriter.from(settings);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
@@ -139,8 +140,9 @@ public class JdbcDbWriterTest {
     Collection<SinkRecord> records = new ArrayList<>();
     records.add(new SinkRecord("topic", 1, Schema.STRING_SCHEMA, "test1", Schema.STRING_SCHEMA, "value", 0));
 
+    ErrorHandlingPolicy policy = ErrorHandlingPolicyHelper.from(ErrorPolicyEnum.NOOP);
     when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, new NoopErrorHandlingPolicy());
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, policy, 10);
     writer.write(records);
   }
 
@@ -153,7 +155,7 @@ public class JdbcDbWriterTest {
     records.add(new SinkRecord("topic", 1, Schema.STRING_SCHEMA, "test1", Schema.STRING_SCHEMA, "value", 0));
 
     when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, new ThrowErrorHandlingPolicy());
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, new ThrowErrorHandlingPolicy(), 10);
     writer.write(records);
   }
 
@@ -258,10 +260,14 @@ public class JdbcDbWriterTest {
     map.put(topic2.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, new HashMap<String, FieldAlias>())));
 
-
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -373,7 +379,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -471,7 +477,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -586,7 +592,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -733,7 +739,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 

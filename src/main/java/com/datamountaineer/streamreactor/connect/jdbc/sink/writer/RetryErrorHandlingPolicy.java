@@ -16,17 +16,22 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.sql.Connection;
 import java.util.Collection;
 
 /**
- * The policy swallows the exception
+ * The policy propagates the error further
  */
-public final class NoopErrorHandlingPolicy implements ErrorHandlingPolicy {
+public final class RetryErrorHandlingPolicy implements ErrorHandlingPolicy {
   @Override
   public void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection, final int retryCount) {
-    //Do nothing
+    if (retryCount == 0) {
+      throw new RuntimeException(error);
+    } else {
+      throw new RetriableException(error);
+    }
   }
 }

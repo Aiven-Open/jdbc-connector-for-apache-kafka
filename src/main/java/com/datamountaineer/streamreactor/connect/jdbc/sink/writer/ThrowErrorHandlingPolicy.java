@@ -26,7 +26,7 @@ import java.util.Collection;
  */
 public final class ThrowErrorHandlingPolicy implements ErrorHandlingPolicy {
   @Override
-  public void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection) {
+  public void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection, final int retryCount) {
     throw new RuntimeException(error);
   }
 
