@@ -14,7 +14,6 @@
  * limitations under the License.
  **/
 
-
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
@@ -38,12 +37,12 @@ public final class JdbcSinkSettings {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkSettings.class);
   private final boolean batching;
   private final String connection;
-  private final String database;
   private final String user;
   private final String password;
   private final List<FieldsMappings> mappings;
   private final ErrorPolicyEnum errorPolicy;
   private final InsertModeEnum insertMode;
+  private final int maxRetries;
 
   /**
    * Creates a new instance of JdbcSinkSettings
@@ -55,13 +54,13 @@ public final class JdbcSinkSettings {
    * @param insertMode  - Specifies how the data is inserted into RDBMS
    */
   public JdbcSinkSettings(String connection,
-                          String database,
                           String user,
                           String password,
                           List<FieldsMappings> mappings,
                           boolean batching,
                           ErrorPolicyEnum errorPolicy,
-                          InsertModeEnum insertMode) {
+                          InsertModeEnum insertMode,
+                          int maxRetries) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
 
     this.connection = connection;
@@ -71,11 +70,11 @@ public final class JdbcSinkSettings {
     this.batching = batching;
     this.errorPolicy = errorPolicy;
     this.insertMode = insertMode;
-    this.database = database;
+    this.maxRetries = maxRetries;
   }
 
-  public String getDatabase() {
-    return database;
+  public int getRetries() {
+    return maxRetries;
   }
 
   public String getConnection() {
@@ -155,16 +154,15 @@ public final class JdbcSinkSettings {
       }
     }
 
-
     return new JdbcSinkSettings(
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_URI),
-            config.getString(JdbcSinkConfig.DATABASE),
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
             config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
             fieldsMappings,
             config.getBoolean(JdbcSinkConfig.DATABASE_IS_BATCHING),
             ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY)),
-            insertMode);
+            insertMode,
+            config.getInt(JdbcSinkConfig.MAX_RETRIES));
   }
 
   private static List<FieldsMappings> getTablesMappings(final JdbcSinkConfig config) {

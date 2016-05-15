@@ -33,12 +33,9 @@ public interface ErrorHandlingPolicy {
    * @param error      - The error raised when the insert failed
    * @param connection - The database connection instance
    */
-  void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection);
+  void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection, final int retryCount);
 }
 
-/**
- * Helper class for creating new instances of ErrorHandlingPolicy.
- */
 final class ErrorHandlingPolicyHelper {
   /**
    * Creates a new instance of ErrorHandling policy given the enum value.
@@ -53,10 +50,14 @@ final class ErrorHandlingPolicyHelper {
       case THROW:
         return new ThrowErrorHandlingPolicy();
 
+      case RETRY:
+        return new RetryErrorHandlingPolicy();
+
       default:
         throw new RuntimeException(value + " error handling policy is not recognized.");
     }
 
   }
 }
+
 

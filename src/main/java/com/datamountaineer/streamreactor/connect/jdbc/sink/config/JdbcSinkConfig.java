@@ -37,14 +37,27 @@ public class JdbcSinkConfig extends AbstractConfig {
     super(configDef, props);
   }
 
+  public final static String EXPORT_MAPPINGS = "connect.jdbc.sink.export.mappings";
+  public final static String EXPORT_MAPPING_DOC = "Specifies to the mappings of topic to table. Additionally which fields" +
+      "to select from the source topic and their mappings to columns in the target table." +
+      "Multiple mappings can set array style, comma separated." +
+      "" +
+      "For example [ \n" +
+      " \"TOPIC1:TABLE1;field1,field5,field7 as field7000\", \n" +
+      " \"TOPIC2:TABLE2;field1,field2\",  \n" +
+      " \"TOPIC3:TABLE3;*\"]" +
+      "" +
+      "The first element specifies map TOPIC1 to TABLE1 and select only field1, field2 and field7 from the topic payload. " +
+      "Field7 is mapped to field7000." +
+      "" +
+      "The second element specifies TOPIC2 to TABLE2 and select only field1 and field2 from the topic payload" +
+      "" +
+      "The last mappings specifies map TOPIC3 to TABLE3 and select all fields from the topic payload.";
+
   public final static String TABLE_MAPPINGS_FORMAT = "connect.jdbc.sink.table.%s.mappings";
 
   public final static String DATABASE_CONNECTION_URI = "connect.jdbc.connection.uri";
   public final static String DATABASE_CONNECTION_URI_DOC = "Specifies the JDBC database connection URI.";
-
-  public final static String DATABASE = "connect.jdbc.sink.database";
-  public final static String DATABASE_DOC = "The database to connect to. Used for table monitoring so must be set here " +
-          String.format("and in %s", DATABASE_CONNECTION_URI);
 
   public final static String DATABASE_CONNECTION_USER = "connect.jdbc.connection.user";
   public final static String DATABASE_CONNECTION_USER_DOC = "Specifies the JDBC connection user.";
@@ -65,8 +78,16 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public final static String ERROR_POLICY = "connect.jdbc.sink.error.policy";
   public final static String ERROR_POLICY_DOC = "Specifies the action to be taken if an error occurs while inserting the data.\n" +
-          "There are two available options: <noop> - the error is swallowed <throw> - the error is allowed to propagate. \n" +
+          "There are two available options: \n" +
+          "NOOP - the error is swallowed \n" +
+          "THROW - the error is allowed to propagate. \n" +
+          "RETRY - The exception causes the Connect framework to retry the message. The number of retries is based on \n" +
           "The error will be logged automatically";
+
+  public final static String MAX_RETRIES = "connect.jdbc.sink.max.retries";
+  public final static String MAX_RETRIES_DOC = String.format("The maximum number of a message is retried. Only valid for %s" +
+      " set to %s", ERROR_POLICY, ErrorPolicyEnum.RETRY.toString());
+  private final static String MAX_RETRIES_DEFAULT = "10";
 
   public final static String INSERT_MODE = "connect.jdbc.sink.mode";
   public final static String INSERT_MODE_DOC = "Specifies how the data should be landed into the RDBMS. Two options are \n" +
@@ -94,7 +115,6 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final static ConfigDef getConfigDef() {
     return new ConfigDef()
             .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
-            .define(DATABASE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_DOC)
             .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
             .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
             .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)
@@ -102,6 +122,7 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
             .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
             .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
-            .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC);
+            .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC)
+            .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC);
   }
 }
