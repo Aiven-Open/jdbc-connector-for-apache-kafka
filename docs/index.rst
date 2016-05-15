@@ -177,10 +177,10 @@ directory. If you have installed from Debian or RPM packages, the connector will
 be installed in the path given above under the directory where you unzipped the Confluent
 Platform archive.
 
-Alternatively, you can set the ``CLASSPATH`` variable before running ``copycat-standalone`` or
-``copycat-distributed``. For example,::
+Alternatively, you can set the ``CLASSPATH`` variable before running ``connect-standalone`` or
+``connect-distributed``. For example::
 
-   $ CLASSPATH=/usr/local/firebird/* ./bin/copycat-distributed ./config/copycat-distributed.properties
+   $ CLASSPATH=/usr/local/firebird/* ./bin/connect-distributed ./config/connect-distributed.properties
 
 would add the JDBC driver for the Firebird database, located in ``/usr/local/firebird``, and allow
 you to use JDBC connection URLs like
@@ -314,6 +314,20 @@ Configuration Options
 
   * Type: long
   * Default: 60000
+  * Importance: low
+
+``timestamp.delay.interval.ms``
+  How long to wait after a row with certain timestamp appears before we include it in the result. You may choose to add some delay to allow transactions with earlier timestamp to complete. The first execution will fetch all available records (i.e. starting at timestamp 0) until current time minus the delay. Every following execution will get data from the last time we fetched until current time minus the delay.
+
+  * Type: long
+  * Default: 0
+  * Importance: low
+
+``validate.non.null``
+  By default, the JDBC connector will validate that all incrementing and timestamp tables have NOT NULL set for the columns being used as their ID/timestamp. If the tables don't, JDBC connector will fail to start. Setting this to false will disable these checks.
+
+  * Type: boolean
+  * Default: true
   * Importance: low
 
 
