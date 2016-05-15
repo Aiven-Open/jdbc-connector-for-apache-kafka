@@ -82,8 +82,6 @@ public class JdbcDbWriterTest {
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
             10);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
-            InsertModeEnum.INSERT);
 
     Map<String, DbTableColumn> columnMap = new HashMap<>();
     columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
@@ -113,8 +111,7 @@ public class JdbcDbWriterTest {
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
             10);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
-            InsertModeEnum.INSERT);
+
     Map<String, DbTableColumn> columnMap = new HashMap<>();
     columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
     columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
@@ -144,9 +141,7 @@ public class JdbcDbWriterTest {
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
             10
-        );
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
-            InsertModeEnum.INSERT);
+    );
 
     Map<String, DbTableColumn> columnMap = new HashMap<>();
     columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
@@ -177,8 +172,6 @@ public class JdbcDbWriterTest {
             ErrorPolicyEnum.THROW,
             InsertModeEnum.INSERT,
             10);
-    JdbcDbWriter writer = JdbcDbWriter.from(settings);
-            InsertModeEnum.INSERT);
 
     Map<String, DbTableColumn> columnMap = new HashMap<>();
     columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
@@ -658,7 +651,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
-            new ThrowErrorHandlingPolicy(),10);
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -809,7 +802,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
-            new ThrowErrorHandlingPolicy(),10);
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -935,7 +928,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 
@@ -1030,7 +1023,7 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy());
+            new ThrowErrorHandlingPolicy(), 10);
 
     writer.write(records);
 

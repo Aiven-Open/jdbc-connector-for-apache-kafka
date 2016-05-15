@@ -26,7 +26,6 @@ public class PreparedStatementBuilderHelperTest {
     props.put(JAR_FILE, "jdbc.jar");
     props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
     props.put(TOPIC_TABLE_MAPPING, "topic1=tableA,topic2=tableNotPresent");
-    props.put(DATABASE, "TEST_DB");
 
     JdbcSinkConfig config = JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
