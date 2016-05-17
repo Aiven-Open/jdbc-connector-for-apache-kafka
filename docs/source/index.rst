@@ -133,7 +133,7 @@ The sink supports topic routing that allows mapping the messages from topics to 
 a topic called "bloomberg_prices" to a table called "prices". This mapping is set in the
 ``connect.jdbc.sink.export.mappings`` option.
 
-.. warning::
+.. tip::
 
     Explicit mapping of topics to tables is required. If not present the sink will not start and fail validation checks.
 
