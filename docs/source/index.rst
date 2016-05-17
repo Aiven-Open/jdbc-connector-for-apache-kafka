@@ -166,7 +166,7 @@ source topic.
     field mappings it is assumed the user is not interested in upstream changes. For example they maybe tapping into a
     pipeline for a Kafka stream job and not be intended as the final recipient of the stream.
 
-    If a upstream field is removed and the topic is not following the Schema Registries evolution rules, .i.e. not
+    If a upstream field is removed and the topic is not following the Schema Registries evolution rules .i.e. not
     full or backwards compatible, any errors will default to the error policy. If schema evolution rules have been followed
     the missing field will return the default value set in the schema. A warning will be logged if the schema version
     changes.
