@@ -1,11 +1,10 @@
 Kafka Connect JDBC Sink
 =======================
 
-Kafka Connect JDBC Sink is a connector to write data from Kafka to a
-sink target that supports JDBC.
+Kafka Connect JDBC Sink is a connector to write data from Kafka to a sink target that supports JDBC.
 
 .. toctree::
-   :maxdepth: 3
+    :maxdepth: 3
 
 Prerequisites
 -------------
@@ -35,26 +34,25 @@ Starting the Sink Connector (Distributed)
 
 A start in distributed mode.
 
-.. code:: bash
+.. sourcecode:: bash
 
     ➜  bin/connect-distributed \
     ➜  etc/schema-registry/connect-avro-distributed.properties 
 
-Once the connector has started lets use the kafka-connect-tools cli to
-post in our distributed properties file.
+Once the connector has started lets use the kafka-connect-tools cli to post in our distributed properties file.
 
-.. code:: bash
+.. sourcecode:: bash
 
     ➜  java -jar build/libs/kafka-connect-cli-0.2-all.jar \
     ➜  create jdbc-sink < jdbc-sink-distributed-orders.properties 
 
 Now check the logs to see if we started the sink.
 
-... code:: bash
+... sourcecode:: bash
 
 Now check the database
 
-... code:: bash
+... sourcecode:: bash
 
 Features
 --------
@@ -62,17 +60,75 @@ Features
 Error Polices
 ~~~~~~~~~~~~~
 
-Insert Mode
+The sink has three error policies that determine how failed writes to the target database are handled.
+
+**THROW** Any error on write to the target database will be propagated up and processing stopped. This is the default
+behaviour.
+
+**NOOP** Any error on write to the target database is ignore and processing continues. **This can lead to data loss.**
+
+**RETRY** Any error on write to the target database causes the RetryIterable exception to be thrown. This causes the
+Kafka connect framework to pause and replay the message. Offsets are not committed. For example, if the table is offline,
+by accident or accidentally modified or even having a DDL statement applied cause a write failure, the message can be
+replayed.
+
+The error policies effect the behaviour of the schema evolution characteristics of the sink. See the schema evolution
+section for more information.
+
+Write Modes
 ~~~~~~~~~~~
 
-Update Mode
-~~~~~~~~~~~
+The sink supports both **insert** and **upsert** modes.
+
+In **insert** the sink prepares insert statements to execute either in batch transactions or individually dependent on 
+the ``connect.jdbc.sink.batching.enabled`` setting. Typically you would use this in append only tables such as ledgers. 
+Combined with the error policy set with ``connect.jdbc.sink.error.policy``, this allows for idempotent writes. For
+example, sent to NOOP, violations of primary keys would be rejected by the database and sink would log the error but
+continue processing.
+
+In **update** mode the sink prepares upsert statements, the exactly syntax is dependent on the target database. 
+The sql dialect is obtained from the connection uri. When the sink tries to write it executes the appropriate upsert
+statement, for example with MySQL it will use the
+`ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_ to apply an update if a key
+constraint is triggered. If the update fails the sink fails back to the error policy.
+
+The following dialects and upsert statements are supported:
+
+1.  MySQL - `ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_
+2.  Oracle - `MERGE <https://docs.oracle.com/cd/B28359_01/server.111/b28286/statements_9016.htm>`_. 
+    This requires knowledge for the primary keys to build the merge statement. The database metadata is queries 
+    to retrieve this.
+3.  MSSQL - `MERGE <https://msdn.microsoft.com/en-us/library/bb510625.aspx>`_.
+    This requires knowledge for the primary keys to build the merge statement. The database metadata is queries 
+    to retrieve this.
+4.  Postgre - 9.5 and above.
+
+
+Topic Routing
+~~~~~~~~~~~~~
+
+The sink supports topic routing that allows mapping the messages from topics to a specific table. For example map
+a topic called "bloomberg_prices" to a table called "prices". This mapping is set in the
+``connect.jdbc.sink.export.mappings`` option.
+
+.. warning::
+
+    Explicit mapping of topics to tables is required. If not present the sink will not start and fail validation checks.
 
 Field Selection
 ~~~~~~~~~~~~~~~
 
-Topic Routing
-~~~~~~~~~~~~~
+The sink supports selecting fields from the source topic, selecting all fields and mapping of this fields to columns 
+in the target table. For example map a field in the topic called "qty" to a column called "quantity" in the target
+table.
+
+All fields can be selected by using "*" in the field part of ``connect.jdbc.sink.export.mappings``.
+
+.. note::
+
+    Specifying * for field mappings means select and try to map all fields in the topic to matching fields in the target
+    table. Leaving the column name empty means trying to map to a column in the target table with the same name as the
+    field in the source topic.
 
 Schema Evolution
 ~~~~~~~~~~~~~~~~
@@ -80,130 +136,196 @@ Schema Evolution
 Configuration
 -------------
 
-The JDBC connector gives you quite a bit of flexibility in the databases you can export data to and how that data is exported. This section first
-describes how to access databases whose drivers are not included with Confluent Platform, then gives a few example configuration files thatcover common scenarios, then provides an exhaustive description of the available configuration options.
+The JDBC connector gives you quite a bit of flexibility in the databases you can export data to and how that data is
+exported. This section first describes how to access databases whose drivers are not included with Confluent Platform,
+then gives a few example configuration files that cover common scenarios, then provides an exhaustive description of the
+available configuration options.
 
 JDBC Drivers
 ~~~~~~~~~~~~
 
-The JDBC connector implements the data copying functionality on the
-generic JDBC APIs, but relies on JDBC drivers to handle the
-database-specific implementation of those APIs. Confluent Platform ships
-with a few JDBC drivers, but if the driver for your database is not
-included you will need to make it available via the ``CLASSPATH``.
+The JDBC connector implements the data copying functionality on the generic JDBC APIs, but relies on JDBC drivers to
+handle the database-specific implementation of those APIs. Confluent Platform ships with a few JDBC drivers, but if the
+driver for your database is not included you will need to make it available via the ``CLASSPATH``.
 
-One option is to install the JDBC driver jar alongside the connector.
-The packaged connector is installed in the
-``share/java/kafka-connect-jdbc`` directory, relative to the
-installation directory. If you have installed from Debian or RPM
-packages, the connector will be installed in
-``/usr/share/java/kafka-connect-jdbc``. If you installed from zip or tar
-files, the connector will be installed in the path given above under the
-directory where you unzipped the Confluent Platform archive.
+One option is to install the JDBC driver jar alongside the connector. The packaged connector is installed in the
+``share/java/kafka-connect-jdbc`` directory, relative to the installation directory. If you have installed from Debian
+or RPM packages, the connector will be installed in ``/usr/share/java/kafka-connect-jdbc``. If you installed from zip or
+tar files, the connector will be installed in the path given above under the directory where you unzipped the Confluent
+Platform archive.
 
 Alternatively, you can set the ``CLASSPATH`` variable before running For
 example:
 
-.. code:: bash
+.. sourcecode:: bash
 
     $ CLASSPATH=/usr/local/firebird/* ./bin/copycat-distributed ./config/copycat-distributed.properties
 
-would add the JDBC driver for the Firebird database, located in
-``/usr/local/firebird``, and allow you to use JDBC connection URLs like
-``jdbc:firebirdsql:localhost/3050:/var/lib/firebird/example.db``.
+would add the JDBC driver for the Firebird database, located in ``/usr/local/firebird``, and allow you to use JDBC
+connection URLs like ``jdbc:firebirdsql:localhost/3050:/var/lib/firebird/example.db``.
 
 JDBC Sink Connector Configuration Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``connect.jdbc.connection.uri``
 
+Specifies the JDBC database connection URI.
+
 * Type: string
 * Importance: high
-
-Specifies the JDBC database connection URI.
 
 ``connect.jdbc.connection.user``
 
+Specifies the JDBC connection user.
+
 * Type: string
 * Importance: high
-  
-Specifies the JDBC connection user
 
 ``connect.jdbc.connection.password``
+
+Specifies the JDBC connection password.
 
 * Type: password (shows ``[hidden]``) in logs
 * Importance: high
 
-Specifies the JDBC connection password.
-
 ``connect.jdbc.sink.batching.enabled``
+
+Specifies if a given sequence of SinkRecords are batched in a transaction or not. If ``true`` the data insert is batched
+else for each record a sql statement is created.
 
 * Type: boolean
 * Importance: high
-
-Specifies if a given sequence of SinkRecords are batched or not. If ``true`` the data insert is batched else for each record a sql statement is created.";
+* Default : true
 
 ``connect.jdbc.sink.driver.jar``
+
+Specifies the jar file to be loaded at runtime containing the jdbc driver.
   
 * Type: string
 * Importance: high
 
-Specifies the jar file to be loaded at runtime containing the jdbc driver.
-
 ``connect.jdbc.sink.driver.manager.class``
+
+Specifies the canonical class name for the driver manager.
 
 * Type: string
 * Importance: high
- 
-Specifies the canonical class name for the driver manager.
 
 ``connect.jdbc.sink.error.policy``
+
+Specifies the action to be taken if an error occurs while inserting the data.
+
+There are three available options, **noop**, the error is swallowed, **throw**, the error is allowed to propagate and retry. 
+For **retry** the Kafka message is redelivered up to a maximum number of times specified by the
+``connect.jdbc.sink.max.retries`` option.
+
+The errors will be logged automatically.
 
 * Type: string
 * Importance: high
 * Default: ``throw``
-  
-Specifies the action to be taken if an error occurs while inserting the data.There are two available options: ``noop`` - the error is swallowed ``throw`` - the error is allowed to propagate. The error will be logged automatically
+
+``connect.jdbc.sink.max.retries``
+
+The maximum number of a message is retried. Only valid when the ``connect.jdbc.sink.error.policy`` is set to ``retry``.
+
+* Type: string
+* Importance: high
+* Default: 10
+
+The maximum number of a message is retried. Only valid when the ``connect.jdbc.sink.error.policy`` is set to **retry**.
 
 ``connect.jdbc.sink.mode``
- 
-* Type: string
-* Importance: high
 
-Specifies how the data should be landed into the RDBMS. Two options are supported: ``INSERT`` (default value) and ``UPSERT``
 
- ``connect.jdbc.sink.topics.to.tables``
+Specifies how the data should be landed into the RDBMS. Two options are supported: **insert** **upsert**. 
 
 * Type: string
 * Importance: high
+* Default: insert
 
-Specifies which topic maps to which table.Example:topic1=table1;topic2=table2.
+``connect.jdbc.sink.export.mappings``
 
-``connect.jdbc.sink.table.[table].mappings``
-
-* Type: string
-* Importance: high
-
-Specifies which fields and there mapping to table columns should be extracted from the SinkRecords.
+Specifies to the mappings of topic to table. Additionally which fields to select from the source topic and their mappings
+to columns in the target table. Multiple mappings can set comma separated wrapped in {}.
 
 Examples:
 
-Extract only field1 and field2 from topic A and field3 from topic B
+.. sourcecode:: bash
 
-.. code:: bash
+    {TOPIC1:TABLE1;field1->col1,field5->col5,field7->col10}
+    {TOPIC2:TABLE2;field1->,field2->}
+    {TOPIC3:TABLE3;*}
 
-    connect.jdbc.sink.table.topicA.mappings=field1,field2
-    connect.jdbc.sink.table.topicB.mappings=field3
+* Type: string
+* Importance: high
 
-Extract only field1 and field2 from topic A and field3 from topic B but with alias mapping to different columns. Field 1 from topic A goes to colZ and field 3 from topic B goes to column Y. The topic to table mapping is controlled by ``connect.jdbc.sink.topics.to.tables``
+.. warning::
 
-.. code:: bash
+    Explicit mapping of topics to tables is required. If not present the sink will not start and fail validation checks.
 
-    connect.jdbc.sink.table.topicA.mappings=field1=colZ,field2
-    connect.jdbc.sink.table.topicB.mappings=field3=colY
+.. note::
+
+    Specifying * for field mappings means select and try to map all fields in the topic to matching fields in the target
+    table. Leaving the column name empty means trying to map to a column in the target table with the same name as the
+    field in the source topic.
 
 Example Configurations
 ~~~~~~~~~~~~~~~~~~~~~~
+
+The below example gives a typical example, specifying the connection details, error policy and if batching is enable.
+The most complicated option is the ``connect.jdbc.sink.export.map``. This example has three mappings.
+
+.. sourcecode:: bash
+
+    #Name for the sink connector, must be unique in the cluster
+    name=jdbc-datamountaineer-1
+    #Name of the Connector class
+    connector.class=com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcSinkConnector
+    #Maximum number of tasks the Connector can start
+    tasks.max=5
+    #Input topics (Required by Connect Framework)
+    topics=orders,otc_trades,greeks,bloomberg_prices
+    #Target database connection URI, MUST INCLUDE DATABASE
+    connect.jdbc.connection.uri=jdbc:mariadb://mariadb.landoop.com:3306/jdbc_sink_03
+    #Target database username and password
+    connect.jdbc.connection.user=testjdbcsink
+    connect.jdbc.connection.password=datamountaineers
+    #Location of the JDBC jar
+    connect.jdbc.sink.driver.jar=/home/datamountaineers/connect-jdbc/connect/connect-hdfs-to-jdbc-wip/mariadb-java-client-1.4.4.jar
+    #Name of the JDBC Driver class to load
+    connect.jdbc.sink.driver.manager.class=org.mariadb.jdbc.Driver
+    #Error policy to handle failures (default is ``throw``)
+    connect.jdbc.sink.error.policy=THROW
+    #Enable batching, all records the a task receives each time it's called are batched together in one transaction
+    connect.jdbc.sink.batching.enabled=true
+    #The topic to table mappings
+    connect.jdbc.sink.export.map={orders:orders_table;product->product,qty->quantity,price->},{otc_trades:trades;*},{bloomberg_prices:prices;source->,lst_bid->}
+
+For the first mapping **{orders:orders_table;product->product,qty->quantity,price->}** tells the sink the following:
+
+1. Map the orders topic to a table called orders_table.
+2. Select fields product, qty and price from the topic.
+3. Map a field called product from the orders topic to a column called product in the orders_table.
+4. Map a field called qty from the orders topic to a column called quantity in the orders_table.
+5. Map a field called price from the orders topic to a column called price in the orders_tables. *Here the target column is left blank to the field name is taken*.
+
+For the second mapping **{otc_trades:trades;*}** tells the sink the following:
+
+1. Map the otc_trades topic to a table called trades.
+2. Select all fields from the topics message and map them against matching column names in the trades table. **The * indicates select all fields from the topic.**
+
+The final mapping **{bloomberg_prices:prices;source->,lst_bid->}** tells the sink the following:
+
+1. Map the bloomberg_prices topic to a table called prices.
+2. Select fields source and lst_bid from the topic.
+3. Map a field called source from the bloomberg_prices topic to a column called source in the prices table.
+4. Map a field called lst_bid from the bloomberg_prices topic to a column called source in the prices table.
+
+.. note::
+
+    Specifying * for field mappings means select and try to map all fields in the topic to matching fields in the target table.
+    Leaving the column name empty means trying to map to a column in the target table with the same name as the field in the source topic.
 
 Schema Evolution
 ----------------

@@ -40,21 +40,23 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final static String EXPORT_MAPPINGS = "connect.jdbc.sink.export.mappings";
   public final static String EXPORT_MAPPING_DOC = "Specifies to the mappings of topic to table. Additionally which fields" +
       "to select from the source topic and their mappings to columns in the target table." +
-      "Multiple mappings can set array style, comma separated." +
+      "Multiple mappings can set comma separated wrapped in {}." +
       "" +
-      "For example [ \n" +
-      " \"TOPIC1:TABLE1;field1,field5,field7 as field7000\", \n" +
-      " \"TOPIC2:TABLE2;field1,field2\",  \n" +
-      " \"TOPIC3:TABLE3;*\"]" +
+      "Examples:" +
+      "{TOPIC1:TABLE1;field1->col1,field5->col5,field7->col10}" +
+      "{TOPIC2:TABLE2;field1->,field2->}" +
+      "{TOPIC3:TABLE3;*}" +
       "" +
-      "The first element specifies map TOPIC1 to TABLE1 and select only field1, field2 and field7 from the topic payload. " +
-      "Field7 is mapped to field7000." +
+      "The first mapping specifies map TOPIC1 to TABLE1 and select only field1, field2 and field7 from the topic payload. " +
+      "Field1 is mapped to col1, field5 to col5 and field7 to col10." +
       "" +
-      "The second element specifies TOPIC2 to TABLE2 and select only field1 and field2 from the topic payload" +
+      "The second mapping specifies TOPIC2 to TABLE2 and select only field1 and field2 from the topic payload" +
+      "Map the fields to matching column names in TABLE2." +
       "" +
-      "The last mappings specifies map TOPIC3 to TABLE3 and select all fields from the topic payload.";
-
-  public final static String TABLE_MAPPINGS_FORMAT = "connect.jdbc.sink.table.%s.mappings";
+      "The third mapping specifies map TOPIC3 to TABLE3 and select all fields from the topic payload." +
+      "" +
+      "For fields mappings if `*` is supplied all fields are selected from the sink record. If not column name is provided" +
+      "the fields name is used. Topic to table mapping must be explict, the table must be provided.";
 
   public final static String DATABASE_CONNECTION_URI = "connect.jdbc.connection.uri";
   public final static String DATABASE_CONNECTION_URI_DOC = "Specifies the JDBC database connection URI.";
@@ -93,25 +95,9 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final static String INSERT_MODE_DOC = "Specifies how the data should be landed into the RDBMS. Two options are \n" +
           "supported:INSERT(default value) and UPSERT.";
 
-  public final static String TOPIC_TABLE_MAPPING = "connect.jdbc.sink.topics.to.tables";
-  public final static String TOPIC_TABLE_MAPPING_DOC = "Specifies which topic maps to which table.Example:topic1=table1;topic2=table2 \n";
-
   private final static String DEFAULT_ERROR_POLICY = "throw";
   private final static String DEFAULT_INSERT_MODE = "INSERT";
 
-  /*
-  public final static ConfigDef config = new ConfigDef()
-          .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
-          .define(DATABASE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_DOC)
-          .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
-          .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
-          .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)
-          .define(DRIVER_MANAGER_CLASS, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
-          .define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
-          .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
-          .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
-          .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC);
-*/
   public final static ConfigDef getConfigDef() {
     return new ConfigDef()
             .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
@@ -119,10 +105,11 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
             .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)
             .define(DRIVER_MANAGER_CLASS, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
-            .define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
+            //.define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
             .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
             .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
             .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC)
+            .define(EXPORT_MAPPINGS, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, EXPORT_MAPPING_DOC)
             .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC);
   }
 }

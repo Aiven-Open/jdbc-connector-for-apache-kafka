@@ -14,15 +14,16 @@
  * limitations under the License.
  **/
 
+
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
-import io.confluent.common.config.ConfigException;
-import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +121,7 @@ public final class JdbcSinkSettings {
    * @param config : The map of all provided configurations
    * @return An instance of JdbcSinkSettings
    */
-  public static JdbcSinkSettings from(final JdbcSinkConfig config) {
+  public static JdbcSinkSettings from(final JdbcSinkConfig config, SinkTaskContext context) {
 
     final String driverClass = config.getString(JdbcSinkConfig.DRIVER_MANAGER_CLASS);
     final File jarFile = new File(config.getString(JdbcSinkConfig.JAR_FILE));
@@ -129,7 +130,14 @@ public final class JdbcSinkSettings {
 
     JdbcDriverLoader.load(driverClass, jarFile);
 
-    final List<FieldsMappings> fieldsMappings = getTablesMappings(config);
+    String rawExportMap = config.getString(JdbcSinkConfig.EXPORT_MAPPINGS);
+
+    if (rawExportMap.isEmpty()) {
+      throw new ConfigException(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set!");
+    }
+
+    final List<FieldsMappings> fieldsMappings = getTopicExportMappings(rawExportMap);
+    //getTablesMappings(config);
 
     InsertModeEnum insertMode;
     try {
@@ -154,92 +162,153 @@ public final class JdbcSinkSettings {
       }
     }
 
+
+    ErrorPolicyEnum policy = ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY).toUpperCase());
+
     return new JdbcSinkSettings(
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_URI),
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
             config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
             fieldsMappings,
             config.getBoolean(JdbcSinkConfig.DATABASE_IS_BATCHING),
-            ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY)),
+            policy,
             insertMode,
             config.getInt(JdbcSinkConfig.MAX_RETRIES));
   }
 
-  private static List<FieldsMappings> getTablesMappings(final JdbcSinkConfig config) {
-    final String fields = config.getString(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
+//  private static List<FieldsMappings> getTablesMappings(final JdbcSinkConfig config) {
+//    final String fields = config.getString(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
+//
+//    if (fields == null || fields.trim().length() == 0) {
+//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
+//    }
+//
+//    return Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, FieldsMappings>() {
+//      @Override
+//      public FieldsMappings apply(String input) {
+//        if (input.trim().length() == 0)
+//          throw new ConfigException("Empty topic to table mapping found");
+//        //input is topic=table
+//        final String[] arr = input.split("=");
+//        if (arr.length != 2)
+//          throw new ConfigException(input + " is not a valid topic to table mapping");
+//
+//        final String tableName = arr[1].trim();
+//        if (tableName.length() == 0)
+//          throw new ConfigException(input + " is not a valid topic to table mapping");
+//
+//        final String tableMappings = config.getString(String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, tableName));
+//
+//        if (tableMappings == null || tableMappings.trim().length() == 0) {
+//          return new FieldsMappings(tableName, arr[0].trim());
+//        }
+//        return FieldsMappings.from(arr[1].trim(), arr[0].trim(), tableMappings.trim());
+//      }
+//    });
+//  }
 
-    if (fields == null || fields.trim().length() == 0) {
-      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
-    }
+  /**
+   * Get a list of the export mappings for a mapping.
+   *
+   * @param raw the raw input
+   * */
+  public static List<FieldsMappings> getTopicExportMappings(String raw) {
+    List<FieldsMappings> fieldsMappingsList = Lists.newArrayList();
+    String[] rawMappings = raw.split("\\},");
 
-    return Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, FieldsMappings>() {
-      @Override
-      public FieldsMappings apply(String input) {
-        if (input.trim().length() == 0)
-          throw new ConfigException("Empty topic to table mapping found");
-        //input is topic=table
-        final String[] arr = input.split("=");
-        if (arr.length != 2)
-          throw new ConfigException(input + " is not a valid topic to table mapping");
+    for (String rawMapping: rawMappings) {
+      String[] split = rawMapping
+                          .replace("{", "")
+                          .replace("}", "")
+                          .trim()
+                          .split(";");
 
-        final String tableName = arr[1].trim();
-        if (tableName.length() == 0)
-          throw new ConfigException(input + " is not a valid topic to table mapping");
+      if (split.length != 2) {
+        throw new ConfigException(String.format(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set correctly, %s", rawMapping));
+      }
 
-        final String tableMappings = config.getString(String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, tableName));
+      //get the topic to table mapping and field to column mapping
+      String[] topicToTable = split[0].split(":");
+      String[] fieldToCol = split[1].split(",");
 
-        if (tableMappings == null || tableMappings.trim().length() == 0) {
-          return new FieldsMappings(tableName, arr[0].trim());
+      //enforce topic to table mapping
+      if (topicToTable.length != 2) {
+        throw new ConfigException(String.format(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set correctly, %s. Missing " +
+            "either the table or topic.", rawMapping));
+      }
+
+      //break out table and topic
+      String topic = topicToTable[0].trim();
+      String table = topicToTable[1].trim();
+
+      Map<String, FieldAlias> mappings = Maps.newHashMap();
+
+      //all fields?
+      if (!split[1].equals("*")) {
+        //build field to column mappings
+        for (String mapping : fieldToCol) {
+          String[] colSplit = mapping.split("->");
+          String fieldName = colSplit[0].trim();
+          String colName;
+
+          //no mapping but field added
+          if (colSplit.length == 1) {
+            colName = colSplit[0].trim();
+          } else {
+            colName = colSplit[1].trim();
+          }
+          mappings.put(fieldName, new FieldAlias(colName, false));
         }
-        return FieldsMappings.from(arr[1].trim(), arr[0].trim(), tableMappings.trim());
       }
-    });
+
+      fieldsMappingsList.add(new FieldsMappings(table, topic, true, mappings));
+    }
+    return fieldsMappingsList;
   }
 
-  public static JdbcSinkConfig fixConfigLimitationOnDynamicProps(Map<String, String> props) {
-    if (!props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING)) {
-      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is missing.");
-    }
-    final String topicToTables = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
-    if (topicToTables == null || topicToTables.trim().length() == 0) {
-      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
-    }
-
-    final List<String> tables = Lists.transform(Lists.newArrayList(topicToTables.split(",")), new Function<String, String>() {
-      @Override
-      public String apply(String input) {
-        if (input.trim().length() == 0)
-          throw new ConfigException("Empty topic to table mapping found");
-        //input is topic=table
-        final String[] arr = input.split("=");
-        if (arr.length != 2)
-          throw new ConfigException(input + " is not a valid topic to table mapping");
-
-        final String tableName = arr[1].trim();
-        if (tableName.length() == 0)
-          throw new ConfigException(input + " is not a valid topic to table mapping");
-        return tableName;
-      }
-    });
-
-    //now create a new ConfigDef to have the dynamic values defined otherwise we will end up with exception thrown
-    //in the kafka connect api
-    ConfigDef configDefFixed = JdbcSinkConfig.getConfigDef();
-
-    //Parse and check the configuration
-    configDefFixed.parse(props);
-
-    for (String table : tables) {
-      final String key = String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table);
-      logger.info(String.format("Defining dynamic key %s", key));
-      configDefFixed = configDefFixed.define(
-              String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
-              ConfigDef.Type.STRING,
-              null,
-              ConfigDef.Importance.HIGH,
-              String.format("Defines the mapping for table:%s", table));
-    }
-
-    return new JdbcSinkConfig(configDefFixed, props);
-  }
+//  public static JdbcSinkConfig fixConfigLimitationOnDynamicProps(Map<String, String> props) {
+//    if (!props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING)) {
+//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is missing.");
+//    }
+//    final String topicToTables = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
+//    if (topicToTables == null || topicToTables.trim().length() == 0) {
+//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
+//    }
+//
+//    final List<String> tables = Lists.transform(Lists.newArrayList(topicToTables.split(",")), new Function<String, String>() {
+//      @Override
+//      public String apply(String input) {
+//        if (input.trim().length() == 0)
+//          throw new ConfigException("Empty topic to table mapping found");
+//        //input is topic=table
+//        final String[] arr = input.split("=");
+//        if (arr.length != 2)
+//          throw new ConfigException(input + " is not a valid topic to table mapping");
+//
+//        final String tableName = arr[1].trim();
+//        if (tableName.length() == 0)
+//          throw new ConfigException(input + " is not a valid topic to table mapping");
+//        return tableName;
+//      }
+//    });
+//
+//    //now create a new ConfigDef to have the dynamic values defined otherwise we will end up with exception thrown
+//    //in the kafka connect api
+//    ConfigDef configDefFixed = JdbcSinkConfig.getConfigDef();
+//
+//    //Parse and check the configuration
+//    configDefFixed.parse(props);
+//
+//    for (String table : tables) {
+//      final String key = String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table);
+//      logger.info(String.format("Defining dynamic key %s", key));
+//      configDefFixed = configDefFixed.define(
+//              String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
+//              ConfigDef.Type.STRING,
+//              ConfigDef.Importance.HIGH,
+//              String.format("Defines the mapping for table:%s", table));
+//    }
+//
+//    return new JdbcSinkConfig(configDefFixed, props);
+//  }
 }

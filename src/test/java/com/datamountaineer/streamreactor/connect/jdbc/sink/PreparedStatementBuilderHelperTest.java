@@ -1,34 +1,50 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.PreparedStatementBuilderHelper;
-import io.confluent.common.config.ConfigException;
+import com.google.common.collect.*;
+import org.apache.kafka.common.*;
+import org.apache.kafka.common.config.*;
+import org.apache.kafka.connect.sink.*;
 import org.junit.Test;
+import org.mockito.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 public class PreparedStatementBuilderHelperTest {
 
   @Test(expected = ConfigException.class)
   public void shouldThrowAnExceptionIfTheMappedTableDoesntExistInTheDatabase() {
     Map<String, String> props = new HashMap<String, String>();
+    String topic1 = "topic1";
+    String topic2 = "topic2";
+    TopicPartition tp1 = new TopicPartition(topic1, 12);
+    TopicPartition tp2 = new TopicPartition(topic2, 13);
+    HashSet<TopicPartition> assignment = Sets.newHashSet();
+
+    //Set topic assignments, used by the sinkContext mock
+    assignment.add(tp1);
+    assignment.add(tp2);
+
+    //mock the context
+    SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
+    when(context.assignment()).thenReturn(assignment);
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JAR_FILE, "jdbc.jar");
     props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
-    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA,topic2=tableNotPresent");
 
-    JdbcSinkConfig config = JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
+    JdbcSinkConfig config = new JdbcSinkConfig(props);
+        //JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
+    JdbcSinkSettings settings = JdbcSinkSettings.from(config, context);
 
     Map<String, DbTable> tableMap = new HashMap<>();
     tableMap.put("tableA", new DbTable("tableA", new HashMap<String, DbTableColumn>()));

@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 
 public class JdbcDbWriterTest {
 
-  private static final String DB_FILE = "test_db_writer_sqllite.db";
+  private static final String DB_FILE = "test_db_writer_sqllite-jdbc-writer-test.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
 
   static {
@@ -61,7 +61,7 @@ public class JdbcDbWriterTest {
 
   @After
   public void tearDown() {
-    deleteSqlLiteFile();
+    //deleteSqlLiteFile();
   }
 
   private void deleteSqlLiteFile() {
@@ -219,7 +219,7 @@ public class JdbcDbWriterTest {
   @Test
   public void handleSingleStatementPerRecord() throws SQLException {
     String tableName1 = "single_statement_test_1";
-    String createTable1 = "CREATE TABLE " + tableName1 + "(" +
+    String createTable1 = "CREATE TABLE " + tableName1 + " (" +
             "    firstName  TEXT," +
             "    lastName  TEXT," +
             "    age INTEGER," +
@@ -232,10 +232,11 @@ public class JdbcDbWriterTest {
             "    bytes BLOB " +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
 
     String tableName2 = "single_statement_test_2";
-    String createTable2 = "CREATE TABLE " + tableName2 + "(" +
+    String createTable2 = "CREATE TABLE " + tableName2 + " (" +
             "    firstName  TEXT," +
             "    lastName  TEXT," +
             "    age INTEGER," +
@@ -248,6 +249,7 @@ public class JdbcDbWriterTest {
             "    bytes BLOB " +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName2);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable2);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -317,11 +319,7 @@ public class JdbcDbWriterTest {
     map.put(topic2.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, new HashMap<String, FieldAlias>())));
 
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
             new ThrowErrorHandlingPolicy(), 10);
@@ -372,7 +370,7 @@ public class JdbcDbWriterTest {
   @Test
   public void handleSingleStatementPerRecordInsertingSameRecord100Times() throws SQLException {
     String tableName = "single_statement_test_100";
-    String createTable = "CREATE TABLE " + tableName + "(" +
+    String createTable = "CREATE TABLE " + tableName + " (" +
             "    firstName  TEXT," +
             "    lastName  TEXT," +
             "    age INTEGER," +
@@ -385,6 +383,7 @@ public class JdbcDbWriterTest {
             "    bytes BLOB " +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -470,7 +469,7 @@ public class JdbcDbWriterTest {
   @Test
   public void handleBatchedStatementPerRecordInsertingSameRecord100Times() throws SQLException {
     String tableName = "batched_statement_test_100";
-    String createTable = "CREATE TABLE " + tableName + "(" +
+    String createTable = "CREATE TABLE " + tableName + " (" +
             "    firstName  TEXT," +
             "    lastName  TEXT," +
             "    age INTEGER," +
@@ -483,6 +482,7 @@ public class JdbcDbWriterTest {
             "    bytes BLOB " +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -568,7 +568,7 @@ public class JdbcDbWriterTest {
   @Test
   public void handleBatchStatementPerRecord() throws SQLException {
     String tableName = "batched_statement_test";
-    String createTable = "CREATE TABLE " + tableName + "(" +
+    String createTable = "CREATE TABLE " + tableName + " (" +
             "    firstName  TEXT PRIMARY_KEY," +
             "    lastName  TEXT," +
             "    age INTEGER," +
@@ -581,6 +581,7 @@ public class JdbcDbWriterTest {
             "    bytes BLOB " +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -696,7 +697,7 @@ public class JdbcDbWriterTest {
   @Test
   public void handleBatchedUpsert() throws SQLException {
     String tableName1 = "batched_upsert_test_1";
-    String createTable1 = "CREATE TABLE " + tableName1 + "(" +
+    String createTable1 = "CREATE TABLE " + tableName1 + " (" +
             "    firstName  TEXT PRIMARY_KEY," +
             "    lastName  TEXT PRIMARY_KEY," +
             "    age INTEGER," +
@@ -709,7 +710,7 @@ public class JdbcDbWriterTest {
             "    bytes BLOB);";
 
     String tableName2 = "batched_upsert_test_2";
-    String createTable2 = "CREATE TABLE " + tableName2 + "(" +
+    String createTable2 = "CREATE TABLE " + tableName2 + " (" +
             "    firstName  TEXT PRIMARY_KEY," +
             "    lastName  TEXT PRIMARY_KEY," +
             "    age INTEGER," +
@@ -721,7 +722,9 @@ public class JdbcDbWriterTest {
             "    double NUMERIC," +
             "    bytes BLOB);";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName2);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable2);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -845,7 +848,7 @@ public class JdbcDbWriterTest {
   @Test
   public void handleBatchStatementPerRecordWhenThePayloadHasMoreFieldsThanTheTable() throws SQLException {
     String tableName = "batched_statement_more_fields_than_columns_test";
-    String createTable = "CREATE TABLE " + tableName + "(" +
+    String createTable = "CREATE TABLE " + tableName + " (" +
             "    firstName  TEXT PRIMARY_KEY," +
             "    lastName  TEXT," +
             "    age INTEGER," +
@@ -853,6 +856,7 @@ public class JdbcDbWriterTest {
             "    byte  INTEGER" +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -962,12 +966,13 @@ public class JdbcDbWriterTest {
   @Test
   public void handleSingleStatementPerRecordWhenPayloadHasMoreFieldsThanColumnsMapped() throws SQLException {
     String tableName1 = "single_statement_test_with_fields_more_than_columns_1";
-    String createTable1 = "CREATE TABLE " + tableName1 + "(" +
+    String createTable1 = "CREATE TABLE " + tableName1 + " (" +
             "    firstName  TEXT," +
             "    lastName  TEXT," +
             "    age INTEGER" +
             ");";
 
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")

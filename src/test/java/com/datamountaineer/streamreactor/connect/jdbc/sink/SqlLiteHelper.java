@@ -25,6 +25,28 @@ public final class SqlLiteHelper {
     }
   }
 
+  public static void deleteTable(final String uri, final String table) throws SQLException {
+    Connection connection = null;
+    Statement stmt = null;
+    try {
+      connection = DriverManager.getConnection(uri);
+
+      stmt = connection.createStatement();
+      stmt.executeUpdate("DROP TABLE IF EXISTS " + table);
+    } finally {
+      if (stmt != null) {
+        stmt.close();
+      }
+      if (connection != null) {
+        try {
+          connection.close();
+        } catch (SQLException e) {
+
+        }
+      }
+    }
+  }
+
   public static void select(final String uri, final String query, final ResultSetReadCallback callback) throws SQLException {
     Connection connection = null;
     Statement stmt = null;

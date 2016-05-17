@@ -16,7 +16,6 @@ public class JdbcSinkConfigTest {
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JAR_FILE, "jdbc.jar");
     props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
-    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA");
     props.put(DATABASE_IS_BATCHING, "true");
 
     assertEquals(new JdbcSinkConfig(props).getString(ERROR_POLICY), "throw");
@@ -29,7 +28,6 @@ public class JdbcSinkConfigTest {
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JAR_FILE, "jdbc.jar");
     props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
-    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA");
 
     assertEquals(new JdbcSinkConfig(props).getBoolean(DATABASE_IS_BATCHING), true);
   }
@@ -42,7 +40,6 @@ public class JdbcSinkConfigTest {
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JAR_FILE, "jdbc.jar");
     props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
-    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA");
 
     assertEquals(new JdbcSinkConfig(props).getString(INSERT_MODE), "INSERT");
   }

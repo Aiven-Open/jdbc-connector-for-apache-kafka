@@ -16,11 +16,9 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.connector.Task;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,14 +69,14 @@ public final class JdbcSinkConnector extends SinkConnector {
   public void start(Map<String, String> props) {
     final Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
     final String propsStr = mapJoiner.join(props);
-    logger.info("Starting JDBC sink task with " + propsStr);
+    logger.info("Starting JDBC Connector with " + propsStr);
     configProps = props;
 
-    try {
-      JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
-    } catch (Throwable t) {
-      throw new ConnectException("Couldn't start JDBC Sink due to configuration error.", t);
-    }
+//    try {
+//      JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
+//    } catch (Throwable t) {
+//      throw new ConnectException("Couldn't start JDBC Sink due to configuration error.", t);
+//    }
   }
 
   @Override

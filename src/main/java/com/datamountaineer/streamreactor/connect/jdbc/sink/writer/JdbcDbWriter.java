@@ -166,7 +166,7 @@ public final class JdbcDbWriter implements DbWriter {
     final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings, tableMap);
     logger.info("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName());
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
-    logger.info("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName());
+    logger.info(String.format("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName()));
     return new JdbcDbWriter(settings.getConnection(),
             settings.getUser(),
             settings.getPassword(),
