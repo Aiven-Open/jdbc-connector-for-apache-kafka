@@ -295,7 +295,8 @@ Specifies how the data should be landed into the RDBMS. Two options are supporte
 ``connect.jdbc.sink.export.mappings``
 
 Specifies to the mappings of topic to table. Additionally which fields to select from the source topic and their mappings
-to columns in the target table. Multiple mappings can set comma separated wrapped in {}.
+to columns in the target table. Multiple mappings can set comma separated wrapped in {}. Before ``;`` is topic
+to table mappings, after the field mappings.
 
 Examples:
 
