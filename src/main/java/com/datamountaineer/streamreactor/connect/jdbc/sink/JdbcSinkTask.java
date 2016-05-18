@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
+import java.util.Collection;
 
 /**
  * <h1>JdbcSinkTask</h1>
@@ -60,7 +60,7 @@ public class JdbcSinkTask extends SinkTask {
 
     //final JdbcSinkConfig sinkConfig = JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
-    final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig, context);
+    final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
     logger.info("Settings:" + settings.toString());
 
     //Set up the writer

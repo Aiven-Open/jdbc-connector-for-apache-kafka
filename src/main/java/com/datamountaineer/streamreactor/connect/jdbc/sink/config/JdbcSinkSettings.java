@@ -23,7 +23,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,12 +120,13 @@ public final class JdbcSinkSettings {
    * @param config : The map of all provided configurations
    * @return An instance of JdbcSinkSettings
    */
-  public static JdbcSinkSettings from(final JdbcSinkConfig config, SinkTaskContext context) {
+  public static JdbcSinkSettings from(final JdbcSinkConfig config) {
 
     final String driverClass = config.getString(JdbcSinkConfig.DRIVER_MANAGER_CLASS);
     final File jarFile = new File(config.getString(JdbcSinkConfig.JAR_FILE));
-    if (!jarFile.exists())
+    if (!jarFile.exists()) {
       throw new ConfigException(jarFile + " doesn't exist");
+    }
 
     JdbcDriverLoader.load(driverClass, jarFile);
 
@@ -214,10 +214,11 @@ public final class JdbcSinkSettings {
    * */
   public static List<FieldsMappings> getTopicExportMappings(String raw) {
     List<FieldsMappings> fieldsMappingsList = Lists.newArrayList();
-    String[] rawMappings = raw.split("\\},");
+    String[] rawMappings = raw.split("\\}");
 
     for (String rawMapping: rawMappings) {
       String[] split = rawMapping
+                          .replace(",{", "")
                           .replace("{", "")
                           .replace("}", "")
                           .trim()

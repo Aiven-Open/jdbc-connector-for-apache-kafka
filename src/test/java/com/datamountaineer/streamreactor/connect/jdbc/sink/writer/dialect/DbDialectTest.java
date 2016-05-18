@@ -50,4 +50,10 @@ public class DbDialectTest {
     assertEquals(DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass(),
             SqlServerDialect.class);
   }
+
+  @Test
+  public void getPostgreDialect() {
+    assertEquals(DbDialect.fromConnectionString("jdbc:postgre://HOST:1433;DatabaseName=DATABASE").getClass(),
+        PostgreDialect.class);
+  }
 }

@@ -44,7 +44,7 @@ public class PreparedStatementBuilderHelperTest {
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
         //JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config, context);
+    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
 
     Map<String, DbTable> tableMap = new HashMap<>();
     tableMap.put("tableA", new DbTable("tableA", new HashMap<String, DbTableColumn>()));

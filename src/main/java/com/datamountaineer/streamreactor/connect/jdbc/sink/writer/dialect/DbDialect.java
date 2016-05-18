@@ -64,9 +64,11 @@ public abstract class DbDialect {
       case "microsoft:sqlserver":
         return new SqlServerDialect();
 
-
       case "mysql":
         return new MySqlDialect();
+
+      case "postgre":
+        return new PostgreDialect();
 
       default:
         throw new IllegalArgumentException(String.format("%s jdbc is not handled.", protocol));

@@ -36,17 +36,6 @@ public class JdbcSettingsTest {
       e.printStackTrace();
     }
 
-    TopicPartition tp1 = new TopicPartition("topic1", 12);
-    TopicPartition tp2 = new TopicPartition("topic1", 13);
-    HashSet<TopicPartition> assignment = Sets.newHashSet();
-
-    //Set topic assignments, used by the sinkContext mock
-    assignment.add(tp1);
-    assignment.add(tp2);
-
-    SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
-    when(context.assignment()).thenReturn(assignment);
-
     Map<String, String> props = new HashMap<>();
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JAR_FILE, driver);
@@ -54,7 +43,7 @@ public class JdbcSettingsTest {
     props.put(EXPORT_MAPPINGS, selected);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config, context);
+    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -80,7 +69,7 @@ public class JdbcSettingsTest {
     props.put(EXPORT_MAPPINGS, all);
 
     config = new JdbcSinkConfig(props);
-    settings = JdbcSinkSettings.from(config, context);
+    settings = JdbcSinkSettings.from(config);
 
     mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -96,6 +85,26 @@ public class JdbcSettingsTest {
     assertTrue(mappings.get(1).areAllFieldsIncluded());
     cols = mappings.get(1).getMappings();
     assertTrue(cols.isEmpty());
+
+
+    String single = "{topic1:table1;f1->col1,f2->col5}";
+    props.clear();
+    props.put(DATABASE_CONNECTION_URI, "jdbc://");
+    props.put(JAR_FILE, driver);
+    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
+    props.put(EXPORT_MAPPINGS, single);
+
+    config = new JdbcSinkConfig(props);
+    settings = JdbcSinkSettings.from(config);
+
+    mappings = settings.getMappings();
+    assertTrue(mappings.size() == 1);
+    assertTrue(mappings.get(0).getTableName().equals("table1"));
+    assertTrue(mappings.get(0).getIncomingTopic().equals("topic1"));
+
+    cols = mappings.get(0).getMappings();
+    assertTrue(cols.get("f1").getName().equals("col1"));
+    assertTrue(cols.get("f2").getName().equals("col5"));
   }
 
   @Test(expected = ConfigException.class)
@@ -129,7 +138,7 @@ public class JdbcSettingsTest {
     props.put(EXPORT_MAPPINGS, bad);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings.from(config, context);
+    JdbcSinkSettings.from(config);
   }
 
   @Test(expected = ConfigException.class)
@@ -163,6 +172,6 @@ public class JdbcSettingsTest {
     props.put(EXPORT_MAPPINGS, bad);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings.from(config, context);
+    JdbcSinkSettings.from(config);
   }
 }
