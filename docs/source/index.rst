@@ -71,12 +71,12 @@ The sink has three error policies that determine how failed writes to the target
 
 **Throw**.
 
-Any error on write to the target database will be propagated up and processing stopped. This is the default
+Any error on write to the target database will be propagated up and processing is stopped. This is the default
 behaviour.
 
 **Noop**.
 
-Any error on write to the target database is ignore and processing continues.
+Any error on write to the target database is ignored and processing continues.
 
 .. warning::
 
@@ -100,7 +100,7 @@ The sink supports both **insert** and **upsert** modes.
 
 **Insert**
 
-In this mode the sink prepares insert statements to execute either in batch transactions or individually dependent on
+In this mode the sink prepares insert statements to execute either in batch transactions or individually, dependent on
 the ``connect.jdbc.sink.batching.enabled`` setting. Typically you would use this in append only tables such as ledgers. 
 Combined with the error policy setting, ``connect.jdbc.sink.error.policy``, this allows for idempotent writes. For
 example, sent to NOOP, violations of primary keys would be rejected by the database and sink would log the error but
@@ -109,8 +109,8 @@ continue processing but you miss real errors.
 **Update**
 
 In this mode the sink prepares upsert statements, the exactly syntax is dependent on the target database.
-The SQL dialect is obtained from the connection URI. When the sink tries to write it executes the appropriate upsert
-statement, for example with MySQL it will use the
+The SQL dialect is obtained from the connection URI. When the sink tries to write, it executes the appropriate upsert
+statement. For example, with MySQL it will use the
 `ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_ to apply an update if a primary key
 constraint is violated. If the update fails the sink fails back to the error policy.
 
@@ -118,10 +118,10 @@ The following dialects and upsert statements are supported:
 
 1.  MySQL - `ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_
 2.  Oracle - `MERGE <https://docs.oracle.com/cd/B28359_01/server.111/b28286/statements_9016.htm>`_. 
-    This requires knowledge for the primary keys to build the merge statement. The database metadata is queries 
+    This requires knowledge for the primary keys to build the merge statement. The database metadata is queried 
     to retrieve this.
 3.  MSSQL - `MERGE <https://msdn.microsoft.com/en-us/library/bb510625.aspx>`_.
-    This requires knowledge for the primary keys to build the merge statement. The database metadata is queries 
+    This requires knowledge for the primary keys to build the merge statement. The database metadata is queried 
     to retrieve this.
 4.  Postgre - 9.5 and above.???? Needs to be implemented.
 
@@ -141,7 +141,7 @@ Field Selection
 ~~~~~~~~~~~~~~~
 
 The sink supports selecting fields from the source topic or selecting all fields and mapping of this fields to columns
-in the target table. For example map a field in the topic called "qty" to a column called "quantity" in the target
+in the target table. For example, map a field in the topic called "qty" to a column called "quantity" in the target
 table.
 
 All fields can be selected by using "*" in the field part of ``connect.jdbc.sink.export.mappings``.
@@ -163,11 +163,11 @@ source topic.
 .. warning::
 
     Field selection disables evolving the target table if the upstream schema in the Kafka topic changes. By specifying
-    field mappings it is assumed the user is not interested in upstream changes. For example they maybe tapping into a
+    field mappings it is assumed the user is not interested in upstream changes. For example they may be tapping into a
     pipeline for a Kafka stream job and not be intended as the final recipient of the stream.
 
-    If a upstream field is removed and the topic is not following the Schema Registries evolution rules .i.e. not
-    full or backwards compatible, any errors will default to the error policy. If schema evolution rules have been followed
+    If a upstream field is removed and the topic is not following the Schema Registry's evolution rules, i.e. not
+    full or backwards compatible, any errors will default to the error policy. If schema evolution rules have been followed,
     the missing field will return the default value set in the schema. A warning will be logged if the schema version
     changes.
 
@@ -194,7 +194,7 @@ JDBC Drivers
 
 The JDBC connector implements the data copying functionality on the generic JDBC APIs, but relies on JDBC drivers to
 handle the database-specific implementation of those APIs. Confluent Platform ships with a few JDBC drivers, but if the
-driver for your database is not included you will need to make it available via the ``CLASSPATH``.
+driver for your database is not included, you will need to make it available via the ``CLASSPATH``.
 
 One option is to install the JDBC driver jar alongside the connector. The packaged connector is installed in the
 ``share/java/kafka-connect-jdbc`` directory, relative to the installation directory. If you have installed from Debian
@@ -202,8 +202,7 @@ or RPM packages, the connector will be installed in ``/usr/share/java/kafka-conn
 tar files, the connector will be installed in the path given above under the directory where you unzipped the Confluent
 Platform archive.
 
-Alternatively, you can set the ``CLASSPATH`` variable before running For
-example:
+Alternatively, you can set the ``CLASSPATH`` variable before running. For example:
 
 .. sourcecode:: bash
 
@@ -233,7 +232,7 @@ Specifies the JDBC connection user.
 
 Specifies the JDBC connection password.
 
-* Type: password (shows ``[hidden]``) in logs
+* Type: password (shows ``[hidden]`` in logs)
 * Importance: high
 
 ``connect.jdbc.sink.batching.enabled``
