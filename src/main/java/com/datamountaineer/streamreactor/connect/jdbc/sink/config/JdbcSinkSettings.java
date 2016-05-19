@@ -17,7 +17,6 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
@@ -26,7 +25,6 @@ import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -122,14 +120,6 @@ public final class JdbcSinkSettings {
    */
   public static JdbcSinkSettings from(final JdbcSinkConfig config) {
 
-    final String driverClass = config.getString(JdbcSinkConfig.DRIVER_MANAGER_CLASS);
-    final File jarFile = new File(config.getString(JdbcSinkConfig.JAR_FILE));
-    if (!jarFile.exists()) {
-      throw new ConfigException(jarFile + " doesn't exist");
-    }
-
-    JdbcDriverLoader.load(driverClass, jarFile);
-
     String rawExportMap = config.getString(JdbcSinkConfig.EXPORT_MAPPINGS);
 
     if (rawExportMap.isEmpty()) {
@@ -157,7 +147,7 @@ public final class JdbcSinkSettings {
           }
         }
         if (!hasPK)
-          throw new ConfigException("Invalid configuration. UPSERT mode has been chosen buy no primary keys have been " +
+          throw new ConfigException("Invalid configuration. UPSERT mode has been chosen but no primary keys have been " +
                   "provided for " + tm.getTableName());
       }
     }
@@ -176,36 +166,6 @@ public final class JdbcSinkSettings {
             config.getInt(JdbcSinkConfig.MAX_RETRIES));
   }
 
-//  private static List<FieldsMappings> getTablesMappings(final JdbcSinkConfig config) {
-//    final String fields = config.getString(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
-//
-//    if (fields == null || fields.trim().length() == 0) {
-//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
-//    }
-//
-//    return Lists.transform(Lists.newArrayList(fields.split(",")), new Function<String, FieldsMappings>() {
-//      @Override
-//      public FieldsMappings apply(String input) {
-//        if (input.trim().length() == 0)
-//          throw new ConfigException("Empty topic to table mapping found");
-//        //input is topic=table
-//        final String[] arr = input.split("=");
-//        if (arr.length != 2)
-//          throw new ConfigException(input + " is not a valid topic to table mapping");
-//
-//        final String tableName = arr[1].trim();
-//        if (tableName.length() == 0)
-//          throw new ConfigException(input + " is not a valid topic to table mapping");
-//
-//        final String tableMappings = config.getString(String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, tableName));
-//
-//        if (tableMappings == null || tableMappings.trim().length() == 0) {
-//          return new FieldsMappings(tableName, arr[0].trim());
-//        }
-//        return FieldsMappings.from(arr[1].trim(), arr[0].trim(), tableMappings.trim());
-//      }
-//    });
-//  }
 
   /**
    * Get a list of the export mappings for a mapping.
@@ -258,7 +218,7 @@ public final class JdbcSinkSettings {
           } else {
             colName = colSplit[1].trim();
           }
-          mappings.put(fieldName, new FieldAlias(colName, false));
+          mappings.put(fieldName, new FieldAlias(colName, true));
         }
       }
 
@@ -266,50 +226,4 @@ public final class JdbcSinkSettings {
     }
     return fieldsMappingsList;
   }
-
-//  public static JdbcSinkConfig fixConfigLimitationOnDynamicProps(Map<String, String> props) {
-//    if (!props.containsKey(JdbcSinkConfig.TOPIC_TABLE_MAPPING)) {
-//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is missing.");
-//    }
-//    final String topicToTables = props.get(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
-//    if (topicToTables == null || topicToTables.trim().length() == 0) {
-//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
-//    }
-//
-//    final List<String> tables = Lists.transform(Lists.newArrayList(topicToTables.split(",")), new Function<String, String>() {
-//      @Override
-//      public String apply(String input) {
-//        if (input.trim().length() == 0)
-//          throw new ConfigException("Empty topic to table mapping found");
-//        //input is topic=table
-//        final String[] arr = input.split("=");
-//        if (arr.length != 2)
-//          throw new ConfigException(input + " is not a valid topic to table mapping");
-//
-//        final String tableName = arr[1].trim();
-//        if (tableName.length() == 0)
-//          throw new ConfigException(input + " is not a valid topic to table mapping");
-//        return tableName;
-//      }
-//    });
-//
-//    //now create a new ConfigDef to have the dynamic values defined otherwise we will end up with exception thrown
-//    //in the kafka connect api
-//    ConfigDef configDefFixed = JdbcSinkConfig.getConfigDef();
-//
-//    //Parse and check the configuration
-//    configDefFixed.parse(props);
-//
-//    for (String table : tables) {
-//      final String key = String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table);
-//      logger.info(String.format("Defining dynamic key %s", key));
-//      configDefFixed = configDefFixed.define(
-//              String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, table),
-//              ConfigDef.Type.STRING,
-//              ConfigDef.Importance.HIGH,
-//              String.format("Defines the mapping for table:%s", table));
-//    }
-//
-//    return new JdbcSinkConfig(configDefFixed, props);
-//  }
 }

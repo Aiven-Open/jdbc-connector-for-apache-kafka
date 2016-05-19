@@ -1,14 +1,10 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriterTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
@@ -19,14 +15,6 @@ import static org.junit.Assert.*;
 public class JdbcHelperTest {
   private static final String DB_FILE = "test_db_jdbc_helper_sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
-
-  static {
-    try {
-      JdbcDriverLoader.load("org.sqlite.JDBC", Paths.get(JdbcDbWriterTest.class.getResource("/sqlite-jdbc-3.8.11.2.jar").toURI()).toFile());
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   @Before
   public void setUp() {

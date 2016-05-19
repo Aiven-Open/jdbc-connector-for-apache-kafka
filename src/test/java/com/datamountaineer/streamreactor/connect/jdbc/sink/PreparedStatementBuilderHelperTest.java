@@ -39,8 +39,6 @@ public class PreparedStatementBuilderHelperTest {
     when(context.assignment()).thenReturn(assignment);
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, "jdbc.jar");
-    props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
         //JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);

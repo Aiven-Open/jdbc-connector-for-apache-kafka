@@ -124,7 +124,7 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!map.containsKey(colName)) {
           final String error =
-                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns: %s",
                           tm.getTableName(),
                           colName,
                           Joiner.on(",").join(map.keySet()));
@@ -140,7 +140,7 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!dbCols.containsKey(colName)) {
           final String error =
-                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns: %s",
                           tm.getTableName(),
                           colName,
                           Joiner.on(",").join(dbCols.keySet()));

@@ -17,9 +17,7 @@ import java.sql.*;
 import java.util.*;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DRIVER_MANAGER_CLASS;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.JAR_FILE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -31,14 +29,6 @@ import static org.mockito.Mockito.when;
 public class SinkTaskTest {
   private static final String DB_FILE = "test_db_writer_sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
-
-  static {
-    try {
-      JdbcDriverLoader.load("org.sqlite.JDBC", Paths.get(JdbcDbWriterTest.class.getResource("/sqlite-jdbc-3.8.11.2.jar").toURI()).toFile());
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   @Before
   public void setUp() {
@@ -83,8 +73,6 @@ public class SinkTaskTest {
 
     Map<String, String> props = new HashMap<>();
     props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(JAR_FILE, driver);
-    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
     props.put(EXPORT_MAPPINGS, selected);
 
     JdbcSinkTask task = new JdbcSinkTask();

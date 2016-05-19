@@ -29,10 +29,12 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Collection;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -42,7 +44,11 @@ public final class JdbcDbWriter implements DbWriter {
 
   private final PreparedStatementBuilder statementBuilder;
   private final ErrorHandlingPolicy errorHandlingPolicy;
+  private int configuredRetries;
   private int retries;
+  private Date lastError;
+  private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
+  private String lastErrorMessage;
 
   //provides connection pooling
   private final HikariDataSource dataSource;
@@ -62,6 +68,7 @@ public final class JdbcDbWriter implements DbWriter {
                       final int retries) {
 
     this.retries = retries;
+    this.configuredRetries = retries;
 
     final HikariConfig config = new HikariConfig();
     config.setJdbcUrl(connectionStr);
@@ -105,11 +112,17 @@ public final class JdbcDbWriter implements DbWriter {
             }
           }
           //commit the transaction
+          if (retries != configuredRetries) {
+            logger.info(String.format("Recovered from exception \"%s\" at %s. Continuing to process...", lastErrorMessage,
+                dateFormat.format(lastError)));
+            retries = configuredRetries;
+          }
+
           connection.commit();
         }
       } catch (SQLException sqlException) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
-        logger.error(String.format("Following error has occurred inserting data starting at topic:%s offset:%d partition:%d",
+        logger.error(String.format("An error has occurred inserting data starting at topic: %s offset: %d partition: %d",
                 firstRecord.topic(),
                 firstRecord.kafkaOffset(),
                 firstRecord.kafkaPartition()));
@@ -119,11 +132,14 @@ public final class JdbcDbWriter implements DbWriter {
           try {
             connection.rollback();
           } catch (Throwable t) {
+            logger.error("Unable to rollback connection!", t.getMessage());
           }
         }
 
         //handle the exception
         retries--;
+        lastError = new Date();
+        lastErrorMessage = sqlException.getMessage();
         errorHandlingPolicy.handle(records, sqlException, connection, retries);
       } finally {
         if (statements != null) {
@@ -164,7 +180,7 @@ public final class JdbcDbWriter implements DbWriter {
       tableMap.put(table.getName(), table);
     }
     final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings, tableMap);
-    logger.info("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName());
+    logger.info(String.format("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName()));
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
     logger.info(String.format("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName()));
     return new JdbcDbWriter(settings.getConnection(),

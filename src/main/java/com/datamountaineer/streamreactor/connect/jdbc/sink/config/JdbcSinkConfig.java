@@ -72,12 +72,6 @@ public class JdbcSinkConfig extends AbstractConfig {
           "<true> the data insert is batched;\n" +
           "<false> for each record a sql statement is created.";
 
-  public final static String JAR_FILE = "connect.jdbc.sink.driver.jar";
-  public final static String JAR_FILE_DOC = "Specifies the jar file to be loaded at runtime containing the jdbc driver.";
-
-  public final static String DRIVER_MANAGER_CLASS = "connect.jdbc.sink.driver.manager.class";
-  public final static String DRIVER_MANAGER_CLASS_DOC = "Specifies the canonical class name for the driver manager.";
-
   public final static String ERROR_POLICY = "connect.jdbc.sink.error.policy";
   public final static String ERROR_POLICY_DOC = "Specifies the action to be taken if an error occurs while inserting the data.\n" +
           "There are two available options: \n" +
@@ -91,6 +85,12 @@ public class JdbcSinkConfig extends AbstractConfig {
       " set to %s", ERROR_POLICY, ErrorPolicyEnum.RETRY.toString());
   private final static String MAX_RETRIES_DEFAULT = "10";
 
+  public final static String RETRY_INTERVAL = "connect.jdbc.sink.retry.interval";
+  public final static String RETRY_INTERVAL_DEFAULT = "60000";
+  public final static String RETRY_INTERVAL_DOC = String.format("The time, in milliseconds between the Sink retry failed " +
+      "inserts, if the %s is set to RETRY. Default is %s", ERROR_POLICY, RETRY_INTERVAL_DEFAULT);
+
+
   public final static String INSERT_MODE = "connect.jdbc.sink.mode";
   public final static String INSERT_MODE_DOC = "Specifies how the data should be landed into the RDBMS. Two options are \n" +
           "supported:INSERT(default value) and UPSERT.";
@@ -103,13 +103,11 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
             .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
             .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
-            .define(JAR_FILE, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, JAR_FILE_DOC)
-            .define(DRIVER_MANAGER_CLASS, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DRIVER_MANAGER_CLASS_DOC)
-            //.define(TOPIC_TABLE_MAPPING, ConfigDef.Type.STRING, ConfigDef.Importance.LOW, TOPIC_TABLE_MAPPING_DOC)
             .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
             .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
             .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC)
             .define(EXPORT_MAPPINGS, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, EXPORT_MAPPING_DOC)
-            .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC);
+            .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
+            .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC);
   }
 }

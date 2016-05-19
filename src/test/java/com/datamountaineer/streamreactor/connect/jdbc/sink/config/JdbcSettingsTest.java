@@ -13,9 +13,7 @@ import java.util.*;
 
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DRIVER_MANAGER_CLASS;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.JAR_FILE;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -38,8 +36,6 @@ public class JdbcSettingsTest {
 
     Map<String, String> props = new HashMap<>();
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, driver);
-    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
     props.put(EXPORT_MAPPINGS, selected);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
@@ -64,8 +60,6 @@ public class JdbcSettingsTest {
     String all = "{topic1:table1;f1->col1,f2->col5},{topic2:table2;*}";
     props.clear();
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, driver);
-    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
     props.put(EXPORT_MAPPINGS, all);
 
     config = new JdbcSinkConfig(props);
@@ -90,8 +84,6 @@ public class JdbcSettingsTest {
     String single = "{topic1:table1;f1->col1,f2->col5}";
     props.clear();
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, driver);
-    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
     props.put(EXPORT_MAPPINGS, single);
 
     config = new JdbcSinkConfig(props);
@@ -133,8 +125,6 @@ public class JdbcSettingsTest {
     //missing target
     String bad = "{topic1:;*}";
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, driver);
-    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
     props.put(EXPORT_MAPPINGS, bad);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
@@ -167,8 +157,6 @@ public class JdbcSettingsTest {
     //missing target
     String bad = "{topic1:table1;}";
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, driver);
-    props.put(DRIVER_MANAGER_CLASS, "org.sqlite.JDBC");
     props.put(EXPORT_MAPPINGS, bad);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);

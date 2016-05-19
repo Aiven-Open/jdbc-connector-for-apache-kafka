@@ -14,8 +14,6 @@ public class JdbcSinkConfigTest {
     Map<String, String> props = new HashMap<String, String>();
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, "jdbc.jar");
-    props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
     props.put(DATABASE_IS_BATCHING, "true");
 
     assertEquals(new JdbcSinkConfig(props).getString(ERROR_POLICY), "throw");
@@ -26,8 +24,6 @@ public class JdbcSinkConfigTest {
     Map<String, String> props = new HashMap<String, String>();
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, "jdbc.jar");
-    props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
 
     assertEquals(new JdbcSinkConfig(props).getBoolean(DATABASE_IS_BATCHING), true);
   }
@@ -38,8 +34,6 @@ public class JdbcSinkConfigTest {
     Map<String, String> props = new HashMap<String, String>();
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(JAR_FILE, "jdbc.jar");
-    props.put(DRIVER_MANAGER_CLASS, "OracleDriver");
 
     assertEquals(new JdbcSinkConfig(props).getString(INSERT_MODE), "INSERT");
   }

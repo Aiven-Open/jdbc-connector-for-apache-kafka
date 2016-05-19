@@ -67,7 +67,7 @@ public abstract class DbDialect {
       case "mysql":
         return new MySqlDialect();
 
-      case "postgre":
+      case "postgresql":
         return new PostgreDialect();
 
       default:

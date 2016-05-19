@@ -58,10 +58,12 @@ public class JdbcSinkTask extends SinkTask {
       logger.warn("Can't load the ascii art!");
     }
 
-    //final JdbcSinkConfig sinkConfig = JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
+    int retryInterval = sinkConfig.getInt(JdbcSinkConfig.RETRY_INTERVAL);
+    //set retry interval for sink
+    context.timeout(retryInterval);
+
     final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
-    logger.info("Settings:" + settings.toString());
 
     //Set up the writer
     writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {

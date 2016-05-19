@@ -18,40 +18,49 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Created by andrew@datamountaineer.com on 17/05/16.
  * kafka-connect-jdbc
  */
 public class PostgreDialect extends DbDialect {
+  private static final Logger logger = LoggerFactory.getLogger(PostgreDialect.class);
+
+
   @Override
-  public String getUpsertQuery(String table, List<String> columns, List<String> keyColumns) {
+  public String getUpsertQuery(final String table, final List<String> nonKeyColumns, final List<String> keyColumns) {
     if (table == null || table.trim().length() == 0)
-      throw new IllegalArgumentException("<table> is not valid");
+      throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
 
     if (keyColumns == null || keyColumns.size() == 0) {
-      throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
+      throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
     }
 
+
+    final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
+    final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
+
     String updateSet = null;
-    if (columns.size() > 0) {
-      final StringBuilder updateSetBuilder = new StringBuilder("");
-      updateSetBuilder.append(String.format("%s.%s=incoming.%s", table, columns.get(0), columns.get(0)));
-      for (int i = 1; i < columns.size(); ++i) {
-        updateSetBuilder.append(String.format(",%s.%s=incoming.%s", table, columns.get(i), columns.get(i)));
+    if (nonKeyColumns.size() > 0) {
+      final StringBuilder updateSetBuilder = new StringBuilder();
+      updateSetBuilder.append(String.format("%s=EXCLUDED.%s", nonKeyColumns.get(0), nonKeyColumns.get(0)));
+      for (int i = 1; i < nonKeyColumns.size(); ++i) {
+        updateSetBuilder.append(String.format(",%s=EXCLUDED.%s", nonKeyColumns.get(i), nonKeyColumns.get(i)));
       }
       updateSet = updateSetBuilder.toString();
     }
 
-    final String insertColumns = Joiner.on(String.format(",%s.", table)).join(Iterables.concat(columns, keyColumns));
-    final String insertValues = Joiner.on(",incoming.").join(Iterables.concat(columns, keyColumns));
-    final String key = Joiner.on(",").join(keyColumns);
+    String sql = "INSERT INTO " + table + " (" + queryColumns + ") " +
+                 "VALUES (" + bindingValues + ") " +
+                 "ON CONFLICT (" + Joiner.on(",").join(Iterables.concat(keyColumns)) + ") DO UPDATE SET " + updateSet;
 
-    String sql = "INSERT INTO " + table + "(" + insertColumns + ") " +
-                 "VALUES (" + insertValues + ") " +
-                 "ON CONFLICT (" + key + ") UPDATE " + updateSet;
+
+    logger.debug("Prepared sql: " + sql);
 
     return sql;
   }

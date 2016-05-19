@@ -2,7 +2,6 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcDriverLoader;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
@@ -45,14 +44,6 @@ public class JdbcDbWriterTest {
 
   private static final String DB_FILE = "test_db_writer_sqllite-jdbc-writer-test.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
-
-  static {
-    try {
-      JdbcDriverLoader.load("org.sqlite.JDBC", Paths.get(JdbcDbWriterTest.class.getResource("/sqlite-jdbc-3.8.11.2.jar").toURI()).toFile());
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   @Before
   public void setUp() {

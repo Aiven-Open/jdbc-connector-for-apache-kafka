@@ -9,7 +9,7 @@ import static junit.framework.TestCase.assertTrue;
  * Created by andrew@datamountaineer.com on 17/05/16.
  * kafka-connect-jdbc
  */
-public class PostgreDialectTest {
+public class PostgreSqlDialectTest {
 
   final DbDialect dialect = new PostgreDialect();
 
@@ -35,9 +35,8 @@ public class PostgreDialectTest {
 
   @Test
   public void PostgreDialectTest() {
-    String conflict = "INSERT INTO Customer(name,Customer.salary,Customer.address,Customer.id) VALUES " +
-    "(name,incoming.salary,incoming.address,incoming.id) ON CONFLICT (id) UPDATE Customer.name=incoming.name," +
-    "Customer.salary=incoming.salary,Customer.address=incoming.address";
+    String conflict = "INSERT INTO Customer (name,salary,address,id) VALUES (?,?,?,?) ON CONFLICT (id) DO UPDATE SET " +
+        "name=EXCLUDED.name,salary=EXCLUDED.salary,address=EXCLUDED.address";
     String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
     assertTrue(conflict.equals(insert));
   }

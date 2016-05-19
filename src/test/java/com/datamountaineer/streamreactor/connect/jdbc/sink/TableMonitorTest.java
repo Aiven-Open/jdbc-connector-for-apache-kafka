@@ -35,13 +35,13 @@ public class TableMonitorTest {
   private static final String DB_FILE = "test_db_writer_sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
 
-  static {
-    try {
-      JdbcDriverLoader.load("org.sqlite.JDBC", Paths.get(JdbcDbWriterTest.class.getResource("/sqlite-jdbc-3.8.11.2.jar").toURI()).toFile());
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
+//  static {
+//    try {
+//      JdbcDriverLoader.load("org.sqlite.JDBC", Paths.get(JdbcDbWriterTest.class.getResource("/sqlite-jdbc-3.8.11.2.jar").toURI()).toFile());
+//    } catch (URISyntaxException e) {
+//      throw new RuntimeException(e);
+//    }
+//  }
 
   @Before
   public void setUp() {
