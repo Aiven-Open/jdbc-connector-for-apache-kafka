@@ -466,7 +466,7 @@ concatenated string if the form of topicname:partition:offset, e.g. topicC:1:99.
 
 ``connect.jdbc.sink.pk.col.name``
 
-The column name to create in a target table if ``connect.jdbc.sink.auto.create.tables`` is enabled and no fields set as
+The column name to create in a target table if ``connect.jdbc.sink.auto.create.tables`` is enabled and not fields set as
 the primary key.
 
 * Type : string

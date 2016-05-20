@@ -105,6 +105,11 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final static String AUTO_CREATE_TABLE_MAP = "connect.jdbc.sink.auto.create.tables";
   private final static String AUTO_CREATE_TABLE_MAP_DOC = "List of tables to create automatically from topics.";
 
+  public final static String DEFAULT_PK_COL_NAME_VALUE = "__connect_auto_id";
+  public final static String DEFAULT_PK_COL_NAME = "connect.jdbc.sink.pk.col.name";
+  public final static String DEFAULT_PK_COL_DOC = "The name of the primary key column in the target table if " +
+      AUTO_CREATE_TABLE_MAP + " is set and no fields are set the primary keys.";
+
 
   private static ConfigDef getConfigDef() {
     return new ConfigDef()
@@ -118,6 +123,7 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
             .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC)
             .define(AUTO_CREATE_TABLE_MAP, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, AUTO_CREATE_TABLE_MAP_DOC)
-            .define(EVOLVE_TABLE_MAP, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, EVOLVE_TABLE_MAP_DOC);
+            .define(EVOLVE_TABLE_MAP, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, EVOLVE_TABLE_MAP_DOC)
+            .define(DEFAULT_PK_COL_NAME, ConfigDef.Type.STRING, DEFAULT_PK_COL_NAME_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_PK_COL_DOC);
   }
 }
