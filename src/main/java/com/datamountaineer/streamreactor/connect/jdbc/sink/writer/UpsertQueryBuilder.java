@@ -36,7 +36,7 @@ public class UpsertQueryBuilder implements QueryBuilder {
    * @param table         - The target table
    * @param nonKeyColumns - A list of columns in the target table which are not part of the primary key
    * @param keyColumns    - A list of columns in the target table which make the primary key
-   * @return
+   * @return An upsert for the dialect
    */
   @Override
   public String build(String table, List<String> nonKeyColumns, List<String> keyColumns) {

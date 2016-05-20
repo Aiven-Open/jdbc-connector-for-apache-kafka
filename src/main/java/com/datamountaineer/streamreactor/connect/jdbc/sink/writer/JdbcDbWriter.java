@@ -16,9 +16,13 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
 import com.google.common.collect.Iterators;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -29,12 +33,10 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -44,34 +46,34 @@ public final class JdbcDbWriter implements DbWriter {
 
   private final PreparedStatementBuilder statementBuilder;
   private final ErrorHandlingPolicy errorHandlingPolicy;
-  private int configuredRetries;
+  private final DatabaseChangesExecutor databaseChangesExecutor;
   private int retries;
-  private Date lastError;
-  private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
-  private String lastErrorMessage;
 
   //provides connection pooling
   private final HikariDataSource dataSource;
 
   /**
-   * @param connectionStr       - The database connection string
-   * @param user-               - The database user to connect as
-   * @param password            - The database user password
-   * @param statementBuilder    - Returns a sequence of PreparedStatement to process
-   * @param errorHandlingPolicy - An instance of the error handling approach
+   * @param dbUri                   - The database connection string
+   * @param user-                   - The database user to connect as
+   * @param password                - The database user password
+   * @param statementBuilder        - Returns a sequence of PreparedStatement to process
+   * @param errorHandlingPolicy     - An instance of the error handling approach
+   * @param databaseChangesExecutor -Contains the database metadata (tables and their columns)
+   * @param retries                 - Number of attempts to run when a SQLException occurs
    */
-  public JdbcDbWriter(final String connectionStr,
+  public JdbcDbWriter(final String dbUri,
                       final String user,
                       final String password,
                       final PreparedStatementBuilder statementBuilder,
                       final ErrorHandlingPolicy errorHandlingPolicy,
+                      final DatabaseChangesExecutor databaseChangesExecutor,
                       final int retries) {
-
-    this.retries = retries;
-    this.configuredRetries = retries;
+    ParameterValidator.notNullOrEmpty(dbUri, "dbUri");
+    ParameterValidator.notNull(statementBuilder, "statementBuilder");
+    ParameterValidator.notNull(databaseChangesExecutor, "databaseChangesExecutor");
 
     final HikariConfig config = new HikariConfig();
-    config.setJdbcUrl(connectionStr);
+    config.setJdbcUrl(dbUri);
 
     if (user != null && user.trim().length() > 0) {
       config.setUsername(user);
@@ -83,6 +85,8 @@ public final class JdbcDbWriter implements DbWriter {
     this.dataSource = new HikariDataSource(config);
     this.statementBuilder = statementBuilder;
     this.errorHandlingPolicy = errorHandlingPolicy;
+    this.databaseChangesExecutor = databaseChangesExecutor;
+    this.retries = retries;
   }
 
   /**
@@ -97,13 +101,18 @@ public final class JdbcDbWriter implements DbWriter {
     } else {
 
       Connection connection = null;
-      List<PreparedStatement> statements = null;
+      Collection<PreparedStatement> statements = null;
       try {
         connection = dataSource.getConnection();
-        statements = statementBuilder.build(records, connection);
+        final PreparedStatementContext statementContext = statementBuilder.build(records, connection);
+        statements = statementContext.getPreparedStatements();
         if (!statements.isEmpty()) {
+
           //begin transaction
           connection.setAutoCommit(false);
+          //handle possible database changes (new tables, new columns)
+          databaseChangesExecutor.handleChanges(statementContext.getTablesToColumnsMap(), connection);
+
           for (final PreparedStatement statement : statements) {
             if (statementBuilder.isBatching()) {
               statement.executeBatch();
@@ -112,41 +121,37 @@ public final class JdbcDbWriter implements DbWriter {
             }
           }
           //commit the transaction
-          if (retries != configuredRetries) {
-            logger.info(String.format("Recovered from exception \"%s\" at %s. Continuing to process...", lastErrorMessage,
-                dateFormat.format(lastError)));
-            retries = configuredRetries;
-          }
-
           connection.commit();
         }
+
       } catch (SQLException sqlException) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
-        logger.error(String.format("An error has occurred inserting data starting at topic: %s offset: %d partition: %d",
+        assert firstRecord != null;
+        logger.error(String.format("Following error has occurred inserting data starting at topic:%s offset:%d partition:%d",
                 firstRecord.topic(),
                 firstRecord.kafkaOffset(),
                 firstRecord.kafkaPartition()));
+        logger.error(sqlException.getMessage());
 
         if (connection != null) {
           //rollback the transaction
           try {
             connection.rollback();
           } catch (Throwable t) {
-            logger.error("Unable to rollback connection!", t.getMessage());
+            logger.error(t.getMessage());
           }
         }
 
         //handle the exception
         retries--;
-        lastError = new Date();
-        lastErrorMessage = sqlException.getMessage();
-        errorHandlingPolicy.handle(records, sqlException, connection, retries);
+        errorHandlingPolicy.handle(records, sqlException, retries);
       } finally {
         if (statements != null) {
           for (final PreparedStatement statement : statements) {
             try {
               statement.close();
             } catch (Throwable t) {
+              logger.error(t.getMessage());
             }
           }
         }
@@ -155,6 +160,7 @@ public final class JdbcDbWriter implements DbWriter {
           try {
             connection.close();
           } catch (Throwable t) {
+            logger.error(t.getMessage());
           }
         }
       }
@@ -169,25 +175,43 @@ public final class JdbcDbWriter implements DbWriter {
   /**
    * Creates an instance of JdbcDbWriter from the Jdbc sink settings.
    *
-   * @param settings - Holds the sink settings
+   * @param settings         - Holds the sink settings
+   * @param databaseMetadata
    * @return Returns a new instsance of JdbcDbWriter
    */
-  public static JdbcDbWriter from(final JdbcSinkSettings settings, final DbTableInfoProvider provider) {
+  public static JdbcDbWriter from(final JdbcSinkSettings settings,
+                                  final DatabaseMetadata databaseMetadata) {
 
-    final Map<String, DbTable> tableMap = new HashMap<>();
-    final List<DbTable> tables = provider.getTables(settings.getConnection(), settings.getUser(), settings.getPassword());
-    for (DbTable table : tables) {
-      tableMap.put(table.getName(), table);
-    }
-    final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings, tableMap);
+    final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings, databaseMetadata);
     logger.info(String.format("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName()));
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
     logger.info(String.format("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName()));
+
+    final List<FieldsMappings> mappingsList = settings.getMappings();
+    final Set<String> tablesAllowingAutoCreate = new HashSet<>();
+    final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
+    for (FieldsMappings fm : mappingsList) {
+      if (fm.autoCreateTable()) {
+        tablesAllowingAutoCreate.add(fm.getTableName());
+      }
+      if (fm.evolveTableSchema()) {
+        tablesAllowingSchemaEvolution.add(fm.getTableName());
+      }
+    }
+
+    final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
+
+    final DatabaseChangesExecutor databaseChangesExecutor = new DatabaseChangesExecutor(tablesAllowingAutoCreate,
+            tablesAllowingSchemaEvolution,
+            databaseMetadata,
+            dbDialect);
+
     return new JdbcDbWriter(settings.getConnection(),
             settings.getUser(),
             settings.getPassword(),
             statementBuilder,
             errorHandlingPolicy,
+            databaseChangesExecutor,
             settings.getRetries());
   }
 

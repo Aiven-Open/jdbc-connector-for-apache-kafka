@@ -1,7 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
-import com.google.common.collect.*;
-import org.junit.*;
+import com.google.common.collect.Lists;
+import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
 
@@ -11,16 +11,16 @@ import static junit.framework.TestCase.assertTrue;
  */
 public class PostgreSqlDialectTest {
 
-  final DbDialect dialect = new PostgreDialect();
+  private final DbDialect dialect = new PostgreSQLDialect();
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Lists.newArrayList("value"), Lists.<String>newArrayList("id"));
+    dialect.getUpsertQuery(null, Lists.newArrayList("value"), Lists.newArrayList("id"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Lists.newArrayList("value"), Lists.<String>newArrayList("id"));
+    dialect.getUpsertQuery("  ", Lists.newArrayList("value"), Lists.newArrayList("id"));
   }
 
   @Test(expected = IllegalArgumentException.class)

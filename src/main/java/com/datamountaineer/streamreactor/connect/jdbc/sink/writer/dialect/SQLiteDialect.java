@@ -16,16 +16,68 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import org.apache.kafka.connect.data.Schema;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides SQL insert support for SQLite
  */
 public class SQLiteDialect extends DbDialect {
+  public SQLiteDialect() {
+    super(getSqlTypeMap());
+  }
+
+  private static Map<Schema.Type, String> getSqlTypeMap() {
+    Map<Schema.Type, String> map = new HashMap<>();
+    map.put(Schema.Type.INT8, "NUMERIC");
+    map.put(Schema.Type.INT16, "NUMERIC");
+    map.put(Schema.Type.INT32, "NUMERIC");
+    map.put(Schema.Type.INT64, "NUMERIC");
+    map.put(Schema.Type.FLOAT32, "REAL");
+    map.put(Schema.Type.FLOAT64, "REAL");
+    map.put(Schema.Type.BOOLEAN, "NUMERIC");
+    map.put(Schema.Type.STRING, "TEXT");
+    map.put(Schema.Type.BYTES, "BLOB");
+    return map;
+  }
+
+  @Override
+  public String getAlterTable(String table, Collection<Field> fields) {
+    ParameterValidator.notNullOrEmpty(table, "table");
+    ParameterValidator.notNull(fields, "fields");
+    if (fields.isEmpty()) {
+      throw new IllegalArgumentException("<fields> is empty.");
+    }
+    final StringBuilder builder = new StringBuilder();
+    builder.append(table);
+    builder.append(System.lineSeparator());
+
+    boolean first = true;
+    for (final Field f : fields) {
+      if (!first) {
+        builder.append(System.lineSeparator());
+      } else {
+        first = false;
+      }
+      builder.append("ALTER TABLE ADD ");
+      builder.append(f.getName());
+      builder.append(" NULL ");
+      builder.append(getSqlType(f.getType()));
+      builder.append(";");
+    }
+
+    return builder.toString();
+  }
+
   @Override
   public String getUpsertQuery(String table, List<String> nonKeyColumns, List<String> keyColumns) {
     if (table == null || table.trim().length() == 0)
@@ -51,6 +103,6 @@ public class SQLiteDialect extends DbDialect {
     }
 
     return String.format("update or ignore %s set %s where %s\n;", table, builder, whereBuilder) +
-            String.format("insert or ignore into %s(%s) values (%s)", table, queryColumns, bindingValues);
+        String.format("insert or ignore into %s(%s) values (%s)", table, queryColumns, bindingValues);
   }
 }

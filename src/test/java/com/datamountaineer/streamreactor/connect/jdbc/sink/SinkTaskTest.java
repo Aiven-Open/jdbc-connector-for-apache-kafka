@@ -1,7 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.*;
 import com.google.common.collect.*;
 import org.apache.kafka.common.*;
 import org.apache.kafka.connect.data.*;
@@ -11,13 +10,10 @@ import org.junit.*;
 import org.mockito.*;
 
 import java.io.*;
-import java.net.*;
-import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -47,12 +43,11 @@ public class SinkTaskTest {
 
   @Test
   public void TestSinkTaskStarts() throws SQLException {
-    String tableName1 = "batched_upsert_test_1";
-    String tableName2 = "batched_upsert_test_2";
-    String topic1 = "topic1";
-    String topic2 = "topic2";
-    TopicPartition tp1 = new TopicPartition(topic1, 12);
-    TopicPartition tp2 = new TopicPartition(topic2, 13);
+    TestBase base = new TestBase();
+    Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
+    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
+    TopicPartition tp1 = new TopicPartition(base.getTopic1(), 12);
+    TopicPartition tp2 = new TopicPartition(base.getTopic2(), 13);
     HashSet<TopicPartition> assignment = Sets.newHashSet();
 
     //Set topic assignments, used by the sinkContext mock
@@ -63,22 +58,10 @@ public class SinkTaskTest {
     SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
     when(context.assignment()).thenReturn(assignment);
 
-    String selected = String.format("{%s:%s;*},{%s:%s;*}", topic1, tableName1, topic2, tableName2);
-    String driver = null;
-    try {
-      driver = Paths.get(getClass().getResource("/sqlite-jdbc-3.8.11.2.jar").toURI()).toAbsolutePath().toString();
-    } catch (URISyntaxException e) {
-      e.printStackTrace();
-    }
-
-    Map<String, String> props = new HashMap<>();
-    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(EXPORT_MAPPINGS, selected);
-
     JdbcSinkTask task = new JdbcSinkTask();
     task.initialize(context);
 
-    String createTable1 = "CREATE TABLE " + tableName1 + "(" +
+    String createTable1 = "CREATE TABLE " + base.getTableName1() + "(" +
         "    firstName  TEXT PRIMARY_KEY," +
         "    lastName  TEXT PRIMARY_KEY," +
         "    age INTEGER," +
@@ -90,7 +73,7 @@ public class SinkTaskTest {
         "    double NUMERIC," +
         "    bytes BLOB);";
 
-    String createTable2 = "CREATE TABLE " + tableName2 + "(" +
+    String createTable2 = "CREATE TABLE " + base.getTableName2() + "(" +
         "    firstName  TEXT PRIMARY_KEY," +
         "    lastName  TEXT PRIMARY_KEY," +
         "    age INTEGER," +
@@ -102,9 +85,9 @@ public class SinkTaskTest {
         "    double NUMERIC," +
         "    bytes BLOB);";
 
-    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName1());
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
-    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName2);
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName2());
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable2);
 
     task.start(props);
@@ -168,22 +151,38 @@ public class SinkTaskTest {
 
     int partition = 2;
     Collection<SinkRecord> records = Lists.newArrayList(
-        new SinkRecord(topic1, partition, null, null, schema, struct1, 1),
-        new SinkRecord(topic2, partition, null, null, schema, struct2, 2),
-        new SinkRecord(topic1, partition, null, null, schema, struct1a, 3),
-        new SinkRecord(topic2, partition, null, null, schema, struct2, 4));
+        new SinkRecord(base.getTopic1(), partition, null, null, schema, struct1, 1),
+        new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 2),
+        new SinkRecord(base.getTopic1(), partition, null, null, schema, struct1a, 3),
+        new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 4));
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
-    map.put(topic1.toLowerCase(),
-        new StructFieldsDataExtractor(new FieldsMappings(tableName1, topic1, true, new HashMap<String, FieldAlias>())));
-    map.put(topic2.toLowerCase(),
-        new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, new HashMap<String, FieldAlias>())));
+    map.put(base.getTopic1().toLowerCase(),
+        new StructFieldsDataExtractor(new FieldsMappings(base.getTableName1(), base.getTopic1(), true, new HashMap<String, FieldAlias>())));
+    map.put(base.getTopic2().toLowerCase(),
+        new StructFieldsDataExtractor(new FieldsMappings(base.getTableName2(), base.getTopic2(), true, new HashMap<String, FieldAlias>())));
 
     task.put(records);
 
-    String query = "SELECT * FROM " + tableName1 + " WHERE firstName='" + fName1 + "' and lastName='" + lName1 + "'";
+    String query = "SELECT * FROM " + base.getTableName1() + " WHERE firstName='" + fName1 + "' and lastName='" + lName1 + "'";
 
     SqlLiteHelper.select(SQL_LITE_URI, query, new SqlLiteHelper.ResultSetReadCallback() {
+      @Override
+      public void read(ResultSet rs) throws SQLException {
+
+        assertEquals(rs.getBoolean("bool"), bool1);
+        assertEquals(rs.getShort("short"), s1a);
+        assertEquals(rs.getByte("byte"), b1);
+        assertEquals(rs.getLong("long"), l1);
+        assertTrue(Float.compare(rs.getFloat("float"), f1 + 1) == 0);
+        assertEquals(Double.compare(rs.getDouble("double"), d1 + 1), 0);
+        assertEquals(rs.getInt("age"), age1);
+      }
+    });
+
+    String query2 = "SELECT * FROM " + base.getTableName2() + " WHERE firstName='" + fName1 + "' and lastName='" + lName1 + "'";
+
+    SqlLiteHelper.select(SQL_LITE_URI, query2, new SqlLiteHelper.ResultSetReadCallback() {
       @Override
       public void read(ResultSet rs) throws SQLException {
 

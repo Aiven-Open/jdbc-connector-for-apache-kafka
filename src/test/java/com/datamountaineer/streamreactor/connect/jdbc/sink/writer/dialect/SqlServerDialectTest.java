@@ -6,16 +6,16 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class SqlServerDialectTest {
-  final DbDialect dialect = new SqlServerDialect();
+  private final DbDialect dialect = new SqlServerDialect();
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Lists.newArrayList("value"), Lists.<String>newArrayList("id"));
+    dialect.getUpsertQuery(null, Lists.newArrayList("value"), Lists.newArrayList("id"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Lists.newArrayList("value"), Lists.<String>newArrayList("id"));
+    dialect.getUpsertQuery("  ", Lists.newArrayList("value"), Lists.newArrayList("id"));
   }
 
   @Test(expected = IllegalArgumentException.class)

@@ -19,7 +19,6 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-import java.sql.Connection;
 import java.util.Collection;
 
 /**
@@ -28,12 +27,10 @@ import java.util.Collection;
 public interface ErrorHandlingPolicy {
   /**
    * Called when the sql operation to insert the SinkRecords fails
-   *
-   * @param records    The list of records received by the SinkTask
+   *  @param records    The list of records received by the SinkTask
    * @param error      - The error raised when the insert failed
-   * @param connection - The database connection instance
    */
-  void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection, final int retryCount);
+  void handle(Collection<SinkRecord> records, final Throwable error, final int retryCount);
 }
 
 final class ErrorHandlingPolicyHelper {

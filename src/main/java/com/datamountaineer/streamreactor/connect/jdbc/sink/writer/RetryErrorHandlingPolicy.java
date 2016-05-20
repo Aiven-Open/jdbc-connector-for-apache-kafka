@@ -22,7 +22,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
-import java.sql.Connection;
 import java.util.Collection;
 
 /**
@@ -32,7 +31,7 @@ public final class RetryErrorHandlingPolicy implements ErrorHandlingPolicy {
   private static final Logger logger = LoggerFactory.getLogger(RetryErrorHandlingPolicy.class);
 
   @Override
-  public void handle(Collection<SinkRecord> records, final Throwable error, final Connection connection, final int retryCount) {
+  public void handle(Collection<SinkRecord> records, final Throwable error, final int retryCount) {
     if (retryCount == 0) {
       throw new RuntimeException(error);
     } else {
@@ -41,11 +40,11 @@ public final class RetryErrorHandlingPolicy implements ErrorHandlingPolicy {
 
       if (!records.isEmpty()) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
+        assert firstRecord != null;
         logger.warn(String.format("Going to retry inserting data starting at topic: %s offset: %d partition: %d",
             firstRecord.topic(),
             firstRecord.kafkaOffset(),
             firstRecord.kafkaPartition()));
-        logger.warn("Stack trace is...");
         throw new RetriableException(error);
       } else {
         throw new RetriableException(error);

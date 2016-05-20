@@ -18,10 +18,16 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import org.apache.kafka.connect.data.Schema;
 
 import java.util.List;
+import java.util.Map;
 
-public class Sql2003Dialect extends DbDialect {
+public abstract class Sql2003Dialect extends DbDialect {
+
+  Sql2003Dialect(final Map<Schema.Type, String> map) {
+    super(map);
+  }
 
   @Override
   public String getUpsertQuery(String table, List<String> columns, List<String> keyColumns) {
@@ -55,17 +61,17 @@ public class Sql2003Dialect extends DbDialect {
         https://blogs.oracle.com/cmar/entry/using_merge_to_do_an"
          */
     return "merge into " + table + getMergeHints() +
-            " using (select ? " + select + ") incoming" +
-            " on(" + joinBuilder.toString() + ") " +
-            updateSet +
-            String.format(" when not matched then insert(%s.%s) values(incoming.%s)",
-                    table,
-                    insertColumns,
-                    insertValues);
+        " using (select ? " + select + ") incoming" +
+        " on(" + joinBuilder.toString() + ") " +
+        updateSet +
+        String.format(" when not matched then insert(%s.%s) values(incoming.%s)",
+            table,
+            insertColumns,
+            insertValues);
 
   }
 
-  public String getMergeHints() {
+  String getMergeHints() {
     return "";
   }
 }

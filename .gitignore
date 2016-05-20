@@ -1,27 +1,5 @@
-/docs/build
 /kafka-connect-jdbc.iml
-/kafka-connect-jdbc-sink/sample.db
 /.idea
-/.gradle
-/build
-/kafka-connect-common/build
-/kafka-connect-jdbc-sink/build
-*.class
-*.log
-
 # sbt specific
-.cache
-.history
-.lib/
-dist/*
 target/
-lib_managed/
-src_managed/
-project/boot/
-project/plugins/project/
-
-/*.db
-
 # Scala-IDE specific
-.scala_dependencies
-.worksheet

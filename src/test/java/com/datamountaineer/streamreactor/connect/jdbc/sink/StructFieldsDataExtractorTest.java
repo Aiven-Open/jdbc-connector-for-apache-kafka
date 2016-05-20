@@ -39,7 +39,6 @@ public class StructFieldsDataExtractorTest {
             .field("bytes", Schema.BYTES_SCHEMA)
             .field("threshold", Schema.OPTIONAL_FLOAT64_SCHEMA).build();
 
-    boolean bool = true;
     short s = 1234;
     byte b = -32;
     long l = 12425436;
@@ -50,7 +49,7 @@ public class StructFieldsDataExtractorTest {
     Struct struct = new Struct(schema)
             .put("firstName", "Alex")
             .put("lastName", "Smith")
-            .put("bool", bool)
+            .put("bool", true)
             .put("short", s)
             .put("byte", b)
             .put("long", l)
@@ -198,7 +197,6 @@ public class StructFieldsDataExtractorTest {
             .field("bytes", Schema.BYTES_SCHEMA)
             .field("threshold", Schema.OPTIONAL_FLOAT64_SCHEMA).build();
 
-    boolean bool = true;
     short s = 1234;
     byte b = -32;
     long l = 12425436;
@@ -209,7 +207,7 @@ public class StructFieldsDataExtractorTest {
     Struct struct = new Struct(schema)
             .put("firstName", "Alex")
             .put("lastName", "Smith")
-            .put("bool", bool)
+            .put("bool", true)
             .put("short", s)
             .put("byte", b)
             .put("long", l)
@@ -287,7 +285,6 @@ public class StructFieldsDataExtractorTest {
             .field("bytes", Schema.BYTES_SCHEMA)
             .field("threshold", Schema.OPTIONAL_FLOAT64_SCHEMA).build();
 
-    boolean bool = true;
     short s = 1234;
     byte b = -32;
     long l = 12425436;
@@ -298,7 +295,7 @@ public class StructFieldsDataExtractorTest {
     Struct struct = new Struct(schema)
             .put("firstName", "Alex")
             .put("lastName", "Smith")
-            .put("bool", bool)
+            .put("bool", true)
             .put("short", s)
             .put("byte", b)
             .put("long", l)

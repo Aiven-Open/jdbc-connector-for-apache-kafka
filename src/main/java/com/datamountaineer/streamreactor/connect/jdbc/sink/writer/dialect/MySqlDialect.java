@@ -18,14 +18,35 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import org.apache.kafka.connect.data.Schema;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides support for MySql.
  */
 public class MySqlDialect extends DbDialect {
+
+  public MySqlDialect() {
+    super(getSqlTypeMap());
+  }
+
+  private static Map<Schema.Type, String> getSqlTypeMap() {
+    Map<Schema.Type, String> map = new HashMap<>();
+    map.put(Schema.Type.INT8, "TINYINT");
+    map.put(Schema.Type.INT16, "SMALLINT");
+    map.put(Schema.Type.INT32, "INT");
+    map.put(Schema.Type.INT64, "BIGINT");
+    map.put(Schema.Type.FLOAT32, "FLOAT");
+    map.put(Schema.Type.FLOAT64, "DOUBLE");
+    map.put(Schema.Type.BOOLEAN, "TINYINT");
+    map.put(Schema.Type.STRING, "VARCHAR(256)");
+    map.put(Schema.Type.BYTES, "VARBINARY(1024)");
+    return map;
+  }
 
   @Override
   public String getUpsertQuery(final String table, final List<String> nonKeyColumns, final List<String> keyColumns) {
@@ -45,8 +66,7 @@ public class MySqlDialect extends DbDialect {
       builder.append(String.format(",%s=values(%s)", nonKeyColumns.get(i), nonKeyColumns.get(i)));
     }
 
-    final String query = String.format("insert into %s(%s) values(%s) " +
+    return String.format("insert into %s(%s) values(%s) " +
             "on duplicate key update %s", table, queryColumns, bindingValues, builder.toString());
-    return query;
   }
 }

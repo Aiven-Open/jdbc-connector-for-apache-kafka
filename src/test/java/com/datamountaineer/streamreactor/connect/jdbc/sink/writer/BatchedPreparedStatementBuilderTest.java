@@ -79,7 +79,7 @@ public class BatchedPreparedStatementBuilderTest {
     PreparedStatement statement3 = mock(PreparedStatement.class);
     when(connection.prepareStatement(sql3)).thenReturn(statement3);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 3);
 
@@ -105,7 +105,7 @@ public class BatchedPreparedStatementBuilderTest {
   }
 
   @Test
-  public void handleMultipeTablesForInsert() throws SQLException {
+  public void handleMultipleTablesForInsert() throws SQLException {
     StructFieldsDataExtractor valueExtractor1 = mock(StructFieldsDataExtractor.class);
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -165,7 +165,7 @@ public class BatchedPreparedStatementBuilderTest {
     PreparedStatement statement2 = mock(PreparedStatement.class);
     when(connection.prepareStatement(sql2)).thenReturn(statement2);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 2);
 
@@ -256,7 +256,7 @@ public class BatchedPreparedStatementBuilderTest {
     PreparedStatement statement3 = mock(PreparedStatement.class);
     when(connection.prepareStatement(sql3)).thenReturn(statement3);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 3);
 
@@ -352,7 +352,7 @@ public class BatchedPreparedStatementBuilderTest {
     when(connection.prepareStatement(sql2)).thenReturn(statement2);
 
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 2);
 

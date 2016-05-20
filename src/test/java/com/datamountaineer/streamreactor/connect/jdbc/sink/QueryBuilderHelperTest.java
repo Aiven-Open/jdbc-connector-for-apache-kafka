@@ -1,17 +1,17 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.InsertQueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilderHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.UpsertQueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.MySqlDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.OracleDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.Sql2003Dialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SqlServerDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -99,7 +99,7 @@ public class QueryBuilderHelperTest {
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
 
     UpsertQueryBuilder upsertQueryBuilder = (UpsertQueryBuilder) queryBuilder;
-    assertEquals(upsertQueryBuilder.getDbDialect().getClass(), Sql2003Dialect.class);
+    assertEquals(upsertQueryBuilder.getDbDialect().getClass(), OracleDialect.class);
   }
 
   @Test
@@ -114,7 +114,7 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-           10);
+            10);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -135,7 +135,7 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-             10);
+            10);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);

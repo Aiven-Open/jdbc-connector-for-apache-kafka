@@ -13,13 +13,13 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class SinglePreparedStatementBuilderTest {
@@ -70,7 +70,7 @@ public class SinglePreparedStatementBuilderTest {
     when(connection.prepareStatement(sql))
             .thenReturn(statements.get(0), returnedStatementJavaSyntaxIsAncient);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 10);
     verify(connection, times(10)).prepareStatement(sql);
@@ -163,7 +163,7 @@ public class SinglePreparedStatementBuilderTest {
     PreparedStatement preparedStatement2 = mock(PreparedStatement.class);
     when(connection.prepareStatement(sql2)).thenReturn(preparedStatement2);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 2);
     verify(connection, times(1)).prepareStatement(sql1);
@@ -231,7 +231,7 @@ public class SinglePreparedStatementBuilderTest {
     when(connection.prepareStatement(sql))
             .thenReturn(statements.get(0), returnedStatementJavaSyntaxIsAncient);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 10);
     verify(connection, times(10)).prepareStatement(sql);
@@ -327,7 +327,7 @@ public class SinglePreparedStatementBuilderTest {
     when(connection.prepareStatement(sql1)).thenReturn(preparedStatement1, preparedStatement1a);
     when(connection.prepareStatement(sql2)).thenReturn(preparedStatement2);
 
-    List<PreparedStatement> actualStatements = builder.build(records, connection);
+    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
 
     assertEquals(actualStatements.size(), 3);
     verify(connection, times(2)).prepareStatement(sql1);

@@ -1,9 +1,18 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import java.sql.*;
+
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public final class SqlLiteHelper {
-  public static void createTable(final String uri, final String createSql) throws SQLException {
+  private static final Logger logger = LoggerFactory.getLogger(JdbcHelper.class);
+  public static void createTable(final String uri, final String createSql) throws SQLException{
     Connection connection = null;
     Statement stmt = null;
     try {
@@ -19,7 +28,7 @@ public final class SqlLiteHelper {
         try {
           connection.close();
         } catch (SQLException e) {
-
+           logger.error(e.getMessage(), e);
         }
       }
     }
@@ -41,9 +50,16 @@ public final class SqlLiteHelper {
         try {
           connection.close();
         } catch (SQLException e) {
-
+          logger.error(e.getMessage(), e);
         }
       }
+    }
+
+    //random errors of table not being available happens in the unit tests
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 
@@ -71,13 +87,13 @@ public final class SqlLiteHelper {
         try {
           connection.close();
         } catch (SQLException e) {
-
+          logger.error(e.getMessage(),e);
         }
       }
     }
   }
 
-  public static interface ResultSetReadCallback {
+  public interface ResultSetReadCallback {
     void read(final ResultSet rs) throws SQLException;
   }
 }

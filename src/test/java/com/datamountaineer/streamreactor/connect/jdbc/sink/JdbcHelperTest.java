@@ -1,5 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,7 +11,9 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class JdbcHelperTest {
   private static final String DB_FILE = "test_db_jdbc_helper_sqllite.db";
@@ -37,7 +40,7 @@ public class JdbcHelperTest {
   }
 
   @Test
-  public void returnTheDatabaseTableInformations() throws SQLException {
+  public void returnTheDatabaseTableInformation() throws SQLException {
     String createEmployees = "CREATE TABLE employees\n" +
             "( employee_id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
             "  last_name VARCHAR NOT NULL,\n" +

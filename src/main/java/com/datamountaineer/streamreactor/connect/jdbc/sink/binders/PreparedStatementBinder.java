@@ -16,6 +16,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.binders;
 
+import org.apache.kafka.connect.data.Schema;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -27,16 +29,21 @@ public interface PreparedStatementBinder {
 
   /**
    * Returns the column name for which the value is inserted
-   * @return
+   * @return Column name for inserted
    */
   String getFieldName();
+
+  /**
+   * Returns the Kafka Connect field Schema type
+   * @return Topic schema
+   */
+  Schema.Type getFieldType();
 
   /**
    * Bind the value to the prepared statement.
    *
    * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
-   * @return The statement with the value bound.
    * */
 
   void bind(int index, PreparedStatement statement) throws SQLException;

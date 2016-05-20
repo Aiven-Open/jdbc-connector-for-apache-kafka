@@ -29,8 +29,12 @@ import java.util.Map;
 public final class FieldsMappings {
   private final String tableName;
   private final String incomingTopic;
-  private final Boolean allFieldsIncluded;
+  private final boolean allFieldsIncluded;
   private final Map<String, FieldAlias> mappings;
+
+  private final boolean autoCreateTable;
+  private final boolean evolveTableSchema;
+  private final PrimaryKeyMode primaryKeyMode;
 
   /**
    * Creates a new instance of FieldsMappings
@@ -44,8 +48,30 @@ public final class FieldsMappings {
    */
   public FieldsMappings(final String tableName,
                         final String incomingTopic,
-                        final Boolean allFieldsIncluded,
+                        final boolean allFieldsIncluded,
                         final Map<String, FieldAlias> mappings) {
+    this(tableName, incomingTopic, allFieldsIncluded, mappings, false, false, PrimaryKeyMode.NONE);
+  }
+
+  /**
+   * Creates a new instance of FieldsMappings
+   *
+   * @param tableName         - The target RDBMS table to insert the records into
+   * @param incomingTopic     - The source Kafka topic
+   * @param allFieldsIncluded - If set to true it considers all fields in the payload; if false it will rely on the
+   *                          defined fields to include
+   * @param mappings          - Provides the map of fields to include and their alias. It could be set to Map.empty if all fields
+   *                          are to be included.
+   * @param evolveTableSchema - If true it allows auto table creation and table evolution
+   */
+  public FieldsMappings(final String tableName,
+                        final String incomingTopic,
+                        final boolean allFieldsIncluded,
+                        final Map<String, FieldAlias> mappings,
+                        final boolean autoCreateTable,
+                        final boolean evolveTableSchema,
+                        final PrimaryKeyMode primaryKeyMode) {
+
     ParameterValidator.notNullOrEmpty(tableName, "tableName");
     ParameterValidator.notNullOrEmpty(incomingTopic, "incomingTopic");
     ParameterValidator.notNull(mappings, "map");
@@ -54,7 +80,11 @@ public final class FieldsMappings {
     this.incomingTopic = incomingTopic;
     this.allFieldsIncluded = allFieldsIncluded;
     this.mappings = mappings;
+    this.autoCreateTable = autoCreateTable;
+    this.evolveTableSchema = evolveTableSchema;
+    this.primaryKeyMode = primaryKeyMode;
   }
+
 
   public FieldsMappings(final String tableName, final String incomingTopic) {
     this(tableName, incomingTopic, true, new HashMap<String, FieldAlias>());
@@ -65,7 +95,7 @@ public final class FieldsMappings {
    *
    * @return true - if all payload fields should be included; false - otherwise
    */
-  public Boolean areAllFieldsIncluded() {
+  public boolean areAllFieldsIncluded() {
     return allFieldsIncluded;
   }
 
@@ -75,6 +105,7 @@ public final class FieldsMappings {
 
   /**
    * Returns the source Kafka topic.
+   *
    * @return
    */
   public String getIncomingTopic() {
@@ -83,6 +114,7 @@ public final class FieldsMappings {
 
   /**
    * Returns the target database table name.
+   *
    * @return
    */
   public String getTableName() {
@@ -102,39 +134,57 @@ public final class FieldsMappings {
     return false;
   }
 
+  public boolean autoCreateTable() {
+    return autoCreateTable;
+  }
+
+  public boolean evolveTableSchema() {
+    return evolveTableSchema;
+  }
+
+  public PrimaryKeyMode getPrimaryKeyMode() {
+    return primaryKeyMode;
+  }
 
   @Override
   public String toString() {
     Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
-    return String.format("PayloadFields(%s,%s)", allFieldsIncluded.toString(), mapJoiner.join(mappings));
+    return String.format("PayloadFields(%b,%s)", allFieldsIncluded, mapJoiner.join(mappings));
   }
 
-  public static FieldsMappings from(final String tableName, final String incomingTopic, final String value) {
-    if (value == null)
-      return new FieldsMappings(tableName, incomingTopic);
-
+  public static FieldsMappings from(final String tableName,
+                                    final String incomingTopic,
+                                    final String value,
+                                    final boolean autoCreateTable,
+                                    final boolean evolveTableSchema,
+                                    final PrimaryKeyMode pkMode) {
     final Map<String, FieldAlias> fieldAlias = new HashMap<>();
-    for (String split : value.split(",")) {
-      final String[] arr = split.trim().split("=");
-      if (arr[0].trim().length() == 0)
-        throw new ConfigException("Invalid configuration for fields and mappings. Need to define the field name");
+    if (value != null) {
+      for (String split : value.split(",")) {
+        final String[] arr = split.trim().split("=");
+        if (arr[0].trim().length() == 0)
+          throw new ConfigException("Invalid configuration for fields and mappings. Need to define the field name");
 
-      boolean isPk = isPrimaryKey(arr[0].trim());
-      String field;
-      if (isPk) field = removePrimaryKeyChars(arr[0].trim());
-      else field = arr[0].trim();
+        final String field = arr[0].trim();
 
-      if (arr.length == 1) {
-        fieldAlias.put(field, new FieldAlias(field));
-      } else if (arr.length == 2) {
-        fieldAlias.put(field, new FieldAlias(arr[1].trim(), isPk));
-      } else
-        throw new ConfigException(value + " is not valid. Need to set the fields and mappings like: field1,field2,field3=alias3,[field4, field5=alias5]");
+        if (arr.length == 1) {
+          fieldAlias.put(field, new FieldAlias(field));
+        } else if (arr.length == 2) {
+          fieldAlias.put(field, new FieldAlias(arr[1].trim(), false));
+        } else
+          throw new ConfigException(value + " is not valid. Need to set the fields and mappings like: field1,field2,field3=alias3,[field4, field5=alias5]");
+      }
     }
 
     final Boolean allFields = fieldAlias.remove("*") != null;
 
-    return new FieldsMappings(tableName, incomingTopic, allFields, fieldAlias);
+    return new FieldsMappings(tableName,
+            incomingTopic,
+            allFields,
+            fieldAlias,
+            autoCreateTable,
+            evolveTableSchema,
+            pkMode);
   }
 
   /**
@@ -153,6 +203,7 @@ public final class FieldsMappings {
     return isPk;
   }
 
+ /*
   public static String removePrimaryKeyChars(final String field) {
     final String f = field.substring(1, field.length() - 1).trim();
     if (f.length() == 0) {
@@ -160,4 +211,5 @@ public final class FieldsMappings {
     }
     return f;
   }
+  */
 }

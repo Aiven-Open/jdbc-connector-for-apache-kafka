@@ -5,60 +5,46 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.PreparedStatementBuilderHelper;
-import com.google.common.collect.*;
-import org.apache.kafka.common.*;
+import com.google.common.collect.Lists;
 import org.apache.kafka.common.config.*;
-import org.apache.kafka.connect.sink.*;
 import org.junit.Test;
-import org.mockito.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
-
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.*;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
+import java.util.ArrayList;
+
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.TOPIC_TABLE_MAPPING;
 
 public class PreparedStatementBuilderHelperTest {
 
   @Test(expected = ConfigException.class)
   public void shouldThrowAnExceptionIfTheMappedTableDoesntExistInTheDatabase() {
-    Map<String, String> props = new HashMap<String, String>();
-    String topic1 = "topic1";
-    String topic2 = "topic2";
-    TopicPartition tp1 = new TopicPartition(topic1, 12);
-    TopicPartition tp2 = new TopicPartition(topic2, 13);
-    HashSet<TopicPartition> assignment = Sets.newHashSet();
-
-    //Set topic assignments, used by the sinkContext mock
-    assignment.add(tp1);
-    assignment.add(tp2);
-
-    //mock the context
-    SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
-    when(context.assignment()).thenReturn(assignment);
+    Map<String, String> props = new HashMap<>();
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
+    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA,topic2=tableNotPresent");
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
-        //JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
 
-    Map<String, DbTable> tableMap = new HashMap<>();
-    tableMap.put("tableA", new DbTable("tableA", new HashMap<String, DbTableColumn>()));
-    tableMap.put("tableB", new DbTable("tableB", new HashMap<String, DbTableColumn>()));
-    PreparedStatementBuilderHelper.from(settings, tableMap);
+    List<DbTable> tables = Lists.newArrayList(
+        new DbTable("tableA", new ArrayList<DbTableColumn>()),
+        new DbTable("tableB", new ArrayList<DbTableColumn>()));
+    PreparedStatementBuilderHelper.from(settings, new DatabaseMetadata(null, tables));
   }
 
   @Test(expected = ConfigException.class)
-  public void throwAnExceptionIfTheFieldMapsToAnInexistentColumn() {
+  public void throwAnExceptionIfTheFieldMapsToAnInExistingColumn() {
 
-
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", false, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, false, 1));
-    columnMap.put("col3", new DbTableColumn("col3", false, false, 1));
-    DbTable table = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+        new DbTableColumn("col1", false, false, 1),
+        new DbTableColumn("col2", false, false, 1),
+        new DbTableColumn("col3", false, false, 1));
+    DbTable table = new DbTable("tableA", columns);
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("f1", new FieldAlias("col1", false));
@@ -72,11 +58,11 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleAllFieldsMappingSetting() {
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, false, 1));
-    columnMap.put("col3", new DbTableColumn("col3", false, false, 1));
-    DbTable table = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, false, 1),
+        new DbTableColumn("col3", false, false, 1));
+    DbTable table = new DbTable("tableA", columns);
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
 
@@ -104,11 +90,11 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleAllFieldsMappingSettingAndTheMappingsProvided() {
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, false, 1));
-    columnMap.put("col3", new DbTableColumn("col3", false, false, 1));
-    DbTable table = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, false, 1),
+        new DbTableColumn("col3", false, false, 1));
+    DbTable table = new DbTable("tableA", columns);
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("f1", new FieldAlias("col3"));
@@ -141,11 +127,11 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleAllFieldsIncludedAndAnExistingMapping() {
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, false, 1));
-    columnMap.put("col3", new DbTableColumn("col3", false, false, 1));
-    DbTable table = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, false, 1),
+        new DbTableColumn("col3", false, false, 1));
+    DbTable table = new DbTable("tableA", columns);
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("col3", new FieldAlias("col3", true));
@@ -174,11 +160,11 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleNotAllFieldsMappedButSpecificMappings() {
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, false, 1));
-    columnMap.put("col3", new DbTableColumn("col3", false, false, 1));
-    DbTable table = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, false, 1),
+        new DbTableColumn("col3", false, false, 1));
+    DbTable table = new DbTable("tableA", columns);
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("col1", new FieldAlias("col1", false));
@@ -203,11 +189,11 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test(expected = ConfigException.class)
   public void throwAnExceptionIfSpecificMappingsAreSetButPKColumnIsMissed() {
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, false, 1));
-    columnMap.put("col3", new DbTableColumn("col3", false, false, 1));
-    DbTable table = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, false, 1),
+        new DbTableColumn("col3", false, false, 1));
+    DbTable table = new DbTable("tableA", columns);
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("col2", new FieldAlias("col2", false));

@@ -14,17 +14,23 @@
  * limitations under the License.
  **/
 
-package com.datamountaineer.streamreactor.connect.jdbc.sink.binders;
+package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-public abstract class BasePreparedStatementBinder implements PreparedStatementBinder {
-  private final String fieldName;
+/**
+ * Specifies the modes for creating primary
+ */
+public enum PrimaryKeyMode {
+  NONE("None"),
+  FIELD("Fields"),
+  KAFKA("Kafka");
 
-  BasePreparedStatementBinder(final String fieldName) {
-    this.fieldName = fieldName;
+  private final String value;
+
+  PrimaryKeyMode(String value) {
+    this.value = value;
   }
 
-  @Override
-  public String getFieldName() {
-    return fieldName;
+  public String getValue() {
+    return value;
   }
 }

@@ -19,14 +19,19 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
+import com.google.common.base.Function;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Holds the Jdbc Sink settings
@@ -103,6 +108,15 @@ public final class JdbcSinkSettings {
     return password;
   }
 
+  public Set<String> getTableNames() {
+    return Sets.newHashSet(Iterables.transform(mappings, new Function<FieldsMappings, String>() {
+      @Override
+      public String apply(FieldsMappings fieldsMappings) {
+        return fieldsMappings.getTableName();
+      }
+    }));
+  }
+
   @Override
   public String toString() {
     return String.format("JdbcSinkSettings(\n" +
@@ -120,38 +134,30 @@ public final class JdbcSinkSettings {
    */
   public static JdbcSinkSettings from(final JdbcSinkConfig config) {
 
-    String rawExportMap = config.getString(JdbcSinkConfig.EXPORT_MAPPINGS);
-
-    if (rawExportMap.isEmpty()) {
-      throw new ConfigException(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set!");
-    }
-
-    final List<FieldsMappings> fieldsMappings = getTopicExportMappings(rawExportMap);
-    //getTablesMappings(config);
+    final List<FieldsMappings> fieldsMappings = getTopicExportMappings(config);
 
     InsertModeEnum insertMode;
     try {
-      insertMode = InsertModeEnum.valueOf(config.getString(JdbcSinkConfig.INSERT_MODE));
+      insertMode = InsertModeEnum.valueOf(config.getString(JdbcSinkConfig.INSERT_MODE).toUpperCase());
     } catch (IllegalArgumentException e) {
       throw new ConfigException(JdbcSinkConfig.INSERT_MODE + " is not set correctly");
     }
 
-    if (insertMode == InsertModeEnum.UPSERT) {
-      for (FieldsMappings tm : fieldsMappings) {
-        boolean hasPK = false;
-
-        for (Map.Entry<String, FieldAlias> e : tm.getMappings().entrySet()) {
-          if (e.getValue().isPrimaryKey()) {
-            hasPK = true;
-            break;
-          }
-        }
-        if (!hasPK)
-          throw new ConfigException("Invalid configuration. UPSERT mode has been chosen but no primary keys have been " +
-                  "provided for " + tm.getTableName());
-      }
-    }
-
+//    if (insertMode == InsertModeEnum.UPSERT) {
+//      for (FieldsMappings tm : fieldsMappings) {
+//        boolean hasPK = false;
+//
+//        for (Map.Entry<String, FieldAlias> e : tm.getMappings().entrySet()) {
+//          if (e.getValue().isPrimaryKey()) {
+//            hasPK = true;
+//            break;
+//          }
+//        }
+//        if (!hasPK)
+//          throw new ConfigException("Invalid configuration. UPSERT mode has been chosen but no primary keys have been " +
+//                  "provided for " + tm.getTableName());
+//      }
+//    }
 
     ErrorPolicyEnum policy = ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY).toUpperCase());
 
@@ -166,23 +172,33 @@ public final class JdbcSinkSettings {
             config.getInt(JdbcSinkConfig.MAX_RETRIES));
   }
 
-
   /**
    * Get a list of the export mappings for a mapping.
    *
-   * @param raw the raw input
-   * */
-  public static List<FieldsMappings> getTopicExportMappings(String raw) {
-    List<FieldsMappings> fieldsMappingsList = Lists.newArrayList();
-    String[] rawMappings = raw.split("\\}");
 
+   * */
+  private static List<FieldsMappings> getTopicExportMappings(JdbcSinkConfig config) {
+    String rawExportMap = config.getString(JdbcSinkConfig.EXPORT_MAPPINGS).replaceAll("\\s+", "");
+
+    if (rawExportMap.isEmpty()) {
+      throw new ConfigException(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set!");
+    }
+
+    //get the auto create map
+    final String autoCreateRaw = config.getString(JdbcSinkConfig.AUTO_CREATE_TABLE_MAP).replaceAll("\\s+", "");
+    final String evolveRaw = config.getString(JdbcSinkConfig.EVOLVE_TABLE_MAP).replaceAll("\\s+", "");
+
+    List<FieldsMappings> fieldsMappingsList = Lists.newArrayList();
+    String[] rawMappings = rawExportMap.split("\\}");
+
+    //go over our main mappings
     for (String rawMapping: rawMappings) {
       String[] split = rawMapping
-                          .replace(",{", "")
-                          .replace("{", "")
-                          .replace("}", "")
-                          .trim()
-                          .split(";");
+          .replace(",{", "")
+          .replace("{", "")
+          .replace("}", "")
+          .trim()
+          .split(";");
 
       if (split.length != 2) {
         throw new ConfigException(String.format(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set correctly, %s", rawMapping));
@@ -202,7 +218,28 @@ public final class JdbcSinkSettings {
       String topic = topicToTable[0].trim();
       String table = topicToTable[1].trim();
 
+      //auto create the table from the topic
+      final boolean autoCreateTable = autoCreateRaw.contains(topic);
+      //allow evolving topics
+      final boolean evolveTableSchema = evolveRaw.contains(topic);
+      logger.info(String.format("Setting auto create table to %s and all schema evolution to %s for topic %s and table %s",
+          autoCreateTable, evolveTableSchema, topic, table));
+
+      //auto create is true so try and get pk fields
+      Set<String> pkCols = Sets.newHashSet();
+      if (autoCreateTable) {
+        int mapStart = autoCreateRaw.indexOf("{" + topic);
+        int delimiterIndex = autoCreateRaw.indexOf(":", mapStart);
+        int mapEnd = autoCreateRaw.indexOf("}", mapStart);
+        String[] pks = autoCreateRaw.substring(delimiterIndex + 1, mapEnd).split(",");
+        for (String pk : pks) {
+          if (!pk.isEmpty()) pkCols.add(pk);
+        }
+      }
+
+      //now get fields mappings
       Map<String, FieldAlias> mappings = Maps.newHashMap();
+      Boolean allFields = split[1].equals("*");
 
       //all fields?
       if (!split[1].equals("*")) {
@@ -218,12 +255,122 @@ public final class JdbcSinkSettings {
           } else {
             colName = colSplit[1].trim();
           }
-          mappings.put(fieldName, new FieldAlias(colName, true));
+
+          boolean pk = pkCols.contains(colName);
+          mappings.put(fieldName, new FieldAlias(colName, pk));
+        }
+      } else {
+        //all fields mode but need to know the pks if any set.
+        for (String pk : pkCols) {
+          mappings.put(pk, new FieldAlias(pk, true));
         }
       }
 
-      fieldsMappingsList.add(new FieldsMappings(table, topic, true, mappings));
+      //check pks are in our fields selection if not allFields
+      if (!allFields) {
+        for (String pk : pkCols) {
+          if (!mappings.containsKey(pk)) {
+            throw new ConfigException(String.format("Primary key %s mapping specified that does not exist in field selection %s.",
+                                        pk, rawExportMap));
+          }
+        }
+      }
+
+      FieldsMappings fm = new FieldsMappings(table, topic, allFields, mappings, autoCreateTable, evolveTableSchema,
+                                             PrimaryKeyMode.FIELD);
+      fieldsMappingsList.add(fm);
     }
     return fieldsMappingsList;
   }
+
+
+//  private static List<FieldsMappings> getTablesMappings(final JdbcSinkConfig config) {
+//    final String fields = config.getString(JdbcSinkConfig.TOPIC_TABLE_MAPPING);
+//
+//    if (fields == null || fields.trim().length() == 0) {
+//      throw new ConfigException(JdbcSinkConfig.TOPIC_TABLE_MAPPING + " is not set correctly.");
+//    }
+//
+//    List<FieldsMappings> fieldsMappingsList = new ArrayList<>();
+//    for (String input : fields.split(",")) {
+//      if (input.trim().length() == 0)
+//        throw new ConfigException("Empty topic to table mapping found");
+//      //input is topic=table
+//      final String[] arr = input.split("=");
+//      if (arr.length != 2)
+//        throw new ConfigException(input + " is not a valid topic to table mapping");
+//
+//      final String tableName = arr[1].trim();
+//      if (tableName.length() == 0)
+//        throw new ConfigException(input + " is not a valid topic to table mapping");
+//
+//      String tableMappings = config.getString(String.format(JdbcSinkConfig.TABLE_MAPPINGS_FORMAT, tableName));
+//
+//      final boolean autoCreateTable = config.getBoolean(String.format(JdbcSinkConfig.TABLE_AUTO_CREATE_TABLE_FORMAT, tableName));
+//      final boolean evolveTableSchema = config.getBoolean(String.format(JdbcSinkConfig.TABLE_EVOLVE_SCHEMA_FORMAT, tableName));
+//      final PrimaryKeyMode pkMode = PrimaryKeyMode.valueOf(config.getString(String.format(JdbcSinkConfig.TABLE_EVOLVE_PK_MODE_FORMAT, tableName)));
+//
+//
+//      //!!Trick here. In schema evolution mode we concatenate the table_evolve_pk_fields with the table mappings
+//      //This way FieldMappings knows about FieldAlias and no more logic is necessary in the StructFieldExtractor
+//      if (evolveTableSchema && pkMode == PrimaryKeyMode.FIELD) {
+//        final String pkFields = config.getString(String.format(JdbcSinkConfig.TABLE_EVOLVE_PK_FIELDS_FORMAT, tableName));
+//        if (pkFields == null || pkFields.trim().length() == 0) {
+//          throw new ConfigException(String.format(JdbcSinkConfig.TABLE_EVOLVE_PK_MODE_FORMAT, tableName) + " is invalid." +
+//                  " For table schema evolution with primary key mode set to FIELDS the primary key fields need to be " +
+//                  "specified");
+//        }
+//
+//        if ((tableMappings != null && tableMappings.trim().length() > 0) || tableMappings == null) {
+//          tableMappings = pkFields;
+//        } else {
+//          tableMappings += "," + pkFields;
+//        }
+//      }
+//
+//      fieldsMappingsList.add(
+//              FieldsMappings.from(tableName,
+//                      arr[0].trim(),
+//                      tableMappings,
+//                      autoCreateTable,
+//                      evolveTableSchema,
+//                      pkMode));
+//    }
+//
+//    return fieldsMappingsList;
+//  }
+//
+//
+//  /**
+//   * Returns a set of all the values that have been comma separated
+//   *
+//   * @param value
+//   * @return
+//   */
+//  public static Set<String> fromCommaSeparated(final String value) {
+//    if (value == null || value.trim().length() == 0) {
+//      return null;
+//    }
+//    final Set<String> pkFields = new HashSet<>();
+//    for (final String v : value.split(",")) {
+//      if (v.trim().length() > 0) {
+//        pkFields.add(v.trim());
+//      }
+//    }
+//    return pkFields;
+//  }
+//
+//  private static ConfigDef addDynamicKey(final ConfigDef configDef,
+//                                         final String key,
+//                                         ConfigDef.Type type,
+//                                         final Object defaultValue,
+//                                         final String description) {
+//    logger.info(String.format("Defining dynamic key %s", key));
+//    return configDef.define(
+//            key,
+//            type,
+//            defaultValue,
+//            ConfigDef.Importance.LOW,
+//            description);
+//  }
 }

@@ -24,23 +24,25 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SqlServerDialect extends Sql2003Dialect {
-
-  public SqlServerDialect() {
+/**
+ * Provides support for Oracle database
+ */
+public class OracleDialect extends Sql2003Dialect {
+  public OracleDialect() {
     super(getSqlTypeMap());
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
     Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "tinyint");
-    map.put(Schema.Type.INT16, "smallint");
-    map.put(Schema.Type.INT32, "int");
-    map.put(Schema.Type.INT64, "bigint");
-    map.put(Schema.Type.FLOAT32, "real");
-    map.put(Schema.Type.FLOAT64, "float");
-    map.put(Schema.Type.BOOLEAN, "bit");
-    map.put(Schema.Type.STRING, "varchar(1024)");
-    map.put(Schema.Type.BYTES, "varbinary(1024)");
+    map.put(Schema.Type.INT8, " TINYINT");
+    map.put(Schema.Type.INT16, " SMALLINT");
+    map.put(Schema.Type.INT32, "INTEGER");
+    map.put(Schema.Type.INT64, "BIGINT");
+    map.put(Schema.Type.FLOAT32, "REAL");
+    map.put(Schema.Type.FLOAT64, "DOUBLE");
+    map.put(Schema.Type.BOOLEAN, "BOOLEAN");
+    map.put(Schema.Type.STRING, "VARCHAR(1024)");
+    map.put(Schema.Type.BYTES, "BLOB");
     return map;
   }
 
@@ -51,7 +53,7 @@ public class SqlServerDialect extends Sql2003Dialect {
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is empty.");
     }
-    final StringBuilder builder = new StringBuilder("ALTER TABLE ADD ");
+    final StringBuilder builder = new StringBuilder("ALTER TABLE ADD (");
     builder.append(table);
     builder.append(System.lineSeparator());
 
@@ -68,12 +70,7 @@ public class SqlServerDialect extends Sql2003Dialect {
       builder.append(" NULL ");
       builder.append(getSqlType(f.getType()));
     }
-    builder.append(";");
+    builder.append(");");
     return builder.toString();
-  }
-
-  @Override
-  public String getMergeHints() {
-    return " with (HOLDLOCK)";
   }
 }

@@ -38,7 +38,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   }
 
   public final static String EXPORT_MAPPINGS = "connect.jdbc.sink.export.mappings";
-  public final static String EXPORT_MAPPING_DOC = "Specifies to the mappings of topic to table. Additionally which fields" +
+  private final static String EXPORT_MAPPING_DOC = "Specifies to the mappings of topic to table. Additionally which fields" +
       "to select from the source topic and their mappings to columns in the target table." +
       "Multiple mappings can set comma separated wrapped in {}." +
       "" +
@@ -59,21 +59,21 @@ public class JdbcSinkConfig extends AbstractConfig {
       "the fields name is used. Topic to table mapping must be explict, the table must be provided.";
 
   public final static String DATABASE_CONNECTION_URI = "connect.jdbc.connection.uri";
-  public final static String DATABASE_CONNECTION_URI_DOC = "Specifies the JDBC database connection URI.";
+  private final static String DATABASE_CONNECTION_URI_DOC = "Specifies the JDBC database connection URI.";
 
   public final static String DATABASE_CONNECTION_USER = "connect.jdbc.connection.user";
-  public final static String DATABASE_CONNECTION_USER_DOC = "Specifies the JDBC connection user.";
+  private final static String DATABASE_CONNECTION_USER_DOC = "Specifies the JDBC connection user.";
 
   public final static String DATABASE_CONNECTION_PASSWORD = "connect.jdbc.connection.password";
-  public final static String DATABASE_CONNECTION_PASSWORD_DOC = "Specifies the JDBC connection password.";
+  private final static String DATABASE_CONNECTION_PASSWORD_DOC = "Specifies the JDBC connection password.";
 
   public final static String DATABASE_IS_BATCHING = "connect.jdbc.sink.batching.enabled";
-  public final static String DATABASE_IS_BATCHING_DOC = "Specifies if a given sequence of SinkRecords are batched or not.\n" +
+  private final static String DATABASE_IS_BATCHING_DOC = "Specifies if a given sequence of SinkRecords are batched or not.\n" +
           "<true> the data insert is batched;\n" +
           "<false> for each record a sql statement is created.";
 
   public final static String ERROR_POLICY = "connect.jdbc.sink.error.policy";
-  public final static String ERROR_POLICY_DOC = "Specifies the action to be taken if an error occurs while inserting the data.\n" +
+  private final static String ERROR_POLICY_DOC = "Specifies the action to be taken if an error occurs while inserting the data.\n" +
           "There are two available options: \n" +
           "NOOP - the error is swallowed \n" +
           "THROW - the error is allowed to propagate. \n" +
@@ -81,24 +81,32 @@ public class JdbcSinkConfig extends AbstractConfig {
           "The error will be logged automatically";
 
   public final static String MAX_RETRIES = "connect.jdbc.sink.max.retries";
-  public final static String MAX_RETRIES_DOC = String.format("The maximum number of a message is retried. Only valid for %s" +
-      " set to %s", ERROR_POLICY, ErrorPolicyEnum.RETRY.toString());
+  private final static String MAX_RETRIES_DOC = String.format("The maximum number of a message is retried. Only valid for %s" +
+          " set to %s", ERROR_POLICY, ErrorPolicyEnum.RETRY.toString());
   private final static String MAX_RETRIES_DEFAULT = "10";
 
   public final static String RETRY_INTERVAL = "connect.jdbc.sink.retry.interval";
-  public final static String RETRY_INTERVAL_DEFAULT = "60000";
-  public final static String RETRY_INTERVAL_DOC = String.format("The time, in milliseconds between the Sink retry failed " +
+  private final static String RETRY_INTERVAL_DEFAULT = "60000";
+  private final static String RETRY_INTERVAL_DOC = String.format("The time, in milliseconds between the Sink retry failed " +
       "inserts, if the %s is set to RETRY. Default is %s", ERROR_POLICY, RETRY_INTERVAL_DEFAULT);
 
 
   public final static String INSERT_MODE = "connect.jdbc.sink.mode";
-  public final static String INSERT_MODE_DOC = "Specifies how the data should be landed into the RDBMS. Two options are \n" +
+  private final static String INSERT_MODE_DOC = "Specifies how the data should be landed into the RDBMS. Two options are \n" +
           "supported:INSERT(default value) and UPSERT.";
 
-  private final static String DEFAULT_ERROR_POLICY = "throw";
+  private final static String DEFAULT_ERROR_POLICY = "THROW";
   private final static String DEFAULT_INSERT_MODE = "INSERT";
 
-  public final static ConfigDef getConfigDef() {
+  public final static String TOPIC_TABLE_MAPPING = "connect.jdbc.sink.topics.to.tables";
+
+  public final static String EVOLVE_TABLE_MAP = "connect.jdbc.sink.evolve.tables";
+  private final static String EVOLVE_TABLE_MAP_DOC = "Comma separated list of tables on which to allow evolving schemas.";
+  public final static String AUTO_CREATE_TABLE_MAP = "connect.jdbc.sink.auto.create.tables";
+  private final static String AUTO_CREATE_TABLE_MAP_DOC = "List of tables to create automatically from topics.";
+
+
+  private static ConfigDef getConfigDef() {
     return new ConfigDef()
             .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
             .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
@@ -108,6 +116,8 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC)
             .define(EXPORT_MAPPINGS, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, EXPORT_MAPPING_DOC)
             .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
-            .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC);
+            .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC)
+            .define(AUTO_CREATE_TABLE_MAP, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, AUTO_CREATE_TABLE_MAP_DOC)
+            .define(EVOLVE_TABLE_MAP, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, EVOLVE_TABLE_MAP_DOC);
   }
 }

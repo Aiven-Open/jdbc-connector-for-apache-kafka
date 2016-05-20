@@ -1,5 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
@@ -10,7 +12,10 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.OracleDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -20,8 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -52,7 +55,7 @@ public class JdbcDbWriterTest {
 
   @After
   public void tearDown() {
-    //deleteSqlLiteFile();
+    deleteSqlLiteFile();
   }
 
   private void deleteSqlLiteFile() {
@@ -74,17 +77,13 @@ public class JdbcDbWriterTest {
             InsertModeEnum.INSERT,
             10);
 
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
-    final DbTable tableA = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+            new DbTableColumn("col1", true, false, 1),
+            new DbTableColumn("col2", false, true, 1)
+    );
+    final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
-      @Override
-      public List<DbTable> getTables(String connectionUri, String user, String password) {
-        return Lists.newArrayList(tableA);
-      }
-    });
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
 
     assertEquals(writer.getStatementBuilder().getClass(), BatchedPreparedStatementBuilder.class);
   }
@@ -103,24 +102,19 @@ public class JdbcDbWriterTest {
             InsertModeEnum.INSERT,
             10);
 
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
-    final DbTable tableA = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+            new DbTableColumn("col1", true, false, 1),
+            new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
-      @Override
-      public List<DbTable> getTables(String connectionUri, String user, String password) {
-        return Lists.newArrayList(tableA);
-      }
-    });
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
 
     assertEquals(writer.getStatementBuilder().getClass(), SinglePreparedStatementBuilder.class);
   }
 
 
   @Test
-  public void writerShouldUseNoopForErrorHandling() {
+  public void writerShouldUseNoopForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
@@ -134,24 +128,18 @@ public class JdbcDbWriterTest {
             10
     );
 
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
-    final DbTable tableA = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+            new DbTableColumn("col1", true, false, 1),
+            new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
-      @Override
-      public List<DbTable> getTables(String connectionUri, String user, String password) {
-        return Lists.newArrayList(tableA);
-      }
-    });
-
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
   }
 
   @Test
-  public void writerShouldUseThrowForErrorHandling() {
+  public void writerShouldUseThrowForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, new HashMap<String, FieldAlias>()));
 
@@ -164,17 +152,12 @@ public class JdbcDbWriterTest {
             InsertModeEnum.INSERT,
             10);
 
-    Map<String, DbTableColumn> columnMap = new HashMap<>();
-    columnMap.put("col1", new DbTableColumn("col1", true, false, 1));
-    columnMap.put("col2", new DbTableColumn("col2", false, true, 1));
-    final DbTable tableA = new DbTable("tableA", columnMap);
+    List<DbTableColumn> columns = Lists.newArrayList(
+            new DbTableColumn("col1", true, false, 1),
+            new DbTableColumn("col2", false, true, 1));
+    final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DbTableInfoProvider() {
-      @Override
-      public List<DbTable> getTables(String connectionUri, String user, String password) {
-        return Lists.newArrayList(tableA);
-      }
-    });
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
   }
@@ -190,7 +173,13 @@ public class JdbcDbWriterTest {
 
     ErrorHandlingPolicy policy = ErrorHandlingPolicyHelper.from(ErrorPolicyEnum.NOOP);
     when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, policy, 10);
+
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new OracleDialect());
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, policy, executor, 10);
     writer.write(records);
   }
 
@@ -203,12 +192,18 @@ public class JdbcDbWriterTest {
     records.add(new SinkRecord("topic", 1, Schema.STRING_SCHEMA, "test1", Schema.STRING_SCHEMA, "value", 0));
 
     when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, new ThrowErrorHandlingPolicy(), 10);
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new OracleDialect());
+
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, new ThrowErrorHandlingPolicy(), executor, 10);
     writer.write(records);
   }
 
   @Test
-  public void handleSingleStatementPerRecord() throws SQLException {
+  public void handleSingleStatementPerRecord() throws SQLException, InterruptedException {
     String tableName1 = "single_statement_test_1";
     String createTable1 = "CREATE TABLE " + tableName1 + " (" +
             "    firstName  TEXT," +
@@ -310,10 +305,44 @@ public class JdbcDbWriterTest {
     map.put(topic2.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, new HashMap<String, FieldAlias>())));
 
+    Thread.sleep(1000);
 
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName1, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )),
+            new DbTable(tableName2, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )));
+
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new SQLiteDialect());
     JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy(), 10);
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 
@@ -424,9 +453,31 @@ public class JdbcDbWriterTest {
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, new HashMap<String, FieldAlias>())));
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )));
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new SQLiteDialect());
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
+            null,
+            null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy(), 10);
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 
@@ -522,10 +573,31 @@ public class JdbcDbWriterTest {
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, new HashMap<String, FieldAlias>())));
 
-
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )));
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new SQLiteDialect());
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
+            null,
+            null,
             new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy(), 10);
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 
@@ -641,9 +713,33 @@ public class JdbcDbWriterTest {
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, aliasMapPK)));
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
-            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
-            new ThrowErrorHandlingPolicy(), 10);
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )));
+
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            dbDialect);
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
+            null,
+            null,
+            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(dbDialect)),
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 
@@ -794,9 +890,45 @@ public class JdbcDbWriterTest {
     map.put(topic2.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName2, topic2, true, aliasPKMap)));
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
-            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
-            new ThrowErrorHandlingPolicy(), 10);
+    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName1, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )),
+            new DbTable(tableName2, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1),
+                    new DbTableColumn("short", true, false, 1),
+                    new DbTableColumn("long", true, false, 1),
+                    new DbTableColumn("float", true, false, 1),
+                    new DbTableColumn("double", true, false, 1),
+                    new DbTableColumn("BLOB", true, false, 1)
+            )));
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            dbDialect);
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
+            null,
+            null,
+            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(dbDialect)),
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 
@@ -921,9 +1053,27 @@ public class JdbcDbWriterTest {
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, false, aliasMap)));
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
-            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(DbDialect.fromConnectionString(SQL_LITE_URI))),
-            new ThrowErrorHandlingPolicy(), 10);
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1),
+                    new DbTableColumn("bool", true, false, 1),
+                    new DbTableColumn("byte", true, false, 1)
+            )));
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            dbDialect);
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
+            null,
+            null,
+            new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(dbDialect)),
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 
@@ -1017,9 +1167,26 @@ public class JdbcDbWriterTest {
     map.put(topic1.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName1, topic1, false, aliasMap)));
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
+    List<DbTable> dbTables = Lists.newArrayList(
+            new DbTable(tableName1, Lists.<DbTableColumn>newArrayList(
+                    new DbTableColumn("firstName", true, false, 1),
+                    new DbTableColumn("lastName", true, false, 1),
+                    new DbTableColumn("age", false, false, 1)
+            )));
+
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new SQLiteDialect());
+
+    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
+            null,
+            null,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
-            new ThrowErrorHandlingPolicy(), 10);
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
 
     writer.write(records);
 

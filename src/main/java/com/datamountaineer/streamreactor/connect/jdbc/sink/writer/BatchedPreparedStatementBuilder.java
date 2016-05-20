@@ -66,9 +66,11 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
    * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
    */
   @Override
-  public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
+  public PreparedStatementContext build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
 
     final Map<String, PreparedStatement> mapStatements = new HashMap<>();
+    final TablesToColumnUsageState state = new TablesToColumnUsageState();
+
     for (final SinkRecord record : records) {
       logger.debug("Received record from topic:%s partition:%d and offset:$d",
               record.topic(),
@@ -98,6 +100,8 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
       final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct);
 
       if (!binders.isEmpty()) {
+        final String tableName = fieldsDataExtractor.getTableName();
+        state.trackUsage(tableName, binders);
 
         final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
         final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
@@ -105,7 +109,7 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
         final String statementKey = Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
 
         if (!mapStatements.containsKey(statementKey)) {
-          final String query = queryBuilder.build(fieldsDataExtractor.getTableName(),
+          final String query = queryBuilder.build(tableName,
                   nonKeyColumnsName,
                   keyColumnsName);
 
@@ -118,7 +122,7 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
       }
     }
 
-    return Lists.newArrayList(mapStatements.values());
+    return new PreparedStatementContext(mapStatements.values(), state.getState());
   }
 
   @Override

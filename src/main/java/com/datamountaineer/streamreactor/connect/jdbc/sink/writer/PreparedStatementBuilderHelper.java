@@ -15,6 +15,7 @@
  **/
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
@@ -63,22 +64,22 @@ public final class PreparedStatementBuilderHelper {
    * 4th avoiding the error)
    *
    * @param settings
-   * @param tableInfoMap
+   * @param databaseMetadata
    * @return
    */
   public static PreparedStatementBuilder from(final JdbcSinkSettings settings,
-                                              Map<String, DbTable> tableInfoMap) {
+                                              DatabaseMetadata databaseMetadata) {
 
     final Map<String, StructFieldsDataExtractor> map = Maps.newHashMap();
     for (final FieldsMappings tm : settings.getMappings()) {
-      if (!tableInfoMap.containsKey(tm.getTableName())) {
-        final String tables = Joiner.on(",").join(tableInfoMap.keySet());
+      if (!databaseMetadata.containsTable(tm.getTableName())) {
+        final String tables = Joiner.on(",").join(databaseMetadata.getTableNames());
         throw new ConfigException(String.format("%s table is not found in the database available tables:%s",
-                tm.getTableName(),
-                tables));
+            tm.getTableName(),
+            tables));
       }
 
-      final FieldsMappings tableMappings = validateAndMerge(tm, tableInfoMap.get(tm.getTableName()));
+      final FieldsMappings tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
 
       final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tableMappings);
 
@@ -116,7 +117,7 @@ public final class PreparedStatementBuilderHelper {
 
       for (DbTableColumn column : dbTable.getColumns().values()) {
         map.put(column.getName(),
-                new FieldAlias(column.getName(), column.isPrimaryKey()));
+            new FieldAlias(column.getName(), column.isPrimaryKey()));
       }
 
       //apply the specific mappings
@@ -124,10 +125,10 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!map.containsKey(colName)) {
           final String error =
-                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns: %s",
-                          tm.getTableName(),
-                          colName,
-                          Joiner.on(",").join(map.keySet()));
+              String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                  tm.getTableName(),
+                  colName,
+                  Joiner.on(",").join(map.keySet()));
           throw new ConfigException(error);
         }
         map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName)));
@@ -140,10 +141,10 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!dbCols.containsKey(colName)) {
           final String error =
-                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns: %s",
-                          tm.getTableName(),
-                          colName,
-                          Joiner.on(",").join(dbCols.keySet()));
+              String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                  tm.getTableName(),
+                  colName,
+                  Joiner.on(",").join(dbCols.keySet()));
           throw new ConfigException(error);
         }
         map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName)));
@@ -155,9 +156,9 @@ public final class PreparedStatementBuilderHelper {
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
           throw new ConfigException(
-                  String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
-                          Joiner.on(",").join(specifiedPKs),
-                          Joiner.on(",").join(pkColumns)));
+              String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
+                  Joiner.on(",").join(specifiedPKs),
+                  Joiner.on(",").join(pkColumns)));
         }
       }
     }

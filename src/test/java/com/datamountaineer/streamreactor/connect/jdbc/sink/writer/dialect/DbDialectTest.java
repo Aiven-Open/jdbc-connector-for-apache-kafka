@@ -37,7 +37,7 @@ public class DbDialectTest {
 
   @Test
   public void getSql2003DialectForOracle() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:oracle:thin:@localhost:1521:xe").getClass(), Sql2003Dialect.class);
+    assertEquals(DbDialect.fromConnectionString("jdbc:oracle:thin:@localhost:1521:xe").getClass(), OracleDialect.class);
   }
 
   @Test
@@ -54,6 +54,6 @@ public class DbDialectTest {
   @Test
   public void getPostgreDialect() {
     assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(),
-        PostgreDialect.class);
+        PostgreSQLDialect.class);
   }
 }

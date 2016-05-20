@@ -30,7 +30,7 @@ import java.net.URL;
  * java.net.URL does not support multi:part:scheme:// components, which
  * virtually all JDBC connect string URLs have.
  */
-public final class JDBCUrl {
+final class JDBCUrl {
 
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkSettings.class);
 

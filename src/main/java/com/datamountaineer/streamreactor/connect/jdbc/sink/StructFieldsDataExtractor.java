@@ -16,16 +16,16 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.base.Predicate;
@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class holds the a mappings of fields to extract from
@@ -79,7 +80,7 @@ public class StructFieldsDataExtractor {
         @Override
         public boolean apply(Field input) {
           return fieldsMappings.getMappings().containsKey(input.name()) ||
-                  fieldsMappings.areAllFieldsIncluded();
+              fieldsMappings.areAllFieldsIncluded();
         }
 
         @Override
@@ -95,12 +96,13 @@ public class StructFieldsDataExtractor {
 
     final List<PreparedStatementBinder> nonPrimaryKeyBinders = Lists.newLinkedList();
     final List<PreparedStatementBinder> primaryKeyBinders = Lists.newLinkedList();
+    final Map<String, FieldAlias> mappings = fieldsMappings.getMappings();
     for (final Field field : fields) {
       final PreparedStatementBinder binder = getFieldValue(field, struct);
       if (binder != null) {
         boolean isPk = false;
-        if (fieldsMappings.getMappings().containsKey(field.name())) {
-          final FieldAlias fa = fieldsMappings.getMappings().get(field.name());
+        if (mappings.containsKey(field.name())) {
+          final FieldAlias fa = mappings.get(field.name());
           isPk = fa.isPrimaryKey();
         }
 
@@ -191,8 +193,8 @@ public class StructFieldsDataExtractor {
     }
 
     public boolean isEmpty() {
-      return nonKeyColumns.isEmpty() && keyColumns.isEmpty();
+      return (nonKeyColumns == null || nonKeyColumns.isEmpty()) &&
+          (keyColumns == null || keyColumns.isEmpty());
     }
   }
 }
-

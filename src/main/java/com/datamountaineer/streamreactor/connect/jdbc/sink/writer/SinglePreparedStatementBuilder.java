@@ -46,6 +46,7 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
       return input.getFieldName();
     }
   };
+
   private final Map<String, StructFieldsDataExtractor> fieldsDataExtractorMap;
   private final QueryBuilder queryBuilder;
 
@@ -64,8 +65,11 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
    * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
    */
   @Override
-  public List<PreparedStatement> build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
+  public PreparedStatementContext build(final Collection<SinkRecord> records,
+                                        final Connection connection) throws SQLException {
     final List<PreparedStatement> statements = new ArrayList<>(records.size());
+    final TablesToColumnUsageState tablesToColumnsState = new TablesToColumnUsageState();
+
     for (final SinkRecord record : records) {
       logger.debug("Received record from topic:%s partition:%d and offset:$d",
               record.topic(),
@@ -93,16 +97,18 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
       final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct);
 
       if (!binders.isEmpty()) {
+        final String tableName = fieldsDataExtractor.getTableName();
+        tablesToColumnsState.trackUsage(tableName, binders);
         final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
         final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
-        final String query = queryBuilder.build(fieldsDataExtractor.getTableName(), nonKeyColumnsName, keyColumnsName);
+        final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
         final PreparedStatement statement = connection.prepareStatement(query);
         PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
         statements.add(statement);
       }
     }
 
-    return statements;
+    return new PreparedStatementContext(statements, tablesToColumnsState.getState());
   }
 
   @Override

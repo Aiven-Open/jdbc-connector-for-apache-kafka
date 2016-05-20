@@ -19,10 +19,8 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 
 public interface PreparedStatementBuilder {
 
@@ -33,8 +31,8 @@ public interface PreparedStatementBuilder {
    * @param connection The database connection to create the prepared statements on.
    * @return A list of prepared statements for the sink records.
    */
-  List<PreparedStatement> build(final Collection<SinkRecord> records,
-                                final Connection connection) throws SQLException;
+  PreparedStatementContext build(final Collection<SinkRecord> records,
+                                 final Connection connection) throws SQLException;
 
   boolean isBatching();
 }

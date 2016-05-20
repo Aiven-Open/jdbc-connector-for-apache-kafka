@@ -24,7 +24,7 @@ import java.sql.SQLException;
 /**
  * Binds the SinkRecord entries to the sql PreparedStatement.
  */
-public final class PreparedStatementBindData {
+final class PreparedStatementBindData {
   /**
    * Binds the values to the given PreparedStatement
    *

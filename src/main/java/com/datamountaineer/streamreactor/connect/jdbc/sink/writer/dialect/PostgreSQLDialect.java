@@ -18,9 +18,12 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import org.apache.kafka.connect.data.Schema;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Collections;
 
@@ -28,8 +31,26 @@ import java.util.Collections;
  * Created by andrew@datamountaineer.com on 17/05/16.
  * kafka-connect-jdbc
  */
-public class PostgreDialect extends DbDialect {
-  private static final Logger logger = LoggerFactory.getLogger(PostgreDialect.class);
+public class PostgreSQLDialect extends DbDialect {
+  private static final Logger logger = LoggerFactory.getLogger(PostgreSQLDialect.class);
+
+  public PostgreSQLDialect() {
+    super(getSqlTypeMap());
+  }
+
+  private static Map<Schema.Type, String> getSqlTypeMap() {
+    Map<Schema.Type, String> map = new HashMap<>();
+    map.put(Schema.Type.INT8, "SMALLINT");
+    map.put(Schema.Type.INT16, "SMALLINT");
+    map.put(Schema.Type.INT32, "INT");
+    map.put(Schema.Type.INT64, "BIGINT");
+    map.put(Schema.Type.FLOAT32, "FLOAT");
+    map.put(Schema.Type.FLOAT64, "DOUBLE");
+    map.put(Schema.Type.BOOLEAN, "TINYINT");
+    map.put(Schema.Type.STRING, "TEXT");
+    map.put(Schema.Type.BYTES, "BYTEA");
+    return map;
+  }
 
 
   @Override
@@ -64,11 +85,4 @@ public class PostgreDialect extends DbDialect {
 
     return sql;
   }
-
-  public String getMergeHints() {
-    return "";
-  }
-
-
-
 }

@@ -16,35 +16,31 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+import org.apache.kafka.connect.data.Schema;
+
 /**
- * Holds the information about a database table column.
+ * Contains the SinkRecord field and schema. It is used in conjunction with table schema evolution
  */
-public final class DbTableColumn {
+public class Field {
   private final boolean isPrimaryKey;
-  private final boolean allowsNull;
-  private final int sqlType;
+  private final Schema.Type type;
   private final String name;
 
-  public DbTableColumn(final String name, final boolean isPrimaryKey, final boolean allowsNull, final int sqlType) {
-    this.isPrimaryKey = isPrimaryKey;
-    this.allowsNull = allowsNull;
+  public Field(final Schema.Type type, final String name, final  boolean isPrimaryKey) {
+    this.type = type;
     this.name = name;
-    this.sqlType = sqlType;
+    this.isPrimaryKey = isPrimaryKey;
+  }
+
+  public Schema.Type getType() {
+    return type;
   }
 
   public String getName() {
     return name;
   }
 
-  public boolean allowsNull() {
-    return allowsNull;
-  }
-
   public boolean isPrimaryKey() {
     return isPrimaryKey;
-  }
-
-  public int getSqlType() {
-    return sqlType;
   }
 }

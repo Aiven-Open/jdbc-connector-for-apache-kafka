@@ -16,6 +16,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.binders;
 
+import org.apache.kafka.connect.data.Schema;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -35,7 +37,6 @@ public final class DoublePreparedStatementBinder extends BasePreparedStatementBi
    *
    * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
-   * @return The statement with the value bound.
    * */
   @Override
   public void bind(int index, PreparedStatement statement) throws SQLException {
@@ -47,5 +48,14 @@ public final class DoublePreparedStatementBinder extends BasePreparedStatementBi
    * */
   public double getValue() {
     return value;
+  }
+
+  /**
+   * Returns the field's schema type
+   * @return Float64
+   */
+  @Override
+  public Schema.Type getFieldType() {
+    return Schema.Type.FLOAT64;
   }
 }
