@@ -148,8 +148,10 @@ public class DatabaseMetadata {
 
       final List<DbTable> dbTables = Lists.newArrayList();
       for (final String table : tables) {
-        final List<DbTableColumn> columns = getTableColumns(catalog, table, dbMetadata);
-        dbTables.add(new DbTable(table, columns));
+        if (tableExists(connection, table)) {
+          final List<DbTableColumn> columns = getTableColumns(catalog, table, dbMetadata);
+          dbTables.add(new DbTable(table, columns));
+        }
       }
 
       return new DatabaseMetadata(catalog, dbTables);

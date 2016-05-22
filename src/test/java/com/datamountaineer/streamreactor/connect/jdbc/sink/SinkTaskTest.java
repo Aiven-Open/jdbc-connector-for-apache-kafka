@@ -13,6 +13,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.AUTO_CREATE_TABLE_MAP;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,6 +47,7 @@ public class SinkTaskTest {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
     props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
+    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
     TopicPartition tp1 = new TopicPartition(base.getTopic1(), 12);
     TopicPartition tp2 = new TopicPartition(base.getTopic2(), 13);
     HashSet<TopicPartition> assignment = Sets.newHashSet();
@@ -61,17 +63,17 @@ public class SinkTaskTest {
     JdbcSinkTask task = new JdbcSinkTask();
     task.initialize(context);
 
-    String createTable1 = "CREATE TABLE " + base.getTableName1() + "(" +
-        "    firstName  TEXT PRIMARY_KEY," +
-        "    lastName  TEXT PRIMARY_KEY," +
-        "    age INTEGER," +
-        "    bool  NUMERIC," +
-        "    byte  INTEGER," +
-        "    short INTEGER," +
-        "    long INTEGER," +
-        "    float NUMERIC," +
-        "    double NUMERIC," +
-        "    bytes BLOB);";
+//    String createTable1 = "CREATE TABLE " + base.getTableName1() + "(" +
+//        "    firstName  TEXT PRIMARY_KEY," +
+//        "    lastName  TEXT PRIMARY_KEY," +
+//        "    age INTEGER," +
+//        "    bool  NUMERIC," +
+//        "    byte  INTEGER," +
+//        "    short INTEGER," +
+//        "    long INTEGER," +
+//        "    float NUMERIC," +
+//        "    double NUMERIC," +
+//        "    bytes BLOB);";
 
     String createTable2 = "CREATE TABLE " + base.getTableName2() + "(" +
         "    firstName  TEXT PRIMARY_KEY," +
@@ -86,7 +88,7 @@ public class SinkTaskTest {
         "    bytes BLOB);";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName1());
-    SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
+   // SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
     SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName2());
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable2);
 
