@@ -72,18 +72,19 @@ public final class PreparedStatementBuilderHelper {
 
     final Map<String, StructFieldsDataExtractor> map = Maps.newHashMap();
     for (final FieldsMappings tm : settings.getMappings()) {
-      if (!databaseMetadata.containsTable(tm.getTableName())) {
-        final String tables = Joiner.on(",").join(databaseMetadata.getTableNames());
-        throw new ConfigException(String.format("%s table is not found in the database available tables:%s",
-                tm.getTableName(),
-                tables));
-      }
-
       FieldsMappings tableMappings = tm;
+      //if the table is not set with autocreate we try to find it
       if (!tm.autoCreateTable()) {
+        if (!databaseMetadata.containsTable(tm.getTableName())) {
+          final String tables = Joiner.on(",").join(databaseMetadata.getTableNames());
+          throw new ConfigException(String.format("%s table is not found in the database available tables:%s. Make sure you" +
+                          " set the table to be autocreated or manually add it to the database.",
+                  tm.getTableName(),
+                  tables));
+        }
+        //get the columns merged
         tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
       }
-
       final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tableMappings);
 
       map.put(tm.getIncomingTopic().toLowerCase(), fieldsValuesExtractor);
