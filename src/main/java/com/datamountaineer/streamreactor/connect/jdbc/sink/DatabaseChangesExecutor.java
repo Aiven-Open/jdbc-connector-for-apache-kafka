@@ -18,7 +18,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
-import com.google.common.base.Joiner;
+import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,20 +38,28 @@ import java.util.Set;
 public class DatabaseChangesExecutor {
   private final static Logger logger = LoggerFactory.getLogger(DatabaseChangesExecutor.class);
 
+  private final int executionRetries;
   private final Set<String> tablesAllowingAutoCreate;
   private final Set<String> tablesAllowingSchemaEvolution;
   private final DatabaseMetadata databaseMetadata;
   private final DbDialect dbDialect;
+  private final HikariDataSource connectionPool;
 
-  public DatabaseChangesExecutor(final Set<String> tablesAllowingAutoCreate,
+
+  public DatabaseChangesExecutor(final HikariDataSource connectionPool,
+                                 final Set<String> tablesAllowingAutoCreate,
                                  final Set<String> tablesAllowingSchemaEvolution,
                                  final DatabaseMetadata databaseMetadata,
-                                 final DbDialect dbDialect) {
+                                 final DbDialect dbDialect,
+                                 final int executionRetries) {
+    this.executionRetries = executionRetries;
+    ParameterValidator.notNull(connectionPool, "connectionPool");
     ParameterValidator.notNull(databaseMetadata, "databaseMetadata");
     ParameterValidator.notNull(tablesAllowingAutoCreate, "tablesAllowingAutoCreate");
     ParameterValidator.notNull(tablesAllowingSchemaEvolution, "tablesAllowingSchemaEvolution");
     ParameterValidator.notNull(dbDialect, "dbDialect");
 
+    this.connectionPool = connectionPool;
     this.tablesAllowingAutoCreate = tablesAllowingAutoCreate;
     this.tablesAllowingSchemaEvolution = tablesAllowingSchemaEvolution;
     this.databaseMetadata = databaseMetadata;
@@ -59,41 +67,35 @@ public class DatabaseChangesExecutor {
   }
 
 
-  public void handleChanges(final Map<String, Collection<Field>> tablesToColumnsMap,
-                            final Connection connection) throws SQLException {
+  public void handleChanges(final Map<String, Collection<Field>> tablesToColumnsMap) throws SQLException {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
 
-    final List<String> queries = new ArrayList<>();
-    handleNewTables(changes.getCreatedMap(), queries);
-    handleAmendTables(changes.getAmendmentMap(), queries);
-    if (queries.size() > 0) {
-      final String query = Joiner.on(String.format(";%s", System.lineSeparator())).join(queries);
-      logger.info(String.format("Changing database structure for database %s%s%s",
-              databaseMetadata.getDatabaseName(),
-              System.lineSeparator(),
-              query));
 
-      Statement statement = null;
-      try {
-        statement = connection.createStatement();
-        statement.execute(query);
-      } finally {
-        try {
-          if (statement != null) {
-            statement.close();
-          }
-        } catch (SQLException e) {
-          logger.error(e.getMessage(), e);
-        }
+    Connection connection = null;
+    try {
+      connection = connectionPool.getConnection();
+      connection.setAutoCommit(false);
+
+      handleNewTables(changes.getCreatedMap(), connection);
+      handleAmendTables(changes.getAmendmentMap(), connection);
+
+      connection.commit();
+    } catch (RuntimeException ex) {
+      connection.rollback();
+      throw ex;
+    } finally {
+      if (connection != null) {
+        connection.close();
       }
     }
   }
 
   private void handleNewTables(final Map<String, Collection<Field>> createdMap,
-                               final List<String> queries) {
-    if (createdMap == null) {
+                               final Connection connection) {
+    if (createdMap == null || createdMap.size() == 0) {
       return;
     }
+
     for (final Map.Entry<String, Collection<Field>> entry : createdMap.entrySet()) {
       final String tableName = entry.getKey();
       if (databaseMetadata.containsTable(tableName)) {
@@ -102,14 +104,83 @@ public class DatabaseChangesExecutor {
       if (!tablesAllowingAutoCreate.contains(tableName)) {
         throw new ConfigException(String.format("Table %s is not configured with auto-create", entry.getKey()));
       }
-      final String createTable = dbDialect.getCreateQuery(tableName, entry.getValue());
-      queries.add(createTable);
+
+      boolean retry = true;
+      int retryAttempts = executionRetries;
+      while (retry) {
+        try {
+          final DbTable table = createTable(tableName, entry.getValue(), connection);
+          databaseMetadata.update(table);
+          retry = false;
+        } catch (RuntimeException ex) {
+          if (--retryAttempts <= 0) {
+            //we want to stop the execution
+            throw ex;
+          }
+          try {
+            //should we exponentially wait?
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+          }
+        }
+      }
     }
   }
 
-  private void handleAmendTables(final Map<String, Collection<Field>> createdMap,
-                                 final List<String> queries) {
-    if (createdMap == null) {
+  private DbTable createTable(final String tableName, final Collection<Field> fields, final Connection connection) {
+    final String createTableQuery = dbDialect.getCreateQuery(tableName, fields);
+    logger.info(String.format("Changing database structure for database %s%s%s",
+            databaseMetadata.getDatabaseName(),
+            System.lineSeparator(),
+            createTableQuery));
+
+    Statement statement = null;
+    try {
+      statement = connection.createStatement();
+      statement.execute(createTableQuery);
+      return DatabaseMetadata.getTableMetadata(connection, tableName);
+    } catch (SQLException e) {
+
+      //tricky part work out if the table already exists
+      try {
+        if (DatabaseMetadata.tableExists(connection, tableName)) {
+          final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
+          //check for all fields from above where they are not present
+          List<Field> notPresentFields = null;
+          for (final Field f : fields) {
+            if (!table.containsColumn(f.getName())) {
+              if (notPresentFields == null) {
+                notPresentFields = new ArrayList<>();
+              }
+              notPresentFields.add(f);
+            }
+          }
+          //we have some difference; run amend table
+          if (notPresentFields != null) {
+            return amendTable(tableName, notPresentFields, connection);
+          }
+          return table;
+        } else {
+          //table doesn't exist throw; the above layer will pick up an retry
+          throw new RuntimeException(e.getMessage(), e);
+        }
+      } catch (SQLException e1) {
+        throw new RuntimeException(e1.getMessage(), e1);
+      }
+    } finally {
+      try {
+        if (statement != null) {
+          statement.close();
+        }
+      } catch (SQLException e) {
+        logger.error(e.getMessage(), e);
+      }
+    }
+
+  }
+
+  private void handleAmendTables(final Map<String, Collection<Field>> createdMap, final Connection connection) {
+    if (createdMap == null || createdMap.size() == 0) {
       return;
     }
     for (final Map.Entry<String, Collection<Field>> entry : createdMap.entrySet()) {
@@ -121,8 +192,80 @@ public class DatabaseChangesExecutor {
         logger.warn(String.format("Table %s is not configured with schema evolution", entry.getKey()));
         continue;
       }
-      final String createTable = dbDialect.getAlterTable(entry.getKey(), entry.getValue());
-      queries.add(createTable);
+
+      boolean retry = true;
+      int retryAttempts = executionRetries;
+      while (retry) {
+        try {
+          final DbTable table = amendTable(tableName, entry.getValue(), connection);
+          databaseMetadata.update(table);
+          retry = false;
+        } catch (RuntimeException ex) {
+          if (--retryAttempts <= 0) {
+            //we want to stop the execution
+            throw ex;
+          }
+          try {
+            //should we exponentially wait?
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+          }
+        }
+      }
+    }
+  }
+
+  private DbTable amendTable(final String tableName,
+                             final Collection<Field> fields,
+                             final Connection connection) {
+    final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, fields);
+
+    Statement statement = null;
+    try {
+      connection.setAutoCommit(false);
+      statement = connection.createStatement();
+
+      for (String amendTableQuery : amendTableQueries) {
+        logger.info(String.format("Changing database structure for database %s%s%s",
+                databaseMetadata.getDatabaseName(),
+                System.lineSeparator(),
+                amendTableQuery));
+
+        statement.execute(amendTableQuery);
+      }
+      //commit the transaction
+      connection.commit();
+
+      return DatabaseMetadata.getTableMetadata(connection, tableName);
+    } catch (SQLException e) {
+      //see if it there was a race with other tasks to add the colums
+      try {
+        final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
+        List<Field> notPresentFields = null;
+        for (final Field f : fields) {
+          if (!table.containsColumn(f.getName())) {
+            if (notPresentFields == null) {
+              notPresentFields = new ArrayList<>();
+            }
+            notPresentFields.add(f);
+          }
+        }
+        //we have some difference; run amend table
+        if (notPresentFields != null) {
+          return amendTable(tableName, notPresentFields, connection);
+        }
+        return table;
+      } catch (SQLException e1) {
+        throw new RuntimeException(e1.getMessage(), e);
+      }
+    } finally {
+      try {
+        if (statement != null) {
+          statement.close();
+        }
+      } catch (SQLException e) {
+        logger.error(e.getMessage(), e);
+      }
     }
   }
 }

@@ -249,11 +249,8 @@ The following dialects and upsert statements are supported:
 4.  PostgreSQL - *9.5 and above.* `ON CONFLICT <http://www.postgresql.org/docs/9.5/static/sql-insert.html>`_.
     This requires knowledge for the primary keys to build the merge statement. The database metadata is queried.
 
+
 .. warning:: Postgre UPSERT is only supported on versions 9.5 and above.
-
-.. note::
-
-    Primary keys are required to be set on the target tables for upsert mode.
 
 Topic Routing
 ~~~~~~~~~~~~~
@@ -295,44 +292,20 @@ source topic.
     field mappings it is assumed the user is not interested in new upstream fields. For example they may be tapping into a
     pipeline for a Kafka stream job and not be intended as the final recipient of the stream.
 
+    If a upstream field is removed and the topic is not following the Schema Registry's evolution rules, i.e. not
+    full or backwards compatible, any errors will default to the error policy. If schema evolution rules have been followed,
+    the missing field will return the default value set in the schema. A warning will be logged if the schema version
+    changes.
+
 Auto Create Tables
 ~~~~~~~~~~~~~~~~~~
 
-The sink supports auto creation of tables for each topic. This feature is **not** supported with field selection.
-The ``connect.jdbc.sink.auto.create.tables`` option controls which topics are enabled for auto table creation with optional
-fields to be used as the primary keys. If no fields are specified the sink creates a field, controlled by the
-``connect.jdbc.sink.pk.col.name`` option. The default column name is ``__connect_auto_id`` and it's value will be filled
-a concatenation of the topic name, partition and offset.
-
+TODO
 
 Auto Evolve Tables
 ~~~~~~~~~~~~~~~~~~
 
-Schema evolution can occur upstream, for example any new fields or change in data type in the schema of the topic, or
-downstream DDLs on the database.
-
-Upstream changes must follow the schema evolution rules laid out in the Schema Registry. This sink only supports BACKWARD
-and FULLY compatible schemas. If new fields are added the sink will attempt to perform a ALTER table DDL statement against
-the target table to add columns. All columns added to the target table are set as nullable.
-
-Fields can not be deleted upstream. Fields should be of Avro union type [null, <dataType>] with a default
-set. This allows the sink to either retrieve the default value or null. Effectively the sink would not be aware that field
-has been deleted as a value is always supplied to it.
-
-.. warning::
-
-    If a upstream field is removed and the topic is not following the Schema Registry's evolution rules, i.e. not
-    full or backwards compatible, any errors will default to the error policy.
-
-**TODO - Upstream changes to data types are only handled for ???**
-
-Downstream changes are handled by the sink. If columns are removed, the mapped fields from the topic are ignored. If
-columns are added we attempt to find a matching field by name in the topic. Changes to data types can only be promotions.
-
-
-.. tip::
-
-    If adding columns to the target database set them a nullable and/or with a default value.
+TODO
 
 Configuration
 -------------
@@ -461,47 +434,8 @@ Examples:
 .. note::
 
     Specifying * for field mappings means select and try to map all fields in the topic to matching fields in the target
-    table. Leaving the column name empty means trying to map field in the topic to a column in the database based on name.
-
-``connect.jdbc.sink.evolve.tables``
-
-Specifies if the sink is allowed to evolve target tables. If set and new fields are add to the upstream topic
-the sink will attempt to create a corresponding additional column in the mapped database. If an explict field mapping has
-been set in ``connect.jdbc.sink.export.mappings`` the sink will **not** evolve the table as fields have been choosen by the
-operator. The format is a comma separated list of the topics. The sink is then allowed to evolve the mapped tables.
-For example, ``connect.jdbc.sink.evolve.tables=topic1,topic2``
-
-* Type : string
-* Importance : medium
-* Default : not set.
-
-.. warning:: Field selection disables this feature.
-
-``connect.jdbc.sink.auto.create.tables``
-
-Enables auto creation of tables in the target database based on the schema of the source topic.
-The tables are created based of the latest schema for the topic. The format is {table:column list}. The column
-list is a comma separated list of fields to take from the topic to form the primary key. If left blank, as for topicC,
-the sink will add a primary key column to the table called ``__connect_auto_id``. This key will be filled with a
-concatenated string if the form of topicname|partition|offset, e.g. topicC|1|99.
-
-.. sourcecode:: bash
-
-    {topicA:a1,a2},{topicB:b1,b2},{topicC:}
-
-* Type : string
-* Importance: medium
-* Default : false
-
-``connect.jdbc.sink.pk.col.name``
-
-The column name to create in a target table if ``connect.jdbc.sink.auto.create.tables`` is enabled and no fields set as
-the primary key.
-
-* Type : string
-* Importance : medium
-* Default : __connect_auto_id
-
+    table. Leaving the column name empty means trying to map to a column in the target table with the same name as the
+    field in the source topic.
 
 Example Configurations
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -559,6 +493,10 @@ The final mapping **{bloomberg_prices:prices;source->,lst_bid->}** tells the sin
 3. Map a field called *source*  from the *bloomberg_prices*  topic to a column called *source*  in the *prices* table.
 4. Map a field called *lst_bid*  from the *bloomberg_prices*  topic to a column called *lst_bid*  in the *prices* table.
 
+Schema Evolution
+----------------
+
+TODO
 
 Deployment Guidelines
 ---------------------

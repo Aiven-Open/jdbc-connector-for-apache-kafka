@@ -143,22 +143,6 @@ public final class JdbcSinkSettings {
       throw new ConfigException(JdbcSinkConfig.INSERT_MODE + " is not set correctly");
     }
 
-//    if (insertMode == InsertModeEnum.UPSERT) {
-//      for (FieldsMappings tm : fieldsMappings) {
-//        boolean hasPK = false;
-//
-//        for (Map.Entry<String, FieldAlias> e : tm.getMappings().entrySet()) {
-//          if (e.getValue().isPrimaryKey()) {
-//            hasPK = true;
-//            break;
-//          }
-//        }
-//        if (!hasPK)
-//          throw new ConfigException("Invalid configuration. UPSERT mode has been chosen but no primary keys have been " +
-//                  "provided for " + tm.getTableName());
-//      }
-//    }
-
     ErrorPolicyEnum policy = ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY).toUpperCase());
 
     return new JdbcSinkSettings(
@@ -222,7 +206,7 @@ public final class JdbcSinkSettings {
       final boolean autoCreateTable = autoCreateRaw.contains(topic);
       //allow evolving topics
       final boolean evolveTableSchema = evolveRaw.contains(topic);
-      logger.info(String.format("Setting auto create table to %s and all schema evolution to %s for topic %s and table %s",
+      logger.info(String.format("Setting auto create table to %s and schema evolution to %s for topic %s and table %s",
           autoCreateTable, evolveTableSchema, topic, table));
 
       //auto create is true so try and get pk fields

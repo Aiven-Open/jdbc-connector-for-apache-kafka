@@ -75,11 +75,14 @@ public final class PreparedStatementBuilderHelper {
       if (!databaseMetadata.containsTable(tm.getTableName())) {
         final String tables = Joiner.on(",").join(databaseMetadata.getTableNames());
         throw new ConfigException(String.format("%s table is not found in the database available tables:%s",
-            tm.getTableName(),
-            tables));
+                tm.getTableName(),
+                tables));
       }
 
-      final FieldsMappings tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
+      FieldsMappings tableMappings = tm;
+      if (!tm.autoCreateTable()) {
+        tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
+      }
 
       final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tableMappings);
 
@@ -100,7 +103,7 @@ public final class PreparedStatementBuilderHelper {
    * caused when the user sets * for all fields the payload has 4 fields but only 3 found in the database.
    * Furthermore if the mapping is not found in the database an exception is thrown
    *
-   * @param tm - Field mappings
+   * @param tm      - Field mappings
    * @param dbTable - The instance of DbTable
    * @return
    */
@@ -117,7 +120,7 @@ public final class PreparedStatementBuilderHelper {
 
       for (DbTableColumn column : dbTable.getColumns().values()) {
         map.put(column.getName(),
-            new FieldAlias(column.getName(), column.isPrimaryKey()));
+                new FieldAlias(column.getName(), column.isPrimaryKey()));
       }
 
       //apply the specific mappings
@@ -125,10 +128,10 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!map.containsKey(colName)) {
           final String error =
-              String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
-                  tm.getTableName(),
-                  colName,
-                  Joiner.on(",").join(map.keySet()));
+                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                          tm.getTableName(),
+                          colName,
+                          Joiner.on(",").join(map.keySet()));
           throw new ConfigException(error);
         }
         map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName)));
@@ -141,10 +144,10 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!dbCols.containsKey(colName)) {
           final String error =
-              String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
-                  tm.getTableName(),
-                  colName,
-                  Joiner.on(",").join(dbCols.keySet()));
+                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                          tm.getTableName(),
+                          colName,
+                          Joiner.on(",").join(dbCols.keySet()));
           throw new ConfigException(error);
         }
         map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName)));
@@ -156,9 +159,9 @@ public final class PreparedStatementBuilderHelper {
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
           throw new ConfigException(
-              String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
-                  Joiner.on(",").join(specifiedPKs),
-                  Joiner.on(",").join(pkColumns)));
+                  String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
+                          Joiner.on(",").join(specifiedPKs),
+                          Joiner.on(",").join(pkColumns)));
         }
       }
     }

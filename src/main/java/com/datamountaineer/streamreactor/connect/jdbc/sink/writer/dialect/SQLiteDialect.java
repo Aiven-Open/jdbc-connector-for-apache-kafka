@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,32 +51,63 @@ public class SQLiteDialect extends DbDialect {
     return map;
   }
 
+  /**
+   * Returns the query for creating a new table in the database
+   *
+   * @param table
+   * @param fields
+   * @return The create query for the dialect
+   */
+  public String getCreateQuery(String table, Collection<Field> fields) {
+    ParameterValidator.notNull(fields, "fields");
+    if (fields.isEmpty()) {
+      throw new IllegalArgumentException("<fields> is not valid.Not accepting empty collection of fields.");
+    }
+    final StringBuilder builder = new StringBuilder();
+    builder.append(String.format("CREATE TABLE %s (", table));
+    boolean first = true;
+    List<String> primaryKeys = new ArrayList<>();
+    for (final Field f : fields) {
+      if (!first) {
+        builder.append(",");
+      } else {
+        first = false;
+      }
+      builder.append(System.lineSeparator());
+      builder.append(f.getName());
+      builder.append(" ");
+      builder.append(getSqlType(f.getType()));
+
+      if (f.isPrimaryKey()) {
+        builder.append(" NOT NULL ");
+        primaryKeys.add(f.getName());
+      } else {
+        builder.append(" NULL");
+      }
+    }
+    if (primaryKeys.size() > 0) {
+      builder.append(",");
+      builder.append(System.lineSeparator());
+      builder.append("PRIMARY KEY(");
+      builder.append(Joiner.on(",").join(primaryKeys));
+      builder.append(")");
+    }
+    builder.append(");");
+    return builder.toString();
+  }
+
   @Override
-  public String getAlterTable(String table, Collection<Field> fields) {
+  public List<String> getAlterTable(String table, Collection<Field> fields) {
     ParameterValidator.notNullOrEmpty(table, "table");
     ParameterValidator.notNull(fields, "fields");
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is empty.");
     }
-    final StringBuilder builder = new StringBuilder();
-    builder.append(table);
-    builder.append(System.lineSeparator());
-
-    boolean first = true;
+    final List<String> queries = new ArrayList<>(fields.size());
     for (final Field f : fields) {
-      if (!first) {
-        builder.append(System.lineSeparator());
-      } else {
-        first = false;
-      }
-      builder.append("ALTER TABLE ADD ");
-      builder.append(f.getName());
-      builder.append(" NULL ");
-      builder.append(getSqlType(f.getType()));
-      builder.append(";");
+      queries.add(String.format("ALTER TABLE %s ADD %s %s NULL;", table, f.getName(), getSqlType(f.getType())));
     }
-
-    return builder.toString();
+    return queries;
   }
 
   @Override
@@ -103,6 +135,6 @@ public class SQLiteDialect extends DbDialect {
     }
 
     return String.format("update or ignore %s set %s where %s\n;", table, builder, whereBuilder) +
-        String.format("insert or ignore into %s(%s) values (%s)", table, queryColumns, bindingValues);
+            String.format("insert or ignore into %s(%s) values (%s)", table, queryColumns, bindingValues);
   }
 }

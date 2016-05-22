@@ -20,6 +20,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.io.CharStreams;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -63,12 +64,13 @@ public class JdbcSinkTask extends SinkTask {
 
     final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
 
-    final DatabaseMetadata databaseMetadata = JdbcHelper.getDatabaseMetadata(settings.getConnection(),
-            settings.getUser(),
-            settings.getPassword(),
-            settings.getTableNames());
     //Set up the writer
-    writer = JdbcDbWriter.from(settings, databaseMetadata);
+    writer = JdbcDbWriter.from(settings, new DatabaseMetadataProvider() {
+      @Override
+      public DatabaseMetadata get(HikariDataSource connectionPool) {
+        return DatabaseMetadata.getDatabaseMetadata(connectionPool, settings.getTableNames());
+      }
+    });
   }
 
   /**
@@ -85,7 +87,7 @@ public class JdbcSinkTask extends SinkTask {
       final SinkRecord first = records.iterator().next();
       int recordsCount = records.size();
       logger.info(String.format("Received %d records. First entry topic:%s  partition:%d offset:%s. Writing them " +
-          "to the database...", recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset()));
+              "to the database...", recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset()));
       writer.write(records);
       logger.info(String.format("Finished writing %d records to the database.", recordsCount));
     }

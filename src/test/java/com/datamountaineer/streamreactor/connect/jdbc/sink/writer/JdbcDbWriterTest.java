@@ -2,8 +2,10 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
@@ -16,6 +18,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.Oracle
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -83,7 +86,10 @@ public class JdbcDbWriterTest {
     );
     final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
+    when(provider.get(any(HikariDataSource.class)))
+            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getStatementBuilder().getClass(), BatchedPreparedStatementBuilder.class);
   }
@@ -107,7 +113,10 @@ public class JdbcDbWriterTest {
             new DbTableColumn("col2", false, true, 1));
     final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
+    when(provider.get(any(HikariDataSource.class)))
+            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getStatementBuilder().getClass(), SinglePreparedStatementBuilder.class);
   }
@@ -133,7 +142,10 @@ public class JdbcDbWriterTest {
             new DbTableColumn("col2", false, true, 1));
     final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
+    when(provider.get(any(HikariDataSource.class)))
+            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
   }
@@ -157,7 +169,10 @@ public class JdbcDbWriterTest {
             new DbTableColumn("col2", false, true, 1));
     final DbTable tableA = new DbTable("tableA", columns);
 
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
+    when(provider.get(any(HikariDataSource.class)))
+            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+    JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
   }
@@ -175,11 +190,16 @@ public class JdbcDbWriterTest {
     when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            new OracleDialect());
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, policy, executor, 10);
+            new OracleDialect(),
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(ds, builder, policy, executor, 10);
     writer.write(records);
   }
 
@@ -193,12 +213,16 @@ public class JdbcDbWriterTest {
 
     when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            new OracleDialect());
+            new OracleDialect(),
+            1);
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null, builder, new ThrowErrorHandlingPolicy(), executor, 10);
+    JdbcDbWriter writer = new JdbcDbWriter(ds, builder, new ThrowErrorHandlingPolicy(), executor, 10);
     writer.write(records);
   }
 
@@ -334,11 +358,16 @@ public class JdbcDbWriterTest {
             )));
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            new SQLiteDialect());
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI, null, null,
+            new SQLiteDialect(),
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(
+            ds,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -467,13 +496,16 @@ public class JdbcDbWriterTest {
                     new DbTableColumn("BLOB", true, false, 1)
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            new SQLiteDialect());
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
-            null,
-            null,
+            new SQLiteDialect(),
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(
+            ds,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -587,13 +619,15 @@ public class JdbcDbWriterTest {
                     new DbTableColumn("BLOB", true, false, 1)
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            new SQLiteDialect());
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
-            null,
-            null,
+            new SQLiteDialect(),
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(ds,
             new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder()),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -729,13 +763,15 @@ public class JdbcDbWriterTest {
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            dbDialect);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
-            null,
-            null,
+            dbDialect,
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(ds,
             new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(dbDialect)),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -918,13 +954,15 @@ public class JdbcDbWriterTest {
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
 
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            dbDialect);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
-            null,
-            null,
+            dbDialect,
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(ds,
             new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(dbDialect)),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -1063,13 +1101,15 @@ public class JdbcDbWriterTest {
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            dbDialect);
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
-            null,
-            null,
+            dbDialect,
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(ds,
             new BatchedPreparedStatementBuilder(map, new UpsertQueryBuilder(dbDialect)),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -1175,14 +1215,16 @@ public class JdbcDbWriterTest {
             )));
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(Sets.<String>newHashSet(),
+    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
+            ds,
+            Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
-            new SQLiteDialect());
+            new SQLiteDialect(),
+            1);
 
-    JdbcDbWriter writer = new JdbcDbWriter(SQL_LITE_URI,
-            null,
-            null,
+    JdbcDbWriter writer = new JdbcDbWriter(ds,
             new SinglePreparedStatementBuilder(map, new InsertQueryBuilder()),
             new ThrowErrorHandlingPolicy(),
             executor,

@@ -16,27 +16,25 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /***
  * Contains the database table information.
  */
 public class DbTable {
   private final String name;
-  private final List<DbTableColumn> columns;
+  private final Map<String, DbTableColumn> columnMap = new HashMap<>();
 
   public DbTable(String name, List<DbTableColumn> columns) {
     ParameterValidator.notNullOrEmpty(name, "name");
     ParameterValidator.notNull(columns, "columns");
     this.name = name;
-    this.columns = columns;
+    for (final DbTableColumn column : columns) {
+      columnMap.put(column.getName(), column);
+    }
   }
 
   public String getName() {
@@ -45,24 +43,19 @@ public class DbTable {
 
   public void addColumn(final DbTableColumn column) {
     ParameterValidator.notNull(column, "column");
-    final Optional<DbTableColumn> found = Iterables.tryFind(columns, new Predicate<DbTableColumn>() {
-      @Override
-      public boolean apply(DbTableColumn col) {
-        return Objects.equals(col.getName(), column.getName());
-      }
-    });
-    if (found.isPresent()) {
+
+    if (columnMap.containsKey(column.getName())) {
       throw new IllegalArgumentException(String.format("%s column is already present", column.getName()));
     }
-    columns.add(column);
+    getColumns().put(column.getName(), column);
   }
 
 
   public Map<String, DbTableColumn> getColumns() {
-    final Map<String, DbTableColumn> map = new HashMap<>();
-    for (final DbTableColumn column : columns) {
-      map.put(column.getName(), column);
-    }
-    return map;
+    return columnMap;
+  }
+
+  public boolean containsColumn(final String tableName) {
+    return columnMap.containsKey(tableName);
   }
 }

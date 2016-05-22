@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.confluent</groupId>
-    <artifactId>kafka-connect-jdbc-sink</artifactId>
+    <artifactId>kafka-connect-jdbc</artifactId>
     <packaging>jar</packaging>
     <version>1.0.0-SNAPSHOT</version>
     <name>kafka-connect-jdbc-sink</name>

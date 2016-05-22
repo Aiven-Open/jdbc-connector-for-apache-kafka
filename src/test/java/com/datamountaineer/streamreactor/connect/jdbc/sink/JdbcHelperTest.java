@@ -64,7 +64,7 @@ public class JdbcHelperTest {
 
     final Map<String, DbTable> tables = new HashMap<>();
 
-    for (DbTable table : JdbcHelper.getTablesMetadata(SQL_LITE_URI, null, null)) {
+    for (DbTable table : DatabaseMetadata.getTableMetadata(HikariHelper.from(SQL_LITE_URI, null, null))) {
       tables.put(table.getName(), table);
     }
 

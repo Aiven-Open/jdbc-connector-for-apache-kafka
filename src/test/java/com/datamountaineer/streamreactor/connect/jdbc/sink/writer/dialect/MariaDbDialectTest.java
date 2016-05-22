@@ -7,44 +7,10 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by andrew@datamountaineer.com on 17/05/16.
- * kafka-connect-jdbc
- */
-public class PostgreSqlDialectTest {
-
-  private final DbDialect dialect = new PostgreSQLDialect();
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Lists.newArrayList("value"), Lists.newArrayList("id"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Lists.newArrayList("value"), Lists.newArrayList("id"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", Lists.newArrayList("value"), null);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Lists.newArrayList("value"), Lists.<String>newArrayList());
-  }
-
-  @Test
-  public void PostgreDialectTest() {
-    String conflict = "INSERT INTO Customer (name,salary,address,id) VALUES (?,?,?,?) ON CONFLICT (id) DO UPDATE SET " +
-        "name=EXCLUDED.name,salary=EXCLUDED.salary,address=EXCLUDED.address";
-    String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
-    assertTrue(conflict.equals(insert));
-  }
+public class MariaDbDialectTest {
+  final MariaDialect dialect = new MariaDialect();
 
   @Test
   public void handleCreateTableMultiplePKColumns() {
@@ -55,9 +21,9 @@ public class PostgreSqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "userid INT NOT NULL," + System.lineSeparator() +
-            "userdataid INT NOT NULL," + System.lineSeparator() +
-            "info TEXT NULL," + System.lineSeparator() +
+            "userid INTEGER NOT NULL," + System.lineSeparator() +
+            "userdataid INTEGER NOT NULL," + System.lineSeparator() +
+            "info VARCHAR(256) NULL," + System.lineSeparator() +
             "PRIMARY KEY(userid,userdataid));";
     assertEquals(expected, actual);
   }
@@ -76,13 +42,13 @@ public class PostgreSqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INT NOT NULL," + System.lineSeparator() +
+            "col1 INTEGER NOT NULL," + System.lineSeparator() +
             "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 TEXT NULL," + System.lineSeparator() +
+            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
             "col4 FLOAT NULL," + System.lineSeparator() +
             "col5 DOUBLE NULL," + System.lineSeparator() +
             "col6 TINYINT NULL," + System.lineSeparator() +
-            "col7 SMALLINT NULL," + System.lineSeparator() +
+            "col7 TINYINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL," + System.lineSeparator() +
             "PRIMARY KEY(col1));";
     assertEquals(expected, actual);
@@ -102,13 +68,13 @@ public class PostgreSqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INT NULL," + System.lineSeparator() +
+            "col1 INTEGER NULL," + System.lineSeparator() +
             "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 TEXT NULL," + System.lineSeparator() +
+            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
             "col4 FLOAT NULL," + System.lineSeparator() +
             "col5 DOUBLE NULL," + System.lineSeparator() +
             "col6 TINYINT NULL," + System.lineSeparator() +
-            "col7 SMALLINT NULL," + System.lineSeparator() +
+            "col7 TINYINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL);";
     assertEquals(expected, actual);
   }
@@ -129,13 +95,13 @@ public class PostgreSqlDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE tableA" + System.lineSeparator() +
-            "ADD COLUMN col1 INT NULL," + System.lineSeparator() +
+            "ADD COLUMN col1 INTEGER NULL," + System.lineSeparator() +
             "ADD COLUMN col2 BIGINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col3 TEXT NULL," + System.lineSeparator() +
+            "ADD COLUMN col3 VARCHAR(256) NULL," + System.lineSeparator() +
             "ADD COLUMN col4 FLOAT NULL," + System.lineSeparator() +
             "ADD COLUMN col5 DOUBLE NULL," + System.lineSeparator() +
             "ADD COLUMN col6 TINYINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col7 SMALLINT NULL," + System.lineSeparator() +
+            "ADD COLUMN col7 TINYINT NULL," + System.lineSeparator() +
             "ADD COLUMN col8 SMALLINT NULL;";
     assertEquals(expected, actual.get(0));
   }

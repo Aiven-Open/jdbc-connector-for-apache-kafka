@@ -1,8 +1,8 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,14 +12,16 @@ import java.sql.Statement;
 
 public final class SqlLiteHelper {
   private static final Logger logger = LoggerFactory.getLogger(JdbcHelper.class);
-  public static void createTable(final String uri, final String createSql) throws SQLException{
+
+  public static void createTable(final String uri, final String createSql) throws SQLException {
     Connection connection = null;
     Statement stmt = null;
     try {
       connection = DriverManager.getConnection(uri);
-
+      connection.setAutoCommit(false);
       stmt = connection.createStatement();
       stmt.executeUpdate(createSql);
+      connection.commit();
     } finally {
       if (stmt != null) {
         stmt.close();
@@ -28,7 +30,7 @@ public final class SqlLiteHelper {
         try {
           connection.close();
         } catch (SQLException e) {
-           logger.error(e.getMessage(), e);
+          logger.error(e.getMessage(), e);
         }
       }
     }
@@ -39,9 +41,10 @@ public final class SqlLiteHelper {
     Statement stmt = null;
     try {
       connection = DriverManager.getConnection(uri);
-
+      connection.setAutoCommit(false);
       stmt = connection.createStatement();
       stmt.executeUpdate("DROP TABLE IF EXISTS " + table);
+      connection.commit();
     } finally {
       if (stmt != null) {
         stmt.close();
@@ -69,7 +72,6 @@ public final class SqlLiteHelper {
     ResultSet rs = null;
     try {
       connection = DriverManager.getConnection(uri);
-      connection.setAutoCommit(false);
 
       stmt = connection.createStatement();
       rs = stmt.executeQuery(query);
@@ -87,7 +89,31 @@ public final class SqlLiteHelper {
         try {
           connection.close();
         } catch (SQLException e) {
-          logger.error(e.getMessage(),e);
+          logger.error(e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  public static void execute(String uri, String query) throws SQLException {
+    Connection connection = null;
+    Statement stmt = null;
+    try {
+      connection = DriverManager.getConnection(uri);
+      connection.setAutoCommit(false);
+
+      stmt = connection.createStatement();
+      stmt.execute(query);
+      connection.commit();
+    } finally {
+      if (stmt != null) {
+        stmt.close();
+      }
+      if (connection != null) {
+        try {
+          connection.close();
+        } catch (SQLException e) {
+          logger.error(e.getMessage(), e);
         }
       }
     }
