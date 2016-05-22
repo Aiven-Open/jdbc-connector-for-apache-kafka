@@ -1,3 +1,4 @@
+/docs/build
 /kafka-connect-jdbc.iml
 /.idea
 # sbt specific
