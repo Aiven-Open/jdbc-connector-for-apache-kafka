@@ -249,8 +249,11 @@ The following dialects and upsert statements are supported:
 4.  PostgreSQL - *9.5 and above.* `ON CONFLICT <http://www.postgresql.org/docs/9.5/static/sql-insert.html>`_.
     This requires knowledge for the primary keys to build the merge statement. The database metadata is queried.
 
-
 .. warning:: Postgre UPSERT is only supported on versions 9.5 and above.
+
+.. note::
+
+    Primary keys are required to be set on the target tables for upsert mode.
 
 Topic Routing
 ~~~~~~~~~~~~~
