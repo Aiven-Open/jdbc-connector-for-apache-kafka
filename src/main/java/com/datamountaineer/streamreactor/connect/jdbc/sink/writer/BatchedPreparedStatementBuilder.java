@@ -27,9 +27,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -61,14 +58,13 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
   }
 
   /**
-   * @param records    - The sequence of records to be inserted to the database
-   * @param connection - The database connection instance
+   * @param records - The sequence of records to be inserted to the database
    * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
    */
   @Override
-  public PreparedStatementContext build(final Collection<SinkRecord> records, final Connection connection) throws SQLException {
+  public PreparedStatementContext build(final Collection<SinkRecord> records) {
 
-    final Map<String, PreparedStatement> mapStatements = new HashMap<>();
+    final Map<String, PreparedStatementData> mapStatements = new HashMap<>();
     final TablesToColumnUsageState state = new TablesToColumnUsageState();
 
     for (final SinkRecord record : records) {
@@ -97,7 +93,7 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
 
       final StructFieldsDataExtractor fieldsDataExtractor = fieldsExtractorMap.get(topic);
       final Struct struct = (Struct) record.value();
-      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct);
+      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct, record);
 
       if (!binders.isEmpty()) {
         final String tableName = fieldsDataExtractor.getTableName();
@@ -113,12 +109,13 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
                   nonKeyColumnsName,
                   keyColumnsName);
 
-          final PreparedStatement statement = connection.prepareStatement(query);
-          mapStatements.put(statementKey, statement);
+          //final PreparedStatement statement = connection.prepareStatement(query);
+          mapStatements.put(statementKey, new PreparedStatementData(query, Lists.<Iterable<PreparedStatementBinder>>newLinkedList()));
         }
-        final PreparedStatement statement = mapStatements.get(statementKey);
-        PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
-        statement.addBatch();
+        final PreparedStatementData statementData = mapStatements.get(statementKey);
+        statementData.addEntryBinders(Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
+        //PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
+        //statement.addBatch();
       }
     }
 

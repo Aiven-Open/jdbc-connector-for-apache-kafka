@@ -18,14 +18,13 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.google.common.base.Joiner;
 import com.google.common.base.Function;
-import com.google.common.collect.Sets;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import org.apache.kafka.common.config.ConfigException;
+import com.google.common.collect.Sets;
+import io.confluent.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,9 +157,7 @@ public final class JdbcSinkSettings {
 
   /**
    * Get a list of the export mappings for a mapping.
-   *
-
-   * */
+   */
   private static List<FieldsMappings> getTopicExportMappings(JdbcSinkConfig config) {
     String rawExportMap = config.getString(JdbcSinkConfig.EXPORT_MAPPINGS).replaceAll("\\s+", "");
 
@@ -176,13 +173,13 @@ public final class JdbcSinkSettings {
     String[] rawMappings = rawExportMap.split("\\}");
 
     //go over our main mappings
-    for (String rawMapping: rawMappings) {
+    for (String rawMapping : rawMappings) {
       String[] split = rawMapping
-          .replace(",{", "")
-          .replace("{", "")
-          .replace("}", "")
-          .trim()
-          .split(";");
+              .replace(",{", "")
+              .replace("{", "")
+              .replace("}", "")
+              .trim()
+              .split(";");
 
       if (split.length != 2) {
         throw new ConfigException(String.format(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set correctly, %s", rawMapping));
@@ -195,7 +192,7 @@ public final class JdbcSinkSettings {
       //enforce topic to table mapping
       if (topicToTable.length != 2) {
         throw new ConfigException(String.format(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set correctly, %s. Missing " +
-            "either the table or topic.", rawMapping));
+                "either the table or topic.", rawMapping));
       }
 
       //break out table and topic
@@ -207,17 +204,30 @@ public final class JdbcSinkSettings {
       //allow evolving topics
       final boolean evolveTableSchema = evolveRaw.contains(topic);
       logger.info(String.format("Setting auto create table to %s and schema evolution to %s for topic %s and table %s",
-          autoCreateTable, evolveTableSchema, topic, table));
+              autoCreateTable, evolveTableSchema, topic, table));
 
       //auto create is true so try and get pk fields
       Set<String> pkCols = Sets.newHashSet();
       if (autoCreateTable) {
         int mapStart = autoCreateRaw.indexOf("{" + topic);
-        int delimiterIndex = autoCreateRaw.indexOf(":", mapStart);
-        int mapEnd = autoCreateRaw.indexOf("}", mapStart);
-        String[] pks = autoCreateRaw.substring(delimiterIndex + 1, mapEnd).split(",");
-        for (String pk : pks) {
-          if (!pk.isEmpty()) pkCols.add(pk);
+        //if no fields were specified introduce the defaul PK colum
+        if (mapStart > 0) {
+          int delimiterIndex = autoCreateRaw.indexOf(":", mapStart);
+          if (delimiterIndex < 0) {
+            throw new ConfigException("Invalid configuration for " + JdbcSinkConfig.AUTO_CREATE_TABLE_MAP + ". Make sure you " +
+                    "provide the value in the format {..:..}");
+          }
+          int mapEnd = autoCreateRaw.indexOf("}", mapStart);
+          if (mapEnd < 0) {
+            throw new ConfigException("Invalid configuration for " + JdbcSinkConfig.AUTO_CREATE_TABLE_MAP + ". Make sure you " +
+                    "provide the value in the format {..:..}");
+          }
+          String[] pks = autoCreateRaw.trim().substring(delimiterIndex + 1, mapEnd).split(",");
+          for (String pk : pks) {
+            if (!pk.isEmpty()) pkCols.add(pk);
+          }
+        } else {
+          pkCols.add(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
         }
       }
 
@@ -253,15 +263,15 @@ public final class JdbcSinkSettings {
       //check pks are in our fields selection if not allFields
       if (!allFields) {
         for (String pk : pkCols) {
-          if (!mappings.containsKey(pk)) {
+          if (pk != FieldsMappings.CONNECT_AUTO_ID_COLUMN && !mappings.containsKey(pk)) {
             throw new ConfigException(String.format("Primary key %s mapping specified that does not exist in field selection %s.",
-                                        pk, rawExportMap));
+                    pk, rawExportMap));
           }
         }
       }
 
       FieldsMappings fm = new FieldsMappings(table, topic, allFields, mappings, autoCreateTable, evolveTableSchema,
-                                             PrimaryKeyMode.FIELD);
+              PrimaryKeyMode.FIELD);
       fieldsMappingsList.add(fm);
     }
     return fieldsMappingsList;

@@ -16,21 +16,29 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import org.apache.kafka.connect.sink.SinkRecord;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 
-import java.util.Collection;
+import java.util.List;
 
-public interface PreparedStatementBuilder {
 
-  /**
-   * Build a list of prepared statements the sink records against this connection.
-   *
-   * @param records The sinkRecords to create prepared statements for.
-   * @return A list of prepared statements for the sink records.
-   */
-  PreparedStatementContext build(final Collection<SinkRecord> records);
+public final class PreparedStatementData {
+  private final String sql;
+  private final List<Iterable<PreparedStatementBinder>> binders;
 
-  boolean isBatching();
+  public PreparedStatementData(String sql, List<Iterable<PreparedStatementBinder>> binders) {
+    this.sql = sql;
+    this.binders = binders;
+  }
+
+  public String getSql() {
+    return sql;
+  }
+
+  public List<Iterable<PreparedStatementBinder>> getBinders() {
+    return binders;
+  }
+
+  public void addEntryBinders(Iterable<PreparedStatementBinder> entryBinders) {
+    binders.add(entryBinders);
+  }
 }
-
-

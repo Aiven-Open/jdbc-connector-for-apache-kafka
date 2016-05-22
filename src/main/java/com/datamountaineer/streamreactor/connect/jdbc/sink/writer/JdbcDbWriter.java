@@ -21,6 +21,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
@@ -39,8 +40,10 @@ import java.util.Date;
 import java.util.Set;
 import java.util.List;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
-
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -97,23 +100,33 @@ public final class JdbcDbWriter implements DbWriter {
     } else {
 
       Connection connection = null;
-      Collection<PreparedStatement> statements = null;
       try {
-        connection = dataSource.getConnection();
-        final PreparedStatementContext statementContext = statementBuilder.build(records, connection);
-        statements = statementContext.getPreparedStatements();
-        if (!statements.isEmpty()) {
+        final PreparedStatementContext statementContext = statementBuilder.build(records);
+        final Collection<PreparedStatementData> statementsData = statementContext.getPreparedStatements();
+        if (!statementsData.isEmpty()) {
 
-          //begin transaction
-          connection.setAutoCommit(false);
           //handle possible database changes (new tables, new columns)
           databaseChangesExecutor.handleChanges(statementContext.getTablesToColumnsMap());
 
-          for (final PreparedStatement statement : statements) {
-            if (statementBuilder.isBatching()) {
+          connection = dataSource.getConnection();
+          //begin transaction
+          connection.setAutoCommit(false);
+
+          for (final PreparedStatementData statementData : statementsData) {
+
+            PreparedStatement statement = null;
+            try {
+              statement = connection.prepareStatement(statementData.getSql());
+              for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
+                PreparedStatementBindData.apply(statement, entryBinders);
+                statement.addBatch();
+              }
               statement.executeBatch();
-            } else {
-              statement.execute();
+
+            } finally {
+              if (statement != null) {
+                statement.close();
+              }
             }
           }
           //commit the transaction
@@ -148,16 +161,6 @@ public final class JdbcDbWriter implements DbWriter {
         lastErrorMessage = sqlException.getMessage();
         errorHandlingPolicy.handle(records, sqlException, retries);
       } finally {
-        if (statements != null) {
-          for (final PreparedStatement statement : statements) {
-            try {
-              statement.close();
-            } catch (Throwable t) {
-              logger.error(t.getMessage());
-            }
-          }
-        }
-
         if (connection != null) {
           try {
             connection.close();

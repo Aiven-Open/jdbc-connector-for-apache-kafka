@@ -1,24 +1,30 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,7 +66,8 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, new HashMap<String, FieldAlias>());
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct);
+    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+            new SinkRecord("", 1, null, null, schema, struct, 0));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
     for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
@@ -120,7 +127,8 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct);
+    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+            new SinkRecord("", 1, null, null, schema, struct, 0));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
     for (PreparedStatementBinder p : Iterables.concat(binders.getKeyColumns(), binders.getNonKeyColumns()))
@@ -167,7 +175,8 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", false, mappings);
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct);
+    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+            new SinkRecord("", 2, null, null, schema, struct, 2));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
     for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
@@ -222,7 +231,8 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct);
+    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+            new SinkRecord("", 1, null, null, schema, struct, 0));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
     for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
@@ -310,7 +320,8 @@ public class StructFieldsDataExtractorTest {
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
 
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct);
+    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+            new SinkRecord("", 2, null, null, schema, struct, 2));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
     for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))

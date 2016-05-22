@@ -19,7 +19,6 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
 
-import java.sql.PreparedStatement;
 import java.util.Collection;
 import java.util.Map;
 
@@ -27,10 +26,10 @@ import java.util.Map;
  * Contains a list of PreparedStatements to execute as well as the tables affected and the columns referenced.
  */
 public class PreparedStatementContext {
-  private final Collection<PreparedStatement> preparedStatements;
+  private final Collection<PreparedStatementData> preparedStatements;
   private final Map<String, Collection<Field>> tablesToColumnsMap;
 
-  public PreparedStatementContext(Collection<PreparedStatement> preparedStatements,
+  public PreparedStatementContext(Collection<PreparedStatementData> preparedStatements,
                                   Map<String, Collection<Field>> tablesToColumnsMap) {
     this.preparedStatements = preparedStatements;
     this.tablesToColumnsMap = tablesToColumnsMap;
@@ -41,7 +40,7 @@ public class PreparedStatementContext {
    *
    * @return Returns the list of PreparedStatements to execute
    */
-  public Collection<PreparedStatement> getPreparedStatements() {
+  public Collection<PreparedStatementData> getPreparedStatements() {
     return preparedStatements;
   }
 

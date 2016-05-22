@@ -26,9 +26,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -61,13 +58,11 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
    * Creates a PreparedStatement for each SinkRecord
    *
    * @param records    - The sequence of records to be inserted to the database
-   * @param connection - The database connection instance
    * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
    */
   @Override
-  public PreparedStatementContext build(final Collection<SinkRecord> records,
-                                        final Connection connection) throws SQLException {
-    final List<PreparedStatement> statements = new ArrayList<>(records.size());
+  public PreparedStatementContext build(final Collection<SinkRecord> records) {
+    final List<PreparedStatementData> statements = new ArrayList<>(records.size());
     final TablesToColumnUsageState tablesToColumnsState = new TablesToColumnUsageState();
 
     for (final SinkRecord record : records) {
@@ -94,7 +89,7 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
       }
       final Struct struct = (Struct) record.value();
       final StructFieldsDataExtractor fieldsDataExtractor = fieldsDataExtractorMap.get(record.topic().toLowerCase());
-      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct);
+      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct, record);
 
       if (!binders.isEmpty()) {
         final String tableName = fieldsDataExtractor.getTableName();
@@ -102,9 +97,12 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
         final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
         final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
         final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
-        final PreparedStatement statement = connection.prepareStatement(query);
-        PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
-        statements.add(statement);
+        //final PreparedStatement statement = connection.prepareStatement(query);
+        //PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
+        final List<Iterable<PreparedStatementBinder>> entryBinders = new ArrayList<>();
+        entryBinders.add(Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
+        final PreparedStatementData data = new PreparedStatementData(query, entryBinders);
+        statements.add(data);
       }
     }
 

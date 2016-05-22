@@ -21,8 +21,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
  */
 public enum PrimaryKeyMode {
   NONE("None"),
-  FIELD("Fields"),
-  KAFKA("Kafka");
+  FIELD("Fields");
 
   private final String value;
 

@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -69,8 +70,7 @@ public class StructFieldsDataExtractor {
     return fieldsMappings.getTableName();
   }
 
-
-  public PreparedStatementBinders get(final Struct struct) {
+  public PreparedStatementBinders get(final Struct struct, final SinkRecord record) {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
     if (fieldsMappings.areAllFieldsIncluded()) {
@@ -80,7 +80,7 @@ public class StructFieldsDataExtractor {
         @Override
         public boolean apply(Field input) {
           return fieldsMappings.getMappings().containsKey(input.name()) ||
-              fieldsMappings.areAllFieldsIncluded();
+                  fieldsMappings.areAllFieldsIncluded();
         }
 
         @Override
@@ -97,6 +97,13 @@ public class StructFieldsDataExtractor {
     final List<PreparedStatementBinder> nonPrimaryKeyBinders = Lists.newLinkedList();
     final List<PreparedStatementBinder> primaryKeyBinders = Lists.newLinkedList();
     final Map<String, FieldAlias> mappings = fieldsMappings.getMappings();
+    //check for the autocreated PK column
+    final FieldAlias autoPK = mappings.get(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
+    if (autoPK != null) {
+      //fake the field and binder
+      primaryKeyBinders.add(new StringPreparedStatementBinder(FieldsMappings.CONNECT_AUTO_ID_COLUMN,
+              FieldsMappings.generateConnectAutoPKValue(record)));
+    }
     for (final Field field : fields) {
       final PreparedStatementBinder binder = getFieldValue(field, struct);
       if (binder != null) {
@@ -194,7 +201,7 @@ public class StructFieldsDataExtractor {
 
     public boolean isEmpty() {
       return (nonKeyColumns == null || nonKeyColumns.isEmpty()) &&
-          (keyColumns == null || keyColumns.isEmpty());
+              (keyColumns == null || keyColumns.isEmpty());
     }
   }
 }

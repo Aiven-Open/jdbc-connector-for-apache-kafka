@@ -1,17 +1,22 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.*;
-import com.google.common.collect.*;
-import org.apache.kafka.common.*;
-import org.apache.kafka.common.config.*;
-import org.apache.kafka.connect.sink.*;
-import org.junit.Test;
-import org.mockito.*;
 
-import java.util.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.TestBase;
+import com.google.common.collect.Sets;
+import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -224,7 +229,6 @@ public class JdbcSinkSettingsTest {
   }
 
 
-
   @Test
   public void UpsertThrowBatchingAllFields() {
     TestBase base = new TestBase();
@@ -355,7 +359,7 @@ public class JdbcSinkSettingsTest {
     assertFalse(mappings.get(0).evolveTableSchema());
     assertFalse(mappings.get(1).evolveTableSchema());
 
-    assertTrue(mappings.get(0).getMappings().isEmpty());
+    assertEquals(1, mappings.get(0).getMappings().size());
     assertTrue(mappings.get(1).getMappings().isEmpty());
   }
 
@@ -384,11 +388,9 @@ public class JdbcSinkSettingsTest {
     assertFalse(mappings.get(0).evolveTableSchema());
     assertFalse(mappings.get(1).evolveTableSchema());
 
-    assertTrue(mappings.get(0).getMappings().size() == 2); //two pks
-    assertTrue(mappings.get(0).getMappings().get("f1").getName().equals("f1"));
-    assertTrue(mappings.get(0).getMappings().get("f1").isPrimaryKey());
-    assertTrue(mappings.get(0).getMappings().get("f2").getName().equals("f2"));
-    assertTrue(mappings.get(0).getMappings().get("f2").isPrimaryKey());
+    assertTrue(mappings.get(0).getMappings().size() == 1); //auto PK
+    assertTrue(mappings.get(0).getMappings().get(FieldsMappings.CONNECT_AUTO_ID_COLUMN).getName().equals(FieldsMappings.CONNECT_AUTO_ID_COLUMN));
+    assertTrue(mappings.get(0).getMappings().get(FieldsMappings.CONNECT_AUTO_ID_COLUMN).isPrimaryKey());
 
     assertTrue(mappings.get(1).getMappings().size() == 1); //two pks
     assertTrue(mappings.get(1).getMappings().get("f3").getName().equals("f3"));

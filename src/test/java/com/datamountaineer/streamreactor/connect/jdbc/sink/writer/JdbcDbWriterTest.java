@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -177,33 +176,6 @@ public class JdbcDbWriterTest {
     assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
   }
 
-
-  @Test
-  public void errorPolicyShouldHideTheException() throws SQLException {
-    PreparedStatementBuilder builder = mock(PreparedStatementBuilder.class);
-    Exception ex = new SQLException("some error description");
-
-    Collection<SinkRecord> records = new ArrayList<>();
-    records.add(new SinkRecord("topic", 1, Schema.STRING_SCHEMA, "test1", Schema.STRING_SCHEMA, "value", 0));
-
-    ErrorHandlingPolicy policy = ErrorHandlingPolicyHelper.from(ErrorPolicyEnum.NOOP);
-    when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
-
-    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
-
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
-    DatabaseChangesExecutor executor = new DatabaseChangesExecutor(
-            ds,
-            Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(),
-            dbMetadata,
-            new OracleDialect(),
-            1);
-    JdbcDbWriter writer = new JdbcDbWriter(ds, builder, policy, executor, 10);
-    writer.write(records);
-  }
-
-
   @Test(expected = RuntimeException.class)
   public void errorPolicyShouldThrowTheException() throws SQLException {
     PreparedStatementBuilder builder = mock(PreparedStatementBuilder.class);
@@ -211,7 +183,7 @@ public class JdbcDbWriterTest {
     Collection<SinkRecord> records = new ArrayList<>();
     records.add(new SinkRecord("topic", 1, Schema.STRING_SCHEMA, "test1", Schema.STRING_SCHEMA, "value", 0));
 
-    when(builder.build(any(records.getClass()), any(Connection.class))).thenThrow(ex);
+    when(builder.build(any(records.getClass()))).thenThrow(ex);
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
     HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
     DatabaseChangesExecutor executor = new DatabaseChangesExecutor(

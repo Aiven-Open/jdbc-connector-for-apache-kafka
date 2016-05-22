@@ -19,6 +19,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Joiner;
 import io.confluent.common.config.ConfigException;
+import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,8 @@ import java.util.Map;
  * Contains the SinkConnect payload fields to consider and/or their mappings
  */
 public final class FieldsMappings {
+
+  public final static String CONNECT_AUTO_ID_COLUMN = "__connect_auto_id";
   private final String tableName;
   private final String incomingTopic;
   private final boolean allFieldsIncluded;
@@ -142,10 +145,6 @@ public final class FieldsMappings {
     return evolveTableSchema;
   }
 
-  public PrimaryKeyMode getPrimaryKeyMode() {
-    return primaryKeyMode;
-  }
-
   @Override
   public String toString() {
     Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
@@ -203,13 +202,13 @@ public final class FieldsMappings {
     return isPk;
   }
 
- /*
-  public static String removePrimaryKeyChars(final String field) {
-    final String f = field.substring(1, field.length() - 1).trim();
-    if (f.length() == 0) {
-      throw new ConfigException("Invlaid configuration for field mappings. Missing the primary key field.");
-    }
-    return f;
+  /**
+   * Constructs the primary key value when the table is set with autocreate and no fields are specified
+   *
+   * @param record - The connect record structure
+   * @return - The string formed by topic.partition.offset
+   */
+  public static String generateConnectAutoPKValue(final SinkRecord record) {
+    return String.format("%s.%d.%d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
   }
-  */
 }

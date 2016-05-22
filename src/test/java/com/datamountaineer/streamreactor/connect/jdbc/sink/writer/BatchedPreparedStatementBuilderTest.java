@@ -1,7 +1,15 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.IntPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.MySqlDialect;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
@@ -13,10 +21,18 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BatchedPreparedStatementBuilderTest {
 
@@ -40,7 +56,7 @@ public class BatchedPreparedStatementBuilderTest {
             new StringPreparedStatementBinder("B", "bishbash"));
 
     when(valueExtractor.getTableName()).thenReturn("tableA");
-    when(valueExtractor.get(any(Struct.class))).
+    when(valueExtractor.get(any(Struct.class), any(SinkRecord.class))).
             thenReturn(
                     new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.<PreparedStatementBinder>newArrayList()),
                     new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.<PreparedStatementBinder>newArrayList()),
@@ -64,44 +80,50 @@ public class BatchedPreparedStatementBuilderTest {
     //same size as the valueextractor.get returns
     Collection<SinkRecord> records = Collections.nCopies(5, new SinkRecord("topic1a", 1, null, null, schema, record, 0));
 
-    Connection connection = mock(Connection.class);
-
     String sql1 = "INSERT INTO tableA(colA,colB,colC,colD) VALUES(?,?,?,?)";
-    PreparedStatement statement1 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql1)).thenReturn(statement1);
-
     String sql2 = "INSERT INTO tableA(colE,colF,colG,colH) VALUES(?,?,?,?)";
-    PreparedStatement statement2 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql2)).thenReturn(statement2);
-
 
     String sql3 = "INSERT INTO tableA(A,B) VALUES(?,?)";
-    PreparedStatement statement3 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql3)).thenReturn(statement3);
 
-    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
 
+    Map<String, PreparedStatementData> dataMap = new HashMap<>();
+    for (PreparedStatementData d : actualStatements) {
+      dataMap.put(d.getSql(), d);
+    }
     assertEquals(actualStatements.size(), 3);
 
-    verify(connection, times(1)).prepareStatement(sql1);
-    verify(connection, times(1)).prepareStatement(sql2);
-    verify(connection, times(1)).prepareStatement(sql3);
+    assertTrue(dataMap.containsKey(sql1));
+    assertTrue(dataMap.containsKey(sql2));
+    assertTrue(dataMap.containsKey(sql3));
 
-    verify(statement1, times(3)).setBoolean(1, true);
-    verify(statement1, times(3)).setInt(2, 3);
-    verify(statement1, times(3)).setLong(3, 124566);
-    verify(statement1, times(3)).setString(4, "somevalue");
-    verify(statement1, times(3)).addBatch();
+    List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
+    assertEquals(3, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
 
-    verify(statement2, times(1)).setDouble(1, -5345.22);
-    verify(statement2, times(1)).setFloat(2, 0);
-    verify(statement2, times(1)).setByte(3, (byte) -24);
-    verify(statement2, times(1)).setShort(4, (short) -2345);
-    verify(statement2, times(1)).addBatch();
+    binders = dataMap.get(sql2).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
+      assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
+      assertEquals(-24, ((BytePreparedStatementBinder) b.get(2)).getValue());
+      assertEquals(-2345, ((ShortPreparedStatementBinder) b.get(3)).getValue());
+    }
 
-    verify(statement3, times(1)).setInt(1, 1);
-    verify(statement3, times(1)).setString(2, "bishbash");
-    verify(statement3, times(1)).addBatch();
+    binders = dataMap.get(sql3).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(1, ((IntPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals("bishbash", ((StringPreparedStatementBinder) b.get(1)).getValue());
+    }
   }
 
   @Test
@@ -131,13 +153,13 @@ public class BatchedPreparedStatementBuilderTest {
             .build();
 
     Struct struct1 = new Struct(schema);
-    when(valueExtractor1.get(struct1)).
+    when(valueExtractor1.get(eq(struct1), any(SinkRecord.class))).
             thenReturn(
                     new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.<PreparedStatementBinder>newArrayList())
             );
 
     Struct struct2 = new Struct(schema);
-    when(valueExtractor2.get(struct2)).
+    when(valueExtractor2.get(eq(struct2), any(SinkRecord.class))).
             thenReturn(
                     new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.<PreparedStatementBinder>newArrayList())
             );
@@ -155,34 +177,36 @@ public class BatchedPreparedStatementBuilderTest {
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0),
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0));
 
-    Connection connection = mock(Connection.class);
-
     String sql1 = "INSERT INTO tableA(colA,colB,colC,colD) VALUES(?,?,?,?)";
-    PreparedStatement statement1 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql1)).thenReturn(statement1);
 
     String sql2 = "INSERT INTO tableB(colE,colF,colG,colH) VALUES(?,?,?,?)";
-    PreparedStatement statement2 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql2)).thenReturn(statement2);
 
-    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
-
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
     assertEquals(actualStatements.size(), 2);
 
-    verify(connection, times(1)).prepareStatement(sql1);
-    verify(connection, times(1)).prepareStatement(sql2);
+    assertEquals(sql1, actualStatements.get(0).getSql());
+    assertEquals(sql2, actualStatements.get(1).getSql());
 
-    verify(statement1, times(3)).setBoolean(1, true);
-    verify(statement1, times(3)).setInt(2, 3);
-    verify(statement1, times(3)).setLong(3, 124566);
-    verify(statement1, times(3)).setString(4, "somevalue");
-    verify(statement1, times(3)).addBatch();
+    assertEquals(3, actualStatements.get(0).getBinders().size());
 
-    verify(statement2, times(1)).setDouble(1, -5345.22);
-    verify(statement2, times(1)).setFloat(2, 0);
-    verify(statement2, times(1)).setByte(3, (byte) -24);
-    verify(statement2, times(1)).setShort(4, (short) -2345);
-    verify(statement2, times(1)).addBatch();
+    List<Iterable<PreparedStatementBinder>> binders = actualStatements.get(0).getBinders();
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+
+    binders = actualStatements.get(1).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(0));
+      assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
+      assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
+      assertEquals((byte) -24, ((BytePreparedStatementBinder) b.get(2)).getValue());
+      assertEquals(-2345, ((ShortPreparedStatementBinder) b.get(3)).getValue());
+    }
   }
 
   @Test
@@ -212,7 +236,7 @@ public class BatchedPreparedStatementBuilderTest {
     String table = "tableA";
     String topic = "topic1Ab";
     when(valueExtractor.getTableName()).thenReturn(table);
-    when(valueExtractor.get(any(Struct.class))).
+    when(valueExtractor.get(any(Struct.class), any(SinkRecord.class))).
             thenReturn(
                     new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.newArrayList(pk1)),
                     new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.newArrayList(pk2)),
@@ -247,38 +271,49 @@ public class BatchedPreparedStatementBuilderTest {
 
     String sql2 = "insert into tableA(colE,colF,colG,colH,colPK) values(?,?,?,?,?) " +
             "on duplicate key update colE=values(colE),colF=values(colF),colG=values(colG),colH=values(colH)";
-    PreparedStatement statement2 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql2)).thenReturn(statement2);
-
 
     String sql3 = "insert into tableA(A,B,colPK) values(?,?,?) " +
             "on duplicate key update A=values(A),B=values(B)";
-    PreparedStatement statement3 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql3)).thenReturn(statement3);
 
-    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
 
+    Map<String, PreparedStatementData> dataMap = new HashMap<>();
+    for (PreparedStatementData d : actualStatements) {
+      dataMap.put(d.getSql(), d);
+    }
     assertEquals(actualStatements.size(), 3);
 
-    verify(connection, times(1)).prepareStatement(sql1);
-    verify(connection, times(1)).prepareStatement(sql2);
-    verify(connection, times(1)).prepareStatement(sql3);
+    assertTrue(dataMap.containsKey(sql1));
+    assertTrue(dataMap.containsKey(sql2));
+    assertTrue(dataMap.containsKey(sql3));
 
-    verify(statement1, times(3)).setBoolean(1, true);
-    verify(statement1, times(3)).setInt(2, 3);
-    verify(statement1, times(3)).setLong(3, 124566);
-    verify(statement1, times(3)).setString(4, "somevalue");
-    verify(statement1, times(3)).addBatch();
+    List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
+    assertEquals(3, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
 
-    verify(statement2, times(1)).setDouble(1, -5345.22);
-    verify(statement2, times(1)).setFloat(2, 0);
-    verify(statement2, times(1)).setByte(3, (byte) -24);
-    verify(statement2, times(1)).setShort(4, (short) -2345);
-    verify(statement2, times(1)).addBatch();
+    binders = dataMap.get(sql2).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
+      assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
+      assertEquals((byte) -24, ((BytePreparedStatementBinder) b.get(2)).getValue());
+      assertEquals(-2345, ((ShortPreparedStatementBinder) b.get(3)).getValue());
+    }
 
-    verify(statement3, times(1)).setInt(1, 1);
-    verify(statement3, times(1)).setString(2, "bishbash");
-    verify(statement3, times(1)).addBatch();
+    binders = dataMap.get(sql3).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(1, ((IntPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals("bishbash", ((StringPreparedStatementBinder) b.get(1)).getValue());
+    }
   }
 
   @Test
@@ -313,7 +348,7 @@ public class BatchedPreparedStatementBuilderTest {
     String topic1 = "topic1Ab";
 
     when(valueExtractor1.getTableName()).thenReturn(table1);
-    when(valueExtractor1.get(struct1)).
+    when(valueExtractor1.get(eq(struct1), any(SinkRecord.class))).
             thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.newArrayList(pk1)));
 
     Struct struct2 = new Struct(schema);
@@ -321,7 +356,7 @@ public class BatchedPreparedStatementBuilderTest {
     String topic2 = "topic2";
 
     when(valueExtractor2.getTableName()).thenReturn(table2);
-    when(valueExtractor2.get(struct2)).
+    when(valueExtractor2.get(eq(struct2), any(SinkRecord.class))).
             thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.newArrayList(pk2)));
 
 
@@ -343,32 +378,39 @@ public class BatchedPreparedStatementBuilderTest {
 
     String sql1 = "insert into tableA(colA,colB,colC,colD,colPK) values(?,?,?,?,?) " +
             "on duplicate key update colA=values(colA),colB=values(colB),colC=values(colC),colD=values(colD)";
-    PreparedStatement statement1 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql1)).thenReturn(statement1);
 
     String sql2 = "insert into tableB(colE,colF,colG,colH,colPK) values(?,?,?,?,?) " +
             "on duplicate key update colE=values(colE),colF=values(colF),colG=values(colG),colH=values(colH)";
-    PreparedStatement statement2 = mock(PreparedStatement.class);
-    when(connection.prepareStatement(sql2)).thenReturn(statement2);
 
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
 
-    Collection<PreparedStatement> actualStatements = builder.build(records, connection).getPreparedStatements();
-
+    Map<String, PreparedStatementData> dataMap = new HashMap<>();
+    for (PreparedStatementData d : actualStatements) {
+      dataMap.put(d.getSql(), d);
+    }
     assertEquals(actualStatements.size(), 2);
 
-    verify(connection, times(1)).prepareStatement(sql1);
-    verify(connection, times(1)).prepareStatement(sql2);
+    assertTrue(dataMap.containsKey(sql1));
+    assertTrue(dataMap.containsKey(sql2));
 
-    verify(statement1, times(3)).setBoolean(1, true);
-    verify(statement1, times(3)).setInt(2, 3);
-    verify(statement1, times(3)).setLong(3, 124566);
-    verify(statement1, times(3)).setString(4, "somevalue");
-    verify(statement1, times(3)).addBatch();
+    List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql2).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
+      assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
+      assertEquals(-24, ((BytePreparedStatementBinder) b.get(2)).getValue());
+      assertEquals(-2345, ((ShortPreparedStatementBinder) b.get(3)).getValue());
+    }
 
-    verify(statement2, times(1)).setDouble(1, -5345.22);
-    verify(statement2, times(1)).setFloat(2, 0);
-    verify(statement2, times(1)).setByte(3, (byte) -24);
-    verify(statement2, times(1)).setShort(4, (short) -2345);
-    verify(statement2, times(1)).addBatch();
+    binders = dataMap.get(sql1).getBinders();
+    assertEquals(3, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
   }
 }
