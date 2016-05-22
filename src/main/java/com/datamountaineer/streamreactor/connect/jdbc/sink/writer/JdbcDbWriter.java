@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.*;
 import java.util.Date;
 import java.util.Set;
 import java.util.List;
@@ -120,7 +121,8 @@ public final class JdbcDbWriter implements DbWriter {
 
           if (maxRetries != retries) {
             retries = maxRetries;
-            logger.info(String.format("Recovered from error % at %s", lastError, lastErrorMessage));
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
+            logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
           }
         }
       } catch (SQLException sqlException) {

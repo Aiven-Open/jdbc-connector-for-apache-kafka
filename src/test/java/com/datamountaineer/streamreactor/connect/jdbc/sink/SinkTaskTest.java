@@ -15,6 +15,7 @@ import java.util.*;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.AUTO_CREATE_TABLE_MAP;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -48,6 +49,7 @@ public class SinkTaskTest {
     Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
     props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
     props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
+    props.put(ERROR_POLICY, "RETRY");
     TopicPartition tp1 = new TopicPartition(base.getTopic1(), 12);
     TopicPartition tp2 = new TopicPartition(base.getTopic2(), 13);
     HashSet<TopicPartition> assignment = Sets.newHashSet();
