@@ -502,6 +502,14 @@ the primary key.
 * Importance : medium
 * Default : __connect_auto_id
 
+``connect.jdbc.sink.schema.registry.url``
+
+The url for the Schema registry. This is used to retrieve the latest schema for table creation.
+
+* Type : string
+* Importance : high
+* Default : http://localhost:8081
+
 
 Example Configurations
 ~~~~~~~~~~~~~~~~~~~~~~
