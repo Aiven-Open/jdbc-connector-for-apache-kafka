@@ -71,12 +71,6 @@ public final class JdbcSinkConnector extends SinkConnector {
     final String propsStr = mapJoiner.join(props);
     logger.info("Starting JDBC Connector with " + propsStr);
     configProps = props;
-
-//    try {
-//      JdbcSinkSettings.fixConfigLimitationOnDynamicProps(props);
-//    } catch (Throwable t) {
-//      throw new ConnectException("Couldn't start JDBC Sink due to configuration error.", t);
-//    }
   }
 
   @Override

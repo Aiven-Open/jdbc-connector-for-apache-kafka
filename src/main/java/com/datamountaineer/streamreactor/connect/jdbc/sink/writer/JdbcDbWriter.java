@@ -76,7 +76,6 @@ public final class JdbcDbWriter implements DbWriter {
     ParameterValidator.notNull(statementBuilder, "statementBuilder");
     ParameterValidator.notNull(databaseChangesExecutor, "databaseChangesExecutor");
 
-
     this.dataSource = hikariDataSource;
     this.statementBuilder = statementBuilder;
     this.errorHandlingPolicy = errorHandlingPolicy;

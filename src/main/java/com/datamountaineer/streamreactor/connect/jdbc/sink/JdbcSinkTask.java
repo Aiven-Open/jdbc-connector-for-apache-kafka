@@ -16,8 +16,9 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.io.CharStreams;
 import com.zaxxer.hikari.HikariDataSource;
@@ -60,9 +61,12 @@ public class JdbcSinkTask extends SinkTask {
     final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
     int retryInterval = sinkConfig.getInt(JdbcSinkConfig.RETRY_INTERVAL);
     //set retry interval for sink
-    context.timeout(retryInterval);
 
     final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
+
+    if (settings.getErrorPolicy().equals(ErrorPolicyEnum.RETRY)) {
+      context.timeout(retryInterval);
+    }
 
     //Set up the writer
     writer = JdbcDbWriter.from(settings, new DatabaseMetadataProvider() {
