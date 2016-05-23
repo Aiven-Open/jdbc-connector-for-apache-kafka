@@ -67,8 +67,7 @@ public final class PreparedStatementBuilderHelper {
    * @param databaseMetadata
    * @return
    */
-  public static PreparedStatementBuilder from(final JdbcSinkSettings settings,
-                                              DatabaseMetadata databaseMetadata) {
+  public static PreparedStatementBuilder from(final JdbcSinkSettings settings, final DatabaseMetadata databaseMetadata) {
 
     final Map<String, StructFieldsDataExtractor> map = Maps.newHashMap();
     for (final FieldsMappings tm : settings.getMappings()) {

@@ -57,12 +57,11 @@ public class BatchedPreparedStatementBuilderTest {
 
     when(valueExtractor.getTableName()).thenReturn("tableA");
     when(valueExtractor.get(any(Struct.class), any(SinkRecord.class))).
-            thenReturn(
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.<PreparedStatementBinder>newArrayList()),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.<PreparedStatementBinder>newArrayList()),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.<PreparedStatementBinder>newArrayList()),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.<PreparedStatementBinder>newArrayList()),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders3, Lists.<PreparedStatementBinder>newArrayList()));
+            thenReturn(dataBinders1,
+                    dataBinders2,
+                    dataBinders1,
+                    dataBinders1,
+                    dataBinders3);
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put("topic1a", valueExtractor);
@@ -154,15 +153,11 @@ public class BatchedPreparedStatementBuilderTest {
 
     Struct struct1 = new Struct(schema);
     when(valueExtractor1.get(eq(struct1), any(SinkRecord.class))).
-            thenReturn(
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.<PreparedStatementBinder>newArrayList())
-            );
+            thenReturn(dataBinders1);
 
     Struct struct2 = new Struct(schema);
     when(valueExtractor2.get(eq(struct2), any(SinkRecord.class))).
-            thenReturn(
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.<PreparedStatementBinder>newArrayList())
-            );
+            thenReturn(dataBinders2);
 
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
@@ -212,37 +207,45 @@ public class BatchedPreparedStatementBuilderTest {
   @Test
   public void groupAllRecordsWithTheSameColumnsForMySqlUpsert() throws SQLException {
     StructFieldsDataExtractor valueExtractor = mock(StructFieldsDataExtractor.class);
+
+    IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 1);
+    pk1.setPrimaryKey(true);
+
+    IntPreparedStatementBinder pk2 = new IntPreparedStatementBinder("colPK", 2);
+    pk2.setPrimaryKey(true);
+
+    IntPreparedStatementBinder pk3 = new IntPreparedStatementBinder("colPK", 3);
+    pk3.setPrimaryKey(true);
+
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
             new LongPreparedStatementBinder("colC", 124566),
-            new StringPreparedStatementBinder("colD", "somevalue"));
+            new StringPreparedStatementBinder("colD", "somevalue"),
+            pk1);
 
     List<PreparedStatementBinder> dataBinders2 = Lists.<PreparedStatementBinder>newArrayList(
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
             new BytePreparedStatementBinder("colG", (byte) -24),
-            new ShortPreparedStatementBinder("colH", (short) -2345));
+            new ShortPreparedStatementBinder("colH", (short) -2345),
+            pk2);
 
-
-    PreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 1);
-    PreparedStatementBinder pk2 = new IntPreparedStatementBinder("colPK", 2);
-    PreparedStatementBinder pk3 = new IntPreparedStatementBinder("colPK", 3);
 
     List<PreparedStatementBinder> dataBinders3 = Lists.<PreparedStatementBinder>newArrayList(
             new IntPreparedStatementBinder("A", 1),
-            new StringPreparedStatementBinder("B", "bishbash"));
+            new StringPreparedStatementBinder("B", "bishbash"),
+            pk3);
 
     String table = "tableA";
     String topic = "topic1Ab";
     when(valueExtractor.getTableName()).thenReturn(table);
     when(valueExtractor.get(any(Struct.class), any(SinkRecord.class))).
-            thenReturn(
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.newArrayList(pk1)),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.newArrayList(pk2)),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.newArrayList(pk1)),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.newArrayList(pk1)),
-                    new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders3, Lists.newArrayList(pk3)));
+            thenReturn(dataBinders1,
+                    dataBinders2,
+                    dataBinders1,
+                    dataBinders1,
+                    dataBinders3);
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put(topic.toLowerCase(), valueExtractor);
@@ -319,22 +322,27 @@ public class BatchedPreparedStatementBuilderTest {
   @Test
   public void handleMultipleTablesForUpsert() throws SQLException {
     StructFieldsDataExtractor valueExtractor1 = mock(StructFieldsDataExtractor.class);
+
+    IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 0);
+    pk1.setPrimaryKey(true);
+
+    IntPreparedStatementBinder pk2 = new IntPreparedStatementBinder("colPK", 0);
+    pk2.setPrimaryKey(true);
+
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
             new LongPreparedStatementBinder("colC", 124566),
-            new StringPreparedStatementBinder("colD", "somevalue"));
+            new StringPreparedStatementBinder("colD", "somevalue"),
+            pk1);
 
     StructFieldsDataExtractor valueExtractor2 = mock(StructFieldsDataExtractor.class);
     List<PreparedStatementBinder> dataBinders2 = Lists.<PreparedStatementBinder>newArrayList(
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
             new BytePreparedStatementBinder("colG", (byte) -24),
-            new ShortPreparedStatementBinder("colH", (short) -2345));
-
-
-    PreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 1);
-    PreparedStatementBinder pk2 = new IntPreparedStatementBinder("colPK", 2);
+            new ShortPreparedStatementBinder("colH", (short) -2345),
+            pk2);
 
 
     //schema is not used as we mocked the value extractors
@@ -349,7 +357,7 @@ public class BatchedPreparedStatementBuilderTest {
 
     when(valueExtractor1.getTableName()).thenReturn(table1);
     when(valueExtractor1.get(eq(struct1), any(SinkRecord.class))).
-            thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1, Lists.newArrayList(pk1)));
+            thenReturn(dataBinders1);
 
     Struct struct2 = new Struct(schema);
     String table2 = "tableB";
@@ -357,7 +365,7 @@ public class BatchedPreparedStatementBuilderTest {
 
     when(valueExtractor2.getTableName()).thenReturn(table2);
     when(valueExtractor2.get(eq(struct2), any(SinkRecord.class))).
-            thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2, Lists.newArrayList(pk2)));
+            thenReturn(dataBinders2);
 
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
@@ -373,8 +381,6 @@ public class BatchedPreparedStatementBuilderTest {
             new SinkRecord(topic2, 1, null, null, schema, struct2, 0),
             new SinkRecord(topic1, 1, null, null, schema, struct1, 0),
             new SinkRecord(topic1, 1, null, null, schema, struct1, 0));
-
-    Connection connection = mock(Connection.class);
 
     String sql1 = "insert into tableA(colA,colB,colC,colD,colPK) values(?,?,?,?,?) " +
             "on duplicate key update colA=values(colA),colB=values(colB),colC=values(colC),colD=values(colD)";

@@ -2,7 +2,6 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
@@ -16,7 +15,6 @@ import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -28,16 +26,12 @@ import static org.junit.Assert.assertTrue;
 public class TablesToColumnUsageStateTest {
   @Test(expected = IllegalArgumentException.class)
   public void shouldRaiseAnExceptionIfTheTableNameIsNull() {
-    new TablesToColumnUsageState().trackUsage(null,
-            new StructFieldsDataExtractor.PreparedStatementBinders(Lists.<PreparedStatementBinder>newArrayList(),
-                    Lists.<PreparedStatementBinder>newArrayList()));
+    new TablesToColumnUsageState().trackUsage(null, Lists.<PreparedStatementBinder>newArrayList());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void shouldRaiseAnExceptionIfTheTableNameIsWhitespace() {
-    new TablesToColumnUsageState().trackUsage(" ",
-            new StructFieldsDataExtractor.PreparedStatementBinders(Lists.<PreparedStatementBinder>newArrayList(),
-                    Lists.<PreparedStatementBinder>newArrayList()));
+    new TablesToColumnUsageState().trackUsage(" ", Lists.<PreparedStatementBinder>newArrayList());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -46,23 +40,9 @@ public class TablesToColumnUsageStateTest {
   }
 
   @Test
-  public void shouldHandlesNullPkColumns() {
-    new TablesToColumnUsageState().trackUsage("table",
-            new StructFieldsDataExtractor.PreparedStatementBinders(Lists.<PreparedStatementBinder>newArrayList(), null));
-  }
-
-  @Test
-  public void shouldHandlesNullNonPKColumns() {
-    new TablesToColumnUsageState().trackUsage("table",
-            new StructFieldsDataExtractor.PreparedStatementBinders(null, Lists.<PreparedStatementBinder>newArrayList()));
-  }
-
-  @Test
   public void shouldHandlesEmptyBinders() {
     TablesToColumnUsageState state = new TablesToColumnUsageState();
-    state.trackUsage("table",
-            new StructFieldsDataExtractor.PreparedStatementBinders(Lists.<PreparedStatementBinder>newArrayList(),
-                    Lists.<PreparedStatementBinder>newArrayList()));
+    state.trackUsage("table", Lists.<PreparedStatementBinder>newArrayList());
 
     assertEquals(state.getState().size(), 0);
   }
@@ -71,21 +51,23 @@ public class TablesToColumnUsageStateTest {
   public void shouldHandleNewTable() {
     TablesToColumnUsageState state = new TablesToColumnUsageState();
 
-    List<PreparedStatementBinder> pkCols = new ArrayList<>();
-    pkCols.add(new IntPreparedStatementBinder("pk1", 0));
-    pkCols.add(new IntPreparedStatementBinder("pk2", 0));
+    List<PreparedStatementBinder> cols = Lists.newArrayList();
+    cols.add(new ShortPreparedStatementBinder("npk1", (short) 0));
+    cols.add(new StringPreparedStatementBinder("npk2", "bibble"));
+    cols.add(new BooleanPreparedStatementBinder("npk3", true));
+    cols.add(new BytePreparedStatementBinder("npk4", (byte) 1));
+    cols.add(new FloatPreparedStatementBinder("npk5", (float) 12.5));
+    cols.add(new DoublePreparedStatementBinder("npk6", -1212.5));
+    cols.add(new LongPreparedStatementBinder("npk7", 8823111));
+    IntPreparedStatementBinder pk1= new IntPreparedStatementBinder("pk1", 0);
+    pk1.setPrimaryKey(true);
+    cols.add(pk1);
 
-    List<PreparedStatementBinder> nonPKCols = Lists.newArrayList();
-    nonPKCols.add(new ShortPreparedStatementBinder("npk1", (short) 0));
-    nonPKCols.add(new StringPreparedStatementBinder("npk2", "bibble"));
-    nonPKCols.add(new BooleanPreparedStatementBinder("npk3", true));
-    nonPKCols.add(new BytePreparedStatementBinder("npk4", (byte) 1));
-    nonPKCols.add(new FloatPreparedStatementBinder("npk5", (float) 12.5));
-    nonPKCols.add(new DoublePreparedStatementBinder("npk6", -1212.5));
-    nonPKCols.add(new LongPreparedStatementBinder("npk7", 8823111));
+    IntPreparedStatementBinder pk2= new IntPreparedStatementBinder("pk2", 0);
+    pk2.setPrimaryKey(true);
+    cols.add(pk2);
 
-    state.trackUsage("table",
-            new StructFieldsDataExtractor.PreparedStatementBinders(nonPKCols, pkCols));
+    state.trackUsage("table", cols);
 
     Map<String, Collection<Field>> s = state.getState();
     assertEquals(s.size(), 1);
@@ -96,7 +78,7 @@ public class TablesToColumnUsageStateTest {
       fieldMap.put(f.getName(), f);
     }
 
-    assertEquals(pkCols.size() + nonPKCols.size(), fieldMap.size());
+    assertEquals(cols.size(), fieldMap.size());
     assertTrue(fieldMap.containsKey("pk1"));
     assertTrue(fieldMap.containsKey("pk2"));
     assertTrue(fieldMap.containsKey("npk1"));
@@ -130,24 +112,20 @@ public class TablesToColumnUsageStateTest {
 
     TablesToColumnUsageState state = new TablesToColumnUsageState();
 
-    List<PreparedStatementBinder> pkCols = new ArrayList<>();
-    pkCols.add(new IntPreparedStatementBinder("pk1", 0));
-    pkCols.add(new IntPreparedStatementBinder("pk2", 0));
+    List<PreparedStatementBinder> cols = Lists.newArrayList();
+    cols.add(new ShortPreparedStatementBinder("npk1", (short) 0));
+    cols.add(new StringPreparedStatementBinder("npk2", "bibble"));
+    cols.add(new BooleanPreparedStatementBinder("npk3", true));
+    cols.add(new BytePreparedStatementBinder("npk4", (byte) 1));
+    cols.add(new FloatPreparedStatementBinder("npk5", (float) 12.5));
+    cols.add(new DoublePreparedStatementBinder("npk6", -1212.5));
+    cols.add(new LongPreparedStatementBinder("npk7", 8823111));
+    cols.add(new IntPreparedStatementBinder("pk1", 0));
+    cols.add(new IntPreparedStatementBinder("pk2", 0));
 
-    List<PreparedStatementBinder> nonPKCols = Lists.newArrayList();
-    nonPKCols.add(new ShortPreparedStatementBinder("npk1", (short) 0));
-    nonPKCols.add(new StringPreparedStatementBinder("npk2", "bibble"));
-    nonPKCols.add(new BooleanPreparedStatementBinder("npk3", true));
-    nonPKCols.add(new BytePreparedStatementBinder("npk4", (byte) 1));
-    nonPKCols.add(new FloatPreparedStatementBinder("npk5", (float) 12.5));
-    nonPKCols.add(new DoublePreparedStatementBinder("npk6", -1212.5));
-    nonPKCols.add(new LongPreparedStatementBinder("npk7", 8823111));
+    state.trackUsage("table", cols);
 
-    state.trackUsage("table",
-            new StructFieldsDataExtractor.PreparedStatementBinders(nonPKCols, pkCols));
-
-    state.trackUsage("table",
-            new StructFieldsDataExtractor.PreparedStatementBinders(nonPKCols, pkCols));
+    state.trackUsage("table", cols);
 
     Map<String, Collection<Field>> s = state.getState();
     assertEquals(s.size(), 1);
@@ -158,7 +136,7 @@ public class TablesToColumnUsageStateTest {
       fieldMap.put(f.getName(), f);
     }
 
-    assertEquals(pkCols.size() + nonPKCols.size(), fieldMap.size());
+    assertEquals(cols.size(), fieldMap.size());
     assertTrue(fieldMap.containsKey("pk1"));
     assertTrue(fieldMap.containsKey("pk2"));
     assertTrue(fieldMap.containsKey("npk1"));

@@ -19,8 +19,6 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -28,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +56,7 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
   /**
    * Creates a PreparedStatement for each SinkRecord
    *
-   * @param records    - The sequence of records to be inserted to the database
+   * @param records - The sequence of records to be inserted to the database
    * @return A sequence of PreparedStatement to be executed. It will batch the sql operation.
    */
   @Override
@@ -89,18 +88,25 @@ public final class SinglePreparedStatementBuilder implements PreparedStatementBu
       }
       final Struct struct = (Struct) record.value();
       final StructFieldsDataExtractor fieldsDataExtractor = fieldsDataExtractorMap.get(record.topic().toLowerCase());
-      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct, record);
+      final List<PreparedStatementBinder> binders = fieldsDataExtractor.get(struct, record);
 
       if (!binders.isEmpty()) {
         final String tableName = fieldsDataExtractor.getTableName();
         tablesToColumnsState.trackUsage(tableName, binders);
-        final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
-        final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
+        final List<String> nonKeyColumnsName = new LinkedList<>();
+        final List<String> keyColumnsName = new LinkedList<>();
+        for (PreparedStatementBinder b : binders) {
+          if (b.isPrimaryKey()) {
+            keyColumnsName.add(b.getFieldName());
+          } else {
+            nonKeyColumnsName.add(b.getFieldName());
+          }
+        }
         final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
         //final PreparedStatement statement = connection.prepareStatement(query);
         //PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
         final List<Iterable<PreparedStatementBinder>> entryBinders = new ArrayList<>();
-        entryBinders.add(Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
+        entryBinders.add(binders);
         final PreparedStatementData data = new PreparedStatementData(query, entryBinders);
         statements.add(data);
       }
