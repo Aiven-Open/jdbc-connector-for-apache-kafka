@@ -22,6 +22,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.io.CharStreams;
 import com.zaxxer.hikari.HikariDataSource;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -68,13 +70,23 @@ public class JdbcSinkTask extends SinkTask {
       context.timeout(retryInterval);
     }
 
-    //Set up the writer
-    writer = JdbcDbWriter.from(settings, new DatabaseMetadataProvider() {
+    DatabaseMetadataProvider provider = new DatabaseMetadataProvider() {
       @Override
       public DatabaseMetadata get(HikariDataSource connectionPool) {
         return DatabaseMetadata.getDatabaseMetadata(connectionPool, settings.getTableNames());
       }
-    });
+    };
+
+    //Set up the writer
+    try {
+      writer = JdbcDbWriter.from(settings, provider);
+    } catch (IOException e) {
+      logger.error(e.getMessage(), e);
+    } catch (RestClientException e) {
+      logger.error("Error getting schema from Schema registry.", e);
+    } catch (SQLException e) {
+      logger.error(e.getMessage(), e);
+    }
   }
 
   /**

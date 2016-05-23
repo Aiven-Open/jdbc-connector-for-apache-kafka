@@ -1,4 +1,4 @@
-package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
+package com.datamountaineer.streamreactor.connect.jdbc.sink.services;
 
 /**
  * Copyright 2014 Confluent Inc.

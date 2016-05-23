@@ -90,7 +90,7 @@ public class DatabaseChangesExecutor {
     }
   }
 
-  private void handleNewTables(final Map<String, Collection<Field>> createdMap,
+  public void handleNewTables(final Map<String, Collection<Field>> createdMap,
                                final Connection connection) {
     if (createdMap == null || createdMap.size() == 0) {
       return;

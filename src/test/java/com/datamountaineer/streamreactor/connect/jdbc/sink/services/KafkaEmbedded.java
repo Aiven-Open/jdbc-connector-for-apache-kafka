@@ -1,4 +1,4 @@
-package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
+package com.datamountaineer.streamreactor.connect.jdbc.sink.services;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkConnection;

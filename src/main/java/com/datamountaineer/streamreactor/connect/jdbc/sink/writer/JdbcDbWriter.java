@@ -17,31 +17,39 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.avro.AvroToDbConverter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
 import com.google.common.collect.Iterators;
 import com.zaxxer.hikari.HikariDataSource;
+import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
-
+import java.util.Date;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -180,7 +188,8 @@ public final class JdbcDbWriter implements DbWriter {
    * @return Returns a new instsance of JdbcDbWriter
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings,
-                                  final DatabaseMetadataProvider databaseMetadataProvider) {
+                                  final DatabaseMetadataProvider databaseMetadataProvider)
+      throws IOException, RestClientException, SQLException {
 
     final HikariDataSource connectionPool = HikariHelper.from(settings.getConnection(),
             settings.getUser(),
@@ -196,9 +205,29 @@ public final class JdbcDbWriter implements DbWriter {
     final List<FieldsMappings> mappingsList = settings.getMappings();
     final Set<String> tablesAllowingAutoCreate = new HashSet<>();
     final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
+    final Map<String, Collection<Field>> createTablesMap = new HashMap<>();
+
+    //for the mappings get the schema from the schema registry and add the default pk col.
     for (FieldsMappings fm : mappingsList) {
       if (fm.autoCreateTable()) {
         tablesAllowingAutoCreate.add(fm.getTableName());
+        RestService registry = new RestService(settings.getSchemaRegistryUrl());
+        String latest = registry.getLatestVersion(fm.getIncomingTopic()).getSchema();
+        AvroToDbConverter converter = new AvroToDbConverter();
+        Collection<Field> convertedFields = converter.convert(latest);
+        boolean addDefaultPk = false;
+
+        //do we have a default pk columns
+        FieldAlias pk = fm.getMappings().get(settings.getDefaultPKColName());
+        if (pk != null) {
+          addDefaultPk = pk.isPrimaryKey();
+        }
+
+        //add pk column if we have it to schema registry list of columns.
+        if (addDefaultPk) {
+          convertedFields.add(new Field(Schema.Type.STRING, settings.getDefaultPKColName(), true));
+          createTablesMap.put(fm.getTableName(), convertedFields);
+        }
       }
       if (fm.evolveTableSchema()) {
         tablesAllowingSchemaEvolution.add(fm.getTableName());
@@ -214,6 +243,11 @@ public final class JdbcDbWriter implements DbWriter {
             databaseMetadata,
             dbDialect,
             settings.getRetries());
+
+    //create an required tables
+    if (!createTablesMap.isEmpty()) {
+      databaseChangesExecutor.handleNewTables(createTablesMap, connectionPool.getConnection());
+    }
 
     return new JdbcDbWriter(connectionPool,
             statementBuilder,

@@ -1,10 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.InsertQueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilderHelper;
@@ -36,7 +32,9 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
-            10);
+            10,
+        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE
+        );
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), InsertQueryBuilder.class);
@@ -54,7 +52,8 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
-            10);
+            10,
+        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), InsertQueryBuilder.class);
@@ -72,7 +71,8 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-            10);
+            10,
+        "", JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -93,7 +93,8 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-            10);
+            10,
+        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -114,7 +115,8 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-            10);
+            10,
+        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -135,7 +137,7 @@ public class QueryBuilderHelperTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-            10);
+            10, "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);

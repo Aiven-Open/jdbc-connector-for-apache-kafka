@@ -13,6 +13,7 @@ import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSin
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.INSERT_MODE;
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.SCHEMA_REGISTRY_URL;
 
 /**
  * Created by andrew@datamountaineer.com on 20/05/16.
@@ -86,10 +87,6 @@ public class TestBase {
   }
 
   public List<FieldsMappings> getFieldMappingsAll()  {
-//    final String tableName,
-//    final String incomingTopic,
-//    final boolean allFieldsIncluded,
-//    final Map<String, FieldAlias> mappings
     List<FieldsMappings> list = Lists.newArrayList();
 
     Map<String, FieldAlias> mappings = Maps.newHashMap();

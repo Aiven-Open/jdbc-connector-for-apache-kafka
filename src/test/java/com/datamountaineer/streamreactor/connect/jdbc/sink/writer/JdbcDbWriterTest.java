@@ -8,17 +8,14 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.OracleDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.*;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -27,7 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -65,7 +62,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test
-  public void writerShouldUseBatching() {
+  public void writerShouldUseBatching() throws RestClientException, SQLException, IOException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "topica", true, new HashMap<String, FieldAlias>()));
 
@@ -77,7 +74,8 @@ public class JdbcDbWriterTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
-            10);
+            10,
+            "", JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     List<DbTableColumn> columns = Lists.newArrayList(
             new DbTableColumn("col1", true, false, 1),
@@ -94,7 +92,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test
-  public void writerShouldUseNonBatching() {
+  public void writerShouldUseNonBatching() throws RestClientException, SQLException, IOException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, new HashMap<String, FieldAlias>()));
 
@@ -105,7 +103,7 @@ public class JdbcDbWriterTest {
             false,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
-            10);
+            10, "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     List<DbTableColumn> columns = Lists.newArrayList(
             new DbTableColumn("col1", true, false, 1),
@@ -122,7 +120,7 @@ public class JdbcDbWriterTest {
 
 
   @Test
-  public void writerShouldUseNoopForErrorHandling() throws SQLException {
+  public void writerShouldUseNoopForErrorHandling() throws SQLException, IOException, RestClientException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
 
@@ -133,7 +131,7 @@ public class JdbcDbWriterTest {
             true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
-            10
+            10, "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE
     );
 
     List<DbTableColumn> columns = Lists.newArrayList(
@@ -150,7 +148,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test
-  public void writerShouldUseThrowForErrorHandling() throws SQLException {
+  public void writerShouldUseThrowForErrorHandling() throws SQLException, IOException, RestClientException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, new HashMap<String, FieldAlias>()));
 
@@ -161,7 +159,7 @@ public class JdbcDbWriterTest {
             true,
             ErrorPolicyEnum.THROW,
             InsertModeEnum.INSERT,
-            10);
+            10, "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
 
     List<DbTableColumn> columns = Lists.newArrayList(
             new DbTableColumn("col1", true, false, 1),

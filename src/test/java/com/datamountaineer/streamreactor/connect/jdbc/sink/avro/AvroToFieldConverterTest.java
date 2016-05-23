@@ -1,6 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.services.*;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.*;
 import io.confluent.kafka.schemaregistry.client.rest.*;
 import io.confluent.kafka.schemaregistry.client.rest.entities.*;

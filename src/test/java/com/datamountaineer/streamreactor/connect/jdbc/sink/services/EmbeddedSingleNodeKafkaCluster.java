@@ -1,4 +1,4 @@
-package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
+package com.datamountaineer.streamreactor.connect.jdbc.sink.services;
 
 import org.apache.curator.test.InstanceSpec;
 import org.slf4j.Logger;

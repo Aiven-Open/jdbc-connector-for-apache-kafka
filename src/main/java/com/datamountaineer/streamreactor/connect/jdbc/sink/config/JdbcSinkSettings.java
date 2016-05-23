@@ -45,6 +45,8 @@ public final class JdbcSinkSettings {
   private final ErrorPolicyEnum errorPolicy;
   private final InsertModeEnum insertMode;
   private final int maxRetries;
+  private final String schemaRegistryUrl;
+  private final String defaultPKColName;
 
   /**
    * Creates a new instance of JdbcSinkSettings
@@ -62,7 +64,9 @@ public final class JdbcSinkSettings {
                           boolean batching,
                           ErrorPolicyEnum errorPolicy,
                           InsertModeEnum insertMode,
-                          int maxRetries) {
+                          int maxRetries,
+                          String schemaRegistryUrl,
+                          String defaultPKColName) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
 
     this.connection = connection;
@@ -73,6 +77,8 @@ public final class JdbcSinkSettings {
     this.errorPolicy = errorPolicy;
     this.insertMode = insertMode;
     this.maxRetries = maxRetries;
+    this.schemaRegistryUrl = schemaRegistryUrl;
+    this.defaultPKColName = defaultPKColName;
   }
 
   public int getRetries() {
@@ -116,6 +122,14 @@ public final class JdbcSinkSettings {
     }));
   }
 
+  public String getSchemaRegistryUrl() {
+    return schemaRegistryUrl;
+  }
+
+  public String getDefaultPKColName() {
+    return defaultPKColName;
+  }
+
   @Override
   public String toString() {
     return String.format("JdbcSinkSettings(\n" +
@@ -152,7 +166,10 @@ public final class JdbcSinkSettings {
             config.getBoolean(JdbcSinkConfig.DATABASE_IS_BATCHING),
             policy,
             insertMode,
-            config.getInt(JdbcSinkConfig.MAX_RETRIES));
+            config.getInt(JdbcSinkConfig.MAX_RETRIES),
+            config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
+            config.getString(JdbcSinkConfig.DEFAULT_PK_COL_NAME)
+        );
   }
 
   /**
@@ -210,7 +227,7 @@ public final class JdbcSinkSettings {
       Set<String> pkCols = Sets.newHashSet();
       if (autoCreateTable) {
         int mapStart = autoCreateRaw.indexOf("{" + topic);
-        //if no fields were specified introduce the defaul PK colum
+        //if no fields were specified introduce the default PK column
         if (mapStart > 0) {
           int delimiterIndex = autoCreateRaw.indexOf(":", mapStart);
           if (delimiterIndex < 0) {

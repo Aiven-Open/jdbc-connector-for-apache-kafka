@@ -2,20 +2,28 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.TestBase;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.services.*;
 import com.google.common.collect.Sets;
 import io.confluent.common.config.ConfigException;
+import io.confluent.kafka.schemaregistry.client.rest.*;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.*;
+import org.apache.curator.test.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkTaskContext;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.Mockito;
 
+import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.AUTO_CREATE_TABLE_MAP;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.SCHEMA_REGISTRY_URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -23,11 +31,50 @@ import static org.mockito.Mockito.when;
 
 public class JdbcSinkSettingsTest {
 
+  private static final String DB_FILE = "test_db_writer_sqllite.db";
+  private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
+  int port;
+  TestBase base = new TestBase();
+  RestService client;
+
+
+  String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
+      "\"fields\":[\n" +
+      "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
+      "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
+      "{\"name\":\"age\", \"type\": \"int\"}, \n" +
+      "{\"name\":\"bool\", \"type\": \"float\"},\n" +
+      "{\"name\":\"byte\", \"type\": \"float\"},\n" +
+      "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
+      "{\"name\":\"long\", \"type\": \"long\"},\n" +
+      "{\"name\":\"float\", \"type\": \"float\"},\n" +
+      "{\"name\":\"double\", \"type\": \"double\"}\n" +
+      "]}";
+
+
+  @Before
+  public void setUp() throws Exception {
+    deleteSqlLiteFile();
+    port = InstanceSpec.getRandomPort();
+    EmbeddedSingleNodeKafkaCluster cluster  = new EmbeddedSingleNodeKafkaCluster();
+    RestApp registry = new RestApp(port, cluster.zookeeperConnect(), base.getTopic1());
+    registry.start();
+    client = registry.restClient;
+  }
+
+  @After
+  public void tearDown() {
+    deleteSqlLiteFile();
+  }
+
+  private void deleteSqlLiteFile() {
+    new File(DB_FILE).delete();
+  }
 
   @Test
-  public void InsertThrowBatchingAllFields() {
-    TestBase base = new TestBase();
+  public void InsertThrowBatchingAllFields() throws Exception {
     Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
@@ -55,9 +102,11 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertThrowBatchingSelectedFields() {
+  public void InsertThrowBatchingSelectedFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("throw", "insert", false);
+
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
@@ -92,9 +141,11 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void InsertNoopBatchingAllFields() {
+  public void InsertNoopBatchingAllFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("noop", "insert", false);
+
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
@@ -122,9 +173,10 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertNoopBatchingSelectedFields() {
+  public void InsertNoopBatchingSelectedFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("noop", "insert", false);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
@@ -160,9 +212,10 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertRetryBatchingAllFields() {
+  public void InsertRetryBatchingAllFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("retry", "insert", false);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
@@ -191,9 +244,10 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertRetryBatchingSelectedFields() {
+  public void InsertRetryBatchingSelectedFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("retry", "insert", false);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
@@ -230,9 +284,10 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void UpsertThrowBatchingAllFields() {
+  public void UpsertThrowBatchingAllFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("throw", "upsert", false);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
@@ -261,9 +316,10 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void UpsertThrowBatchingSelectedFields() {
+  public void UpsertThrowBatchingSelectedFields() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("throw", "upsert", false);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
@@ -298,9 +354,15 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void UpsertThrowBatchingSelectedFieldsAutoCreateDefault() {
+  public void UpsertThrowBatchingSelectedFieldsAutoCreateDefault() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("throw", "upsert", true);
+
+    client.registerSchema(rawSchema, base.getTopic1());
+    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
+    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
+    props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
@@ -335,9 +397,15 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void UpsertThrowBatchingAllFieldsAutoCreateDefault() {
+  public void UpsertThrowBatchingAllFieldsAutoCreateDefault() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("throw", "upsert", true);
+
+    client.registerSchema(rawSchema, base.getTopic1());
+    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
+    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
+    props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
@@ -364,9 +432,17 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void UpsertThrowBatchingAllFieldsAutoCreate() {
+  public void UpsertThrowBatchingAllFieldsAutoCreate() throws IOException, RestClientException {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFieldsAutoCreatePK();
+
+
+    client.registerSchema(rawSchema, base.getTopic1());
+    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
+//    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
+    props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);
+
+
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
