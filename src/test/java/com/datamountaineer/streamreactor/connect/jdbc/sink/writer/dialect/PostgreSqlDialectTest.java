@@ -81,7 +81,7 @@ public class PostgreSqlDialectTest {
             "col3 TEXT NULL," + System.lineSeparator() +
             "col4 FLOAT NULL," + System.lineSeparator() +
             "col5 DOUBLE PRECISION NULL," + System.lineSeparator() +
-            "col6 TINYINT NULL," + System.lineSeparator() +
+            "col6 BOOLEAN NULL," + System.lineSeparator() +
             "col7 SMALLINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL," + System.lineSeparator() +
             "PRIMARY KEY(col1));";
@@ -107,7 +107,7 @@ public class PostgreSqlDialectTest {
             "col3 TEXT NULL," + System.lineSeparator() +
             "col4 FLOAT NULL," + System.lineSeparator() +
             "col5 DOUBLE PRECISION NULL," + System.lineSeparator() +
-            "col6 TINYINT NULL," + System.lineSeparator() +
+            "col6 BOOLEAN NULL," + System.lineSeparator() +
             "col7 SMALLINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL);";
     assertEquals(expected, actual);
@@ -134,7 +134,7 @@ public class PostgreSqlDialectTest {
             "ADD COLUMN col3 TEXT NULL," + System.lineSeparator() +
             "ADD COLUMN col4 FLOAT NULL," + System.lineSeparator() +
             "ADD COLUMN col5 DOUBLE PRECISION NULL," + System.lineSeparator() +
-            "ADD COLUMN col6 TINYINT NULL," + System.lineSeparator() +
+            "ADD COLUMN col6 BOOLEAN NULL," + System.lineSeparator() +
             "ADD COLUMN col7 SMALLINT NULL," + System.lineSeparator() +
             "ADD COLUMN col8 SMALLINT NULL;";
     assertEquals(expected, actual.get(0));
