@@ -107,7 +107,7 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public final static String SCHEMA_REGISTRY_URL = "connect.jdbc.sink.schema.registry.url";
   private final static String SCHEMA_REGISTRY_URL_DOC = "Url of the Schema registry";
-  private final static String SCHEMA_REGISTRY_URL_DEFAULT = "localhost:8081";
+  private final static String SCHEMA_REGISTRY_URL_DEFAULT = "http://localhost:8081";
 
   public final static String DEFAULT_PK_COL_NAME_VALUE = "__connect_auto_id";
   public final static String DEFAULT_PK_COL_NAME = "connect.jdbc.sink.pk.col.name";

@@ -83,7 +83,7 @@ public class JdbcSinkTask extends SinkTask {
     } catch (IOException e) {
       logger.error(e.getMessage(), e);
     } catch (RestClientException e) {
-      logger.error("Error getting schema from Schema registry.", e);
+      logger.warn("Error getting schema from Schema registry.", e);
     } catch (SQLException e) {
       logger.error(e.getMessage(), e);
     }

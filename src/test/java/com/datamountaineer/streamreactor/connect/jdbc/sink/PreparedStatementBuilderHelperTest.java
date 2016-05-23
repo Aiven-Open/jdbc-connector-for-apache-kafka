@@ -6,7 +6,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.PreparedStatementBuilderHelper;
 import com.google.common.collect.Lists;
-import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.config.*;
 import org.junit.Test;
 import java.util.HashMap;
 import java.util.List;

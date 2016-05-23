@@ -24,7 +24,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -239,10 +239,17 @@ public final class JdbcSinkSettings {
             throw new ConfigException("Invalid configuration for " + JdbcSinkConfig.AUTO_CREATE_TABLE_MAP + ". Make sure you " +
                     "provide the value in the format {..:..}");
           }
+
+          //add any specific pk cols provided by the user
           String[] pks = autoCreateRaw.trim().substring(delimiterIndex + 1, mapEnd).split(",");
           for (String pk : pks) {
             if (!pk.isEmpty()) pkCols.add(pk);
           }
+          //no pks set and the default
+          if (pkCols.isEmpty()) {
+            pkCols.add(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
+          }
+
         } else {
           pkCols.add(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
         }
@@ -270,6 +277,13 @@ public final class JdbcSinkSettings {
           boolean pk = pkCols.contains(colName);
           mappings.put(fieldName, new FieldAlias(colName, pk));
         }
+
+        if (!pkCols.isEmpty()) {
+          for (String pk : pkCols) {
+            mappings.put(pk, new FieldAlias(pk, true));
+          }
+        }
+
       } else {
         //all fields mode but need to know the pks if any set.
         for (String pk : pkCols) {

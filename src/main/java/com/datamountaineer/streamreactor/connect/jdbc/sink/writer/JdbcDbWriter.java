@@ -212,7 +212,19 @@ public final class JdbcDbWriter implements DbWriter {
       if (fm.autoCreateTable()) {
         tablesAllowingAutoCreate.add(fm.getTableName());
         RestService registry = new RestService(settings.getSchemaRegistryUrl());
-        String latest = registry.getLatestVersion(fm.getIncomingTopic()).getSchema();
+        List<String> all = registry.getAllSubjects();
+
+        String lkTopic = fm.getIncomingTopic();
+        //do we have our topic
+        if (!all.contains(lkTopic)) {
+          //try topic name + value
+          if (all.contains(lkTopic + "-value")) {
+            lkTopic = lkTopic + "-value";
+          }
+        }
+
+        String latest = registry.getLatestVersion(lkTopic).getSchema();
+        logger.info("Found the following schema " + latest);
         AvroToDbConverter converter = new AvroToDbConverter();
         Collection<Field> convertedFields = converter.convert(latest);
         boolean addDefaultPk = false;
@@ -223,8 +235,14 @@ public final class JdbcDbWriter implements DbWriter {
           addDefaultPk = pk.isPrimaryKey();
         }
 
+        logger.info("Field mappings");
+        for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
+          logger.info(f.getKey() + " " + f.getValue());
+        }
+
         //add pk column if we have it to schema registry list of columns.
         if (addDefaultPk) {
+          logger.info("Adding default primary key " + settings.getDefaultPKColName());
           convertedFields.add(new Field(Schema.Type.STRING, settings.getDefaultPKColName(), true));
           createTablesMap.put(fm.getTableName(), convertedFields);
         }

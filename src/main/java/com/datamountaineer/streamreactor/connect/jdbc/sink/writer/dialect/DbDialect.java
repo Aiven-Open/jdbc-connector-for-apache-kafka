@@ -117,7 +117,12 @@ public abstract class DbDialect {
       builder.append(System.lineSeparator());
       builder.append(f.getName());
       builder.append(" ");
-      builder.append(getSqlType(f.getType()));
+
+      if (f.isPrimaryKey() && f.getType().equals(Schema.Type.STRING)) {
+        builder.append("VARCHAR(50)");
+      } else {
+        builder.append(getSqlType(f.getType()));
+      }
 
       if (f.isPrimaryKey()) {
         builder.append(" NOT NULL");
