@@ -84,8 +84,7 @@ public class AvroToDbConverter {
         throw new RuntimeException("Avro type not supported");
     }
   }
-
-
+  
   org.apache.avro.Schema getNonNull(org.apache.avro.Schema schema) {
     List<org.apache.avro.Schema> unionTypes = schema.getTypes();
     if (unionTypes.size() == 2) {
