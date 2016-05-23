@@ -17,17 +17,17 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.avro.AvroToDbConverter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
 import com.google.common.collect.Iterators;
 import com.zaxxer.hikari.HikariDataSource;
@@ -44,12 +44,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Set;
-import java.util.Date;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -116,6 +116,7 @@ public final class JdbcDbWriter implements DbWriter {
           //begin transaction
           connection.setAutoCommit(false);
 
+          int totalRecords = 0;
           for (final PreparedStatementData statementData : statementsData) {
 
             PreparedStatement statement = null;
@@ -124,6 +125,7 @@ public final class JdbcDbWriter implements DbWriter {
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
                 statement.addBatch();
+                totalRecords++;
               }
               statement.executeBatch();
 
@@ -133,14 +135,18 @@ public final class JdbcDbWriter implements DbWriter {
               }
             }
           }
+
           //commit the transaction
           connection.commit();
 
+          logger.info("Wrote " + totalRecords + " to the database.");
           if (maxRetries != retries) {
             retries = maxRetries;
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
             logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
           }
+        } else {
+          logger.warn("No records have been written. Given the configuartion no data has been used from the SinkRecords.");
         }
       } catch (SQLException sqlException) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
@@ -189,7 +195,7 @@ public final class JdbcDbWriter implements DbWriter {
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings,
                                   final DatabaseMetadataProvider databaseMetadataProvider)
-      throws IOException, RestClientException, SQLException {
+          throws IOException, RestClientException, SQLException {
 
     final HikariDataSource connectionPool = HikariHelper.from(settings.getConnection(),
             settings.getUser(),
