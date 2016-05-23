@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.Map;
 public class MySqlDialect extends DbDialect {
 
   public MySqlDialect() {
-    super(getSqlTypeMap());
+    super(getSqlTypeMap(), "`", "`");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -49,12 +50,21 @@ public class MySqlDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(final String table, final List<String> nonKeyColumns, final List<String> keyColumns) {
+  public String getUpsertQuery(final String table, final List<String> cols, final List<String> keyCols) {
     if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
 
-    if (keyColumns == null || keyColumns.size() == 0) {
+    if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
+    }
+    List<String> nonKeyColumns = new ArrayList<>(cols.size());
+    for (String c : cols) {
+      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+    }
+
+    List<String> keyColumns = new ArrayList<>(keyCols.size());
+    for (String c : keyCols) {
+      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
     }
     //MySql doesn't support SQL 2003:merge so here how the upsert is handled
     final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));

@@ -20,8 +20,8 @@ public class SqliteDialectTest {
     ));
 
     assertEquals(3, queries.size());
-    assertEquals("ALTER TABLE tableA ADD col1 NUMERIC NULL;", queries.get(0));
-    assertEquals("ALTER TABLE tableA ADD col2 REAL NULL;", queries.get(1));
-    assertEquals("ALTER TABLE tableA ADD col3 TEXT NULL;", queries.get(2));
+    assertEquals("ALTER TABLE tableA ADD `col1` NUMERIC NULL;", queries.get(0));
+    assertEquals("ALTER TABLE tableA ADD `col2` REAL NULL;", queries.get(1));
+    assertEquals("ALTER TABLE tableA ADD `col3` TEXT NULL;", queries.get(2));
   }
 }

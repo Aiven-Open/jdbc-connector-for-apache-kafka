@@ -212,9 +212,9 @@ public class SinglePreparedStatementBuilderTest {
     Struct record = new Struct(schema);
     List<SinkRecord> records = Collections.nCopies(10, new SinkRecord(topic, 1, null, null, schema, record, 0));
 
-    String sql = "insert into tableA(colA,colB,colC,colD,colE,colF,colG,colH,colPK) values(?,?,?,?,?,?,?,?,?)" +
-            " on duplicate key update colA=values(colA),colB=values(colB),colC=values(colC)," +
-            "colD=values(colD),colE=values(colE),colF=values(colF),colG=values(colG),colH=values(colH)";
+    String sql = "insert into tableA(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
+            " on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`)," +
+            "`colD`=values(`colD`),`colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
 
@@ -301,13 +301,13 @@ public class SinglePreparedStatementBuilderTest {
             new SinkRecord(topic2, 1, null, null, schema, record2, 0),
             new SinkRecord(topic1, 1, null, null, schema, record1, 0));
 
-    String sql1 = "insert into tableA(colA,colB,colC,colD,colE,colF,colG,colH,colPK) values(?,?,?,?,?,?,?,?,?)" +
-            " on duplicate key update colA=values(colA),colB=values(colB),colC=values(colC)," +
-            "colD=values(colD),colE=values(colE),colF=values(colF),colG=values(colG),colH=values(colH)";
+    String sql1 = "insert into tableA(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
+            " on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`)," +
+            "`colD`=values(`colD`),`colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
-    String sql2 = "insert into tableB(colA,colB,colC,colD,colE,colF,colG,colH,colPK) values(?,?,?,?,?,?,?,?,?)" +
-            " on duplicate key update colA=values(colA),colB=values(colB),colC=values(colC)," +
-            "colD=values(colD),colE=values(colE),colF=values(colF),colG=values(colG),colH=values(colH)";
+    String sql2 = "insert into tableB(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
+            " on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`)," +
+            "`colD`=values(`colD`),`colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());

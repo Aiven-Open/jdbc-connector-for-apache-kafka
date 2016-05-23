@@ -19,13 +19,14 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Collections;
+import java.util.Map;
 
 /**
  * Created by andrew@datamountaineer.com on 17/05/16.
@@ -35,8 +36,9 @@ public class PostgreSQLDialect extends DbDialect {
   private static final Logger logger = LoggerFactory.getLogger(PostgreSQLDialect.class);
 
   public PostgreSQLDialect() {
-    super(getSqlTypeMap());
+    super(getSqlTypeMap(), "\"", "\"");
   }
+
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
     Map<Schema.Type, String> map = new HashMap<>();
@@ -54,14 +56,23 @@ public class PostgreSQLDialect extends DbDialect {
 
 
   @Override
-  public String getUpsertQuery(final String table, final List<String> nonKeyColumns, final List<String> keyColumns) {
+  public String getUpsertQuery(final String table, final List<String> cols, final List<String> keyCols) {
     if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
 
-    if (keyColumns == null || keyColumns.size() == 0) {
+    if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
     }
 
+    List<String> nonKeyColumns = new ArrayList<>(cols.size());
+    for (String c : cols) {
+      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+    }
+
+    List<String> keyColumns = new ArrayList<>(keyCols.size());
+    for (String c : keyCols) {
+      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+    }
 
     final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
     final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));

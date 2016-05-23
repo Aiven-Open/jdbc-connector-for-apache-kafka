@@ -21,10 +21,10 @@ public class MySqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "userid INT NOT NULL," + System.lineSeparator() +
-            "userdataid INT NOT NULL," + System.lineSeparator() +
-            "info VARCHAR(256) NULL," + System.lineSeparator() +
-            "PRIMARY KEY(userid,userdataid));";
+            "`userid` INT NOT NULL," + System.lineSeparator() +
+            "`userdataid` INT NOT NULL," + System.lineSeparator() +
+            "`info` VARCHAR(256) NULL," + System.lineSeparator() +
+            "PRIMARY KEY(`userid`,`userdataid`));";
     assertEquals(expected, actual);
   }
 
@@ -42,15 +42,15 @@ public class MySqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INT NOT NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
-            "col4 FLOAT NULL," + System.lineSeparator() +
-            "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 TINYINT NULL," + System.lineSeparator() +
-            "col7 TINYINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(col1));";
+            "`col1` INT NOT NULL," + System.lineSeparator() +
+            "`col2` BIGINT NULL," + System.lineSeparator() +
+            "`col3` VARCHAR(256) NULL," + System.lineSeparator() +
+            "`col4` FLOAT NULL," + System.lineSeparator() +
+            "`col5` DOUBLE NULL," + System.lineSeparator() +
+            "`col6` TINYINT NULL," + System.lineSeparator() +
+            "`col7` TINYINT NULL," + System.lineSeparator() +
+            "`col8` SMALLINT NULL," + System.lineSeparator() +
+            "PRIMARY KEY(`col1`));";
     assertEquals(expected, actual);
   }
 
@@ -68,14 +68,14 @@ public class MySqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INT NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
-            "col4 FLOAT NULL," + System.lineSeparator() +
-            "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 TINYINT NULL," + System.lineSeparator() +
-            "col7 TINYINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL);";
+            "`col1` INT NULL," + System.lineSeparator() +
+            "`col2` BIGINT NULL," + System.lineSeparator() +
+            "`col3` VARCHAR(256) NULL," + System.lineSeparator() +
+            "`col4` FLOAT NULL," + System.lineSeparator() +
+            "`col5` DOUBLE NULL," + System.lineSeparator() +
+            "`col6` TINYINT NULL," + System.lineSeparator() +
+            "`col7` TINYINT NULL," + System.lineSeparator() +
+            "`col8` SMALLINT NULL);";
     assertEquals(expected, actual);
   }
 
@@ -95,14 +95,14 @@ public class MySqlDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE tableA" + System.lineSeparator() +
-            "ADD COLUMN col1 INT NULL," + System.lineSeparator() +
-            "ADD COLUMN col2 BIGINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col3 VARCHAR(256) NULL," + System.lineSeparator() +
-            "ADD COLUMN col4 FLOAT NULL," + System.lineSeparator() +
-            "ADD COLUMN col5 DOUBLE NULL," + System.lineSeparator() +
-            "ADD COLUMN col6 TINYINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col7 TINYINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col8 SMALLINT NULL;";
+            "ADD COLUMN `col1` INT NULL," + System.lineSeparator() +
+            "ADD COLUMN `col2` BIGINT NULL," + System.lineSeparator() +
+            "ADD COLUMN `col3` VARCHAR(256) NULL," + System.lineSeparator() +
+            "ADD COLUMN `col4` FLOAT NULL," + System.lineSeparator() +
+            "ADD COLUMN `col5` DOUBLE NULL," + System.lineSeparator() +
+            "ADD COLUMN `col6` TINYINT NULL," + System.lineSeparator() +
+            "ADD COLUMN `col7` TINYINT NULL," + System.lineSeparator() +
+            "ADD COLUMN `col8` SMALLINT NULL;";
     assertEquals(expected, actual.get(0));
   }
 }

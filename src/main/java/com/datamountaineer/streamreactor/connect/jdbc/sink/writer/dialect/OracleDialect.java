@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public class OracleDialect extends Sql2003Dialect {
   public OracleDialect() {
-    super(getSqlTypeMap());
+    super(getSqlTypeMap(), "\"", "\"");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -67,7 +67,7 @@ public class OracleDialect extends Sql2003Dialect {
         first = false;
       }
       builder.append(System.lineSeparator());
-      builder.append(f.getName());
+      builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));
       builder.append(" NULL");

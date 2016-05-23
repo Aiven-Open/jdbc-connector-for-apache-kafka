@@ -22,10 +22,10 @@ public class OracleDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "userid INTEGER NOT NULL," + System.lineSeparator() +
-            "userdataid INTEGER NOT NULL," + System.lineSeparator() +
-            "info VARCHAR(256) NULL," + System.lineSeparator() +
-            "PRIMARY KEY(userid,userdataid));";
+            "\"userid\" INTEGER NOT NULL," + System.lineSeparator() +
+            "\"userdataid\" INTEGER NOT NULL," + System.lineSeparator() +
+            "\"info\" VARCHAR(256) NULL," + System.lineSeparator() +
+            "PRIMARY KEY(\"userid\",\"userdataid\"));";
     assertEquals(expected, actual);
   }
 
@@ -43,15 +43,15 @@ public class OracleDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INTEGER NOT NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
-            "col4 REAL NULL," + System.lineSeparator() +
-            "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 NUMBER(1,0) NULL," + System.lineSeparator() +
-            "col7 TINYINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(col1));";
+            "\"col1\" INTEGER NOT NULL," + System.lineSeparator() +
+            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
+            "\"col4\" REAL NULL," + System.lineSeparator() +
+            "\"col5\" DOUBLE NULL," + System.lineSeparator() +
+            "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
+            "\"col7\" TINYINT NULL," + System.lineSeparator() +
+            "\"col8\" SMALLINT NULL," + System.lineSeparator() +
+            "PRIMARY KEY(\"col1\"));";
     assertEquals(expected, actual);
   }
 
@@ -69,14 +69,14 @@ public class OracleDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INTEGER NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
-            "col4 REAL NULL," + System.lineSeparator() +
-            "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 NUMBER(1,0) NULL," + System.lineSeparator() +
-            "col7 TINYINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL);";
+            "\"col1\" INTEGER NULL," + System.lineSeparator() +
+            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
+            "\"col4\" REAL NULL," + System.lineSeparator() +
+            "\"col5\" DOUBLE NULL," + System.lineSeparator() +
+            "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
+            "\"col7\" TINYINT NULL," + System.lineSeparator() +
+            "\"col8\" SMALLINT NULL);";
     assertEquals(expected, actual);
   }
 
@@ -96,14 +96,14 @@ public class OracleDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE tableA ADD(" + System.lineSeparator() +
-            "col1 INTEGER NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 VARCHAR(256) NULL," + System.lineSeparator() +
-            "col4 REAL NULL," + System.lineSeparator() +
-            "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 NUMBER(1,0) NULL," + System.lineSeparator() +
-            "col7 TINYINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL);";
+            "\"col1\" INTEGER NULL," + System.lineSeparator() +
+            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
+            "\"col4\" REAL NULL," + System.lineSeparator() +
+            "\"col5\" DOUBLE NULL," + System.lineSeparator() +
+            "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
+            "\"col7\" TINYINT NULL," + System.lineSeparator() +
+            "\"col8\" SMALLINT NULL);";
     assertEquals(expected, actual.get(0));
   }
 }

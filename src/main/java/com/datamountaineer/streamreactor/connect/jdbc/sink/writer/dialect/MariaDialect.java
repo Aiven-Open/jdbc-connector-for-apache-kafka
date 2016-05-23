@@ -26,7 +26,7 @@ import java.util.Map;
  */
 class MariaDialect extends Sql2003Dialect {
   public MariaDialect() {
-    super(getSqlTypeMap());
+    super(getSqlTypeMap(), "`", "`");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {

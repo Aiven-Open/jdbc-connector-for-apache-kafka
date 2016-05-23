@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public class SQLiteDialect extends DbDialect {
   public SQLiteDialect() {
-    super(getSqlTypeMap());
+    super(getSqlTypeMap(), "`", "`");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -74,13 +74,13 @@ public class SQLiteDialect extends DbDialect {
         first = false;
       }
       builder.append(System.lineSeparator());
-      builder.append(f.getName());
+      builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));
 
       if (f.isPrimaryKey()) {
         builder.append(" NOT NULL ");
-        primaryKeys.add(f.getName());
+        primaryKeys.add(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
       } else {
         builder.append(" NULL");
       }
@@ -105,20 +105,31 @@ public class SQLiteDialect extends DbDialect {
     }
     final List<String> queries = new ArrayList<>(fields.size());
     for (final Field f : fields) {
-      queries.add(String.format("ALTER TABLE %s ADD %s %s NULL;", table, f.getName(), getSqlType(f.getType())));
+      queries.add(String.format("ALTER TABLE %s ADD %s%s%s %s NULL;", table, escapeColumnNamesStart, f.getName(), escapeColumnNamesEnd, getSqlType(f.getType())));
     }
     return queries;
   }
 
   @Override
-  public String getUpsertQuery(String table, List<String> nonKeyColumns, List<String> keyColumns) {
+  public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
     if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table> is not a valid parameter");
-    if (nonKeyColumns == null || nonKeyColumns.size() == 0)
+    if (cols == null || cols.size() == 0)
       throw new IllegalArgumentException("<columns> is invalid.Expecting non null and non empty collection");
-    if (keyColumns == null || keyColumns.size() == 0) {
+    if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
     }
+
+    List<String> nonKeyColumns = new ArrayList<>(cols.size());
+    for (String c : cols) {
+      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+    }
+
+    List<String> keyColumns = new ArrayList<>(keyCols.size());
+    for (String c : keyCols) {
+      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+    }
+
     final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
     final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
 

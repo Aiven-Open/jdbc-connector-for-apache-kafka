@@ -20,22 +20,35 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public abstract class Sql2003Dialect extends DbDialect {
 
-  Sql2003Dialect(final Map<Schema.Type, String> map) {
-    super(map);
+  Sql2003Dialect(final Map<Schema.Type, String> map, String escapeColumnNamesStart, String escapeColumnNamesEnd) {
+    super(map, escapeColumnNamesStart, escapeColumnNamesEnd);
   }
 
   @Override
-  public String getUpsertQuery(String table, List<String> columns, List<String> keyColumns) {
+  public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
     if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table> is not valid");
 
-    if (keyColumns == null || keyColumns.size() == 0) {
+    if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
+    }
+
+    List<String> columns = null;
+    if (cols != null) {
+      columns = new ArrayList<>(cols.size());
+      for (String c : cols) {
+        columns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+      }
+    }
+    List<String> keyColumns = new ArrayList<>(keyCols.size());
+    for (String c : keyCols) {
+      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
     }
     final String select = Joiner.on(", ? ").join(Iterables.concat(columns, keyColumns));
     final StringBuilder joinBuilder = new StringBuilder();
@@ -45,7 +58,7 @@ public abstract class Sql2003Dialect extends DbDialect {
     }
 
     String updateSet = null;
-    if (columns.size() > 0) {
+    if (columns != null && columns.size() > 0) {
       final StringBuilder updateSetBuilder = new StringBuilder("when matched then update set ");
       updateSetBuilder.append(String.format("%s.%s=incoming.%s", table, columns.get(0), columns.get(0)));
       for (int i = 1; i < columns.size(); ++i) {
@@ -61,13 +74,13 @@ public abstract class Sql2003Dialect extends DbDialect {
         https://blogs.oracle.com/cmar/entry/using_merge_to_do_an"
          */
     return "merge into " + table + getMergeHints() +
-        " using (select ? " + select + ") incoming" +
-        " on(" + joinBuilder.toString() + ") " +
-        updateSet +
-        String.format(" when not matched then insert(%s.%s) values(incoming.%s)",
-            table,
-            insertColumns,
-            insertValues);
+            " using (select ? " + select + ") incoming" +
+            " on(" + joinBuilder.toString() + ") " +
+            updateSet +
+            String.format(" when not matched then insert(%s.%s) values(incoming.%s)",
+                    table,
+                    insertColumns,
+                    insertValues);
 
   }
 
