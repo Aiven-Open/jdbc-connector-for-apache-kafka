@@ -48,8 +48,7 @@ public class SinglePreparedStatementBuilderTest {
 
     when(valueExtractor.getTableName()).thenReturn(topic);
     when(valueExtractor.get(any(Struct.class), any(SinkRecord.class)))
-            .thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders,
-                    Lists.<PreparedStatementBinder>newArrayList()));
+            .thenReturn(dataBinders);
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put(topic.toLowerCase(), valueExtractor);
@@ -138,15 +137,13 @@ public class SinglePreparedStatementBuilderTest {
     SinkRecord sinkRecord1 = new SinkRecord(topic1, 1, null, null, schema, record1, 0);
 
     when(valueExtractor1.get(eq(record1), any(SinkRecord.class)))
-            .thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1,
-                    Lists.<PreparedStatementBinder>newArrayList()));
+            .thenReturn(dataBinders1);
 
     Struct record2 = new Struct(schema);
     SinkRecord sinkRecord2 = new SinkRecord(topic2, 1, null, null, schema, record2, 0);
 
     when(valueExtractor2.get(eq(record2), any(SinkRecord.class)))
-            .thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2,
-                    Lists.<PreparedStatementBinder>newArrayList()));
+            .thenReturn(dataBinders2);
 
 
     List<SinkRecord> records = Lists.newArrayList(sinkRecord1, sinkRecord2);
@@ -182,6 +179,8 @@ public class SinglePreparedStatementBuilderTest {
   @Test
   public void returnAPreparedStatementForEachRecordForUpsertQuery() throws SQLException {
     StructFieldsDataExtractor valueExtractor = mock(StructFieldsDataExtractor.class);
+    IntPreparedStatementBinder pk = new IntPreparedStatementBinder("colPK", 1010101);
+    pk.setPrimaryKey(true);
     List<PreparedStatementBinder> dataBinders = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
@@ -190,14 +189,14 @@ public class SinglePreparedStatementBuilderTest {
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
             new BytePreparedStatementBinder("colG", (byte) -24),
-            new ShortPreparedStatementBinder("colH", (short) -2345));
+            new ShortPreparedStatementBinder("colH", (short) -2345),
+            pk);
 
     String topic = "tableA";
 
     when(valueExtractor.getTableName()).thenReturn(topic);
     when(valueExtractor.get(any(Struct.class), any(SinkRecord.class)))
-            .thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders,
-                    Lists.<PreparedStatementBinder>newArrayList(new IntPreparedStatementBinder("colPK", 1010101))));
+            .thenReturn(dataBinders);
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put(topic.toLowerCase(), valueExtractor);
@@ -241,6 +240,8 @@ public class SinglePreparedStatementBuilderTest {
   @Test
   public void handleMultipleTablesForUpsert() throws SQLException {
     StructFieldsDataExtractor valueExtractor1 = mock(StructFieldsDataExtractor.class);
+    IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 1010101);
+    pk1.setPrimaryKey(true);
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
@@ -249,9 +250,12 @@ public class SinglePreparedStatementBuilderTest {
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
             new BytePreparedStatementBinder("colG", (byte) -24),
-            new ShortPreparedStatementBinder("colH", (short) -2345));
+            new ShortPreparedStatementBinder("colH", (short) -2345),
+            pk1);
 
     StructFieldsDataExtractor valueExtractor2 = mock(StructFieldsDataExtractor.class);
+    IntPreparedStatementBinder pk2 = new IntPreparedStatementBinder("colPK", 2020202);
+    pk2.setPrimaryKey(true);
     List<PreparedStatementBinder> dataBinders2 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
@@ -260,7 +264,8 @@ public class SinglePreparedStatementBuilderTest {
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
             new BytePreparedStatementBinder("colG", (byte) -24),
-            new ShortPreparedStatementBinder("colH", (short) -2345));
+            new ShortPreparedStatementBinder("colH", (short) -2345),
+            pk2);
 
     String topic1 = "topic1A";
     String table1 = "tableA";
@@ -282,14 +287,11 @@ public class SinglePreparedStatementBuilderTest {
 
     Struct record1 = new Struct(schema);
     when(valueExtractor1.get(eq(record1), any(SinkRecord.class)))
-            .thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders1,
-                    Lists.<PreparedStatementBinder>newArrayList(new IntPreparedStatementBinder("colPK", 1010101))));
+            .thenReturn(dataBinders1);
 
     Struct record2 = new Struct(schema);
     when(valueExtractor2.get(eq(record2), any(SinkRecord.class)))
-            .thenReturn(new StructFieldsDataExtractor.PreparedStatementBinders(dataBinders2,
-                    Lists.<PreparedStatementBinder>newArrayList(new IntPreparedStatementBinder("colPK", 2020202))));
-
+            .thenReturn(dataBinders2);
 
     SinglePreparedStatementBuilder builder = new SinglePreparedStatementBuilder(map, new UpsertQueryBuilder(new MySqlDialect()));
 

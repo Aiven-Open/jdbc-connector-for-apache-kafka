@@ -44,12 +44,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Set;
-import java.util.Date;
 import java.util.ArrayList;
 
 /**
@@ -117,6 +117,7 @@ public final class JdbcDbWriter implements DbWriter {
           //begin transaction
           connection.setAutoCommit(false);
 
+          int totalRecords = 0;
           for (final PreparedStatementData statementData : statementsData) {
 
             PreparedStatement statement = null;
@@ -125,6 +126,7 @@ public final class JdbcDbWriter implements DbWriter {
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
                 statement.addBatch();
+                totalRecords++;
               }
               statement.executeBatch();
 
@@ -134,14 +136,18 @@ public final class JdbcDbWriter implements DbWriter {
               }
             }
           }
+
           //commit the transaction
           connection.commit();
 
+          logger.info("Wrote " + totalRecords + " to the database.");
           if (maxRetries != retries) {
             retries = maxRetries;
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
             logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
           }
+        } else {
+          logger.warn("No records have been written. Given the configuartion no data has been used from the SinkRecords.");
         }
       } catch (SQLException sqlException) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);

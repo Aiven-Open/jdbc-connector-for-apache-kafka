@@ -18,12 +18,12 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,7 +52,7 @@ final class TablesToColumnUsageState {
    * @param table   - The database table to get the new data
    * @param binders - A collection of PreparedStatementBinders containing the field/column and the schema type
    */
-  public void trackUsage(final String table, StructFieldsDataExtractor.PreparedStatementBinders binders) {
+  public void trackUsage(final String table, final List<PreparedStatementBinder> binders) {
     ParameterValidator.notNullOrEmpty(table, "table");
     ParameterValidator.notNull(binders, "binders");
     if (binders.isEmpty()) {
@@ -66,8 +66,7 @@ final class TablesToColumnUsageState {
       fieldMap = tablesToColumnsMap.get(table);
     }
 
-    addFields(fieldMap, binders.getKeyColumns(), true);
-    addFields(fieldMap, binders.getNonKeyColumns(), false);
+    addFields(fieldMap, binders);
   }
 
   /**
@@ -75,17 +74,15 @@ final class TablesToColumnUsageState {
    *
    * @param target  - A map of fields/columns already seen
    * @param binders - A collection of PreparedStatementBinder each one containing the field/column and the the schema type
-   * @param primaryKeys       If true all the binders are for primary key columns;
    */
   private static void addFields(final Map<String, Field> target,
-                                final Collection<PreparedStatementBinder> binders,
-                                final boolean primaryKeys) {
+                                final Collection<PreparedStatementBinder> binders) {
     if (binders == null) {
       return;
     }
     for (final PreparedStatementBinder binder : binders) {
       if (!target.containsKey(binder.getFieldName())) {
-        target.put(binder.getFieldName(), new Field(binder.getFieldType(), binder.getFieldName(), primaryKeys));
+        target.put(binder.getFieldName(), new Field(binder.getFieldType(), binder.getFieldName(), binder.isPrimaryKey()));
       }
     }
   }

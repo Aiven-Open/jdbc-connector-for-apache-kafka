@@ -12,7 +12,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPrepared
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -22,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,15 +66,15 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, new HashMap<String, FieldAlias>());
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+    List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
-    for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
+    for (PreparedStatementBinder p : binders)
       map.put(p.getFieldName(), p);
 
     assertTrue(!binders.isEmpty());
-    assertEquals(binders.getKeyColumns().size() + binders.getNonKeyColumns().size(), 10);
+    assertEquals(binders.size(), 10);
 
     assertTrue(map.containsKey("firstName"));
     assertTrue(map.get("firstName").getClass() == StringPreparedStatementBinder.class);
@@ -127,16 +127,16 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+    List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
-    for (PreparedStatementBinder p : Iterables.concat(binders.getKeyColumns(), binders.getNonKeyColumns()))
+    for (PreparedStatementBinder p : binders)
       map.put(p.getFieldName(), p);
 
 
     assertTrue(!binders.isEmpty());
-    assertEquals(binders.getKeyColumns().size() + binders.getNonKeyColumns().size(), 4);
+    assertEquals(binders.size(), 4);
 
     assertTrue(map.containsKey("firstName"));
     assertTrue(map.get("firstName").getClass() == StringPreparedStatementBinder.class);
@@ -175,11 +175,11 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", false, mappings);
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+    List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 2, null, null, schema, struct, 2));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
-    for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
+    for (PreparedStatementBinder p : binders)
       map.put(p.getFieldName(), p);
 
     assertTrue(map.containsKey("Name"));
@@ -231,17 +231,21 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+    List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
-    for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
+    List<PreparedStatementBinder> pkBinders = new LinkedList<>();
+    for (PreparedStatementBinder p : binders) {
+      if (p.isPrimaryKey()) {
+        pkBinders.add(p);
+      }
       map.put(p.getFieldName(), p);
+    }
 
     assertTrue(!binders.isEmpty());
-    assertEquals(binders.getNonKeyColumns().size() + binders.getKeyColumns().size(), 10);
+    assertEquals(binders.size(), 10);
 
-    List<PreparedStatementBinder> pkBinders = binders.getKeyColumns();
     assertEquals(pkBinders.size(), 2);
 
     assertTrue(Objects.equals(pkBinders.get(0).getFieldName(), "fName") ||
@@ -320,17 +324,22 @@ public class StructFieldsDataExtractorTest {
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
 
     StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
-    StructFieldsDataExtractor.PreparedStatementBinders binders = dataExtractor.get(struct,
+    List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 2, null, null, schema, struct, 2));
 
     HashMap<String, PreparedStatementBinder> map = new HashMap<>();
-    for (PreparedStatementBinder p : Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()))
+    LinkedList<PreparedStatementBinder> pkBinders = new LinkedList<>();
+    for (PreparedStatementBinder p : binders) {
+      if (p.isPrimaryKey()) {
+        pkBinders.add(p);
+      }
       map.put(p.getFieldName(), p);
+    }
 
     assertTrue(!binders.isEmpty());
     assertEquals(map.size(), 10);
 
-    assertTrue(Objects.equals(binders.getKeyColumns().get(0).getFieldName(), "long"));
+    assertTrue(Objects.equals(pkBinders.get(0).getFieldName(), "long"));
 
     assertTrue(map.containsKey("firstName"));
     assertTrue(map.get("firstName").getClass() == StringPreparedStatementBinder.class);

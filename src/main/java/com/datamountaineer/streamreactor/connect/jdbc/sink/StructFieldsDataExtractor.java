@@ -16,6 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BasePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
@@ -30,12 +31,12 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -56,7 +57,13 @@ public class StructFieldsDataExtractor {
   private final static Comparator<PreparedStatementBinder> sorter = new Comparator<PreparedStatementBinder>() {
     @Override
     public int compare(PreparedStatementBinder left, PreparedStatementBinder right) {
-      return left.getFieldName().compareTo(right.getFieldName());
+      if (left.isPrimaryKey() == right.isPrimaryKey()) {
+        return left.getFieldName().compareTo(right.getFieldName());
+      }
+      if (!left.isPrimaryKey()) {
+        return -1;
+      }
+      return 1;
     }
   };
 
@@ -70,7 +77,7 @@ public class StructFieldsDataExtractor {
     return fieldsMappings.getTableName();
   }
 
-  public PreparedStatementBinders get(final Struct struct, final SinkRecord record) {
+  public List<PreparedStatementBinder> get(final Struct struct, final SinkRecord record) {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
     if (fieldsMappings.areAllFieldsIncluded()) {
@@ -94,37 +101,30 @@ public class StructFieldsDataExtractor {
       });
     }
 
-    final List<PreparedStatementBinder> nonPrimaryKeyBinders = Lists.newLinkedList();
-    final List<PreparedStatementBinder> primaryKeyBinders = Lists.newLinkedList();
+    final List<PreparedStatementBinder> binders = new ArrayList<>(fields.size() + 1);
     final Map<String, FieldAlias> mappings = fieldsMappings.getMappings();
     //check for the autocreated PK column
     final FieldAlias autoPK = mappings.get(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
     if (autoPK != null) {
       //fake the field and binder
-      primaryKeyBinders.add(new StringPreparedStatementBinder(FieldsMappings.CONNECT_AUTO_ID_COLUMN,
-              FieldsMappings.generateConnectAutoPKValue(record)));
+      StringPreparedStatementBinder binder = new StringPreparedStatementBinder(FieldsMappings.CONNECT_AUTO_ID_COLUMN,
+              FieldsMappings.generateConnectAutoPKValue(record));
+      binder.setPrimaryKey(true);
+      binders.add(binder);
     }
     for (final Field field : fields) {
-      final PreparedStatementBinder binder = getFieldValue(field, struct);
+      final BasePreparedStatementBinder binder = getPreparedStatementBinder(field, struct);
       if (binder != null) {
-        boolean isPk = false;
-        if (mappings.containsKey(field.name())) {
-          final FieldAlias fa = mappings.get(field.name());
-          isPk = fa.isPrimaryKey();
+        final FieldAlias fa = mappings.get(field.name());
+        if (fa != null && fa.isPrimaryKey()) {
+          binder.setPrimaryKey(true);
         }
-
-        //final Pair<String, PreparedStatementBinder> pair = new Pair<>(fieldName, binder);
-        if (isPk)
-          primaryKeyBinders.add(binder);
-        else
-          nonPrimaryKeyBinders.add(binder);
+        binders.add(binder);
       }
     }
 
-    Collections.sort(nonPrimaryKeyBinders, sorter);
-    Collections.sort(primaryKeyBinders, sorter);
-
-    return new PreparedStatementBinders(nonPrimaryKeyBinders, primaryKeyBinders);
+    Collections.sort(binders, sorter);
+    return binders;
   }
 
   /**
@@ -134,7 +134,7 @@ public class StructFieldsDataExtractor {
    * @param struct The struct which the field belongs to.
    * @return A PreparedStatementBinder for the field.
    */
-  private PreparedStatementBinder getFieldValue(final Field field, final Struct struct) {
+  private BasePreparedStatementBinder getPreparedStatementBinder(final Field field, final Struct struct) {
     final Object value = struct.get(field);
     if (value == null)
       return null;
@@ -147,7 +147,7 @@ public class StructFieldsDataExtractor {
       fieldName = field.name();
 
     //match on fields schema type to find the correct casting.
-    PreparedStatementBinder binder;
+    BasePreparedStatementBinder binder;
     switch (field.schema().type()) {
       case INT8:
         binder = new BytePreparedStatementBinder(fieldName, struct.getInt8(field.name()));
@@ -180,28 +180,5 @@ public class StructFieldsDataExtractor {
         throw new IllegalArgumentException("Following schema type " + struct.schema().type() + " is not supported");
     }
     return binder;
-  }
-
-  public static class PreparedStatementBinders {
-    private final List<PreparedStatementBinder> nonKeyColumns;
-    private final List<PreparedStatementBinder> keyColumns;
-
-    public PreparedStatementBinders(List<PreparedStatementBinder> nonKeyColumns, List<PreparedStatementBinder> keyColumns) {
-      this.nonKeyColumns = nonKeyColumns;
-      this.keyColumns = keyColumns;
-    }
-
-    public List<PreparedStatementBinder> getNonKeyColumns() {
-      return nonKeyColumns;
-    }
-
-    public List<PreparedStatementBinder> getKeyColumns() {
-      return keyColumns;
-    }
-
-    public boolean isEmpty() {
-      return (nonKeyColumns == null || nonKeyColumns.isEmpty()) &&
-              (keyColumns == null || keyColumns.isEmpty());
-    }
   }
 }

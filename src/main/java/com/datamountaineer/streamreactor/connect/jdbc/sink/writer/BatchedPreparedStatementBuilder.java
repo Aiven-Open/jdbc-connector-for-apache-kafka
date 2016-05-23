@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,7 @@ import java.util.Map;
  */
 public final class BatchedPreparedStatementBuilder implements PreparedStatementBuilder {
   private static final Logger logger = LoggerFactory.getLogger(BatchedPreparedStatementBuilder.class);
+
   private static final Function<PreparedStatementBinder, String> fieldNamesFunc = new Function<PreparedStatementBinder, String>() {
     @Override
     public String apply(PreparedStatementBinder input) {
@@ -46,7 +48,6 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
 
   private final Map<String, StructFieldsDataExtractor> fieldsExtractorMap;
   private final QueryBuilder queryBuilder;
-
 
   public BatchedPreparedStatementBuilder(final Map<String, StructFieldsDataExtractor> fieldsExtractorMap,
                                          final QueryBuilder queryBuilder) {
@@ -93,29 +94,30 @@ public final class BatchedPreparedStatementBuilder implements PreparedStatementB
 
       final StructFieldsDataExtractor fieldsDataExtractor = fieldsExtractorMap.get(topic);
       final Struct struct = (Struct) record.value();
-      final StructFieldsDataExtractor.PreparedStatementBinders binders = fieldsDataExtractor.get(struct, record);
+      final List<PreparedStatementBinder> binders = fieldsDataExtractor.get(struct, record);
 
       if (!binders.isEmpty()) {
         final String tableName = fieldsDataExtractor.getTableName();
         state.trackUsage(tableName, binders);
 
-        final List<String> nonKeyColumnsName = Lists.transform(binders.getNonKeyColumns(), fieldNamesFunc);
-        final List<String> keyColumnsName = Lists.transform(binders.getKeyColumns(), fieldNamesFunc);
+        final List<String> nonKeyColumnsName = new LinkedList<>();
+        final List<String> keyColumnsName = new LinkedList<>();
+        for (PreparedStatementBinder b : binders) {
+          if (b.isPrimaryKey()) {
+            keyColumnsName.add(b.getFieldName());
+          } else {
+            nonKeyColumnsName.add(b.getFieldName());
+          }
+        }
 
         final String statementKey = Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
 
         if (!mapStatements.containsKey(statementKey)) {
-          final String query = queryBuilder.build(tableName,
-                  nonKeyColumnsName,
-                  keyColumnsName);
-
-          //final PreparedStatement statement = connection.prepareStatement(query);
+          final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
           mapStatements.put(statementKey, new PreparedStatementData(query, Lists.<Iterable<PreparedStatementBinder>>newLinkedList()));
         }
         final PreparedStatementData statementData = mapStatements.get(statementKey);
-        statementData.addEntryBinders(Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
-        //PreparedStatementBindData.apply(statement, Iterables.concat(binders.getNonKeyColumns(), binders.getKeyColumns()));
-        //statement.addBatch();
+        statementData.addEntryBinders(binders);
       }
     }
 
