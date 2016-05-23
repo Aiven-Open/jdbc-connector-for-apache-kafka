@@ -37,7 +37,6 @@ public final class FieldsMappings {
 
   private final boolean autoCreateTable;
   private final boolean evolveTableSchema;
-  private final PrimaryKeyMode primaryKeyMode;
 
   /**
    * Creates a new instance of FieldsMappings
@@ -53,7 +52,7 @@ public final class FieldsMappings {
                         final String incomingTopic,
                         final boolean allFieldsIncluded,
                         final Map<String, FieldAlias> mappings) {
-    this(tableName, incomingTopic, allFieldsIncluded, mappings, false, false, PrimaryKeyMode.NONE);
+    this(tableName, incomingTopic, allFieldsIncluded, mappings, false, false);
   }
 
   /**
@@ -72,8 +71,7 @@ public final class FieldsMappings {
                         final boolean allFieldsIncluded,
                         final Map<String, FieldAlias> mappings,
                         final boolean autoCreateTable,
-                        final boolean evolveTableSchema,
-                        final PrimaryKeyMode primaryKeyMode) {
+                        final boolean evolveTableSchema) {
 
     ParameterValidator.notNullOrEmpty(tableName, "tableName");
     ParameterValidator.notNullOrEmpty(incomingTopic, "incomingTopic");
@@ -85,7 +83,6 @@ public final class FieldsMappings {
     this.mappings = mappings;
     this.autoCreateTable = autoCreateTable;
     this.evolveTableSchema = evolveTableSchema;
-    this.primaryKeyMode = primaryKeyMode;
   }
 
 
@@ -147,16 +144,22 @@ public final class FieldsMappings {
 
   @Override
   public String toString() {
-    Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
-    return String.format("PayloadFields(%b,%s)", allFieldsIncluded, mapJoiner.join(mappings));
+    Joiner.MapJoiner mapJoiner = Joiner.on(",\n").withKeyValueSeparator("=");
+    return "{\n" +
+            "topic:" + incomingTopic + "\n" +
+            "table:" + tableName + "\n" +
+            "auto-create:" + autoCreateTable + "\n" +
+            "evolve-schema:" + evolveTableSchema + "\n" +
+            "include-all-fields:" + allFieldsIncluded + "\n" +
+            "mappings:" + mapJoiner.join(mappings) + "\n" +
+            "}";
   }
 
   public static FieldsMappings from(final String tableName,
                                     final String incomingTopic,
                                     final String value,
                                     final boolean autoCreateTable,
-                                    final boolean evolveTableSchema,
-                                    final PrimaryKeyMode pkMode) {
+                                    final boolean evolveTableSchema) {
     final Map<String, FieldAlias> fieldAlias = new HashMap<>();
     if (value != null) {
       for (String split : value.split(",")) {
@@ -182,8 +185,7 @@ public final class FieldsMappings {
             allFields,
             fieldAlias,
             autoCreateTable,
-            evolveTableSchema,
-            pkMode);
+            evolveTableSchema);
   }
 
   /**

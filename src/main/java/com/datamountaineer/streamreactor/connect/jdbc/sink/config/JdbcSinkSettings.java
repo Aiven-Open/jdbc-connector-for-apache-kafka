@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -169,7 +170,7 @@ public final class JdbcSinkSettings {
             config.getInt(JdbcSinkConfig.MAX_RETRIES),
             config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
             config.getString(JdbcSinkConfig.DEFAULT_PK_COL_NAME)
-        );
+    );
   }
 
   /**
@@ -294,15 +295,15 @@ public final class JdbcSinkSettings {
       //check pks are in our fields selection if not allFields
       if (!allFields) {
         for (String pk : pkCols) {
-          if (pk != FieldsMappings.CONNECT_AUTO_ID_COLUMN && !mappings.containsKey(pk)) {
+          if (!Objects.equals(pk, FieldsMappings.CONNECT_AUTO_ID_COLUMN) && !mappings.containsKey(pk)) {
             throw new ConfigException(String.format("Primary key %s mapping specified that does not exist in field selection %s.",
                     pk, rawExportMap));
           }
         }
       }
 
-      FieldsMappings fm = new FieldsMappings(table, topic, allFields, mappings, autoCreateTable, evolveTableSchema,
-              PrimaryKeyMode.FIELD);
+      FieldsMappings fm = new FieldsMappings(table, topic, allFields, mappings, autoCreateTable, evolveTableSchema);
+      logger.info("Creating field mapping:\n" + fm);
       fieldsMappingsList.add(fm);
     }
     return fieldsMappingsList;

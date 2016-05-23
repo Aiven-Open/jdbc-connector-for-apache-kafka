@@ -48,7 +48,7 @@ public class OracleDialectTest {
             "col3 VARCHAR(256) NULL," + System.lineSeparator() +
             "col4 REAL NULL," + System.lineSeparator() +
             "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 BOOLEAN NULL," + System.lineSeparator() +
+            "col6 NUMBER(1,0) NULL," + System.lineSeparator() +
             "col7 TINYINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL," + System.lineSeparator() +
             "PRIMARY KEY(col1));";
@@ -74,7 +74,7 @@ public class OracleDialectTest {
             "col3 VARCHAR(256) NULL," + System.lineSeparator() +
             "col4 REAL NULL," + System.lineSeparator() +
             "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 BOOLEAN NULL," + System.lineSeparator() +
+            "col6 NUMBER(1,0) NULL," + System.lineSeparator() +
             "col7 TINYINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL);";
     assertEquals(expected, actual);
@@ -101,7 +101,7 @@ public class OracleDialectTest {
             "col3 VARCHAR(256) NULL," + System.lineSeparator() +
             "col4 REAL NULL," + System.lineSeparator() +
             "col5 DOUBLE NULL," + System.lineSeparator() +
-            "col6 BOOLEAN NULL," + System.lineSeparator() +
+            "col6 NUMBER(1,0) NULL," + System.lineSeparator() +
             "col7 TINYINT NULL," + System.lineSeparator() +
             "col8 SMALLINT NULL);";
     assertEquals(expected, actual.get(0));

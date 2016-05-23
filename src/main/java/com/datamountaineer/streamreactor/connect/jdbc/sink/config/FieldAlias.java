@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Datamountaineer.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -66,7 +66,7 @@ public final class FieldAlias {
    * {@link Object#equals(Object)} methods.
    *
    * @param o the {@link Pair} to which this one is to be checked for equality
-   * equal
+   *          equal
    */
   @Override
   public boolean equals(Object o) {
@@ -85,5 +85,10 @@ public final class FieldAlias {
   @Override
   public int hashCode() {
     return name.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return "{name:" + name + "; isPrimaryKey:" + isPrimaryKey + "}";
   }
 }

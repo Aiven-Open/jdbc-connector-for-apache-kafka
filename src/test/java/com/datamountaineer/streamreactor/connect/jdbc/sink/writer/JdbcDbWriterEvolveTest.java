@@ -105,7 +105,7 @@ public class JdbcDbWriterEvolveTest {
     fields.put(FieldsMappings.CONNECT_AUTO_ID_COLUMN, new FieldAlias(FieldsMappings.CONNECT_AUTO_ID_COLUMN, true));
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, fields,
-                    true, true, PrimaryKeyMode.FIELD)));
+                    true, true)));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
@@ -205,7 +205,7 @@ public class JdbcDbWriterEvolveTest {
     fields.put(FieldsMappings.CONNECT_AUTO_ID_COLUMN, new FieldAlias(FieldsMappings.CONNECT_AUTO_ID_COLUMN, true));
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, fields,
-                    true, true, PrimaryKeyMode.FIELD)));
+                    true, true)));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
@@ -320,7 +320,7 @@ public class JdbcDbWriterEvolveTest {
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put(topic.toLowerCase(),
             new StructFieldsDataExtractor(new FieldsMappings(tableName, topic, true, new HashMap<String, FieldAlias>(),
-                    true, true, PrimaryKeyMode.FIELD)));
+                    true, true)));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);

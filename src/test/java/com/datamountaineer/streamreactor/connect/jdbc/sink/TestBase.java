@@ -1,9 +1,13 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
-import com.google.common.collect.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.AUTO_CREATE_TABLE_MAP;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD;
@@ -13,7 +17,6 @@ import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSin
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.INSERT_MODE;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.SCHEMA_REGISTRY_URL;
 
 /**
  * Created by andrew@datamountaineer.com on 20/05/16.
@@ -41,7 +44,7 @@ public class TestBase {
   private static final String topic2 = "topic2";
   private static final String topics = topic1 + "," + topic2;
   private static final String selection = "{" + topic1 + ":" + tableName1 + ";f1->col1,f2->},{" + topic2 + ":" +
-      tableName2 + ";f3->col3,f4->col4}";
+          tableName2 + ";f3->col3,f4->col4}";
   private static final String all = "{" + topic1 + ":" + tableName1 + ";*},{" + topic2 + ":" + tableName2 + ";*}";
 
   public String getAllMap() {
@@ -68,7 +71,7 @@ public class TestBase {
     return topic2;
   }
 
-  public List<FieldsMappings> getFieldMappingsSelection()  {
+  public List<FieldsMappings> getFieldMappingsSelection() {
 //    final String tableName,
 //    final String incomingTopic,
 //    final boolean allFieldsIncluded,
@@ -86,13 +89,13 @@ public class TestBase {
     return list;
   }
 
-  public List<FieldsMappings> getFieldMappingsAll()  {
+  public List<FieldsMappings> getFieldMappingsAll() {
     List<FieldsMappings> list = Lists.newArrayList();
 
     Map<String, FieldAlias> mappings = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName1, topic1, true, mappings, false, false, PrimaryKeyMode.FIELD));
+    list.add(new FieldsMappings(tableName1, topic1, true, mappings, false, false));
     Map<String, FieldAlias> mappings2 = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName2, topic2, true, mappings2, false, false, PrimaryKeyMode.FIELD));
+    list.add(new FieldsMappings(tableName2, topic2, true, mappings2, false, false));
     return list;
   }
 
@@ -100,38 +103,38 @@ public class TestBase {
 
     Map<String, String> props = new HashMap<>();
 
-    props.put("topic",  topics);
+    props.put("topic", topics);
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(DATABASE_CONNECTION_USER, "");
     props.put(DATABASE_CONNECTION_PASSWORD, "");
     props.put(ERROR_POLICY, errorPolicy);
     props.put(DATABASE_IS_BATCHING, ((Boolean) true).toString());
-    props.put(INSERT_MODE,mode);
+    props.put(INSERT_MODE, mode);
     props.put(EXPORT_MAPPINGS, all);
 
     if (autoCreate) {
       //only topic 1
-      props.put(AUTO_CREATE_TABLE_MAP, "{"+ topic1 + ":}");
+      props.put(AUTO_CREATE_TABLE_MAP, "{" + topic1 + ":}");
     }
     return props;
   }
 
   public Map<String, String> getPropsAllFieldsAutoCreatePK() {
     Map<String, String> map = getPropsAllFields("throw", "upsert", true);
-    map.put(AUTO_CREATE_TABLE_MAP, "{"+ topic1 + ":f1,f2}" + ", " + "{"+ topic2 + ":f3}");
+    map.put(AUTO_CREATE_TABLE_MAP, "{" + topic1 + ":f1,f2}" + ", " + "{" + topic2 + ":f3}");
     return map;
   }
 
   public Map<String, String> getPropsSelectedFieldsAutoCreatePKBad() {
     Map<String, String> map = getPropsSelectedFields("throw", "upsert", true);
-    map.put(AUTO_CREATE_TABLE_MAP, "{"+ topic1 + ":f10,f12}" + ", " + "{"+ topic2 + ":f13}");
+    map.put(AUTO_CREATE_TABLE_MAP, "{" + topic1 + ":f10,f12}" + ", " + "{" + topic2 + ":f13}");
     return map;
   }
 
   public Map<String, String> getPropsSelectedFields(String errorPolicy, String mode, Boolean autoCreate) {
     Map<String, String> props = new HashMap<>();
 
-    props.put("topic",  topics);
+    props.put("topic", topics);
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(DATABASE_CONNECTION_USER, "");
     props.put(DATABASE_CONNECTION_PASSWORD, "");
@@ -142,7 +145,7 @@ public class TestBase {
 
     if (autoCreate) {
       //only topic 1
-      props.put(AUTO_CREATE_TABLE_MAP, "{"+ topic1 + ":}");
+      props.put(AUTO_CREATE_TABLE_MAP, "{" + topic1 + ":}");
     }
 
     return props;
