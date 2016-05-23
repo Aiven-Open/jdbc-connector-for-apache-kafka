@@ -55,28 +55,28 @@ public class AvroToDbConverter {
         return fromAvro(union, fieldName);
 
       case FIXED:
-        return new Field(Schema.Type.BYTES, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.BYTES, fieldName, false);
 
       case STRING:
-        return new Field(Schema.Type.STRING, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.STRING, fieldName, false);
 
       case BYTES:
-        return new Field(Schema.Type.BYTES, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.BYTES, fieldName, false);
 
       case INT:
-        return new Field(Schema.Type.INT32, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.INT32, fieldName, false);
 
       case LONG:
-        return new Field(Schema.Type.INT64, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.INT64, fieldName, false);
 
       case FLOAT:
-        return new Field(Schema.Type.FLOAT64, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.FLOAT64, fieldName, false);
 
       case DOUBLE:
-        return new Field(Schema.Type.FLOAT64, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.FLOAT64, fieldName, false);
 
       case BOOLEAN:
-        return new Field(Schema.Type.BOOLEAN, "`" + fieldName + "`", false);
+        return new Field(Schema.Type.BOOLEAN, fieldName, false);
 
       case NULL:
         throw new RuntimeException("Avro type NULL not supported");

@@ -66,14 +66,14 @@ public class AvroToFieldConverterTest {
     Schema latest = client.getLatestVersion("converterTest");
 
     String ddlString = "CREATE TABLE test (\n" +
-        "`id` NUMERIC NULL,\n" +
-        "`stringType` TEXT NULL,\n" +
-        "`intType` NUMERIC NULL,\n" +
-        "`floatType` REAL NULL,\n" +
-        "`longType` NUMERIC NULL,\n" +
-        "`doubleType` REAL NULL,\n" +
-        "`booleanType` NUMERIC NULL,\n" +
-        "`unionType` NUMERIC NULL);";
+        "id NUMERIC NULL,\n" +
+        "stringType TEXT NULL,\n" +
+        "intType NUMERIC NULL,\n" +
+        "floatType REAL NULL,\n" +
+        "longType NUMERIC NULL,\n" +
+        "doubleType REAL NULL,\n" +
+        "booleanType NUMERIC NULL,\n" +
+        "unionType NUMERIC NULL);";
 
     AvroToDbConverter converter = new AvroToDbConverter();
     Collection<Field> fields = converter.convert(latest.getSchema());

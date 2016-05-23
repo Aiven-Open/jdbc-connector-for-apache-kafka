@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Date;
+import java.util.ArrayList;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -189,7 +190,7 @@ public final class JdbcDbWriter implements DbWriter {
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings,
                                   final DatabaseMetadataProvider databaseMetadataProvider)
-      throws IOException, RestClientException, SQLException {
+      throws IOException, SQLException {
 
     final HikariDataSource connectionPool = HikariHelper.from(settings.getConnection(),
             settings.getUser(),
@@ -212,7 +213,14 @@ public final class JdbcDbWriter implements DbWriter {
       if (fm.autoCreateTable()) {
         tablesAllowingAutoCreate.add(fm.getTableName());
         RestService registry = new RestService(settings.getSchemaRegistryUrl());
-        List<String> all = registry.getAllSubjects();
+        List<String> all = new ArrayList<>();
+
+        try {
+          all = registry.getAllSubjects();
+        } catch (RestClientException e) {
+          e.printStackTrace();
+        }
+
 
         String lkTopic = fm.getIncomingTopic();
         //do we have our topic
@@ -223,7 +231,12 @@ public final class JdbcDbWriter implements DbWriter {
           }
         }
 
-        String latest = registry.getLatestVersion(lkTopic).getSchema();
+        String latest = null;
+        try {
+          latest = registry.getLatestVersion(lkTopic).getSchema();
+        } catch (RestClientException e) {
+          e.printStackTrace();
+        }
         logger.info("Found the following schema " + latest);
         AvroToDbConverter converter = new AvroToDbConverter();
         Collection<Field> convertedFields = converter.convert(latest);

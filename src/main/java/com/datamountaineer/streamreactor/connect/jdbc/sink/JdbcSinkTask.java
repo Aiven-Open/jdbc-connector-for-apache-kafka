@@ -22,7 +22,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.io.CharStreams;
 import com.zaxxer.hikari.HikariDataSource;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -82,8 +81,6 @@ public class JdbcSinkTask extends SinkTask {
       writer = JdbcDbWriter.from(settings, provider);
     } catch (IOException e) {
       logger.error(e.getMessage(), e);
-    } catch (RestClientException e) {
-      logger.warn("Error getting schema from Schema registry.", e);
     } catch (SQLException e) {
       logger.error(e.getMessage(), e);
     }
