@@ -17,17 +17,17 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.avro.AvroToDbConverter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
 import com.google.common.collect.Iterators;
 import com.zaxxer.hikari.HikariDataSource;
@@ -43,6 +43,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -50,7 +51,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.ArrayList;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -122,7 +122,9 @@ public final class JdbcDbWriter implements DbWriter {
 
             PreparedStatement statement = null;
             try {
-              statement = connection.prepareStatement(statementData.getSql());
+              final String sql = statementData.getSql();
+              logger.debug(String.format("Executing SQL:\n%s", sql));
+              statement = connection.prepareStatement(sql);
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
                 statement.addBatch();
@@ -196,7 +198,7 @@ public final class JdbcDbWriter implements DbWriter {
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings,
                                   final DatabaseMetadataProvider databaseMetadataProvider)
-      throws IOException, SQLException {
+          throws IOException, SQLException {
 
     final HikariDataSource connectionPool = HikariHelper.from(settings.getConnection(),
             settings.getUser(),
