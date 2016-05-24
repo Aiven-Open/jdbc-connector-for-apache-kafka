@@ -17,9 +17,9 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,17 +30,17 @@ import java.util.Map;
  * Used by the PreparedStatements to track which tables are used and which columns
  */
 final class TablesToColumnUsageState {
-  private final Map<String, Map<String, Field>> tablesToColumnsMap = new HashMap<>();
+  private final Map<String, Map<String, SinkRecordField>> tablesToColumnsMap = new HashMap<>();
 
   /**
    * Returns the state a list of database tables and the columns targeted.
    *
    * @return The state a list of databases
    */
-  public Map<String, Collection<Field>> getState() {
-    Map<String, Collection<Field>> state = new HashMap<>();
-    for (final Map.Entry<String, Map<String, Field>> entry : tablesToColumnsMap.entrySet()) {
-      final Collection<Field> fields = entry.getValue().values();
+  public Map<String, Collection<SinkRecordField>> getState() {
+    Map<String, Collection<SinkRecordField>> state = new HashMap<>();
+    for (final Map.Entry<String, Map<String, SinkRecordField>> entry : tablesToColumnsMap.entrySet()) {
+      final Collection<SinkRecordField> fields = entry.getValue().values();
       state.put(entry.getKey(), fields);
     }
     return state;
@@ -58,7 +58,7 @@ final class TablesToColumnUsageState {
     if (binders.isEmpty()) {
       return;
     }
-    Map<String, Field> fieldMap;
+    Map<String, SinkRecordField> fieldMap;
     if (!tablesToColumnsMap.containsKey(table)) {
       fieldMap = new HashMap<>();
       tablesToColumnsMap.put(table, fieldMap);
@@ -75,14 +75,14 @@ final class TablesToColumnUsageState {
    * @param target  - A map of fields/columns already seen
    * @param binders - A collection of PreparedStatementBinder each one containing the field/column and the the schema type
    */
-  private static void addFields(final Map<String, Field> target,
+  private static void addFields(final Map<String, SinkRecordField> target,
                                 final Collection<PreparedStatementBinder> binders) {
     if (binders == null) {
       return;
     }
     for (final PreparedStatementBinder binder : binders) {
       if (!target.containsKey(binder.getFieldName())) {
-        target.put(binder.getFieldName(), new Field(binder.getFieldType(), binder.getFieldName(), binder.isPrimaryKey()));
+        target.put(binder.getFieldName(), new SinkRecordField(binder.getFieldType(), binder.getFieldName(), binder.isPrimaryKey()));
       }
     }
   }

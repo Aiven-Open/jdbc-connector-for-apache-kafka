@@ -18,7 +18,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 
 /**
  * Helper class for creating an instance of QueryBuilder

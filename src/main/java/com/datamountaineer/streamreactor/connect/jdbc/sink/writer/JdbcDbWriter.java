@@ -17,18 +17,17 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbWriter;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
+import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.avro.AvroToDbConverter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.google.common.collect.Iterators;
 import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
@@ -214,7 +213,7 @@ public final class JdbcDbWriter implements DbWriter {
     final List<FieldsMappings> mappingsList = settings.getMappings();
     final Set<String> tablesAllowingAutoCreate = new HashSet<>();
     final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
-    final Map<String, Collection<Field>> createTablesMap = new HashMap<>();
+    final Map<String, Collection<SinkRecordField>> createTablesMap = new HashMap<>();
 
     //for the mappings get the schema from the schema registry and add the default pk col.
     for (FieldsMappings fm : mappingsList) {
@@ -247,7 +246,7 @@ public final class JdbcDbWriter implements DbWriter {
         }
         logger.info("Found the following schema " + latest);
         AvroToDbConverter converter = new AvroToDbConverter();
-        Collection<Field> convertedFields = converter.convert(latest);
+        Collection<SinkRecordField> convertedFields = converter.convert(latest);
         boolean addDefaultPk = false;
 
         //do we have a default pk columns
@@ -264,7 +263,7 @@ public final class JdbcDbWriter implements DbWriter {
         //add pk column if we have it to schema registry list of columns.
         if (addDefaultPk) {
           logger.info("Adding default primary key " + settings.getDefaultPKColName());
-          convertedFields.add(new Field(Schema.Type.STRING, settings.getDefaultPKColName(), true));
+          convertedFields.add(new SinkRecordField(Schema.Type.STRING, settings.getDefaultPKColName(), true));
           createTablesMap.put(fm.getTableName(), convertedFields);
         }
       }

@@ -10,7 +10,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedS
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.MySqlDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;

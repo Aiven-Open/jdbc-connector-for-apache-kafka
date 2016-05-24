@@ -1,17 +1,17 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadataProvider;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
+import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.OracleDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.OracleDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;

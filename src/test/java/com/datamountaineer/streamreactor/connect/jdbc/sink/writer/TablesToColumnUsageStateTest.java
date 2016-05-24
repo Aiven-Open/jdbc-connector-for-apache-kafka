@@ -1,7 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
@@ -69,12 +69,12 @@ public class TablesToColumnUsageStateTest {
 
     state.trackUsage("table", cols);
 
-    Map<String, Collection<Field>> s = state.getState();
+    Map<String, Collection<SinkRecordField>> s = state.getState();
     assertEquals(s.size(), 1);
     assertTrue(s.containsKey("table"));
 
-    Map<String, Field> fieldMap = new HashMap<>();
-    for (Field f : s.get("table")) {
+    Map<String, SinkRecordField> fieldMap = new HashMap<>();
+    for (SinkRecordField f : s.get("table")) {
       fieldMap.put(f.getName(), f);
     }
 
@@ -127,12 +127,12 @@ public class TablesToColumnUsageStateTest {
 
     state.trackUsage("table", cols);
 
-    Map<String, Collection<Field>> s = state.getState();
+    Map<String, Collection<SinkRecordField>> s = state.getState();
     assertEquals(s.size(), 1);
     assertTrue(s.containsKey("table"));
 
-    Map<String, Field> fieldMap = new HashMap<>();
-    for (Field f : s.get("table")) {
+    Map<String, SinkRecordField> fieldMap = new HashMap<>();
+    for (SinkRecordField f : s.get("table")) {
       fieldMap.put(f.getName(), f);
     }
 

@@ -1,6 +1,11 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
+import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.common.JdbcHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

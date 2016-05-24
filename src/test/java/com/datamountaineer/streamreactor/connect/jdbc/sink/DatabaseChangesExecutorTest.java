@@ -1,8 +1,12 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
+import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
@@ -99,20 +103,20 @@ public class DatabaseChangesExecutorTest {
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
-    Map<String, Collection<Field>> map = new HashMap<>();
+    Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new Field(Schema.Type.INT32, "col1", true),
-            new Field(Schema.Type.STRING, "col2", false),
-            new Field(Schema.Type.INT8, "col3", false),
-            new Field(Schema.Type.INT64, "col4", false),
-            new Field(Schema.Type.FLOAT64, "col5", false)
+            new SinkRecordField(Schema.Type.INT32, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", false),
+            new SinkRecordField(Schema.Type.INT8, "col3", false),
+            new SinkRecordField(Schema.Type.INT64, "col4", false),
+            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    map.put(tableName2, Lists.<Field>newArrayList(
-            new Field(Schema.Type.STRING, "col1", true),
-            new Field(Schema.Type.STRING, "col2", true),
-            new Field(Schema.Type.FLOAT32, "col3", false),
-            new Field(Schema.Type.BYTES, "col4", false)
+    map.put(tableName2, Lists.<SinkRecordField>newArrayList(
+            new SinkRecordField(Schema.Type.STRING, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", true),
+            new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
+            new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
     changesExecutor.handleChanges(map);
 
@@ -183,13 +187,13 @@ public class DatabaseChangesExecutorTest {
             2);
 
     String tableName = "tableA";
-    Map<String, Collection<Field>> map = new HashMap<>();
+    Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName, Lists.newArrayList(
-            new Field(Schema.Type.INT32, "col1", true),
-            new Field(Schema.Type.STRING, "col2", false),
-            new Field(Schema.Type.INT8, "col3", false),
-            new Field(Schema.Type.INT64, "col3", false),
-            new Field(Schema.Type.FLOAT64, "col4", false)
+            new SinkRecordField(Schema.Type.INT32, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", false),
+            new SinkRecordField(Schema.Type.INT8, "col3", false),
+            new SinkRecordField(Schema.Type.INT64, "col3", false),
+            new SinkRecordField(Schema.Type.FLOAT64, "col4", false)
     ));
     changesExecutor.handleChanges(map);
   }
@@ -222,20 +226,20 @@ public class DatabaseChangesExecutorTest {
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
-    Map<String, Collection<Field>> map = new HashMap<>();
+    Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new Field(Schema.Type.INT32, "col1", true),
-            new Field(Schema.Type.STRING, "col2", false),
-            new Field(Schema.Type.INT8, "col3", false),
-            new Field(Schema.Type.INT64, "col4", false),
-            new Field(Schema.Type.FLOAT64, "col5", false)
+            new SinkRecordField(Schema.Type.INT32, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", false),
+            new SinkRecordField(Schema.Type.INT8, "col3", false),
+            new SinkRecordField(Schema.Type.INT64, "col4", false),
+            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    map.put(tableName2, Lists.<Field>newArrayList(
-            new Field(Schema.Type.STRING, "col1", true),
-            new Field(Schema.Type.STRING, "col2", true),
-            new Field(Schema.Type.FLOAT32, "col3", false),
-            new Field(Schema.Type.BYTES, "col4", false)
+    map.put(tableName2, Lists.<SinkRecordField>newArrayList(
+            new SinkRecordField(Schema.Type.STRING, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", true),
+            new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
+            new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
     changesExecutor.handleChanges(map);
 
@@ -306,13 +310,13 @@ public class DatabaseChangesExecutorTest {
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
-    Map<String, Collection<Field>> map = new HashMap<>();
+    Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new Field(Schema.Type.INT32, "col1", true),
-            new Field(Schema.Type.STRING, "col2", false),
-            new Field(Schema.Type.INT8, "col3", false),
-            new Field(Schema.Type.INT64, "col4", false),
-            new Field(Schema.Type.FLOAT64, "col5", false)
+            new SinkRecordField(Schema.Type.INT32, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", false),
+            new SinkRecordField(Schema.Type.INT8, "col3", false),
+            new SinkRecordField(Schema.Type.INT64, "col4", false),
+            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
 
@@ -374,13 +378,13 @@ public class DatabaseChangesExecutorTest {
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
-    Map<String, Collection<Field>> map = new HashMap<>();
+    Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new Field(Schema.Type.INT32, "col1", true),
-            new Field(Schema.Type.STRING, "col2", false),
-            new Field(Schema.Type.INT8, "col3", false),
-            new Field(Schema.Type.INT64, "col4", false),
-            new Field(Schema.Type.FLOAT64, "col5", false)
+            new SinkRecordField(Schema.Type.INT32, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", false),
+            new SinkRecordField(Schema.Type.INT8, "col3", false),
+            new SinkRecordField(Schema.Type.INT64, "col4", false),
+            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
 
@@ -449,17 +453,17 @@ public class DatabaseChangesExecutorTest {
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
-    Map<String, Collection<Field>> map = new HashMap<>();
+    Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new Field(Schema.Type.INT32, "col1", true),
-            new Field(Schema.Type.STRING, "col2", false),
-            new Field(Schema.Type.INT8, "col3", false),
-            new Field(Schema.Type.INT64, "col4", false),
-            new Field(Schema.Type.FLOAT64, "col5", false)
+            new SinkRecordField(Schema.Type.INT32, "col1", true),
+            new SinkRecordField(Schema.Type.STRING, "col2", false),
+            new SinkRecordField(Schema.Type.INT8, "col3", false),
+            new SinkRecordField(Schema.Type.INT64, "col4", false),
+            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Lists.<Field>newArrayList(
-            new Field(Schema.Type.INT64, "col4", false)
+    List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Lists.<SinkRecordField>newArrayList(
+            new SinkRecordField(Schema.Type.INT64, "col4", false)
     ));
 
     SqlLiteHelper.execute(SQL_LITE_URI, amendQuery.get(0));

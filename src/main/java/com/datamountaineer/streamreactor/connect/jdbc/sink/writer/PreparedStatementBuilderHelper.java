@@ -15,9 +15,9 @@
  **/
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseMetadata;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTable;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DbTableColumn;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;

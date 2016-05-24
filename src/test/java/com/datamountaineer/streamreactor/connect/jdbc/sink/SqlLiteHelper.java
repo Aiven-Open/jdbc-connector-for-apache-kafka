@@ -1,6 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
+import com.datamountaineer.streamreactor.connect.jdbc.common.JdbcHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,8 +16,10 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
+import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.common.config.ConfigException;
 import org.slf4j.Logger;
@@ -67,7 +69,7 @@ public class DatabaseChangesExecutor {
   }
 
 
-  public void handleChanges(final Map<String, Collection<Field>> tablesToColumnsMap) throws SQLException {
+  public void handleChanges(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
 
 
@@ -90,13 +92,13 @@ public class DatabaseChangesExecutor {
     }
   }
 
-  public void handleNewTables(final Map<String, Collection<Field>> createdMap,
+  public void handleNewTables(final Map<String, Collection<SinkRecordField>> createdMap,
                                final Connection connection) {
     if (createdMap == null || createdMap.size() == 0) {
       return;
     }
 
-    for (final Map.Entry<String, Collection<Field>> entry : createdMap.entrySet()) {
+    for (final Map.Entry<String, Collection<SinkRecordField>> entry : createdMap.entrySet()) {
       final String tableName = entry.getKey();
       if (databaseMetadata.containsTable(tableName)) {
         continue;
@@ -127,7 +129,7 @@ public class DatabaseChangesExecutor {
     }
   }
 
-  private DbTable createTable(final String tableName, final Collection<Field> fields, final Connection connection) {
+  private DbTable createTable(final String tableName, final Collection<SinkRecordField> fields, final Connection connection) {
     final String createTableQuery = dbDialect.getCreateQuery(tableName, fields);
     logger.info(String.format("Changing database structure for database %s%s%s",
             databaseMetadata.getDatabaseName(),
@@ -146,8 +148,8 @@ public class DatabaseChangesExecutor {
         if (DatabaseMetadata.tableExists(connection, tableName)) {
           final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
           //check for all fields from above where they are not present
-          List<Field> notPresentFields = null;
-          for (final Field f : fields) {
+          List<SinkRecordField> notPresentFields = null;
+          for (final SinkRecordField f : fields) {
             if (!table.containsColumn(f.getName())) {
               if (notPresentFields == null) {
                 notPresentFields = new ArrayList<>();
@@ -179,11 +181,11 @@ public class DatabaseChangesExecutor {
 
   }
 
-  private void handleAmendTables(final Map<String, Collection<Field>> createdMap, final Connection connection) {
+  private void handleAmendTables(final Map<String, Collection<SinkRecordField>> createdMap, final Connection connection) {
     if (createdMap == null || createdMap.size() == 0) {
       return;
     }
-    for (final Map.Entry<String, Collection<Field>> entry : createdMap.entrySet()) {
+    for (final Map.Entry<String, Collection<SinkRecordField>> entry : createdMap.entrySet()) {
       final String tableName = entry.getKey();
       if (!databaseMetadata.containsTable(tableName)) {
         throw new RuntimeException(String.format("%s is set for amendments but hasn't been created yet", entry.getKey()));
@@ -216,7 +218,7 @@ public class DatabaseChangesExecutor {
   }
 
   private DbTable amendTable(final String tableName,
-                             final Collection<Field> fields,
+                             final Collection<SinkRecordField> fields,
                              final Connection connection) {
     final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, fields);
 
@@ -241,8 +243,8 @@ public class DatabaseChangesExecutor {
       //see if it there was a race with other tasks to add the colums
       try {
         final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
-        List<Field> notPresentFields = null;
-        for (final Field f : fields) {
+        List<SinkRecordField> notPresentFields = null;
+        for (final SinkRecordField f : fields) {
           if (!table.containsColumn(f.getName())) {
             if (notPresentFields == null) {
               notPresentFields = new ArrayList<>();

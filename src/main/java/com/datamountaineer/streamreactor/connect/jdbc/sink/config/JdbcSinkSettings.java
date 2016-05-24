@@ -17,7 +17,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;

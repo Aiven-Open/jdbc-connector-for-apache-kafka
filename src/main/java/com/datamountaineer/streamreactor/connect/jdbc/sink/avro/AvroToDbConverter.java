@@ -16,7 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 
@@ -30,10 +30,10 @@ import java.util.Collection;
 public class AvroToDbConverter {
 
 
-  public Collection<Field> convert(String inputSchema) {
+  public Collection<SinkRecordField> convert(String inputSchema) {
     org.apache.avro.Schema schema = new org.apache.avro.Schema.Parser().parse(inputSchema);
     List<org.apache.avro.Schema.Field> fields = schema.getFields();
-    List<Field> converted = Lists.newArrayList();
+    List<SinkRecordField> converted = Lists.newArrayList();
 
     for (org.apache.avro.Schema.Field avro : fields) {
       converted.add(fromAvro(avro.schema(), avro.name()));
@@ -41,7 +41,7 @@ public class AvroToDbConverter {
     return converted;
   }
 
-  public Field fromAvro(org.apache.avro.Schema schema, String fieldName) {
+  public SinkRecordField fromAvro(org.apache.avro.Schema schema, String fieldName) {
 
     switch (schema.getType()) {
       case RECORD:
@@ -55,28 +55,28 @@ public class AvroToDbConverter {
         return fromAvro(union, fieldName);
 
       case FIXED:
-        return new Field(Schema.Type.BYTES, fieldName, false);
+        return new SinkRecordField(Schema.Type.BYTES, fieldName, false);
 
       case STRING:
-        return new Field(Schema.Type.STRING, fieldName, false);
+        return new SinkRecordField(Schema.Type.STRING, fieldName, false);
 
       case BYTES:
-        return new Field(Schema.Type.BYTES, fieldName, false);
+        return new SinkRecordField(Schema.Type.BYTES, fieldName, false);
 
       case INT:
-        return new Field(Schema.Type.INT32, fieldName, false);
+        return new SinkRecordField(Schema.Type.INT32, fieldName, false);
 
       case LONG:
-        return new Field(Schema.Type.INT64, fieldName, false);
+        return new SinkRecordField(Schema.Type.INT64, fieldName, false);
 
       case FLOAT:
-        return new Field(Schema.Type.FLOAT64, fieldName, false);
+        return new SinkRecordField(Schema.Type.FLOAT64, fieldName, false);
 
       case DOUBLE:
-        return new Field(Schema.Type.FLOAT64, fieldName, false);
+        return new SinkRecordField(Schema.Type.FLOAT64, fieldName, false);
 
       case BOOLEAN:
-        return new Field(Schema.Type.BOOLEAN, fieldName, false);
+        return new SinkRecordField(Schema.Type.BOOLEAN, fieldName, false);
 
       case NULL:
         throw new RuntimeException("Avro type NULL not supported");

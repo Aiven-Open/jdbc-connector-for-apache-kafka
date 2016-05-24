@@ -17,7 +17,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 
 import java.util.Collection;
 import java.util.Map;
@@ -27,10 +27,10 @@ import java.util.Map;
  */
 public class PreparedStatementContext {
   private final Collection<PreparedStatementData> preparedStatements;
-  private final Map<String, Collection<Field>> tablesToColumnsMap;
+  private final Map<String, Collection<SinkRecordField>> tablesToColumnsMap;
 
   public PreparedStatementContext(Collection<PreparedStatementData> preparedStatements,
-                                  Map<String, Collection<Field>> tablesToColumnsMap) {
+                                  Map<String, Collection<SinkRecordField>> tablesToColumnsMap) {
     this.preparedStatements = preparedStatements;
     this.tablesToColumnsMap = tablesToColumnsMap;
   }
@@ -49,7 +49,7 @@ public class PreparedStatementContext {
    *
    * @return Returns a map of table name to fields/columns involved
    */
-  public Map<String, Collection<Field>> getTablesToColumnsMap() {
+  public Map<String, Collection<SinkRecordField>> getTablesToColumnsMap() {
     return tablesToColumnsMap;
   }
 }

@@ -1,10 +1,10 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.Field;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.services.EmbeddedSingleNodeKafkaCluster;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.services.RestApp;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.DbDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.dialect.SQLiteDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import io.confluent.kafka.schemaregistry.client.rest.entities.Schema;
 import org.apache.curator.test.InstanceSpec;
@@ -78,7 +78,7 @@ public class AvroToFieldConverterTest {
             "`unionType` NUMERIC NULL);";
 
     AvroToDbConverter converter = new AvroToDbConverter();
-    Collection<Field> fields = converter.convert(latest.getSchema());
+    Collection<SinkRecordField> fields = converter.convert(latest.getSchema());
     DbDialect db = new SQLiteDialect();
     String ddl = db.getCreateQuery("test", fields);
     assertEquals(ddlString, ddl);
