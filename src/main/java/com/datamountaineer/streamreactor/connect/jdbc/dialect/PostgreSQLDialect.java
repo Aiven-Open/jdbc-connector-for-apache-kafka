@@ -61,7 +61,10 @@ public class PostgreSQLDialect extends DbDialect {
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
 
     if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
+      throw new IllegalArgumentException(
+              String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
+                      table)
+      );
     }
 
     List<String> nonKeyColumns = new ArrayList<>(cols.size());
@@ -88,8 +91,8 @@ public class PostgreSQLDialect extends DbDialect {
     }
 
     String sql = "INSERT INTO " + table + " (" + queryColumns + ") " +
-                 "VALUES (" + bindingValues + ") " +
-                 "ON CONFLICT (" + Joiner.on(",").join(Iterables.concat(keyColumns)) + ") DO UPDATE SET " + updateSet;
+            "VALUES (" + bindingValues + ") " +
+            "ON CONFLICT (" + Joiner.on(",").join(Iterables.concat(keyColumns)) + ") DO UPDATE SET " + updateSet;
 
 
     logger.debug("Prepared sql: " + sql);

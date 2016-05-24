@@ -16,8 +16,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
@@ -117,7 +117,10 @@ public class SQLiteDialect extends DbDialect {
     if (cols == null || cols.size() == 0)
       throw new IllegalArgumentException("<columns> is invalid.Expecting non null and non empty collection");
     if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException("<keyColumns> is invalid. Need to be non null, non empty and be a subset of <columns>");
+      throw new IllegalArgumentException(
+              String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
+                      table)
+      );
     }
 
     List<String> nonKeyColumns = new ArrayList<>(cols.size());
