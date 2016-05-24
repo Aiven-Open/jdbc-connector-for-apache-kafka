@@ -1,7 +1,7 @@
-.. _connect_jdbc: Kafka Connect JDBC documentation master file
+.. _connect_jdbc:
 
-JDBC Connector
-==============
+Confluent JDBC Connector
+========================
 
 Contents:
 

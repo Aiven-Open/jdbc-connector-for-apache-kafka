@@ -16,6 +16,6 @@ JDBC Connector
 * `PR-53 <https://github.com/confluentinc/kafka-connect-jdbc/pull/53>`_ - Adding checkstyle checks and the traditional minor fixes related.
 * `PR-51 <https://github.com/confluentinc/kafka-connect-jdbc/pull/51>`_ - Add config to disable non-null checks.
 * `PR-50 <https://github.com/confluentinc/kafka-connect-jdbc/pull/50>`_ - Bump version to 3.0.0-SNAPSHOT and Kafka dependency to 0.10.0.0-SNAPSHOT.
-* `PR-48 <https://github.com/confluentinc/kafka-connect-jdbc/pull/50>`_ - Delayed copy.
+* `PR-48 <https://github.com/confluentinc/kafka-connect-jdbc/pull/48>`_ - Delayed copy.
 * `PR-45 <https://github.com/confluentinc/kafka-connect-jdbc/pull/45>`_ - Added some logging.
 
