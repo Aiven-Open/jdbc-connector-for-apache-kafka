@@ -144,11 +144,12 @@ public class DatabaseMetadata {
       connection = connectionPooling.getConnection();
 
       final String catalog = connection.getCatalog();
+
       final DatabaseMetaData dbMetadata = connection.getMetaData();
 
       final List<DbTable> dbTables = Lists.newArrayList();
       for (final String table : tables) {
-        if (tableExists(connection, table)) {
+        if (tableExists(connection, catalog, table)) {
           final List<DbTableColumn> columns = getTableColumns(catalog, table, dbMetadata);
           dbTables.add(new DbTable(table, columns));
         }
@@ -170,13 +171,24 @@ public class DatabaseMetadata {
 
   public static boolean tableExists(final Connection connection,
                                     final String tableName) throws SQLException {
+    final String catalog = connection.getCatalog();
+    return tableExists(connection, catalog, tableName);
+  }
+
+  public static boolean tableExists(final Connection connection,
+                                    final String catalog,
+                                    final String tableName) throws SQLException {
     ParameterValidator.notNull(connection, "connection");
     ParameterValidator.notNull(tableName, "tableName");
+
+
     DatabaseMetaData meta = connection.getMetaData();
 
     ResultSet rs = null;
     try {
-      rs = meta.getTables(null, null, tableName, new String[]{"TABLE"});
+      final String schema = meta.getUserName();
+      logger.info(String.format("Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+      rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
       return rs.next();
     } finally {
       if (rs != null) {
@@ -198,7 +210,8 @@ public class DatabaseMetadata {
 
       final String catalog = connection.getCatalog();
       final DatabaseMetaData dbMetadata = connection.getMetaData();
-      ResultSet tablesRs = dbMetadata.getTables(catalog, null, null, new String[]{"TABLE"});
+      final String schema = dbMetadata.getUserName();
+      ResultSet tablesRs = dbMetadata.getTables(catalog, dbMetadata.getUserName(), schema, new String[]{"TABLE"});
 
       final List<DbTable> tables = new ArrayList<>();
       while (tablesRs.next()) {
@@ -236,10 +249,11 @@ public class DatabaseMetadata {
   }
 
   private static List<DbTableColumn> getTableColumns(final String catalog, final String tableName, final DatabaseMetaData dbMetaData) throws SQLException {
-    final ResultSet nonPKcolumnsRS = dbMetaData.getColumns(catalog, null, tableName, null);
+    final String schema = dbMetaData.getUserName();
+    final ResultSet nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema, tableName, null);
     final List<DbTableColumn> columns = new ArrayList<>();
 
-    final ResultSet pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, null, tableName);
+    final ResultSet pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema, tableName);
     final Set<String> pkColumns = new HashSet<>();
 
     while (pkColumnsRS.next()) {
