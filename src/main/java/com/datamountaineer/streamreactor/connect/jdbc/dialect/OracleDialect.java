@@ -49,14 +49,14 @@ public class OracleDialect extends Sql2003Dialect {
   }
 
   @Override
-  public List<String> getAlterTable(String table, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNullOrEmpty(table, "table");
+  public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
+    ParameterValidator.notNullOrEmpty(tableName, "table");
     ParameterValidator.notNull(fields, "fields");
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is empty.");
     }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(table);
+    builder.append(tableName.toUpperCase()); //yes oracles needs it uppercase
     builder.append(" ADD(");
 
     boolean first = true;
@@ -77,5 +77,10 @@ public class OracleDialect extends Sql2003Dialect {
     final List<String> query = new ArrayList<String>(1);
     query.add(builder.toString());
     return query;
+  }
+
+  @Override
+  protected String handleTableName(String tableName) {
+    return tableName.toUpperCase();
   }
 }

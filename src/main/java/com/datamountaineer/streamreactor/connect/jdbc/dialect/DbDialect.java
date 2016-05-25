@@ -17,8 +17,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Joiner;
 import org.apache.kafka.connect.data.Schema;
 
@@ -100,17 +100,17 @@ public abstract class DbDialect {
   /**
    * Returns the query for creating a new table in the database
    *
-   * @param table
+   * @param tableName
    * @param fields
    * @return The create query for the dialect
    */
-  public String getCreateQuery(String table, Collection<SinkRecordField> fields) {
+  public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
     ParameterValidator.notNull(fields, "fields");
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is not valid.Not accepting empty collection of fields.");
     }
     final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("CREATE TABLE %s (", table));
+    builder.append(String.format("CREATE TABLE %s (", handleTableName(tableName)));
     boolean first = true;
 
     List<String> pks = new ArrayList<>();
@@ -153,18 +153,18 @@ public abstract class DbDialect {
   /**
    * Returns the query to alter a table by adding a new table
    *
-   * @param table
+   * @param tableName
    * @param fields
    * @return The alter query for the dialect
    */
-  public List<String> getAlterTable(String table, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNullOrEmpty(table, "table");
+  public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
+    ParameterValidator.notNullOrEmpty(tableName, "table");
     ParameterValidator.notNull(fields, "fields");
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is empty.");
     }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(table);
+    builder.append(handleTableName(tableName));
     boolean first = true;
     for (final SinkRecordField f : fields) {
       if (!first) {
@@ -201,6 +201,10 @@ public abstract class DbDialect {
               type.toString()));
     }
     return sqlType;
+  }
+
+  protected String handleTableName(String tableName) {
+    return tableName;
   }
 
   /**
