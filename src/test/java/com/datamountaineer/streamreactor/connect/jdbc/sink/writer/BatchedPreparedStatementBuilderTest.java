@@ -1,5 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
@@ -10,7 +11,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedS
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -65,7 +65,7 @@ public class BatchedPreparedStatementBuilderTest {
 
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put("topic1a", valueExtractor);
-    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder());
+    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder(new MySqlDialect()));
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -79,10 +79,10 @@ public class BatchedPreparedStatementBuilderTest {
     //same size as the valueextractor.get returns
     Collection<SinkRecord> records = Collections.nCopies(5, new SinkRecord("topic1a", 1, null, null, schema, record, 0));
 
-    String sql1 = "INSERT INTO tableA(colA,colB,colC,colD) VALUES(?,?,?,?)";
-    String sql2 = "INSERT INTO tableA(colE,colF,colG,colH) VALUES(?,?,?,?)";
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
+    String sql2 = "INSERT INTO `tableA`(`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?)";
 
-    String sql3 = "INSERT INTO tableA(A,B) VALUES(?,?)";
+    String sql3 = "INSERT INTO `tableA`(`A`,`B`) VALUES(?,?)";
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
 
@@ -164,7 +164,7 @@ public class BatchedPreparedStatementBuilderTest {
     map.put("topic1a", valueExtractor1);
     map.put("topic2a", valueExtractor2);
 
-    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder());
+    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder(new MySqlDialect()));
 
     Collection<SinkRecord> records = Lists.newArrayList(
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0),
@@ -172,9 +172,9 @@ public class BatchedPreparedStatementBuilderTest {
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0),
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0));
 
-    String sql1 = "INSERT INTO tableA(colA,colB,colC,colD) VALUES(?,?,?,?)";
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
 
-    String sql2 = "INSERT INTO tableB(colE,colF,colG,colH) VALUES(?,?,?,?)";
+    String sql2 = "INSERT INTO `tableB`(`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?)";
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
     assertEquals(actualStatements.size(), 2);
@@ -267,15 +267,15 @@ public class BatchedPreparedStatementBuilderTest {
 
     Connection connection = mock(Connection.class);
 
-    String sql1 = "insert into tableA(`colA`,`colB`,`colC`,`colD`,`colPK`) values(?,?,?,?,?) " +
+    String sql1 = "insert into `tableA`(`colA`,`colB`,`colC`,`colD`,`colPK`) values(?,?,?,?,?) " +
             "on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`),`colD`=values(`colD`)";
     PreparedStatement statement1 = mock(PreparedStatement.class);
     when(connection.prepareStatement(sql1)).thenReturn(statement1);
 
-    String sql2 = "insert into tableA(`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?) " +
+    String sql2 = "insert into `tableA`(`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?) " +
             "on duplicate key update `colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
-    String sql3 = "insert into tableA(`A`,`B`,`colPK`) values(?,?,?) " +
+    String sql3 = "insert into `tableA`(`A`,`B`,`colPK`) values(?,?,?) " +
             "on duplicate key update `A`=values(`A`),`B`=values(`B`)";
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
@@ -382,10 +382,10 @@ public class BatchedPreparedStatementBuilderTest {
             new SinkRecord(topic1, 1, null, null, schema, struct1, 0),
             new SinkRecord(topic1, 1, null, null, schema, struct1, 0));
 
-    String sql1 = "insert into tableA(`colA`,`colB`,`colC`,`colD`,`colPK`) values(?,?,?,?,?) " +
+    String sql1 = "insert into `tableA`(`colA`,`colB`,`colC`,`colD`,`colPK`) values(?,?,?,?,?) " +
             "on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`),`colD`=values(`colD`)";
 
-    String sql2 = "insert into tableB(`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?) " +
+    String sql2 = "insert into `tableB`(`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?) " +
             "on duplicate key update `colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());

@@ -16,34 +16,25 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 
-import java.util.Collections;
 import java.util.List;
 
 public final class InsertQueryBuilder implements QueryBuilder {
+
+  private final DbDialect dialect;
+
+  public InsertQueryBuilder(final DbDialect dialect) {
+
+    ParameterValidator.notNull(dialect, "dialect");
+    this.dialect = dialect;
+  }
 
   @Override
   public String build(final String tableName,
                       final List<String> nonKeyColumns,
                       final List<String> keyColumns) {
-    if (tableName == null || tableName.trim().length() == 0) {
-      throw new IllegalArgumentException("tableName parameter is not a valid table name.");
-    }
-    if (nonKeyColumns == null)
-      throw new IllegalArgumentException("nonKeyColumns parameter is null.");
-
-    if (keyColumns == null)
-      throw new IllegalArgumentException("keyColumns parameter is null");
-
-    if (nonKeyColumns.isEmpty() && keyColumns.isEmpty()) {
-      throw new IllegalArgumentException("Illegal arguments. Both nonKeyColumns and keyColumns are empty");
-    }
-
-    final String questionMarks = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
-    return String.format("INSERT INTO %s(%s) VALUES(%s)",
-            tableName,
-            Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns)), questionMarks);
+    return dialect.getInsert(tableName, nonKeyColumns, keyColumns);
   }
 }

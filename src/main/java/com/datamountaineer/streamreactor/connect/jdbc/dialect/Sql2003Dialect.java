@@ -55,29 +55,30 @@ public abstract class Sql2003Dialect extends DbDialect {
     final String select = Joiner.on(", ? ").join(iter);
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
-    builder.append(handleTableName(table));
+    String tableName = handleTableName(table);
+    builder.append(tableName);
     builder.append(getMergeHints());
     builder.append(" using (select ? ");
     builder.append(select);
     builder.append(") incoming on(");
-    builder.append(String.format("%s.%s=incoming.%s", table, keyColumns.get(0), keyColumns.get(0)));
+    builder.append(String.format("%s.%s=incoming.%s", tableName, keyColumns.get(0), keyColumns.get(0)));
     for (int i = 1; i < keyColumns.size(); ++i) {
-      builder.append(String.format(" and %s.%s=incoming.%s", table, keyColumns.get(i), keyColumns.get(i)));
+      builder.append(String.format(" and %s.%s=incoming.%s", tableName, keyColumns.get(i), keyColumns.get(i)));
     }
     builder.append(")");
     if (columns != null && columns.size() > 0) {
       builder.append(" when matched then update set ");
-      builder.append(String.format("%s.%s=incoming.%s", table, columns.get(0), columns.get(0)));
+      builder.append(String.format("%s.%s=incoming.%s", tableName, columns.get(0), columns.get(0)));
       for (int i = 1; i < columns.size(); ++i) {
-        builder.append(String.format(",%s.%s=incoming.%s", table, columns.get(i), columns.get(i)));
+        builder.append(String.format(",%s.%s=incoming.%s", tableName, columns.get(i), columns.get(i)));
       }
     }
 
-    final String insertColumns = Joiner.on(String.format(",%s.", table)).join(iter);
+    final String insertColumns = Joiner.on(String.format(",%s.", tableName)).join(iter);
     final String insertValues = Joiner.on(",incoming.").join(iter);
 
     builder.append(" when not matched then insert(");
-    builder.append(handleTableName(table));
+    builder.append(tableName);
     builder.append(".");
     builder.append(insertColumns);
     builder.append(") values(incoming.");
