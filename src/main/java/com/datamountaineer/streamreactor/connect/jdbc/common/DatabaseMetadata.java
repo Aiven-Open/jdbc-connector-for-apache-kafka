@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -191,13 +192,10 @@ public class DatabaseMetadata {
 
       if (product.toLowerCase().equals("oracle")) {
         logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
-        String schema = connection.getSchema();
+        String schema = getOracleSchema(connection);
 
         logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
 
-        if (schema.isEmpty()) {
-          schema = meta.getUserName();
-        }
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
       } else if (product.toLowerCase().contains("postgre")) {
         String schema = connection.getSchema();
@@ -212,6 +210,25 @@ public class DatabaseMetadata {
     } finally {
       if (rs != null) {
         rs.close();
+      }
+    }
+  }
+
+
+  private static String getOracleSchema(final Connection connection) throws SQLException {
+    Statement statement = null;
+    ResultSet rs = null;
+    try {
+      statement = connection.createStatement();
+      rs = statement.executeQuery("select sys_context('userenv','current_schema') x from dual");
+      rs.next();
+      return rs.getString(0);
+    } finally {
+      if (rs != null) {
+        rs.close();
+      }
+      if (statement != null) {
+        statement.close();
       }
     }
   }
@@ -277,12 +294,7 @@ public class DatabaseMetadata {
 
     if (product.toLowerCase().equals("oracle")) {
       logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
-      String schema = connection.getSchema();
-
-      if (schema.isEmpty()) {
-        schema = dbMetaData.getUserName();
-      }
-
+      String schema = getOracleSchema(connection);
       logger.info(String.format("[" + product + "] Checking columns exists for catalog=%s and schema %s", tableName, catalog, schema));
 
       nonPKcolumnsRS = dbMetaData.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
@@ -299,8 +311,6 @@ public class DatabaseMetadata {
 
       pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, null, tableName);
     }
-
-
 
 
     //final ResultSet nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema, tableName, null);
