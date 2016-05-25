@@ -188,7 +188,13 @@ public class DatabaseMetadata {
     try {
       final String schema = meta.getUserName();
       logger.info(String.format("Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
-      rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
+
+      if (meta.getDatabaseProductName().equals("oracle")) {
+        rs = meta.getTables(schema, null, tableName, new String[]{"TABLE"});
+      } else {
+        rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
+      }
+
       return rs.next();
     } finally {
       if (rs != null) {
