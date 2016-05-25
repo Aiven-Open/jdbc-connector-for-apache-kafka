@@ -225,7 +225,7 @@ public final class JdbcDbWriter implements DbWriter {
         try {
           all = registry.getAllSubjects();
         } catch (RestClientException e) {
-          e.printStackTrace();
+          logger.info("No schemas found in Registry! Waiting for first record to create table for topic " + fm.getIncomingTopic());
         }
 
 
@@ -239,32 +239,33 @@ public final class JdbcDbWriter implements DbWriter {
         }
 
         String latest = null;
+        logger.info("Looking for schema " + lkTopic);
         try {
           latest = registry.getLatestVersion(lkTopic).getSchema();
+          logger.info("Found the following schema " + latest);
+          AvroToDbConverter converter = new AvroToDbConverter();
+          Collection<SinkRecordField> convertedFields = converter.convert(latest);
+          boolean addDefaultPk = false;
+
+          //do we have a default pk columns
+          FieldAlias pk = fm.getMappings().get(settings.getDefaultPKColName());
+          if (pk != null) {
+            addDefaultPk = pk.isPrimaryKey();
+          }
+
+          logger.info("Field mappings");
+          for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
+            logger.info(f.getKey() + " " + f.getValue());
+          }
+
+          //add pk column if we have it to schema registry list of columns.
+          if (addDefaultPk) {
+            logger.info("Adding default primary key " + settings.getDefaultPKColName());
+            convertedFields.add(new SinkRecordField(Schema.Type.STRING, settings.getDefaultPKColName(), true));
+            createTablesMap.put(fm.getTableName(), convertedFields);
+          }
         } catch (RestClientException e) {
-          e.printStackTrace();
-        }
-        logger.info("Found the following schema " + latest);
-        AvroToDbConverter converter = new AvroToDbConverter();
-        Collection<SinkRecordField> convertedFields = converter.convert(latest);
-        boolean addDefaultPk = false;
-
-        //do we have a default pk columns
-        FieldAlias pk = fm.getMappings().get(settings.getDefaultPKColName());
-        if (pk != null) {
-          addDefaultPk = pk.isPrimaryKey();
-        }
-
-        logger.info("Field mappings");
-        for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
-          logger.info(f.getKey() + " " + f.getValue());
-        }
-
-        //add pk column if we have it to schema registry list of columns.
-        if (addDefaultPk) {
-          logger.info("Adding default primary key " + settings.getDefaultPKColName());
-          convertedFields.add(new SinkRecordField(Schema.Type.STRING, settings.getDefaultPKColName(), true));
-          createTablesMap.put(fm.getTableName(), convertedFields);
+          logger.info("No schema found in Registry! Waiting for first record to create table for topic " + fm.getIncomingTopic());
         }
       }
       if (fm.evolveTableSchema()) {
