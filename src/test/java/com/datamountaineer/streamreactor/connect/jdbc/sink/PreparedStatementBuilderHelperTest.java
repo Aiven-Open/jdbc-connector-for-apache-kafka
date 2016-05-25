@@ -5,6 +5,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.PreparedStatementBuilderHelper;
@@ -55,7 +56,7 @@ public class PreparedStatementBuilderHelperTest {
     aliasMap.put("f3", new FieldAlias("colNotPresent", false));
 
     FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, aliasMap);
-    PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
+    PreparedStatementBuilderHelper.validateAndMerge(mappings, table, InsertModeEnum.INSERT);
   }
 
 
@@ -71,7 +72,7 @@ public class PreparedStatementBuilderHelperTest {
 
     FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, aliasMap);
 
-    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
+    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table, InsertModeEnum.INSERT);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
     assertEquals(newMappings.areAllFieldsIncluded(), false);
@@ -103,7 +104,7 @@ public class PreparedStatementBuilderHelperTest {
     aliasMap.put("f1", new FieldAlias("col3"));
     FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, aliasMap);
 
-    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
+    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table, InsertModeEnum.INSERT);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
     assertEquals(newMappings.areAllFieldsIncluded(), false);
@@ -140,7 +141,7 @@ public class PreparedStatementBuilderHelperTest {
     aliasMap.put("col3", new FieldAlias("col3", true));
     FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, aliasMap);
 
-    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
+    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table, InsertModeEnum.INSERT);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
     assertEquals(newMappings.areAllFieldsIncluded(), false);
@@ -174,7 +175,7 @@ public class PreparedStatementBuilderHelperTest {
     aliasMap.put("col3", new FieldAlias("col3", false));
     FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, aliasMap);
 
-    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
+    FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table, InsertModeEnum.INSERT);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
     assertEquals(newMappings.areAllFieldsIncluded(), false);
@@ -203,6 +204,6 @@ public class PreparedStatementBuilderHelperTest {
     aliasMap.put("col3", new FieldAlias("col3", false));
     FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, aliasMap);
 
-    PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
+    PreparedStatementBuilderHelper.validateAndMerge(mappings, table, InsertModeEnum.UPSERT);
   }
 }

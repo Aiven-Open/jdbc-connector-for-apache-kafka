@@ -21,10 +21,13 @@ import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +35,8 @@ import java.util.Map;
 import java.util.Set;
 
 public final class PreparedStatementBuilderHelper {
+
+  private static final Logger logger = LoggerFactory.getLogger(PreparedStatementBuilderHelper.class);
 
   /**
    * Creates a new instance of PrepareStatementBuilder
@@ -82,7 +87,7 @@ public final class PreparedStatementBuilderHelper {
                   tables));
         }
         //get the columns merged
-        tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
+        tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()), settings.getInsertMode());
       }
       final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tableMappings);
 
@@ -107,7 +112,7 @@ public final class PreparedStatementBuilderHelper {
    * @param dbTable - The instance of DbTable
    * @return
    */
-  public static FieldsMappings validateAndMerge(final FieldsMappings tm, final DbTable dbTable) {
+  public static FieldsMappings validateAndMerge(final FieldsMappings tm, final DbTable dbTable, InsertModeEnum mode) {
     final Set<String> pkColumns = new HashSet<>();
     final Map<String, DbTableColumn> dbCols = dbTable.getColumns();
     for (DbTableColumn column : dbCols.values()) {
@@ -158,6 +163,11 @@ public final class PreparedStatementBuilderHelper {
 
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
+          logger.warn(String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
+              Joiner.on(",").join(specifiedPKs),
+              Joiner.on(",").join(pkColumns)));
+        }
+        if (mode.equals(InsertModeEnum.UPSERT)) {
           throw new ConfigException(
                   String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
                           Joiner.on(",").join(specifiedPKs),
