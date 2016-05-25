@@ -93,7 +93,7 @@ public class DatabaseChangesExecutor {
   }
 
   public void handleNewTables(final Map<String, Collection<SinkRecordField>> createdMap,
-                               final Connection connection) {
+                              final Connection connection) {
     if (createdMap == null || createdMap.size() == 0) {
       return;
     }
@@ -139,6 +139,7 @@ public class DatabaseChangesExecutor {
     Statement statement = null;
     try {
       statement = connection.createStatement();
+      logger.info("Changing the database by adding a new table " + tableName + "\n:" + createTableQuery);
       statement.execute(createTableQuery);
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
