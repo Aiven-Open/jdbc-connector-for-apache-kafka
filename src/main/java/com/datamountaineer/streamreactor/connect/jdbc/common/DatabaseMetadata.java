@@ -186,18 +186,26 @@ public class DatabaseMetadata {
 
     ResultSet rs = null;
     try {
-      String schema = connection.getSchema();
+
       final String product = meta.getDatabaseProductName();
-      logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
 
       if (product.toLowerCase().equals("oracle")) {
         logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
+        String schema = connection.getSchema();
+
+        logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+
         if (schema.isEmpty()) {
           schema = meta.getUserName();
         }
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
-      } else {
+      } else if (product.toLowerCase().contains("postgre")) {
+        String schema = connection.getSchema();
+        logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
         rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
+      } else {
+        logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, ""));
+        rs = meta.getTables(catalog, null, tableName, new String[]{"TABLE"});
       }
 
       return rs.next();
@@ -260,11 +268,45 @@ public class DatabaseMetadata {
   }
 
   private static List<DbTableColumn> getTableColumns(final String catalog, final String tableName, final DatabaseMetaData dbMetaData) throws SQLException {
-    final String schema = dbMetaData.getUserName();
-    final ResultSet nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema, tableName, null);
+
+    final String product = dbMetaData.getDatabaseProductName();
+    Connection connection = dbMetaData.getConnection();
+
+    ResultSet nonPKcolumnsRS = null;
+    ResultSet pkColumnsRS = null;
+
+    if (product.toLowerCase().equals("oracle")) {
+      logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
+      String schema = connection.getSchema();
+
+      if (schema.isEmpty()) {
+        schema = dbMetaData.getUserName();
+      }
+
+      logger.info(String.format("[" + product + "] Checking columns exists for catalog=%s and schema %s", tableName, catalog, schema));
+
+      nonPKcolumnsRS = dbMetaData.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
+
+      pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema, tableName);
+
+    } else if (product.toLowerCase().contains("postgre")) {
+      String schema = connection.getSchema();
+      nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema, tableName, null);
+
+      pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema, tableName);
+    } else {
+      nonPKcolumnsRS = dbMetaData.getColumns(catalog, null, tableName, null);
+
+      pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, null, tableName);
+    }
+
+
+
+
+    //final ResultSet nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema, tableName, null);
     final List<DbTableColumn> columns = new ArrayList<>();
 
-    final ResultSet pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema, tableName);
+    //final ResultSet pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema, tableName);
     final Set<String> pkColumns = new HashSet<>();
 
     while (pkColumnsRS.next()) {
