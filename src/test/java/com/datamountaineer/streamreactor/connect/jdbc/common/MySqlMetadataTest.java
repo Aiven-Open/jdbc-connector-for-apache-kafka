@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 
 public class MySqlMetadataTest {
-  private final String URI = "jdbc:mysql://localhost:3306/test_create";
+  private final String URI = "jdbc:mysql://localhost:3306/the_db";
   private final String user = "root";
   private final String psw = "12345678";
 
@@ -43,7 +43,7 @@ public class MySqlMetadataTest {
     }
   }
 
-  @Test
+  //@Test
   public void shouldReturnFalseEvenIfTheTableIsInAnotherDatabase() throws SQLException {
     String table = "tasks";
     Connection connection = DriverManager.getConnection(URI, user, psw);
@@ -80,7 +80,7 @@ public class MySqlMetadataTest {
 
 
   /**
-   * > CREATE DATABASE test_performance;
+   * > CREATE DATABASE the_db;
    * > CREATE TABLE tutorials_tbl(
    tutorial_id INT NOT NULL AUTO_INCREMENT,
    tutorial_title VARCHAR(100) NOT NULL,
