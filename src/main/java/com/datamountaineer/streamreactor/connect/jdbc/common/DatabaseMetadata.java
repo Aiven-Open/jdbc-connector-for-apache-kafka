@@ -187,9 +187,11 @@ public class DatabaseMetadata {
     ResultSet rs = null;
     try {
       final String schema = meta.getUserName();
-      logger.info(String.format("Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+      final String product = meta.getDatabaseProductName();
+      logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
 
-      if (meta.getDatabaseProductName().toLowerCase().equals("oracle")) {
+      if (product.toLowerCase().equals("oracle")) {
+        logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
       } else {
         rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
