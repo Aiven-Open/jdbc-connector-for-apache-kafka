@@ -90,13 +90,9 @@ public class PostgreSQLDialect extends DbDialect {
       updateSet = updateSetBuilder.toString();
     }
 
-    String sql = "INSERT INTO " + table + " (" + queryColumns + ") " +
+    return "INSERT INTO " + handleTableName(table) + " (" + queryColumns + ") " +
             "VALUES (" + bindingValues + ") " +
-            "ON CONFLICT (" + Joiner.on(",").join(Iterables.concat(keyColumns)) + ") DO UPDATE SET " + updateSet;
+            "ON CONFLICT (" + Joiner.on(",").join(keyColumns) + ") DO UPDATE SET " + updateSet;
 
-
-    logger.debug("Prepared sql: " + sql);
-
-    return sql;
   }
 }

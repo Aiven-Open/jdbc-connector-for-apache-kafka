@@ -73,12 +73,25 @@ public class MySqlDialect extends DbDialect {
     final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
 
     final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("%s=values(%s)", nonKeyColumns.get(0), nonKeyColumns.get(0)));
-    for (int i = 1; i < nonKeyColumns.size(); ++i) {
-      builder.append(String.format(",%s=values(%s)", nonKeyColumns.get(i), nonKeyColumns.get(i)));
-    }
+    builder.append("insert into ");
+    builder.append(handleTableName(table));
+    builder.append("(");
+    builder.append(queryColumns);
+    builder.append(") values(");
+    builder.append(bindingValues);
+    builder.append(") on duplicate key update ");
 
-    return String.format("insert into %s(%s) values(%s) " +
-            "on duplicate key update %s", table, queryColumns, bindingValues, builder.toString());
+    builder.append(nonKeyColumns.get(0));
+    builder.append("=values(");
+    builder.append(nonKeyColumns.get(0));
+    builder.append(")");
+    for (int i = 1; i < nonKeyColumns.size(); ++i) {
+      builder.append(",");
+      builder.append(nonKeyColumns.get(i));
+      builder.append("=values(");
+      builder.append(nonKeyColumns.get(i));
+      builder.append(")");
+    }
+    return builder.toString();
   }
 }

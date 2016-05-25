@@ -105,7 +105,7 @@ public class SQLiteDialect extends DbDialect {
     }
     final List<String> queries = new ArrayList<>(fields.size());
     for (final SinkRecordField f : fields) {
-      queries.add(String.format("ALTER TABLE %s ADD %s%s%s %s NULL;", tableName, escapeColumnNamesStart, f.getName(), escapeColumnNamesEnd, getSqlType(f.getType())));
+      queries.add(String.format("ALTER TABLE %s ADD %s%s%s %s NULL;", handleTableName(tableName), escapeColumnNamesStart, f.getName(), escapeColumnNamesEnd, getSqlType(f.getType())));
     }
     return queries;
   }
@@ -148,7 +148,7 @@ public class SQLiteDialect extends DbDialect {
       whereBuilder.append(String.format(" and %s=?", keyColumns.get(i)));
     }
 
-    return String.format("update or ignore %s set %s where %s\n;", table, builder, whereBuilder) +
-            String.format("insert or ignore into %s(%s) values (%s)", table, queryColumns, bindingValues);
+    return String.format("update or ignore %s set %s where %s\n;", handleTableName(table), builder, whereBuilder) +
+            String.format("insert or ignore into %s(%s) values (%s)", handleTableName(table), queryColumns, bindingValues);
   }
 }

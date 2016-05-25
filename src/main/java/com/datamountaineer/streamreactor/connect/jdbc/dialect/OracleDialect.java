@@ -66,7 +66,7 @@ public class OracleDialect extends Sql2003Dialect {
       } else {
         first = false;
       }
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));

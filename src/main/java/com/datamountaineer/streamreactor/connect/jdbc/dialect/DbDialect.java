@@ -35,6 +35,7 @@ public abstract class DbDialect {
   private final Map<Schema.Type, String> schemaTypeToSqlTypeMap;
   protected final String escapeColumnNamesStart;
   protected final String escapeColumnNamesEnd;
+  protected final String lineSeparator = System.lineSeparator();
 
   DbDialect(Map<Schema.Type, String> schemaTypeToSqlTypeMap, String escapeColumnNamesStart, String escapeColumnNamesEnd) {
     this.escapeColumnNamesStart = escapeColumnNamesStart;
@@ -110,7 +111,9 @@ public abstract class DbDialect {
       throw new IllegalArgumentException("<fields> is not valid.Not accepting empty collection of fields.");
     }
     final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("CREATE TABLE %s (", handleTableName(tableName)));
+    builder.append("CREATE TABLE ");
+    builder.append(handleTableName(tableName));
+    builder.append(" (");
     boolean first = true;
 
     List<String> pks = new ArrayList<>();
@@ -120,7 +123,7 @@ public abstract class DbDialect {
       } else {
         first = false;
       }
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append(escapeColumnNamesStart);
       builder.append(f.getName());
       builder.append(escapeColumnNamesEnd);
@@ -141,7 +144,7 @@ public abstract class DbDialect {
     }
     if (pks.size() > 0) {
       builder.append(",");
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
       builder.append(Joiner.on(",").join(pks));
       builder.append(")");
@@ -172,7 +175,7 @@ public abstract class DbDialect {
       } else {
         first = false;
       }
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append("ADD COLUMN ");
       builder.append(escapeColumnNamesStart);
       builder.append(f.getName());
