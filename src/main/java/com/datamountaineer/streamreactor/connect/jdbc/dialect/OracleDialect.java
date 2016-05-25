@@ -72,7 +72,7 @@ public class OracleDialect extends Sql2003Dialect {
       builder.append(getSqlType(f.getType()));
       builder.append(" NULL");
     }
-    builder.append(");");
+    builder.append(")");
 
     final List<String> query = new ArrayList<String>(1);
     query.add(builder.toString());
