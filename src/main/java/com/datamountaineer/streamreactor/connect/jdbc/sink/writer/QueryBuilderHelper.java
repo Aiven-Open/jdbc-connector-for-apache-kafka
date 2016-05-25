@@ -16,9 +16,9 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 
 /**
  * Helper class for creating an instance of QueryBuilder
@@ -31,10 +31,10 @@ public class QueryBuilderHelper {
    * @return - An instance of DbDialect
    */
   public static QueryBuilder from(final JdbcSinkSettings settings) {
+    final DbDialect dialect = DbDialect.fromConnectionString(settings.getConnection());
     if (settings.getInsertMode() == InsertModeEnum.UPSERT) {
-      final DbDialect dialect = DbDialect.fromConnectionString(settings.getConnection());
       return new UpsertQueryBuilder(dialect);
     }
-    return new InsertQueryBuilder();
+    return new InsertQueryBuilder(dialect);
   }
 }

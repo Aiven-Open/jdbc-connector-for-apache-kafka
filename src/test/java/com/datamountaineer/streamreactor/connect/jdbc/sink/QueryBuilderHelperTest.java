@@ -25,7 +25,7 @@ public class QueryBuilderHelperTest {
     mappings.put("field1", new FieldAlias("field1"));
     mappings.put("field2", new FieldAlias("field2"));
 
-    JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:",
+    JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:jtds:sqlserver://aa:",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
@@ -45,7 +45,7 @@ public class QueryBuilderHelperTest {
 
     Map<String, FieldAlias> mappings = Maps.newHashMap();
 
-    JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:",
+    JdbcSinkSettings settings = new JdbcSinkSettings("jdbc:jtds:sqlserver://aa:1241",
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),

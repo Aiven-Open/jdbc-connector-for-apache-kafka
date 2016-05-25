@@ -1,5 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
@@ -10,7 +12,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.LongPreparedS
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -53,7 +54,7 @@ public class SinglePreparedStatementBuilderTest {
     Map<String, StructFieldsDataExtractor> map = new HashMap<>();
     map.put(topic.toLowerCase(), valueExtractor);
 
-    SinglePreparedStatementBuilder builder = new SinglePreparedStatementBuilder(map, new InsertQueryBuilder());
+    SinglePreparedStatementBuilder builder = new SinglePreparedStatementBuilder(map, new InsertQueryBuilder(new SQLiteDialect()));
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -64,7 +65,7 @@ public class SinglePreparedStatementBuilderTest {
     Struct record = new Struct(schema);
     List<SinkRecord> records = Collections.nCopies(10, new SinkRecord(topic, 1, null, null, schema, record, 0));
 
-    String sql = "INSERT INTO tableA(colA,colB,colC,colD,colE,colF,colG,colH) VALUES(?,?,?,?,?,?,?,?)";
+    String sql = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?,?,?,?,?)";
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
 
@@ -125,7 +126,7 @@ public class SinglePreparedStatementBuilderTest {
     map.put(topic1.toLowerCase(), valueExtractor1);
     map.put(topic2.toLowerCase(), valueExtractor2);
 
-    SinglePreparedStatementBuilder builder = new SinglePreparedStatementBuilder(map, new InsertQueryBuilder());
+    SinglePreparedStatementBuilder builder = new SinglePreparedStatementBuilder(map, new InsertQueryBuilder(new SQLiteDialect()));
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -148,9 +149,9 @@ public class SinglePreparedStatementBuilderTest {
 
     List<SinkRecord> records = Lists.newArrayList(sinkRecord1, sinkRecord2);
 
-    String sql1 = "INSERT INTO tableA(colA,colB,colC,colD,colE,colF,colG,colH) VALUES(?,?,?,?,?,?,?,?)";
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?,?,?,?,?)";
 
-    String sql2 = "INSERT INTO tableB(colA,colB,colC,colD,colE,colF,colG,colH) VALUES(?,?,?,?,?,?,?,?)";
+    String sql2 = "INSERT INTO `tableB`(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?,?,?,?,?)";
 
 
     List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
@@ -212,7 +213,7 @@ public class SinglePreparedStatementBuilderTest {
     Struct record = new Struct(schema);
     List<SinkRecord> records = Collections.nCopies(10, new SinkRecord(topic, 1, null, null, schema, record, 0));
 
-    String sql = "insert into tableA(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
+    String sql = "insert into `tableA`(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
             " on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`)," +
             "`colD`=values(`colD`),`colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
@@ -301,11 +302,11 @@ public class SinglePreparedStatementBuilderTest {
             new SinkRecord(topic2, 1, null, null, schema, record2, 0),
             new SinkRecord(topic1, 1, null, null, schema, record1, 0));
 
-    String sql1 = "insert into tableA(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
+    String sql1 = "insert into `tableA`(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
             " on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`)," +
             "`colD`=values(`colD`),`colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
-    String sql2 = "insert into tableB(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
+    String sql2 = "insert into `tableB`(`colA`,`colB`,`colC`,`colD`,`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?,?,?,?,?)" +
             " on duplicate key update `colA`=values(`colA`),`colB`=values(`colB`),`colC`=values(`colC`)," +
             "`colD`=values(`colD`),`colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 

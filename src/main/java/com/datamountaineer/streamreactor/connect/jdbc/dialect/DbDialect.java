@@ -20,10 +20,12 @@ package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +44,42 @@ public abstract class DbDialect {
     this.escapeColumnNamesEnd = escapeColumnNamesEnd;
     ParameterValidator.notNull(schemaTypeToSqlTypeMap, "schemaTypeToSqlTypeMap");
     this.schemaTypeToSqlTypeMap = schemaTypeToSqlTypeMap;
+  }
+
+  public final String getInsert(final String tableName,
+                                final List<String> nonKeyColumns,
+                                final List<String> keyColumns) {
+    if (tableName == null || tableName.trim().length() == 0) {
+      throw new IllegalArgumentException("tableName parameter is not a valid table name.");
+    }
+    if (nonKeyColumns == null)
+      throw new IllegalArgumentException("nonKeyColumns parameter is null.");
+
+    if (keyColumns == null)
+      throw new IllegalArgumentException("keyColumns parameter is null");
+
+    if (nonKeyColumns.isEmpty() && keyColumns.isEmpty()) {
+      throw new IllegalArgumentException("Illegal arguments. Both nonKeyColumns and keyColumns are empty");
+    }
+
+    StringBuilder builder = new StringBuilder("INSERT INTO ");
+    builder.append(handleTableName(tableName));
+    builder.append("(");
+    Iterator<String> iter = Iterables.concat(nonKeyColumns, keyColumns).iterator();
+    iter.hasNext();
+    builder.append(escapeColumnNamesStart + iter.next() + escapeColumnNamesEnd);
+    while (iter.hasNext()) {
+      builder.append(",");
+      builder.append(escapeColumnNamesStart + iter.next() + escapeColumnNamesEnd);
+    }
+    builder.append(") VALUES(");
+    builder.append("?");
+    final int count = nonKeyColumns.size() + keyColumns.size();
+    for (int i = 1; i < count; ++i) {
+      builder.append(",?");
+    }
+    builder.append(")");
+    return builder.toString();
   }
 
   /**
@@ -170,6 +208,7 @@ public abstract class DbDialect {
     }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
     builder.append(handleTableName(tableName));
+    builder.append(" ");
     boolean first = true;
     for (final SinkRecordField f : fields) {
       if (!first) {
@@ -209,7 +248,7 @@ public abstract class DbDialect {
   }
 
   protected String handleTableName(String tableName) {
-    return tableName;
+    return escapeColumnNamesStart + tableName + escapeColumnNamesEnd;
   }
 
   /**

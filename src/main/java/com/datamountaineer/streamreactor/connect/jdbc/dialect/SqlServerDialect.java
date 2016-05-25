@@ -54,7 +54,7 @@ public class SqlServerDialect extends Sql2003Dialect {
       throw new IllegalArgumentException("<fields> is empty.");
     }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(tableName);
+    builder.append(handleTableName(tableName));
     builder.append(" ADD");
 
     boolean first = true;
@@ -64,7 +64,7 @@ public class SqlServerDialect extends Sql2003Dialect {
       } else {
         first = false;
       }
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));
