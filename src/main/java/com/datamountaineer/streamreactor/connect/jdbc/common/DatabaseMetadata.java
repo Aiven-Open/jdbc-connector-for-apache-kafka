@@ -222,7 +222,7 @@ public class DatabaseMetadata {
       statement = connection.createStatement();
       rs = statement.executeQuery("select sys_context('userenv','current_schema') x from dual");
       rs.next();
-      return rs.getString(0);
+      return rs.getString(1);
     } finally {
       if (rs != null) {
         rs.close();
