@@ -143,7 +143,7 @@ public class DatabaseChangesExecutor {
       statement.execute(createTableQuery);
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
-
+      logger.error("Creating table failed,", e);
       //tricky part work out if the table already exists
       try {
         if (DatabaseMetadata.tableExists(connection, tableName)) {
