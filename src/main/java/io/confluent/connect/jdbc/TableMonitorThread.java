@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -76,13 +77,14 @@ public class TableMonitorThread extends Thread {
   }
 
   public List<String> tables() {
-    final long TIMEOUT = 10000L;
+    //TODO: Timeout should probably be user-configurable or class-level constant
+    final long timeout = 10000L;
     synchronized (db) {
       long started = System.currentTimeMillis();
       long now = started;
-      while (tables == null && now - started < TIMEOUT) {
+      while (tables == null && now - started < timeout) {
         try {
-          db.wait(TIMEOUT - (now - started));
+          db.wait(timeout - (now - started));
         } catch (InterruptedException e) {
           // Ignore
         }
@@ -105,6 +107,7 @@ public class TableMonitorThread extends Thread {
       final List<String> tables;
       try {
         tables = JdbcUtils.getTables(db,table_types);
+        log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
       } catch (SQLException e) {
         log.error("Error while trying to get updated table list, ignoring and waiting for next "
                   + "table poll interval", e);
@@ -131,6 +134,7 @@ public class TableMonitorThread extends Thread {
       }
 
       if (!filteredTables.equals(this.tables)) {
+        log.debug("After filtering we got tables: " + Arrays.toString(filteredTables.toArray()));
         List<String> previousTables = this.tables;
         this.tables = filteredTables;
         db.notifyAll();

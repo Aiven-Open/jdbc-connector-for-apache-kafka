@@ -16,6 +16,8 @@
 
 package io.confluent.connect.jdbc;
 
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -34,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.jdbc.util.StringUtils;
 import io.confluent.connect.jdbc.util.Version;
 
@@ -88,7 +89,7 @@ public class JdbcSourceConnector extends SourceConnector {
 
     if (whitelistSet != null && blacklistSet != null)
       throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
-                                 + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG+ " are "
+                                 + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + " are "
                                  + "exclusive.");
     String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
     if (!query.isEmpty()) {
@@ -149,5 +150,10 @@ public class JdbcSourceConnector extends SourceConnector {
     } catch (SQLException e) {
       log.error("Failed to close database connection: ", e);
     }
+  }
+
+  @Override
+  public ConfigDef config() {
+    return JdbcSourceConnectorConfig.config;
   }
 }

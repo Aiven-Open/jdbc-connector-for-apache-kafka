@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc;
 
+import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +26,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -48,7 +51,7 @@ public class JdbcUtils {
    * The default only includes standard, user-defined tables.
    */
   public static final Set<String> DEFAULT_TABLE_TYPES = Collections.unmodifiableSet(
-      new HashSet<String>(Arrays.asList("TABLE"))
+      new HashSet<>(Arrays.asList("TABLE"))
   );
 
   private static final int GET_TABLES_TYPE_COLUMN = 4;
@@ -59,7 +62,7 @@ public class JdbcUtils {
   private static final int GET_COLUMNS_IS_AUTOINCREMENT = 23;
 
 
-  private static ThreadLocal<SimpleDateFormat> DATE_FORMATTER = new ThreadLocal<SimpleDateFormat>() {
+  private static final ThreadLocal<SimpleDateFormat> DATE_FORMATTER = new ThreadLocal<SimpleDateFormat>() {
     @Override
     protected SimpleDateFormat initialValue() {
       SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -88,7 +91,7 @@ public class JdbcUtils {
   public static List<String> getTables(Connection conn, Set<String> types) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
     ResultSet rs = metadata.getTables(null, null, "%", null);
-    List<String> tableNames = new ArrayList<String>();
+    List<String> tableNames = new ArrayList<>();
     while (rs.next()) {
       if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
         String colName = rs.getString(GET_TABLES_NAME_COLUMN);
@@ -118,7 +121,7 @@ public class JdbcUtils {
     ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%");
     // Some database drivers (SQLite) don't include all the columns
     if (rs.getMetaData().getColumnCount() >= GET_COLUMNS_IS_AUTOINCREMENT) {
-      while(rs.next()) {
+      while (rs.next()) {
         if (rs.getString(GET_COLUMNS_IS_AUTOINCREMENT).equals("YES")) {
           result = rs.getString(GET_COLUMNS_COLUMN_NAME);
           matches++;
@@ -135,7 +138,7 @@ public class JdbcUtils {
       String quoteString = getIdentifierQuoteString(conn);
       rs = stmt.executeQuery("SELECT * FROM " + quoteString + table + quoteString + " LIMIT 1");
       ResultSetMetaData rsmd = rs.getMetaData();
-      for(int i = 1; i < rsmd.getColumnCount(); i++) {
+      for (int i = 1; i < rsmd.getColumnCount(); i++) {
         if (rsmd.isAutoIncrement(i)) {
           result = rsmd.getColumnName(i);
           matches++;
@@ -192,6 +195,48 @@ public class JdbcUtils {
    */
   public static String quoteString(String orig, String quote) {
     return quote + orig + quote;
+  }
+
+  /**
+   * Return current time at the database
+   * @param conn
+   * @param cal
+   * @return
+   */
+  public static Timestamp getCurrentTimeOnDB(Connection conn, Calendar cal) throws SQLException, ConnectException {
+
+    Statement stmt = conn.createStatement();
+    ResultSet rs = null;
+    String query;
+
+    // This is ugly, but to run a function, everyone does 'select function()'
+    // except Oracle that does 'select function() from dual'
+    // and Derby uses either the dummy table SYSIBM.SYSDUMMY1  or values expression (I chose to use values)
+    String dbProduct = conn.getMetaData().getDatabaseProductName();
+    if ("Oracle".equals(dbProduct))
+      query = "select CURRENT_TIMESTAMP from dual";
+    else if ("Apache Derby".equals(dbProduct))
+      query = "values(CURRENT_TIMESTAMP)";
+    else
+      query = "select CURRENT_TIMESTAMP;";
+
+    try {
+      log.debug("executing query " + query + " to get current time from database");
+      rs = stmt.executeQuery(query);
+      if (rs.next())
+        return rs.getTimestamp(1, cal);
+      else
+        throw new ConnectException("Unable to get current time from DB using query " + query + " on database " + dbProduct);
+    } catch (SQLException e) {
+      log.error("Failed to get current time from DB using query " + query + " on database " + dbProduct, e);
+      throw e;
+    } finally {
+      if (rs != null)
+        rs.close();
+      if (stmt != null)
+        stmt.close();
+    }
+
   }
 }
 

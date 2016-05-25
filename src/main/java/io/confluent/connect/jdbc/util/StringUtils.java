@@ -32,7 +32,7 @@ public class StringUtils {
   public static <T> String join(Iterable<T> elements, String delim) {
     StringBuilder result = new StringBuilder();
     boolean first = true;
-    for(T elem : elements) {
+    for (T elem : elements) {
       if (first) {
         first = false;
       } else {

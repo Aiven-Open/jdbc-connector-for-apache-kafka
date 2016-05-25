@@ -29,6 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +96,9 @@ public class JdbcSourceConnectorTest {
     Connection conn = PowerMock.createMock(Connection.class);
     EasyMock.expect(DriverManager.getConnection(db.getUrl()))
         .andReturn(conn);
+    // Since we're just testing start/stop, we don't worry about the value here but need to stub
+    // something since the background thread will be started and try to lookup metadata.
+    EasyMock.expect(conn.getMetaData()).andStubThrow(new SQLException());
     conn.close();
     PowerMock.expectLastCall();
 

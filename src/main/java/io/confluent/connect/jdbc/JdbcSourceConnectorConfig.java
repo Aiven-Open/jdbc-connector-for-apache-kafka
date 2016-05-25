@@ -16,30 +16,40 @@
 
 package io.confluent.connect.jdbc;
 
-import java.util.Arrays;
-import java.util.Map;
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigDef.Importance;
+import org.apache.kafka.common.config.ConfigDef.Recommender;
+import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.config.ConfigDef.Width;
+import org.apache.kafka.common.config.ConfigException;
 
-import io.confluent.common.config.AbstractConfig;
-import io.confluent.common.config.ConfigDef;
-import io.confluent.common.config.ConfigDef.Importance;
-import io.confluent.common.config.ConfigDef.Type;
-import io.confluent.common.config.ConfigException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String CONNECTION_URL_CONFIG = "connection.url";
   private static final String CONNECTION_URL_DOC = "JDBC connection URL for the database to load.";
+  private static final String CONNECTION_URL_DISPLAY = "Connection Url";
 
   public static final String POLL_INTERVAL_MS_CONFIG = "poll.interval.ms";
   private static final String POLL_INTERVAL_MS_DOC = "Frequency in ms to poll for new data in "
                                                      + "each table.";
   public static final int POLL_INTERVAL_MS_DEFAULT = 5000;
+  private static final String POLL_INTERVAL_MS_DISPLAY = "Poll Interval (ms)";
 
   public static final String BATCH_MAX_ROWS_CONFIG = "batch.max.rows";
   private static final String BATCH_MAX_ROWS_DOC =
       "Maximum number of rows to include in a single batch when polling for new data. This "
       + "setting can be used to limit the amount of data buffered internally in the connector.";
   public static final int BATCH_MAX_ROWS_DEFAULT = 100;
+  private static final String BATCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
 
   public static final String MODE_CONFIG = "mode";
   private static final String MODE_DOC =
@@ -54,6 +64,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "  * timestamp+incrementing - use two columns, a timestamp column that detects new and "
       + "modified rows and a strictly incrementing column which provides a globally unique ID for "
       + "updates so each row can be assigned a unique stream offset.";
+  private static final String MODE_DISPLAY = "Table Loading Mode";
 
   public static final String MODE_UNSPECIFIED = "";
   public static final String MODE_BULK = "bulk";
@@ -67,12 +78,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "indicates the column should be autodetected by looking for an auto-incrementing column. "
       + "This column may not be nullable.";
   public static final String INCREMENTING_COLUMN_NAME_DEFAULT = "";
+  private static final String INCREMENTING_COLUMN_NAME_DISPLAY = "Incrementing Column Name";
 
   public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
   private static final String TIMESTAMP_COLUMN_NAME_DOC =
       "The name of the timestamp column to use to detect new or modified rows. This column may "
       + "not be nullable.";
   public static final String TIMESTAMP_COLUMN_NAME_DEFAULT = "";
+  private static final String TIMESTAMP_COLUMN_NAME_DISPLAY = "Timestamp Column Name";
 
   public static final String TABLE_POLL_INTERVAL_MS_CONFIG = "table.poll.interval.ms";
   private static final String TABLE_POLL_INTERVAL_MS_DOC =
@@ -80,16 +93,19 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "configurations to start polling for data in added tables or stop polling for data in "
       + "removed tables.";
   public static final long TABLE_POLL_INTERVAL_MS_DEFAULT = 60 * 1000;
+  private static final String TABLE_POLL_INTERVAL_MS_DISPLAY = "Metadata Change Monitoring Interval (ms)";
 
   public static final String TABLE_WHITELIST_CONFIG = "table.whitelist";
   private static final String TABLE_WHITELIST_DOC =
       "List of tables to include in copying. If specified, table.blacklist may not be set.";
   public static final String TABLE_WHITELIST_DEFAULT = "";
+  private static final String TABLE_WHITELIST_DISPLAY = "Table Whitelist";
 
   public static final String TABLE_BLACKLIST_CONFIG = "table.blacklist";
   private static final String TABLE_BLACKLIST_DOC =
       "List of tables to exclude from copying. If specified, table.whitelist may not be set.";
   public static final String TABLE_BLACKLIST_DEFAULT = "";
+  private static final String TABLE_BLACKLIST_DISPLAY = "";
 
   public static final String QUERY_CONFIG = "query";
   private static final String QUERY_DOC =
@@ -101,11 +117,38 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "to this query (i.e. no WHERE clauses may be used). If you use a WHERE clause, it must "
       + "handle incremental queries itself.";
   public static final String QUERY_DEFAULT = "";
+  private static final String QUERY_DISPLAY = "Query";
 
   public static final String TOPIC_PREFIX_CONFIG = "topic.prefix";
   private static final String TOPIC_PREFIX_DOC =
       "Prefix to prepend to table names to generate the name of the Kafka topic to publish data "
       + "to, or in the case of a custom query, the full name of the topic to publish to.";
+  private static final String TOPIC_PREFIX_DISPLAY = "Topic Prefix";
+
+  public static final String VALIDATE_NON_NULL_CONFIG = "validate.non.null";
+  private static final String VALIDATE_NON_NULL_DOC =
+      "By default, the JDBC connector will validate that all incrementing and timestamp tables have NOT NULL set for "
+      + "the columns being used as their ID/timestamp. If the tables don't, JDBC connector will fail to start. Setting "
+      + "this to false will disable these checks.";
+  public static final boolean VALIDATE_NON_NULL_DEFAULT = true;
+  private static final String VALIDATE_NON_NULL_DISPLAY = "Validate Non Null";
+
+  public static final String TIMESTAMP_DELAY_INTERVAL_MS_CONFIG = "timestamp.delay.interval.ms";
+  private static final String TIMESTAMP_DELAY_INTERVAL_MS_DOC =
+      "How long to wait after a row with certain timestamp appears before we include it in the result. "
+      + "You may choose to add some delay to allow transactions with earlier timestamp to complete. "
+      + "The first execution will fetch all available records (i.e. starting at timestamp 0) until current time minus the delay. "
+      + "Every following execution will get data from the last time we fetched until current time minus the delay.";
+  public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
+  private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
+
+  public static final String DATABASE_GROUP = "Database";
+  public static final String MODE_GROUP = "Mode";
+  public static final String CONNECTOR_GROUP = "Connector";
+
+
+  private static final Recommender TABLE_RECOMMENDER = new TableRecommender();
+  private static final Recommender MODE_DEPENDENTS_RECOMMENDER =  new ModeDependentsRecommender();
 
 
   public static final String TABLE_TYPE_DEFAULT = "TABLE";
@@ -115,34 +158,28 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static ConfigDef baseConfigDef() {
     return new ConfigDef()
-        .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC)
-        .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH,
-                POLL_INTERVAL_MS_DOC)
-        .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW,
-                BATCH_MAX_ROWS_DOC)
-        .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED,
-                ConfigDef.ValidString.in(Arrays.asList(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP,
-                                                       MODE_INCREMENTING,
-                                                       MODE_TIMESTAMP_INCREMENTING)),
-                Importance.HIGH, MODE_DOC)
-        .define(INCREMENTING_COLUMN_NAME_CONFIG, Type.STRING, INCREMENTING_COLUMN_NAME_DEFAULT,
-                Importance.MEDIUM, INCREMENTING_COLUMN_NAME_DOC)
-        .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT,
-                Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC)
-        .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT,
-                Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC)
-        .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT,
-                Importance.MEDIUM, TABLE_WHITELIST_DOC)
-        .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT,
-                Importance.MEDIUM, TABLE_BLACKLIST_DOC)
-        .define(QUERY_CONFIG, Type.STRING, QUERY_DEFAULT,
-                Importance.MEDIUM, QUERY_DOC)
-        .define(TOPIC_PREFIX_CONFIG, Type.STRING,
-                Importance.HIGH, TOPIC_PREFIX_DOC)
+        .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC, DATABASE_GROUP, 1, Width.LONG, CONNECTION_URL_DISPLAY, Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG))
+        .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT, Importance.MEDIUM, TABLE_WHITELIST_DOC, DATABASE_GROUP, 2, Width.LONG, TABLE_WHITELIST_DISPLAY,
+                TABLE_RECOMMENDER)
+        .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT, Importance.MEDIUM, TABLE_BLACKLIST_DOC, DATABASE_GROUP, 3, Width.LONG, TABLE_BLACKLIST_DISPLAY,
+                TABLE_RECOMMENDER)
+        .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED, ConfigDef.ValidString.in(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP, MODE_INCREMENTING, MODE_TIMESTAMP_INCREMENTING),
+                Importance.HIGH, MODE_DOC, MODE_GROUP, 1, Width.MEDIUM, MODE_DISPLAY, Arrays.asList(INCREMENTING_COLUMN_NAME_CONFIG, TIMESTAMP_COLUMN_NAME_CONFIG, VALIDATE_NON_NULL_CONFIG))
+        .define(INCREMENTING_COLUMN_NAME_CONFIG, Type.STRING, INCREMENTING_COLUMN_NAME_DEFAULT, Importance.MEDIUM, INCREMENTING_COLUMN_NAME_DOC, MODE_GROUP, 2, Width.MEDIUM, INCREMENTING_COLUMN_NAME_DISPLAY,
+                MODE_DEPENDENTS_RECOMMENDER)
+        .define(TIMESTAMP_COLUMN_NAME_CONFIG, Type.STRING, TIMESTAMP_COLUMN_NAME_DEFAULT, Importance.MEDIUM, TIMESTAMP_COLUMN_NAME_DOC, MODE_GROUP, 3, Width.MEDIUM, TIMESTAMP_COLUMN_NAME_DISPLAY,
+                MODE_DEPENDENTS_RECOMMENDER)
+        .define(VALIDATE_NON_NULL_CONFIG, Type.BOOLEAN, VALIDATE_NON_NULL_DEFAULT, Importance.LOW, VALIDATE_NON_NULL_DOC, MODE_GROUP, 4, Width.SHORT, VALIDATE_NON_NULL_DISPLAY,
+                MODE_DEPENDENTS_RECOMMENDER)
+        .define(QUERY_CONFIG, Type.STRING, QUERY_DEFAULT, Importance.MEDIUM, QUERY_DOC, MODE_GROUP, 5, Width.SHORT, QUERY_DISPLAY)
+        .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH, POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 1, Width.SHORT, POLL_INTERVAL_MS_DISPLAY)
+        .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW, BATCH_MAX_ROWS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, BATCH_MAX_ROWS_DISPLAY)
+        .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
+        .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
+        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
         .define(TABLE_TYPE_CONFIG, Type.LIST,TABLE_TYPE_DEFAULT,
                     Importance.HIGH, TABLE_TYPE_DOC);
   }
-
   static ConfigDef config = baseConfigDef();
 
   public JdbcSourceConnectorConfig(Map<String, String> props) {
@@ -152,10 +189,59 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       throw new ConfigException("Query mode must be specified");
   }
 
+  private static class TableRecommender implements Recommender {
+
+    @Override
+    public List<Object> validValues(String name, Map<String, Object> config) {
+      String dbUrl = (String) config.get(CONNECTION_URL_CONFIG);
+      if (dbUrl == null) {
+        throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
+      }
+      Connection db;
+      try {
+        db = DriverManager.getConnection(dbUrl);
+        return new LinkedList<Object>(JdbcUtils.getTables(db));
+      } catch (SQLException e) {
+        throw new ConfigException("Couldn't open connection to " + dbUrl, e);
+      }
+    }
+
+    @Override
+    public boolean visible(String name, Map<String, Object> config) {
+      return true;
+    }
+  }
+
+  private static class ModeDependentsRecommender implements Recommender {
+
+    @Override
+    public List<Object> validValues(String name, Map<String, Object> config) {
+      return new LinkedList<>();
+    }
+
+    @Override
+    public boolean visible(String name, Map<String, Object> config) {
+      String mode = (String) config.get(MODE_CONFIG);
+      switch (mode) {
+        case MODE_BULK:
+          return false;
+        case MODE_TIMESTAMP:
+          return name.equals(TIMESTAMP_COLUMN_NAME_CONFIG) || name.equals(VALIDATE_NON_NULL_CONFIG);
+        case MODE_INCREMENTING:
+          return name.equals(INCREMENTING_COLUMN_NAME_CONFIG) || name.equals(VALIDATE_NON_NULL_CONFIG);
+        case MODE_TIMESTAMP_INCREMENTING:
+          return name.equals(TIMESTAMP_COLUMN_NAME_CONFIG) || name.equals(INCREMENTING_COLUMN_NAME_CONFIG) || name.equals(VALIDATE_NON_NULL_CONFIG);
+        case MODE_UNSPECIFIED:
+          throw new ConfigException("Query mode must be specified");
+        default:
+          throw new ConfigException("Invalid mode: " + mode);
+      }
+    }
+  }
+
   protected JdbcSourceConnectorConfig(ConfigDef subclassConfigDef, Map<String, String> props) {
     super(subclassConfigDef, props);
   }
-
 
   public static void main(String[] args) {
     System.out.println(config.toRst());

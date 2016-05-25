@@ -26,6 +26,7 @@ import org.powermock.api.easymock.PowerMock;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     PowerMock.replayAll();
 
     db.createTable(SINGLE_TABLE_NAME,
-                   "id", "INT NOT NULL");
+            "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "id", 1);
 
     startTask(null, "id", null);
@@ -135,8 +136,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     String extraColumn = "col";
     // Need extra column to be able to insert anything, extra is ignored.
     db.createTable(SINGLE_TABLE_NAME,
-                   "id", "INT NOT NULL GENERATED ALWAYS AS IDENTITY",
-                   extraColumn, "FLOAT");
+            "id", "INT NOT NULL GENERATED ALWAYS AS IDENTITY",
+            extraColumn, "FLOAT");
     db.insert(SINGLE_TABLE_NAME, extraColumn, 32.4f);
 
     startTask(null, "", null); // auto-incrementing
@@ -178,6 +179,41 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
+  public void testTimestampWithDelay() throws Exception {
+    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+
+    PowerMock.replayAll();
+
+    // Manage these manually so we can verify the emitted values
+    db.createTable(SINGLE_TABLE_NAME,
+            "modified", "TIMESTAMP NOT NULL",
+            "id", "INT");
+
+    db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1);
+
+    startTask("modified", null, null, 4L);
+    verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
+
+    Long currentTime = new Date().getTime();
+
+    // Validate that we are seeing 2,3 but not 4,5 as they are getting delayed to the next round
+    // Using "toString" and not UTC because Derby's current_timestamp is always local time (i.e. doesn't honor Calendar settings)
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime).toString(), "id", 2);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+1L).toString(), "id", 3);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+500L).toString(), "id", 4);
+    db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime+501L).toString(), "id", 5);
+
+    verifyPoll(2, "id", Arrays.asList(2, 3), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
+
+    // make sure we get the rest
+    Thread.sleep(500);
+    verifyPoll(2, "id", Arrays.asList(4, 5), true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
+
+    PowerMock.verifyAll();
+  }
+
+
+  @Test
   public void testTimestampAndIncrementing() throws Exception {
     expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
 
@@ -185,8 +221,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     // Manage these manually so we can verify the emitted values
     db.createTable(SINGLE_TABLE_NAME,
-                   "modified", "TIMESTAMP NOT NULL",
-                   "id", "INT NOT NULL");
+            "modified", "TIMESTAMP NOT NULL",
+            "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1);
 
     startTask("modified", "id", null);
@@ -208,12 +244,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     offset.put(JdbcSourceTask.INCREMENTING_FIELD, 1L);
 
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
 
     PowerMock.replayAll();
 
     db.createTable(SINGLE_TABLE_NAME,
-                   "id", "INT NOT NULL");
+            "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "id", 1);
     db.insert(SINGLE_TABLE_NAME, "id", 2);
     db.insert(SINGLE_TABLE_NAME, "id", 3);
@@ -231,7 +267,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     Map<String, Object> offset = new HashMap<>();
     offset.put(JdbcSourceTask.INCREMENTING_FIELD, 1L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
 
     PowerMock.replayAll();
 
@@ -257,14 +293,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     Map<String, Object> offset = new HashMap<>();
     offset.put(JdbcSourceTask.TIMESTAMP_FIELD, 10L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
 
     PowerMock.replayAll();
 
     // Timestamp is managed manually here so we can verify handling of duplicate values
     db.createTable(SINGLE_TABLE_NAME,
-                   "modified", "TIMESTAMP NOT NULL",
-                   "id", "INT");
+            "modified", "TIMESTAMP NOT NULL",
+            "id", "INT");
     // id=2 will be ignored since it has the same timestamp as the initial offset.
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 2);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 3);
@@ -284,14 +320,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     offset.put(JdbcSourceTask.TIMESTAMP_FIELD, 10L);
     offset.put(JdbcSourceTask.INCREMENTING_FIELD, 3L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
 
     PowerMock.replayAll();
 
     // Timestamp is managed manually here so we can verify handling of duplicate values
     db.createTable(SINGLE_TABLE_NAME,
-                   "modified", "TIMESTAMP NOT NULL",
-                   "id", "INT NOT NULL");
+            "modified", "TIMESTAMP NOT NULL",
+            "id", "INT NOT NULL");
     // id=3 will be ignored since it has the same timestamp + id as the initial offset, rest
     // should be included, including id=1 which is an old ID with newer timestamp
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(9L)), "id", 2);
@@ -357,32 +393,35 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     // Manage these manually so we can verify the emitted values
     db.createTable(SINGLE_TABLE_NAME,
-                   "modified", "TIMESTAMP NOT NULL",
-                   "id", "INT",
-                   "user_id", "INT");
+            "modified", "TIMESTAMP NOT NULL",
+            "id", "INT",
+            "user_id", "INT");
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 1,
               "user_id", 1);
 
     startTask("modified", null, "SELECT \"test\".\"modified\", \"test\".\"id\", \"test\""
-                                + ".\"user_id\", \"users\".\"name\" FROM \"test\" JOIN \"users\" "
-                                + "ON (\"test\".\"user_id\" = \"users\".\"user_id\")");
+            + ".\"user_id\", \"users\".\"name\" FROM \"test\" JOIN \"users\" "
+            + "ON (\"test\".\"user_id\" = \"users\".\"user_id\")");
 
     verifyTimestampFirstPoll(TOPIC_PREFIX);
 
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(10L)), "id", 2,
-              "user_id", 1);
+            "user_id", 1);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(11L)), "id", 3,
-              "user_id", 2);
+            "user_id", 2);
     db.insert(SINGLE_TABLE_NAME, "modified", JdbcUtils.formatUTC(new Timestamp(12L)), "id", 4,
-              "user_id", 2);
+            "user_id", 2);
 
     verifyPoll(2, "id", Arrays.asList(3, 4), true, false, TOPIC_PREFIX);
 
     PowerMock.verifyAll();
   }
 
-
   private void startTask(String timestampColumn, String incrementingColumn, String query) {
+    startTask(timestampColumn, incrementingColumn, query, 0L);
+  }
+
+  private void startTask(String timestampColumn, String incrementingColumn, String query, Long delay) {
     String mode = null;
     if (timestampColumn != null && incrementingColumn != null) {
       mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
@@ -406,6 +445,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     if (incrementingColumn != null) {
       taskConfig.put(JdbcSourceConnectorConfig.INCREMENTING_COLUMN_NAME_CONFIG, incrementingColumn);
     }
+    taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, delay == null ? "0" : delay.toString());
     task.start(taskConfig);
   }
 
