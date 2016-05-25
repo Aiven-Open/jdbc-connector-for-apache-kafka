@@ -190,7 +190,7 @@ public class DatabaseMetadata {
       logger.info(String.format("Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
 
       if (meta.getDatabaseProductName().toLowerCase().equals("oracle")) {
-        rs = meta.getTables(catalog, schema.toUpperCase(), tableName, new String[]{"TABLE"});
+        rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
       } else {
         rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
       }
