@@ -45,10 +45,10 @@ public class OracleDialectTest {
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
             "\"col1\" INTEGER NOT NULL," + System.lineSeparator() +
-            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col2\" NUMBER(19) NULL," + System.lineSeparator() +
             "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
             "\"col4\" REAL NULL," + System.lineSeparator() +
-            "\"col5\" DOUBLE NULL," + System.lineSeparator() +
+            "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
             "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
             "\"col7\" TINYINT NULL," + System.lineSeparator() +
             "\"col8\" SMALLINT NULL," + System.lineSeparator() +
@@ -71,10 +71,10 @@ public class OracleDialectTest {
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
             "\"col1\" INTEGER NULL," + System.lineSeparator() +
-            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col2\" NUMBER(19) NULL," + System.lineSeparator() +
             "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
             "\"col4\" REAL NULL," + System.lineSeparator() +
-            "\"col5\" DOUBLE NULL," + System.lineSeparator() +
+            "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
             "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
             "\"col7\" TINYINT NULL," + System.lineSeparator() +
             "\"col8\" SMALLINT NULL);";
@@ -98,10 +98,10 @@ public class OracleDialectTest {
 
     String expected = "ALTER TABLE tableA ADD(" + System.lineSeparator() +
             "\"col1\" INTEGER NULL," + System.lineSeparator() +
-            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col2\" NUMBER(19) NULL," + System.lineSeparator() +
             "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
             "\"col4\" REAL NULL," + System.lineSeparator() +
-            "\"col5\" DOUBLE NULL," + System.lineSeparator() +
+            "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
             "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
             "\"col7\" TINYINT NULL," + System.lineSeparator() +
             "\"col8\" SMALLINT NULL);";

@@ -39,9 +39,9 @@ public class OracleDialect extends Sql2003Dialect {
     map.put(Schema.Type.INT8, "TINYINT");
     map.put(Schema.Type.INT16, "SMALLINT");
     map.put(Schema.Type.INT32, "INTEGER");
-    map.put(Schema.Type.INT64, "BIGINT");
+    map.put(Schema.Type.INT64, "NUMBER(19)");
     map.put(Schema.Type.FLOAT32, "REAL");
-    map.put(Schema.Type.FLOAT64, "DOUBLE");
+    map.put(Schema.Type.FLOAT64, "BINARY_DOUBLE");
     map.put(Schema.Type.BOOLEAN, "NUMBER(1,0)");
     map.put(Schema.Type.STRING, "VARCHAR(256)");
     map.put(Schema.Type.BYTES, "BLOB");
