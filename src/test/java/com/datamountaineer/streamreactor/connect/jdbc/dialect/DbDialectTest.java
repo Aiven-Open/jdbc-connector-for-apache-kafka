@@ -1,11 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.OracleDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.PostgreSQLDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.SqlServerDialect;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -14,6 +8,12 @@ public class DbDialectTest {
   @Test(expected = IllegalArgumentException.class)
   public void shouldThrowAndExceptionIfTheUriDoesNotStartWithJdbcWhenExtractingTheProtocol() {
     DbDialect.extractProtocol("mysql://Server:port");
+  }
+
+  @Test
+  public void handleSqlServerJTDS() {
+    assertEquals(SqlServerDialect.class,
+            DbDialect.fromConnectionString("jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01").getClass());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -60,6 +60,6 @@ public class DbDialectTest {
   @Test
   public void getPostgreDialect() {
     assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(),
-        PostgreSQLDialect.class);
+            PostgreSQLDialect.class);
   }
 }
