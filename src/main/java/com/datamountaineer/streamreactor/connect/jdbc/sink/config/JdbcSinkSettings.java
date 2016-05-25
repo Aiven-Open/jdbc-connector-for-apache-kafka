@@ -302,7 +302,7 @@ public final class JdbcSinkSettings {
         }
       }
 
-      FieldsMappings fm = new FieldsMappings(table.toUpperCase(), topic, allFields, mappings, autoCreateTable, evolveTableSchema);
+      FieldsMappings fm = new FieldsMappings(table, topic, allFields, mappings, autoCreateTable, evolveTableSchema);
       logger.info("Creating field mapping:\n" + fm);
       fieldsMappingsList.add(fm);
     }

@@ -59,7 +59,7 @@ public class PostgreSqlDialectTest {
             "\"userid\" INT NOT NULL," + System.lineSeparator() +
             "\"userdataid\" INT NOT NULL," + System.lineSeparator() +
             "\"info\" TEXT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(\"userid\",\"userdataid\"));";
+            "PRIMARY KEY(\"userid\",\"userdataid\"))";
     assertEquals(expected, actual);
   }
 
@@ -85,7 +85,7 @@ public class PostgreSqlDialectTest {
             "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
             "\"col7\" SMALLINT NULL," + System.lineSeparator() +
             "\"col8\" SMALLINT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(\"col1\"));";
+            "PRIMARY KEY(\"col1\"))";
     assertEquals(expected, actual);
   }
 
@@ -110,7 +110,7 @@ public class PostgreSqlDialectTest {
             "\"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
             "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
             "\"col7\" SMALLINT NULL," + System.lineSeparator() +
-            "\"col8\" SMALLINT NULL);";
+            "\"col8\" SMALLINT NULL)";
     assertEquals(expected, actual);
   }
 
@@ -137,7 +137,7 @@ public class PostgreSqlDialectTest {
             "ADD COLUMN \"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
             "ADD COLUMN \"col6\" BOOLEAN NULL," + System.lineSeparator() +
             "ADD COLUMN \"col7\" SMALLINT NULL," + System.lineSeparator() +
-            "ADD COLUMN \"col8\" SMALLINT NULL;";
+            "ADD COLUMN \"col8\" SMALLINT NULL";
     assertEquals(expected, actual.get(0));
   }
 }

@@ -25,7 +25,7 @@ public class MySqlDialectTest {
             "`userid` INT NOT NULL," + System.lineSeparator() +
             "`userdataid` INT NOT NULL," + System.lineSeparator() +
             "`info` VARCHAR(256) NULL," + System.lineSeparator() +
-            "PRIMARY KEY(`userid`,`userdataid`));";
+            "PRIMARY KEY(`userid`,`userdataid`))";
     assertEquals(expected, actual);
   }
 
@@ -51,7 +51,7 @@ public class MySqlDialectTest {
             "`col6` TINYINT NULL," + System.lineSeparator() +
             "`col7` TINYINT NULL," + System.lineSeparator() +
             "`col8` SMALLINT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(`col1`));";
+            "PRIMARY KEY(`col1`))";
     assertEquals(expected, actual);
   }
 
@@ -76,7 +76,7 @@ public class MySqlDialectTest {
             "`col5` DOUBLE NULL," + System.lineSeparator() +
             "`col6` TINYINT NULL," + System.lineSeparator() +
             "`col7` TINYINT NULL," + System.lineSeparator() +
-            "`col8` SMALLINT NULL);";
+            "`col8` SMALLINT NULL)";
     assertEquals(expected, actual);
   }
 
@@ -103,7 +103,7 @@ public class MySqlDialectTest {
             "ADD COLUMN `col5` DOUBLE NULL," + System.lineSeparator() +
             "ADD COLUMN `col6` TINYINT NULL," + System.lineSeparator() +
             "ADD COLUMN `col7` TINYINT NULL," + System.lineSeparator() +
-            "ADD COLUMN `col8` SMALLINT NULL;";
+            "ADD COLUMN `col8` SMALLINT NULL";
     assertEquals(expected, actual.get(0));
   }
 }

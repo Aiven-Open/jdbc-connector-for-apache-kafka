@@ -65,7 +65,7 @@ public class SqlServerDialectTest {
             "[userid] int NOT NULL," + System.lineSeparator() +
             "[userdataid] int NOT NULL," + System.lineSeparator() +
             "[info] varchar(256) NULL," + System.lineSeparator() +
-            "PRIMARY KEY([userid],[userdataid]));";
+            "PRIMARY KEY([userid],[userdataid]))";
     assertEquals(expected, actual);
   }
 
@@ -91,7 +91,7 @@ public class SqlServerDialectTest {
             "[col6] bit NULL," + System.lineSeparator() +
             "[col7] tinyint NULL," + System.lineSeparator() +
             "[col8] smallint NULL," + System.lineSeparator() +
-            "PRIMARY KEY([col1]));";
+            "PRIMARY KEY([col1]))";
     assertEquals(expected, actual);
   }
 
@@ -116,7 +116,7 @@ public class SqlServerDialectTest {
             "[col5] float NULL," + System.lineSeparator() +
             "[col6] bit NULL," + System.lineSeparator() +
             "[col7] tinyint NULL," + System.lineSeparator() +
-            "[col8] smallint NULL);";
+            "[col8] smallint NULL)";
     assertEquals(expected, actual);
   }
 
@@ -143,7 +143,7 @@ public class SqlServerDialectTest {
             "[col5] float NULL," + System.lineSeparator() +
             "[col6] bit NULL," + System.lineSeparator() +
             "[col7] tinyint NULL," + System.lineSeparator() +
-            "[col8] smallint NULL;";
+            "[col8] smallint NULL";
     assertEquals(expected, actual.get(0));
   }
 }

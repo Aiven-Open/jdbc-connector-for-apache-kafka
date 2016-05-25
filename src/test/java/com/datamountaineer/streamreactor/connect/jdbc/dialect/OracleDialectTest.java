@@ -25,7 +25,7 @@ public class OracleDialectTest {
             "\"userid\" INTEGER NOT NULL," + System.lineSeparator() +
             "\"userdataid\" INTEGER NOT NULL," + System.lineSeparator() +
             "\"info\" VARCHAR(256) NULL," + System.lineSeparator() +
-            "PRIMARY KEY(\"userid\",\"userdataid\"));";
+            "PRIMARY KEY(\"userid\",\"userdataid\"))";
     assertEquals(expected, actual);
   }
 
@@ -51,7 +51,7 @@ public class OracleDialectTest {
             "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
             "\"col7\" TINYINT NULL," + System.lineSeparator() +
             "\"col8\" SMALLINT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(\"col1\"));";
+            "PRIMARY KEY(\"col1\"))";
     assertEquals(expected, actual);
   }
 
@@ -76,7 +76,7 @@ public class OracleDialectTest {
             "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
             "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
             "\"col7\" TINYINT NULL," + System.lineSeparator() +
-            "\"col8\" SMALLINT NULL);";
+            "\"col8\" SMALLINT NULL)";
     assertEquals(expected, actual);
   }
 
@@ -103,7 +103,7 @@ public class OracleDialectTest {
             "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
             "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
             "\"col7\" TINYINT NULL," + System.lineSeparator() +
-            "\"col8\" SMALLINT NULL);";
+            "\"col8\" SMALLINT NULL)";
     assertEquals(expected, actual.get(0));
   }
 }

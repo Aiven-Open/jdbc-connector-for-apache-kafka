@@ -146,7 +146,7 @@ public abstract class DbDialect {
       builder.append(Joiner.on(",").join(pks));
       builder.append(")");
     }
-    builder.append(");");
+    builder.append(")");
     return builder.toString();
   }
 
@@ -181,7 +181,7 @@ public abstract class DbDialect {
       builder.append(getSqlType(f.getType()));
       builder.append(" NULL");
     }
-    builder.append(";");
+    //builder.append(";");
 
     final List<String> query = new ArrayList<String>(1);
     query.add(builder.toString());
