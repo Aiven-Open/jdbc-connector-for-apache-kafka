@@ -82,6 +82,7 @@ public abstract class DbDialect {
     switch (protocol) {
       case "microsoft:sqlserver":
       case "sqlserver":
+      case "jtds:sqlserver":
         return new SqlServerDialect();
 
       case "mariadb":
