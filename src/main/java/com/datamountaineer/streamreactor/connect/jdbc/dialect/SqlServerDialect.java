@@ -47,14 +47,14 @@ public class SqlServerDialect extends Sql2003Dialect {
   }
 
   @Override
-  public List<String> getAlterTable(String table, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNullOrEmpty(table, "table");
+  public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
+    ParameterValidator.notNullOrEmpty(tableName, "table");
     ParameterValidator.notNull(fields, "fields");
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is empty.");
     }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(table);
+    builder.append(tableName);
     builder.append(" ADD");
 
     boolean first = true;
