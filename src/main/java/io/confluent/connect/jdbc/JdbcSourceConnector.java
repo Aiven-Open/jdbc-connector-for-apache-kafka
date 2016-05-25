@@ -83,8 +83,8 @@ public class JdbcSourceConnector extends SourceConnector {
     Set<String> whitelistSet = whitelist.isEmpty() ? null : new HashSet<>(whitelist);
     List<String> blacklist = config.getList(JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG);
     Set<String> blacklistSet = blacklist.isEmpty() ? null : new HashSet<>(blacklist);
-    List<String> table_types =  config.getList(JdbcSourceConnectorConfig.TABLE_TYPE_CONFIG);
-    Set<String> table_typesSet =  new HashSet<>(table_types);
+    List<String> tableTypes =  config.getList(JdbcSourceConnectorConfig.TABLE_TYPE_CONFIG);
+    Set<String> tableTypesSet =  new HashSet<>(tableTypes);
 
 
     if (whitelistSet != null && blacklistSet != null)
@@ -101,7 +101,7 @@ public class JdbcSourceConnector extends SourceConnector {
       whitelistSet = Collections.emptySet();
     }
     tableMonitorThread = new TableMonitorThread(db, context, tablePollMs, whitelistSet,
-                                                blacklistSet,table_typesSet);
+                                                blacklistSet, tableTypesSet);
     tableMonitorThread.start();
   }
 

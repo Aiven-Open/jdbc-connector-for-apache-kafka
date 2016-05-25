@@ -44,10 +44,10 @@ public class TableMonitorThread extends Thread {
   private Set<String> whitelist;
   private Set<String> blacklist;
   private List<String> tables;
-  private Set<String> table_types;
+  private Set<String> tableTypes;
 
   public TableMonitorThread(Connection db, ConnectorContext context, long pollMs,
-                            Set<String> whitelist, Set<String> blacklist, Set<String> table_types) {
+                            Set<String> whitelist, Set<String> blacklist, Set<String> tableTypes) {
     this.db = db;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
@@ -55,7 +55,7 @@ public class TableMonitorThread extends Thread {
     this.whitelist = whitelist;
     this.blacklist = blacklist;
     this.tables = null;
-    this.table_types = table_types;
+    this.tableTypes = tableTypes;
   }
 
   @Override
@@ -106,7 +106,7 @@ public class TableMonitorThread extends Thread {
     synchronized (db) {
       final List<String> tables;
       try {
-        tables = JdbcUtils.getTables(db,table_types);
+        tables = JdbcUtils.getTables(db, tableTypes);
         log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
       } catch (SQLException e) {
         log.error("Error while trying to get updated table list, ignoring and waiting for next "
