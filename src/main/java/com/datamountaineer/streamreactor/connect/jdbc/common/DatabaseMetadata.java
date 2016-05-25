@@ -194,7 +194,7 @@ public class DatabaseMetadata {
         logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
       } else {
-        rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
+        rs = meta.getTables(catalog, null, tableName, new String[]{"TABLE"});
       }
 
       return rs.next();
