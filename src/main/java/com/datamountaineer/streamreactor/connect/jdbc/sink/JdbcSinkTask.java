@@ -22,6 +22,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnu
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
+import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -74,6 +75,7 @@ public class JdbcSinkTask extends SinkTask {
     DatabaseMetadataProvider provider = new DatabaseMetadataProvider() {
       @Override
       public DatabaseMetadata get(HikariDataSource connectionPool) {
+        logger.info("Getting tables metadata for " + Joiner.on(",").join(settings.getTableNames()));
         return DatabaseMetadata.getDatabaseMetadata(connectionPool, settings.getTableNames());
       }
     };

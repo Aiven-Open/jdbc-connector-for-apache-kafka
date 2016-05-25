@@ -1,7 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
 
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.OracleDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
