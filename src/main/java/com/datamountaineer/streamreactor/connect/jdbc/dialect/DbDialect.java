@@ -81,6 +81,7 @@ public abstract class DbDialect {
     final String protocol = extractProtocol(connection).toLowerCase();
     switch (protocol) {
       case "microsoft:sqlserver":
+      case "sqlserver":
         return new SqlServerDialect();
 
       case "mariadb":
