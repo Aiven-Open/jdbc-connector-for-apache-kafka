@@ -122,7 +122,7 @@ public final class JdbcDbWriter implements DbWriter {
             PreparedStatement statement = null;
             try {
               final String sql = statementData.getSql();
-              logger.info(String.format("Executing SQL:\n%s", sql));
+              //logger.info(String.format("Executing SQL:\n%s", sql));
               statement = connection.prepareStatement(sql);
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
@@ -226,7 +226,7 @@ public final class JdbcDbWriter implements DbWriter {
           all = registry.getAllSubjects();
         } catch (RestClientException e) {
           logger.info(String.format("No schemas found in Registry! Waiting for first record to create table for topic ",
-              fm.getIncomingTopic()));
+                  fm.getIncomingTopic()));
         }
 
 
@@ -244,7 +244,7 @@ public final class JdbcDbWriter implements DbWriter {
         try {
           latest = registry.getLatestVersion(lkTopic).getSchema();
           logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ", lkTopic,
-              System.lineSeparator(), latest));
+                  System.lineSeparator(), latest));
           AvroToDbConverter converter = new AvroToDbConverter();
           Collection<SinkRecordField> convertedFields = converter.convert(latest);
           boolean addDefaultPk = false;
@@ -268,7 +268,7 @@ public final class JdbcDbWriter implements DbWriter {
           }
         } catch (RestClientException e) {
           logger.info(String.format("No schema found in Registry! Waiting for first record to create table for topic ",
-              fm.getIncomingTopic()));
+                  fm.getIncomingTopic()));
         }
       }
       if (fm.evolveTableSchema()) {

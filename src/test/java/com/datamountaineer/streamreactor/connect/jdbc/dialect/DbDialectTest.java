@@ -12,8 +12,14 @@ public class DbDialectTest {
 
   @Test
   public void handleSqlServerJTDS() {
-    assertEquals(SqlServerDialect.class,
-            DbDialect.fromConnectionString("jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01").getClass());
+    String[] conns = new String[]{
+            "jdbc:sqlserver://what.amazonaws.com:1433/jdbc_sink_01",
+            "jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01"
+    };
+    for (String c : conns) {
+      assertEquals(SqlServerDialect.class,
+              DbDialect.fromConnectionString(c).getClass());
+    }
   }
 
   @Test(expected = IllegalArgumentException.class)
