@@ -56,4 +56,18 @@ public class DbTable {
   public boolean containsColumn(final String tableName) {
     return columnMap.containsKey(tableName);
   }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("{ name: ");
+    builder.append(name);
+    builder.append(", columns:[");
+    for (Map.Entry<String, DbTableColumn> e : columnMap.entrySet()) {
+      builder.append(e.toString());
+      builder.append(",");
+    }
+    builder.append("]}");
+    return builder.toString();
+  }
 }

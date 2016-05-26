@@ -47,4 +47,9 @@ public final class DbTableColumn {
   public int getSqlType() {
     return sqlType;
   }
+
+  @Override
+  public String toString() {
+    return String.format("{name:%s,isPrimaryKey:%s}", name, String.valueOf(isPrimaryKey));
+  }
 }

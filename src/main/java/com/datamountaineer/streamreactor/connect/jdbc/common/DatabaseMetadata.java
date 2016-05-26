@@ -66,6 +66,7 @@ public class DatabaseMetadata {
   }
 
   public void update(final DbTable table) {
+    logger.info("Updating local database metadata for " + table);
     tables.put(table.getName(), table);
   }
 
