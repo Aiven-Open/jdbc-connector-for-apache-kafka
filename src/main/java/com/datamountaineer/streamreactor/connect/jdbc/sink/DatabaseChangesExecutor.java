@@ -131,10 +131,10 @@ public class DatabaseChangesExecutor {
 
   private DbTable createTable(final String tableName, final Collection<SinkRecordField> fields, final Connection connection) {
     final String createTableQuery = dbDialect.getCreateQuery(tableName, fields);
-    logger.info(String.format("Changing database structure for database %s%s%s",
-            databaseMetadata.getDatabaseName(),
-            System.lineSeparator(),
-            createTableQuery));
+//    logger.info(String.format("Changing database structure for database %s%s%s",
+//            databaseMetadata.getDatabaseName(),
+//            System.lineSeparator(),
+//            createTableQuery));
 
     Statement statement = null;
     try {

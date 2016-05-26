@@ -195,15 +195,15 @@ public class DatabaseMetadata {
         logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
         String schema = getOracleSchema(connection);
 
-        logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+        logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
 
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
       } else if (product.toLowerCase().contains("postgre")) {
         String schema = connection.getSchema();
-        logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+        logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
         rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
       } else {
-        logger.info(String.format("[" + product + "]Checking %s exists for catalog=%s and schema %s", tableName, catalog, ""));
+        logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, ""));
         rs = meta.getTables(catalog, null, tableName, new String[]{"TABLE"});
       }
 
@@ -223,7 +223,7 @@ public class DatabaseMetadata {
       statement = connection.createStatement();
       rs = statement.executeQuery("select sys_context('userenv','current_schema') x from dual");
       rs.next();
-      return rs.getString(1);
+      return rs.getString("x");
     } finally {
       if (rs != null) {
         rs.close();
@@ -296,7 +296,7 @@ public class DatabaseMetadata {
     if (product.toLowerCase().equals("oracle")) {
       logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
       String schema = getOracleSchema(connection);
-      logger.info(String.format("[" + product + "] Checking columns exists for catalog=%s and schema %s", tableName, catalog, schema));
+      logger.info(String.format("[" + product + "] Checking columns exists for table=%s, catalog=%s and schema %s", tableName, catalog, schema));
 
       nonPKcolumnsRS = dbMetaData.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
 
