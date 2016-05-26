@@ -122,7 +122,7 @@ public final class JdbcDbWriter implements DbWriter {
             PreparedStatement statement = null;
             try {
               final String sql = statementData.getSql();
-              //logger.info(String.format("Executing SQL:\n%s", sql));
+              logger.info(String.format("Executing SQL:\n%s", sql));
               statement = connection.prepareStatement(sql);
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
