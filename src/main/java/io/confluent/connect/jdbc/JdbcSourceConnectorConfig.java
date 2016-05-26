@@ -155,7 +155,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String TABLE_TYPE_CONFIG = "table.types";
   private static final String TABLE_TYPE_DOC =
       "By default, the JDBC connector will only detect tables with type TABLE from the source Database. "
-      +"This config allows a command seperated list of table types to extract. Optons include:\n "
+      + "This config allows a command seperated list of table types to extract. Optons include:\n "
       + "* TABLE "
       + "* SYSTEM TABLE "
       + "GLOBAL TEMPORARY "
