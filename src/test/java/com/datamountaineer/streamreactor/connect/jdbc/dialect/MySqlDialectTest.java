@@ -21,7 +21,7 @@ public class MySqlDialectTest {
             new SinkRecordField(Schema.Type.STRING, "info", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
             "`userid` INT NOT NULL," + System.lineSeparator() +
             "`userdataid` INT NOT NULL," + System.lineSeparator() +
             "`info` VARCHAR(256) NULL," + System.lineSeparator() +
@@ -42,7 +42,7 @@ public class MySqlDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
             "`col1` INT NOT NULL," + System.lineSeparator() +
             "`col2` BIGINT NULL," + System.lineSeparator() +
             "`col3` VARCHAR(256) NULL," + System.lineSeparator() +
@@ -68,7 +68,7 @@ public class MySqlDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
             "`col1` INT NULL," + System.lineSeparator() +
             "`col2` BIGINT NULL," + System.lineSeparator() +
             "`col3` VARCHAR(256) NULL," + System.lineSeparator() +
@@ -95,7 +95,7 @@ public class MySqlDialectTest {
 
     assertEquals(1, actual.size());
 
-    String expected = "ALTER TABLE tableA" + System.lineSeparator() +
+    String expected = "ALTER TABLE `tableA` " + System.lineSeparator() +
             "ADD COLUMN `col1` INT NULL," + System.lineSeparator() +
             "ADD COLUMN `col2` BIGINT NULL," + System.lineSeparator() +
             "ADD COLUMN `col3` VARCHAR(256) NULL," + System.lineSeparator() +

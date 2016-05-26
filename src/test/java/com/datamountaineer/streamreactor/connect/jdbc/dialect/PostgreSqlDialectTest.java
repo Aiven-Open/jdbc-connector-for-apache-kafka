@@ -1,7 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.PostgreSQLDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
@@ -41,7 +39,7 @@ public class PostgreSqlDialectTest {
 
   @Test
   public void PostgreDialectTest() {
-    String conflict = "INSERT INTO Customer (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
+    String conflict = "INSERT INTO \"Customer\" (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
             "\"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"";
     String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
     assertEquals(conflict, insert);
@@ -55,7 +53,7 @@ public class PostgreSqlDialectTest {
             new SinkRecordField(Schema.Type.STRING, "info", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
             "\"userid\" INT NOT NULL," + System.lineSeparator() +
             "\"userdataid\" INT NOT NULL," + System.lineSeparator() +
             "\"info\" TEXT NULL," + System.lineSeparator() +
@@ -76,7 +74,7 @@ public class PostgreSqlDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
             "\"col1\" INT NOT NULL," + System.lineSeparator() +
             "\"col2\" BIGINT NULL," + System.lineSeparator() +
             "\"col3\" TEXT NULL," + System.lineSeparator() +
@@ -102,7 +100,7 @@ public class PostgreSqlDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
             "\"col1\" INT NULL," + System.lineSeparator() +
             "\"col2\" BIGINT NULL," + System.lineSeparator() +
             "\"col3\" TEXT NULL," + System.lineSeparator() +
@@ -129,7 +127,7 @@ public class PostgreSqlDialectTest {
 
     assertEquals(1, actual.size());
 
-    String expected = "ALTER TABLE tableA" + System.lineSeparator() +
+    String expected = "ALTER TABLE \"tableA\" " + System.lineSeparator() +
             "ADD COLUMN \"col1\" INT NULL," + System.lineSeparator() +
             "ADD COLUMN \"col2\" BIGINT NULL," + System.lineSeparator() +
             "ADD COLUMN \"col3\" TEXT NULL," + System.lineSeparator() +

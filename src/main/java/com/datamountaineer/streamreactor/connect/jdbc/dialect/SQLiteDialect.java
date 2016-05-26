@@ -64,7 +64,7 @@ public class SQLiteDialect extends DbDialect {
       throw new IllegalArgumentException("<fields> is not valid.Not accepting empty collection of fields.");
     }
     final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("CREATE TABLE %s (", tableName));
+    builder.append(String.format("CREATE TABLE %s (", handleTableName(tableName)));
     boolean first = true;
     List<String> primaryKeys = new ArrayList<>();
     for (final SinkRecordField f : fields) {
@@ -73,7 +73,7 @@ public class SQLiteDialect extends DbDialect {
       } else {
         first = false;
       }
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));
@@ -87,7 +87,7 @@ public class SQLiteDialect extends DbDialect {
     }
     if (primaryKeys.size() > 0) {
       builder.append(",");
-      builder.append(System.lineSeparator());
+      builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
       builder.append(Joiner.on(",").join(primaryKeys));
       builder.append(")");

@@ -20,7 +20,7 @@ public class MariaDbDialectTest {
             new SinkRecordField(Schema.Type.STRING, "info", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
             "`userid` INTEGER NOT NULL," + System.lineSeparator() +
             "`userdataid` INTEGER NOT NULL," + System.lineSeparator() +
             "`info` VARCHAR(256) NULL," + System.lineSeparator() +
@@ -41,7 +41,7 @@ public class MariaDbDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
             "`col1` INTEGER NOT NULL," + System.lineSeparator() +
             "`col2` BIGINT NULL," + System.lineSeparator() +
             "`col3` VARCHAR(256) NULL," + System.lineSeparator() +
@@ -67,7 +67,7 @@ public class MariaDbDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
+    String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
             "`col1` INTEGER NULL," + System.lineSeparator() +
             "`col2` BIGINT NULL," + System.lineSeparator() +
             "`col3` VARCHAR(256) NULL," + System.lineSeparator() +
@@ -94,7 +94,7 @@ public class MariaDbDialectTest {
 
     assertEquals(1, actual.size());
 
-    String expected = "ALTER TABLE tableA" + System.lineSeparator() +
+    String expected = "ALTER TABLE `tableA` " + System.lineSeparator() +
             "ADD COLUMN `col1` INTEGER NULL," + System.lineSeparator() +
             "ADD COLUMN `col2` BIGINT NULL," + System.lineSeparator() +
             "ADD COLUMN `col3` VARCHAR(256) NULL," + System.lineSeparator() +

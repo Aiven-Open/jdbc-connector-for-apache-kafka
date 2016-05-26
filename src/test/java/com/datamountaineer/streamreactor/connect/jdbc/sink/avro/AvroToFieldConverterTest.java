@@ -67,7 +67,7 @@ public class AvroToFieldConverterTest {
 
     Schema latest = client.getLatestVersion("converterTest");
 
-    String ddlString = "CREATE TABLE test (\n" +
+    String ddlString = "CREATE TABLE `test` (\n" +
             "`id` NUMERIC NULL,\n" +
             "`stringType` TEXT NULL,\n" +
             "`intType` NUMERIC NULL,\n" +

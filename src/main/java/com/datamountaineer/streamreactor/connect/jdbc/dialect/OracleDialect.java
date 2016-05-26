@@ -16,8 +16,8 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class OracleDialect extends Sql2003Dialect {
       throw new IllegalArgumentException("<fields> is empty.");
     }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(tableName.toUpperCase()); //yes oracles needs it uppercase
+    builder.append(handleTableName(tableName)); //yes oracles needs it uppercase
     builder.append(" ADD(");
 
     boolean first = true;
@@ -81,6 +81,6 @@ public class OracleDialect extends Sql2003Dialect {
 
   @Override
   protected String handleTableName(String tableName) {
-    return tableName.toUpperCase();
+    return escapeColumnNamesStart + tableName.toUpperCase() + escapeColumnNamesEnd;
   }
 }
