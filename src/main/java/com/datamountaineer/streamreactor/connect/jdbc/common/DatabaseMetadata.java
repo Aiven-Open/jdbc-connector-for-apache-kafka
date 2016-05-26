@@ -299,7 +299,7 @@ public class DatabaseMetadata {
       String schema = getOracleSchema(connection);
       logger.info(String.format("[" + product + "] Checking columns exists for table=%s, catalog=%s and schema %s", tableName, catalog, schema));
 
-      nonPKcolumnsRS = dbMetaData.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
+      nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema.toUpperCase(), tableName.toUpperCase(), null);
       pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema.toUpperCase(), tableName.toUpperCase());
 
     } else if (product.toLowerCase().contains("postgre")) {
@@ -326,13 +326,13 @@ public class DatabaseMetadata {
     }
 
     while (nonPKcolumnsRS.next()) {
-      ResultSetMetaData meta = nonPKcolumnsRS.getMetaData();
-      for (int i = 1; i <= nonPKcolumnsRS.getMetaData().getColumnCount(); i++) {
-        logger.info("column MetaData ");
-        logger.info("column number " + i);
-        // get the column's name.
-        logger.info(meta.getColumnName(i));
-      }
+//      ResultSetMetaData meta = nonPKcolumnsRS.getMetaData();
+//      for (int i = 1; i <= nonPKcolumnsRS.getMetaData().getColumnCount(); i++) {
+//        logger.info("column MetaData ");
+//        logger.info("column number " + i);
+//        // get the column's name.
+//        logger.info(meta.getColumnName(i));
+//      }
 
       final String colName = nonPKcolumnsRS.getString("COLUMN_NAME");
       final int sqlType = nonPKcolumnsRS.getInt("DATA_TYPE");
