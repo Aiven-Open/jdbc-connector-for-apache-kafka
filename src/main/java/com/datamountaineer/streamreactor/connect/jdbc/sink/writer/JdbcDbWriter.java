@@ -16,18 +16,18 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.avro.AvroToDbConverter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.google.common.collect.Iterators;
 import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
@@ -157,7 +157,7 @@ public final class JdbcDbWriter implements DbWriter {
                 firstRecord.topic(),
                 firstRecord.kafkaOffset(),
                 firstRecord.kafkaPartition()));
-        logger.error(sqlException.getMessage());
+        logger.error(sqlException.getMessage(), sqlException);
 
         if (connection != null) {
           //rollback the transaction
