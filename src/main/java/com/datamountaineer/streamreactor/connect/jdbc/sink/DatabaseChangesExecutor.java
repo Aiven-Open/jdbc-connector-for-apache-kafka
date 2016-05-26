@@ -168,6 +168,7 @@ public class DatabaseChangesExecutor {
           throw new RuntimeException(e.getMessage(), e);
         }
       } catch (SQLException e1) {
+        logger.error("There was an error on creating the table " + tableName + e1.getMessage(), e1);
         throw new RuntimeException(e1.getMessage(), e1);
       }
     } finally {
