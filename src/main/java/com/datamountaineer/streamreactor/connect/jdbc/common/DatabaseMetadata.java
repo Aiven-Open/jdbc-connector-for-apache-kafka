@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -299,8 +300,7 @@ public class DatabaseMetadata {
       logger.info(String.format("[" + product + "] Checking columns exists for table=%s, catalog=%s and schema %s", tableName, catalog, schema));
 
       nonPKcolumnsRS = dbMetaData.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
-
-      pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema, tableName);
+      pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema.toUpperCase(), tableName.toUpperCase());
 
     } else if (product.toLowerCase().contains("postgre")) {
       String schema = connection.getSchema();
@@ -326,6 +326,14 @@ public class DatabaseMetadata {
     }
 
     while (nonPKcolumnsRS.next()) {
+      ResultSetMetaData meta = nonPKcolumnsRS.getMetaData();
+      for (int i = 1; i <= nonPKcolumnsRS.getMetaData().getColumnCount(); i++) {
+        logger.info("column MetaData ");
+        logger.info("column number " + i);
+        // get the column's name.
+        logger.info(meta.getColumnName(i));
+      }
+
       final String colName = nonPKcolumnsRS.getString("COLUMN_NAME");
       final int sqlType = nonPKcolumnsRS.getInt("DATA_TYPE");
       boolean isNullable = !pkColumns.contains(colName);
