@@ -192,7 +192,7 @@ public class DatabaseMetadata {
       final String product = meta.getDatabaseProductName();
 
       if (product.toLowerCase().equals("oracle")) {
-        logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
+        //logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
         String schema = getOracleSchema(connection);
 
         logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
@@ -294,7 +294,7 @@ public class DatabaseMetadata {
     ResultSet pkColumnsRS = null;
 
     if (product.toLowerCase().equals("oracle")) {
-      logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
+      //logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
       String schema = getOracleSchema(connection);
       logger.info(String.format("[" + product + "] Checking columns exists for table=%s, catalog=%s and schema %s", tableName, catalog, schema));
 
