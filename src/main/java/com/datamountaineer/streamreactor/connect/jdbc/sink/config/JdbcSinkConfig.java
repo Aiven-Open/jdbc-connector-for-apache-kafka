@@ -39,24 +39,24 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public final static String EXPORT_MAPPINGS = "connect.jdbc.sink.export.mappings";
   private final static String EXPORT_MAPPING_DOC = "Specifies to the mappings of topic to table. Additionally which fields" +
-      "to select from the source topic and their mappings to columns in the target table." +
-      "Multiple mappings can set comma separated wrapped in {}." +
-      "" +
-      "Examples:" +
-      "{TOPIC1:TABLE1;field1->col1,field5->col5,field7->col10}" +
-      "{TOPIC2:TABLE2;field1->,field2->}" +
-      "{TOPIC3:TABLE3;*}" +
-      "" +
-      "The first mapping specifies map TOPIC1 to TABLE1 and select only field1, field2 and field7 from the topic payload. " +
-      "Field1 is mapped to col1, field5 to col5 and field7 to col10." +
-      "" +
-      "The second mapping specifies TOPIC2 to TABLE2 and select only field1 and field2 from the topic payload" +
-      "Map the fields to matching column names in TABLE2." +
-      "" +
-      "The third mapping specifies map TOPIC3 to TABLE3 and select all fields from the topic payload." +
-      "" +
-      "For fields mappings if `*` is supplied all fields are selected from the sink record. If not column name is provided" +
-      "the fields name is used. Topic to table mapping must be explict, the table must be provided.";
+          "to select from the source topic and their mappings to columns in the target table." +
+          "Multiple mappings can set comma separated wrapped in {}." +
+          "" +
+          "Examples:" +
+          "{TOPIC1:TABLE1;field1->col1,field5->col5,field7->col10}" +
+          "{TOPIC2:TABLE2;field1->,field2->}" +
+          "{TOPIC3:TABLE3;*}" +
+          "" +
+          "The first mapping specifies map TOPIC1 to TABLE1 and select only field1, field2 and field7 from the topic payload. " +
+          "Field1 is mapped to col1, field5 to col5 and field7 to col10." +
+          "" +
+          "The second mapping specifies TOPIC2 to TABLE2 and select only field1 and field2 from the topic payload" +
+          "Map the fields to matching column names in TABLE2." +
+          "" +
+          "The third mapping specifies map TOPIC3 to TABLE3 and select all fields from the topic payload." +
+          "" +
+          "For fields mappings if `*` is supplied all fields are selected from the sink record. If not column name is provided" +
+          "the fields name is used. Topic to table mapping must be explict, the table must be provided.";
 
   public final static String DATABASE_CONNECTION_URI = "connect.jdbc.connection.uri";
   private final static String DATABASE_CONNECTION_URI_DOC = "Specifies the JDBC database connection URI.";
@@ -66,11 +66,6 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public final static String DATABASE_CONNECTION_PASSWORD = "connect.jdbc.connection.password";
   private final static String DATABASE_CONNECTION_PASSWORD_DOC = "Specifies the JDBC connection password.";
-
-  public final static String DATABASE_IS_BATCHING = "connect.jdbc.sink.batching.enabled";
-  private final static String DATABASE_IS_BATCHING_DOC = "Specifies if a given sequence of SinkRecords are batched or not.\n" +
-          "<true> the data insert is batched;\n" +
-          "<false> for each record a sql statement is created.";
 
   public final static String ERROR_POLICY = "connect.jdbc.sink.error.policy";
   private final static String ERROR_POLICY_DOC = "Specifies the action to be taken if an error occurs while inserting the data.\n" +
@@ -88,13 +83,19 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final static String RETRY_INTERVAL = "connect.jdbc.sink.retry.interval";
   private final static String RETRY_INTERVAL_DEFAULT = "60000";
   private final static String RETRY_INTERVAL_DOC = String.format("The time, in milliseconds between the Sink retry failed " +
-      "inserts, if the %s is set to RETRY. Default is %s", ERROR_POLICY, RETRY_INTERVAL_DEFAULT);
+          "inserts, if the %s is set to RETRY. Default is %s", ERROR_POLICY, RETRY_INTERVAL_DEFAULT);
 
 
   public final static String INSERT_MODE = "connect.jdbc.sink.mode";
   private final static String INSERT_MODE_DOC = "Specifies how the data should be landed into the RDBMS. Two options are \n" +
           "supported:INSERT(default value) and UPSERT.";
 
+  public final static String BATCH_SIZE = "connect.jdbc.sink.batch.size";
+  private final static String BATCH_SIZE_DOC = "Specifies how many records to insert together at one time. If the connect framework " +
+          "provides less records when it is calling the sink it won't wait to fulfill this value but rather execute it.";
+
+
+  private final static int DEFAULT_BATCH_SIZE = 3000;
   private final static String DEFAULT_ERROR_POLICY = "THROW";
   private final static String DEFAULT_INSERT_MODE = "INSERT";
 
@@ -112,7 +113,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final static String DEFAULT_PK_COL_NAME_VALUE = "__connect_auto_id";
   public final static String DEFAULT_PK_COL_NAME = "connect.jdbc.sink.pk.col.name";
   public final static String DEFAULT_PK_COL_DOC = "The name of the primary key column in the target table if " +
-      AUTO_CREATE_TABLE_MAP + " is set and no fields are set the primary keys.";
+          AUTO_CREATE_TABLE_MAP + " is set and no fields are set the primary keys.";
 
 
   private static ConfigDef getConfigDef() {
@@ -120,9 +121,9 @@ public class JdbcSinkConfig extends AbstractConfig {
             .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
             .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)
             .define(DATABASE_CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_PASSWORD_DOC)
-            .define(DATABASE_IS_BATCHING, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.LOW, DATABASE_IS_BATCHING_DOC)
             .define(ERROR_POLICY, ConfigDef.Type.STRING, DEFAULT_ERROR_POLICY, ConfigDef.Importance.HIGH, ERROR_POLICY_DOC)
             .define(INSERT_MODE, ConfigDef.Type.STRING, DEFAULT_INSERT_MODE, ConfigDef.Importance.HIGH, INSERT_MODE_DOC)
+            .define(BATCH_SIZE, ConfigDef.Type.INT, DEFAULT_BATCH_SIZE, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
             .define(EXPORT_MAPPINGS, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, EXPORT_MAPPING_DOC)
             .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
             .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC)

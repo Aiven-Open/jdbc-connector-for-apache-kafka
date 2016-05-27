@@ -44,8 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class holds the a mappings of fields to extract from
- * a Connect Struct record.
+ * This class holds the field mappings to extract from the Connect record.
  * <p>
  * Used to building mappings fro Struct records to JDBC binding statements.
  * <p>
@@ -53,7 +52,7 @@ import java.util.Map;
  * set in configuration to be write to the target, it will return a StringPreparedStatementBinder
  * (statement.setString(index, value))
  */
-public class StructFieldsDataExtractor {
+public class RecordDataExtractor {
   private final static Comparator<PreparedStatementBinder> sorter = new Comparator<PreparedStatementBinder>() {
     @Override
     public int compare(PreparedStatementBinder left, PreparedStatementBinder right) {
@@ -69,7 +68,7 @@ public class StructFieldsDataExtractor {
 
   private final FieldsMappings fieldsMappings;
 
-  public StructFieldsDataExtractor(final FieldsMappings fieldsMappings) {
+  public RecordDataExtractor(final FieldsMappings fieldsMappings) {
     this.fieldsMappings = fieldsMappings;
   }
 

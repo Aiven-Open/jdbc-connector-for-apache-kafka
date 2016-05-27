@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class DatabaseChangesExecutorTest {
+public class DatabaseTest {
 
   private static final String DB_FILE = "test_database_changes_executor.sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
@@ -53,7 +53,7 @@ public class DatabaseChangesExecutorTest {
 
   @Test
   public void createAnInstance() {
-    new DatabaseChangesExecutor(connectionPool,
+    new Database(connectionPool,
             new HashSet<String>(),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -63,7 +63,7 @@ public class DatabaseChangesExecutorTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfConnectionPoolIsNull() {
-    new DatabaseChangesExecutor(null,
+    new Database(null,
             new HashSet<String>(),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -73,7 +73,7 @@ public class DatabaseChangesExecutorTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingAutoCreateIsNull() {
-    new DatabaseChangesExecutor(connectionPool,
+    new Database(connectionPool,
             null,
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -83,7 +83,7 @@ public class DatabaseChangesExecutorTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingSchemaEvolutionIsNull() {
-    new DatabaseChangesExecutor(connectionPool,
+    new Database(connectionPool,
             new HashSet<String>(),
             null,
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -96,7 +96,7 @@ public class DatabaseChangesExecutorTest {
 
     String tableName1 = "tableA";
     String tableName2 = "tableB";
-    DatabaseChangesExecutor changesExecutor = new DatabaseChangesExecutor(connectionPool,
+    Database changesExecutor = new Database(connectionPool,
             Sets.newHashSet(tableName1, tableName2),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -118,7 +118,7 @@ public class DatabaseChangesExecutorTest {
             new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
             new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
-    changesExecutor.handleChanges(map);
+    changesExecutor.update(map);
 
     Connection connection = null;
     try {
@@ -179,7 +179,7 @@ public class DatabaseChangesExecutorTest {
 
   @Test(expected = ConfigException.class)
   public void throwAnExceptionWhenForANewTableToCreateWhichDoesNotAllowAutoCreation() throws SQLException {
-    DatabaseChangesExecutor changesExecutor = new DatabaseChangesExecutor(connectionPool,
+    Database changesExecutor = new Database(connectionPool,
             new HashSet<String>(),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -195,7 +195,7 @@ public class DatabaseChangesExecutorTest {
             new SinkRecordField(Schema.Type.INT64, "col3", false),
             new SinkRecordField(Schema.Type.FLOAT64, "col4", false)
     ));
-    changesExecutor.handleChanges(map);
+    changesExecutor.update(map);
   }
 
   @Test
@@ -219,7 +219,7 @@ public class DatabaseChangesExecutorTest {
             "PRIMARY KEY(col1));");
 
 
-    DatabaseChangesExecutor changesExecutor = new DatabaseChangesExecutor(connectionPool,
+    Database changesExecutor = new Database(connectionPool,
             new HashSet<String>(),
             Sets.newHashSet(tableName1, tableName2),
             new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionPool)),
@@ -241,7 +241,7 @@ public class DatabaseChangesExecutorTest {
             new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
             new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
-    changesExecutor.handleChanges(map);
+    changesExecutor.update(map);
 
     Connection connection = null;
     try {
@@ -303,7 +303,7 @@ public class DatabaseChangesExecutorTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreated() throws SQLException {
 
     String tableName1 = "tableA1";
-    DatabaseChangesExecutor changesExecutor = new DatabaseChangesExecutor(connectionPool,
+    Database changesExecutor = new Database(connectionPool,
             Sets.newHashSet(tableName1),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -329,7 +329,7 @@ public class DatabaseChangesExecutorTest {
             "col5 REAL NULL,\n" +
             "PRIMARY KEY(col1));");
 
-    changesExecutor.handleChanges(map);
+    changesExecutor.update(map);
 
     Connection connection = null;
     try {
@@ -371,7 +371,7 @@ public class DatabaseChangesExecutorTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreatedButNotAllTheColumnsArePresent() throws SQLException {
 
     String tableName1 = "tableA11";
-    DatabaseChangesExecutor changesExecutor = new DatabaseChangesExecutor(connectionPool,
+    Database changesExecutor = new Database(connectionPool,
             Sets.newHashSet(tableName1),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -395,7 +395,7 @@ public class DatabaseChangesExecutorTest {
             "col3 NUMERIC NULL,\n" +
             "PRIMARY KEY(col1));");
 
-    changesExecutor.handleChanges(map);
+    changesExecutor.update(map);
 
     Connection connection = null;
     try {
@@ -446,7 +446,7 @@ public class DatabaseChangesExecutorTest {
             "PRIMARY KEY(col1));");
 
 
-    DatabaseChangesExecutor changesExecutor = new DatabaseChangesExecutor(connectionPool,
+    Database changesExecutor = new Database(connectionPool,
             new HashSet<String>(),
             Sets.newHashSet(tableName1),
             new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionPool)),
@@ -478,7 +478,7 @@ public class DatabaseChangesExecutorTest {
         connection1.close();
       }
     }
-    changesExecutor.handleChanges(map);
+    changesExecutor.update(map);
 
     Connection connection = null;
     try {

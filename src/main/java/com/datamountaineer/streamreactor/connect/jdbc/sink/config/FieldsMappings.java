@@ -18,14 +18,13 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.google.common.base.Joiner;
-import io.confluent.common.config.ConfigException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Contains the SinkConnect payload fields to consider and/or their mappings
+ * Contains the Schema field names to consider as well as their mappings to the target table columns
  */
 public final class FieldsMappings {
 
@@ -45,7 +44,7 @@ public final class FieldsMappings {
    * @param incomingTopic     - The source Kafka topic
    * @param allFieldsIncluded - If set to true it considers all fields in the payload; if false it will rely on the
    *                          defined fields to include
-   * @param mappings          - Provides the map of fields to include and their alias. It could be set to Map.empty if all fields
+   * @param mappings          - Provides the list of schema fields to include and their alias. It could be set to Map.empty if all fields
    *                          are to be included.
    */
   public FieldsMappings(final String tableName,
@@ -153,55 +152,6 @@ public final class FieldsMappings {
             "include-all-fields:" + allFieldsIncluded + "\n" +
             "mappings:" + mapJoiner.join(mappings) + "\n" +
             "}";
-  }
-
-  public static FieldsMappings from(final String tableName,
-                                    final String incomingTopic,
-                                    final String value,
-                                    final boolean autoCreateTable,
-                                    final boolean evolveTableSchema) {
-    final Map<String, FieldAlias> fieldAlias = new HashMap<>();
-    if (value != null) {
-      for (String split : value.split(",")) {
-        final String[] arr = split.trim().split("=");
-        if (arr[0].trim().length() == 0)
-          throw new ConfigException("Invalid configuration for fields and mappings. Need to define the field name");
-
-        final String field = arr[0].trim();
-
-        if (arr.length == 1) {
-          fieldAlias.put(field, new FieldAlias(field));
-        } else if (arr.length == 2) {
-          fieldAlias.put(field, new FieldAlias(arr[1].trim(), false));
-        } else
-          throw new ConfigException(value + " is not valid. Need to set the fields and mappings like: field1,field2,field3=alias3,[field4, field5=alias5]");
-      }
-    }
-
-    final Boolean allFields = fieldAlias.remove("*") != null;
-
-    return new FieldsMappings(tableName,
-            incomingTopic,
-            allFields,
-            fieldAlias,
-            autoCreateTable,
-            evolveTableSchema);
-  }
-
-  /**
-   * Validates if the incoming field specified in the configuration is a primary key one.If the field is encapsulated
-   * between '[]' then is considered to be a primary key field.
-   *
-   * @param field - The field specified in the configuration
-   * @return - true if the field specified is supposed to be a primary key one; false-otherwise
-   */
-  public static boolean isPrimaryKey(final String field) {
-    boolean isPk = field.length() >= 2 && field.charAt(0) == '[' && field.charAt(field.length() - 1) == ']';
-    if (isPk) {
-      if (field.substring(1, field.length() - 1).isEmpty())
-        throw new ConfigException("Invalid configuration for field mappings.The primary key is not named.");
-    }
-    return isPk;
   }
 
   /**

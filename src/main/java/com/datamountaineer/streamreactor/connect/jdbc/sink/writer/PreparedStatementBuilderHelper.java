@@ -18,7 +18,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.RecordDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
@@ -45,7 +45,7 @@ public final class PreparedStatementBuilderHelper {
    * @return - Returns an instance of PreparedStatementBuilder depending on the settings asking for batched or
    * non-batched inserts
    */
-  public static PreparedStatementBuilder from(final JdbcSinkSettings settings) {
+  /*public static BatchedPreparedStatementBuilder from(final JdbcSinkSettings settings) {
     final Map<String, StructFieldsDataExtractor> map = Maps.newHashMap();
     for (final FieldsMappings tm : settings.getMappings()) {
       final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tm);
@@ -55,12 +55,8 @@ public final class PreparedStatementBuilderHelper {
 
     final QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
 
-    if (settings.isBatching()) {
-      return new BatchedPreparedStatementBuilder(map, queryBuilder);
-    }
-
-    return new SinglePreparedStatementBuilder(map, queryBuilder);
-  }
+    return new BatchedPreparedStatementBuilder(map, queryBuilder);
+  }*/
 
   /**
    * This is used in the non evolving table mode. It will overlap the database columns information over the one provided
@@ -72,9 +68,10 @@ public final class PreparedStatementBuilderHelper {
    * @param databaseMetadata
    * @return
    */
-  public static PreparedStatementBuilder from(final JdbcSinkSettings settings, final DatabaseMetadata databaseMetadata) {
+  public static PreparedStatementContextIterable from(final JdbcSinkSettings settings,
+                                                      final DatabaseMetadata databaseMetadata) {
 
-    final Map<String, StructFieldsDataExtractor> map = Maps.newHashMap();
+    final Map<String, RecordDataExtractor> map = Maps.newHashMap();
     for (final FieldsMappings tm : settings.getMappings()) {
       FieldsMappings tableMappings = tm;
       //if the table is not set with autocreate we try to find it
@@ -89,18 +86,14 @@ public final class PreparedStatementBuilderHelper {
         //get the columns merged
         tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()), settings.getInsertMode());
       }
-      final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tableMappings);
+      final RecordDataExtractor fieldsValuesExtractor = new RecordDataExtractor(tableMappings);
 
       map.put(tm.getIncomingTopic().toLowerCase(), fieldsValuesExtractor);
     }
 
     final QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
 
-    if (settings.isBatching()) {
-      return new BatchedPreparedStatementBuilder(map, queryBuilder);
-    }
-
-    return new SinglePreparedStatementBuilder(map, queryBuilder);
+    return new PreparedStatementContextIterable(map, queryBuilder, settings.getBatchSize());
   }
 
   /**
@@ -164,8 +157,8 @@ public final class PreparedStatementBuilderHelper {
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
           logger.warn(String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
-              Joiner.on(",").join(specifiedPKs),
-              Joiner.on(",").join(pkColumns)));
+                  Joiner.on(",").join(specifiedPKs),
+                  Joiner.on(",").join(pkColumns)));
         }
         if (mode.equals(InsertModeEnum.UPSERT)) {
           throw new ConfigException(

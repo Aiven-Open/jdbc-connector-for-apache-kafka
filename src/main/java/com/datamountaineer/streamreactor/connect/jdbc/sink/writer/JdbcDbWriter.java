@@ -21,7 +21,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataPro
 import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.DatabaseChangesExecutor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.Database;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.avro.AvroToDbConverter;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,9 +58,9 @@ import java.util.Set;
 public final class JdbcDbWriter implements DbWriter {
   private static final Logger logger = LoggerFactory.getLogger(JdbcDbWriter.class);
 
-  private final PreparedStatementBuilder statementBuilder;
+  private final PreparedStatementContextIterable statementBuilder;
   private final ErrorHandlingPolicy errorHandlingPolicy;
-  private final DatabaseChangesExecutor databaseChangesExecutor;
+  private final Database database;
   private int retries;
   private Date lastError;
   private String lastErrorMessage;
@@ -72,22 +73,22 @@ public final class JdbcDbWriter implements DbWriter {
    * @param hikariDataSource        - The database connection pooling
    * @param statementBuilder        - Returns a sequence of PreparedStatement to process
    * @param errorHandlingPolicy     - An instance of the error handling approach
-   * @param databaseChangesExecutor - Contains the database metadata (tables and their columns)
+   * @param database - Contains the database metadata (tables and their columns)
    * @param retries                 - Number of attempts to run when a SQLException occurs
    */
   public JdbcDbWriter(final HikariDataSource hikariDataSource,
-                      final PreparedStatementBuilder statementBuilder,
+                      final PreparedStatementContextIterable statementBuilder,
                       final ErrorHandlingPolicy errorHandlingPolicy,
-                      final DatabaseChangesExecutor databaseChangesExecutor,
+                      final Database database,
                       final int retries) {
     ParameterValidator.notNull(hikariDataSource, "hikariDataSource");
     ParameterValidator.notNull(statementBuilder, "statementBuilder");
-    ParameterValidator.notNull(databaseChangesExecutor, "databaseChangesExecutor");
+    ParameterValidator.notNull(database, "databaseChangesExecutor");
 
     this.dataSource = hikariDataSource;
     this.statementBuilder = statementBuilder;
     this.errorHandlingPolicy = errorHandlingPolicy;
-    this.databaseChangesExecutor = databaseChangesExecutor;
+    this.database = database;
     this.retries = retries;
     this.maxRetries = retries;
   }
@@ -103,51 +104,55 @@ public final class JdbcDbWriter implements DbWriter {
       logger.warn("Received empty sequence of SinkRecord");
     } else {
 
+      final Iterator<PreparedStatementContext> iterator = statementBuilder.iterator(records);
       Connection connection = null;
       try {
-        final PreparedStatementContext statementContext = statementBuilder.build(records);
-        final Collection<PreparedStatementData> statementsData = statementContext.getPreparedStatements();
-        if (!statementsData.isEmpty()) {
+        connection = dataSource.getConnection();
+        //begin transaction
+        connection.setAutoCommit(false);
 
-          //handle possible database changes (new tables, new columns)
-          databaseChangesExecutor.handleChanges(statementContext.getTablesToColumnsMap());
+        int totalRecords = 0;
+        while (iterator.hasNext()) {
 
-          connection = dataSource.getConnection();
-          //begin transaction
-          connection.setAutoCommit(false);
+          final PreparedStatementContext statementContext = iterator.next();
+          final Collection<PreparedStatementData> statementsData = statementContext.getPreparedStatements();
+          if (!statementsData.isEmpty()) {
 
-          int totalRecords = 0;
-          for (final PreparedStatementData statementData : statementsData) {
+            //handle possible database changes (new tables, new columns)
+            database.update(statementContext.getTablesToColumnsMap());
 
-            PreparedStatement statement = null;
-            try {
-              final String sql = statementData.getSql();
-              logger.info(String.format("Executing SQL:\n%s", sql));
-              statement = connection.prepareStatement(sql);
-              for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
-                PreparedStatementBindData.apply(statement, entryBinders);
-                statement.addBatch();
-                totalRecords++;
-              }
-              statement.executeBatch();
+            for (final PreparedStatementData statementData : statementsData) {
 
-            } finally {
-              if (statement != null) {
-                statement.close();
+              PreparedStatement statement = null;
+              try {
+                final String sql = statementData.getSql();
+                logger.info(String.format("Executing SQL:\n%s", sql));
+                statement = connection.prepareStatement(sql);
+                for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
+                  PreparedStatementBindData.apply(statement, entryBinders);
+                  statement.addBatch();
+                  totalRecords++;
+                }
+                statement.executeBatch();
+
+              } finally {
+                if (statement != null) {
+                  statement.close();
+                }
               }
             }
           }
+        }
+        //commit the transaction
+        connection.commit();
 
-          //commit the transaction
-          connection.commit();
-
-          logger.info("Wrote " + totalRecords + " to the database.");
-          if (maxRetries != retries) {
-            retries = maxRetries;
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
-            logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
-          }
-        } else {
+        logger.info("Wrote " + totalRecords + " to the database.");
+        if (maxRetries != retries) {
+          retries = maxRetries;
+          SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
+          logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
+        }
+        if (totalRecords == 0) {
           logger.warn("No records have been written. Given the configuartion no data has been used from the SinkRecords.");
         }
       } catch (SQLException sqlException) {
@@ -205,8 +210,8 @@ public final class JdbcDbWriter implements DbWriter {
 
     final DatabaseMetadata databaseMetadata = databaseMetadataProvider.get(connectionPool);
 
-    final PreparedStatementBuilder statementBuilder = PreparedStatementBuilderHelper.from(settings, databaseMetadata);
-    logger.info(String.format("Created PreparedStatementBuilder as %s", statementBuilder.getClass().getCanonicalName()));
+    final PreparedStatementContextIterable statementBuilder = PreparedStatementBuilderHelper.from(settings, databaseMetadata);
+
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
     logger.info(String.format("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName()));
 
@@ -278,7 +283,7 @@ public final class JdbcDbWriter implements DbWriter {
 
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
-    final DatabaseChangesExecutor databaseChangesExecutor = new DatabaseChangesExecutor(
+    final Database database = new Database(
             connectionPool,
             tablesAllowingAutoCreate,
             tablesAllowingSchemaEvolution,
@@ -288,22 +293,24 @@ public final class JdbcDbWriter implements DbWriter {
 
     //create an required tables
     if (!createTablesMap.isEmpty()) {
-      databaseChangesExecutor.handleNewTables(createTablesMap, connectionPool.getConnection());
+      database.createTables(createTablesMap, connectionPool.getConnection());
     }
+
+    connectionPool.setMaximumPoolSize(2);
 
     return new JdbcDbWriter(connectionPool,
             statementBuilder,
             errorHandlingPolicy,
-            databaseChangesExecutor,
+            database,
             settings.getRetries());
   }
 
   /**
    * Get the prepared statement builder
    *
-   * @return a PreparedStatementBuilder
+   * @return a BatchedPreparedStatementBuilder
    */
-  public PreparedStatementBuilder getStatementBuilder() {
+  public PreparedStatementContextIterable getStatementBuilder() {
     return statementBuilder;
   }
 

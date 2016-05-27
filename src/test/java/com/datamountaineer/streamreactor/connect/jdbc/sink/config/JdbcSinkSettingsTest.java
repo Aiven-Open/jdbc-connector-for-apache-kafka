@@ -77,7 +77,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -109,7 +108,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -148,7 +146,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.NOOP));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -179,7 +176,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.NOOP));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -218,7 +214,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.RETRY));
-    assertTrue(settings.isBatching());
     assertTrue(settings.getRetries() == 10);
 
     List<FieldsMappings> mappings = settings.getMappings();
@@ -250,7 +245,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.INSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.RETRY));
-    assertTrue(settings.isBatching());
     assertTrue(settings.getRetries() == 10);
 
     List<FieldsMappings> mappings = settings.getMappings();
@@ -290,8 +284,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
-
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -322,7 +314,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -365,7 +356,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -408,7 +398,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -445,7 +434,6 @@ public class JdbcSinkSettingsTest {
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
     assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-    assertTrue(settings.isBatching());
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);

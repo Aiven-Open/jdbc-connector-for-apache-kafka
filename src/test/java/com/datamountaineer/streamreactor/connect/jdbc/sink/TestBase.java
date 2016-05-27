@@ -13,7 +13,6 @@ import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSin
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_USER;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_IS_BATCHING;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.INSERT_MODE;
@@ -108,7 +107,6 @@ public class TestBase {
     props.put(DATABASE_CONNECTION_USER, "");
     props.put(DATABASE_CONNECTION_PASSWORD, "");
     props.put(ERROR_POLICY, errorPolicy);
-    props.put(DATABASE_IS_BATCHING, ((Boolean) true).toString());
     props.put(INSERT_MODE, mode);
     props.put(EXPORT_MAPPINGS, all);
 
@@ -139,7 +137,6 @@ public class TestBase {
     props.put(DATABASE_CONNECTION_USER, "");
     props.put(DATABASE_CONNECTION_PASSWORD, "");
     props.put(ERROR_POLICY, errorPolicy);
-    props.put(DATABASE_IS_BATCHING, ((Boolean) true).toString());
     props.put(INSERT_MODE, mode);
     props.put(EXPORT_MAPPINGS, selection);
 

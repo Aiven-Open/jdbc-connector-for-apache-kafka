@@ -29,7 +29,7 @@ import java.util.Objects;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class StructFieldsDataExtractorTest {
+public class RecordDataExtractorTest {
   @Test
   public void returnAllFieldsAndTheirBytesValue() {
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
@@ -65,7 +65,7 @@ public class StructFieldsDataExtractorTest {
             .put("age", 30);
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, new HashMap<String, FieldAlias>());
-    StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
+    RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
 
@@ -126,7 +126,7 @@ public class StructFieldsDataExtractorTest {
     mappings.put("age", new FieldAlias("a"));
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
-    StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
+    RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
 
@@ -174,7 +174,7 @@ public class StructFieldsDataExtractorTest {
     mappings.put("age", new FieldAlias("age"));
 
     FieldsMappings tm = new FieldsMappings("table", "topic", false, mappings);
-    StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
+    RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 2, null, null, schema, struct, 2));
 
@@ -230,7 +230,7 @@ public class StructFieldsDataExtractorTest {
     mappings.put("lastName", new FieldAlias("lName", true));
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
-    StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
+    RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
 
@@ -323,7 +323,7 @@ public class StructFieldsDataExtractorTest {
 
     FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
 
-    StructFieldsDataExtractor dataExtractor = new StructFieldsDataExtractor(tm);
+    RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 2, null, null, schema, struct, 2));
 

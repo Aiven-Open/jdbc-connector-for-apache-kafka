@@ -35,10 +35,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Controls the database changes - creating amending tables
+ * Controls the database changes - creating/amending tables.
  */
-public class DatabaseChangesExecutor {
-  private final static Logger logger = LoggerFactory.getLogger(DatabaseChangesExecutor.class);
+public class Database {
+  private final static Logger logger = LoggerFactory.getLogger(Database.class);
 
   private final int executionRetries;
   private final Set<String> tablesAllowingAutoCreate;
@@ -47,13 +47,12 @@ public class DatabaseChangesExecutor {
   private final DbDialect dbDialect;
   private final HikariDataSource connectionPool;
 
-
-  public DatabaseChangesExecutor(final HikariDataSource connectionPool,
-                                 final Set<String> tablesAllowingAutoCreate,
-                                 final Set<String> tablesAllowingSchemaEvolution,
-                                 final DatabaseMetadata databaseMetadata,
-                                 final DbDialect dbDialect,
-                                 final int executionRetries) {
+  public Database(final HikariDataSource connectionPool,
+                  final Set<String> tablesAllowingAutoCreate,
+                  final Set<String> tablesAllowingSchemaEvolution,
+                  final DatabaseMetadata databaseMetadata,
+                  final DbDialect dbDialect,
+                  final int executionRetries) {
     this.executionRetries = executionRetries;
     ParameterValidator.notNull(connectionPool, "connectionPool");
     ParameterValidator.notNull(databaseMetadata, "databaseMetadata");
@@ -69,17 +68,22 @@ public class DatabaseChangesExecutor {
   }
 
 
-  public void handleChanges(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
+  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
-
+    final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
+    final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
+    //short-circuit if there is nothing to change
+    if ((createMap == null || createMap.isEmpty()) && (amendmentsMap == null || amendmentsMap.isEmpty())) {
+      return;
+    }
 
     Connection connection = null;
     try {
       connection = connectionPool.getConnection();
       connection.setAutoCommit(false);
 
-      handleNewTables(changes.getCreatedMap(), connection);
-      handleAmendTables(changes.getAmendmentMap(), connection);
+      createTables(createMap, connection);
+      evolveTables(amendmentsMap, connection);
 
       connection.commit();
     } catch (RuntimeException ex) {
@@ -92,13 +96,13 @@ public class DatabaseChangesExecutor {
     }
   }
 
-  public void handleNewTables(final Map<String, Collection<SinkRecordField>> createdMap,
-                              final Connection connection) {
-    if (createdMap == null || createdMap.size() == 0) {
+  public void createTables(final Map<String, Collection<SinkRecordField>> tableMap,
+                           final Connection connection) {
+    if (tableMap == null || tableMap.size() == 0) {
       return;
     }
 
-    for (final Map.Entry<String, Collection<SinkRecordField>> entry : createdMap.entrySet()) {
+    for (final Map.Entry<String, Collection<SinkRecordField>> entry : tableMap.entrySet()) {
       final String tableName = entry.getKey();
       if (databaseMetadata.containsTable(tableName)) {
         continue;
@@ -129,18 +133,20 @@ public class DatabaseChangesExecutor {
     }
   }
 
-  private DbTable createTable(final String tableName, final Collection<SinkRecordField> fields, final Connection connection) {
-    final String createTableQuery = dbDialect.getCreateQuery(tableName, fields);
-//    logger.info(String.format("Changing database structure for database %s%s%s",
-//            databaseMetadata.getDatabaseName(),
-//            System.lineSeparator(),
-//            createTableQuery));
+  private DbTable createTable(final String tableName,
+                              final Collection<SinkRecordField> fields,
+                              final Connection connection) {
+    final String sql = dbDialect.getCreateQuery(tableName, fields);
+    logger.info(String.format("Changing database structure for database %s%s%s",
+            databaseMetadata.getDatabaseName(),
+            System.lineSeparator(),
+            sql));
 
     Statement statement = null;
     try {
       statement = connection.createStatement();
-      logger.info("Changing the database by adding a new table " + tableName + "\n:" + createTableQuery);
-      statement.execute(createTableQuery);
+      logger.info("Changing the database by adding a new table " + tableName + "\n:" + sql);
+      statement.execute(sql);
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
       logger.error("Creating table failed,", e);
@@ -183,11 +189,12 @@ public class DatabaseChangesExecutor {
 
   }
 
-  private void handleAmendTables(final Map<String, Collection<SinkRecordField>> createdMap, final Connection connection) {
-    if (createdMap == null || createdMap.size() == 0) {
+  private void evolveTables(final Map<String, Collection<SinkRecordField>> tableMap,
+                            final Connection connection) {
+    if (tableMap == null || tableMap.size() == 0) {
       return;
     }
-    for (final Map.Entry<String, Collection<SinkRecordField>> entry : createdMap.entrySet()) {
+    for (final Map.Entry<String, Collection<SinkRecordField>> entry : tableMap.entrySet()) {
       final String tableName = entry.getKey();
       if (!databaseMetadata.containsTable(tableName)) {
         throw new RuntimeException(String.format("%s is set for amendments but hasn't been created yet", entry.getKey()));

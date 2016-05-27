@@ -170,9 +170,9 @@ public class SinkTaskTest {
         new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 2),
         new SinkRecord(base.getTopic2(), partition, null, null, schema, struct1a, 3));
 
-    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, RecordDataExtractor> map = new HashMap<>();
     map.put(base.getTopic1().toLowerCase(),
-        new StructFieldsDataExtractor(new FieldsMappings(base.getTableName1(), base.getTopic1(), true, new HashMap<String, FieldAlias>())));
+        new RecordDataExtractor(new FieldsMappings(base.getTableName1(), base.getTopic1(), true, new HashMap<String, FieldAlias>())));
     task.put(records);
 
     String query = "SELECT * FROM " + base.getTableName2() + " WHERE firstName='" + fName1 + "' and lastName='" + lName1 + "'";

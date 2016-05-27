@@ -1,14 +1,19 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.InsertQueryBuilder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilder;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilderHelper;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.UpsertQueryBuilder;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.OracleDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.SqlServerDialect;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.InsertQueryBuilder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilder;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.QueryBuilderHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.UpsertQueryBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Test;
@@ -29,12 +34,13 @@ public class QueryBuilderHelperTest {
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
-            true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
             10,
-        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE
-        );
+            "",
+            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000
+    );
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), InsertQueryBuilder.class);
@@ -49,11 +55,12 @@ public class QueryBuilderHelperTest {
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
-            true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.INSERT,
             10,
-        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
+            "",
+            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), InsertQueryBuilder.class);
@@ -68,11 +75,12 @@ public class QueryBuilderHelperTest {
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
-            true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
             10,
-        "", JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
+            "",
+            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -90,11 +98,12 @@ public class QueryBuilderHelperTest {
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
-            true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
             10,
-        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
+            "",
+            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -112,11 +121,12 @@ public class QueryBuilderHelperTest {
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
-            true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
             10,
-        "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
+            "",
+            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -134,10 +144,12 @@ public class QueryBuilderHelperTest {
             null,
             null,
             Lists.newArrayList(new FieldsMappings("tableA", "topic", true, mappings)),
-            true,
             ErrorPolicyEnum.NOOP,
             InsertModeEnum.UPSERT,
-            10, "",  JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE);
+            10,
+            "",
+            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);

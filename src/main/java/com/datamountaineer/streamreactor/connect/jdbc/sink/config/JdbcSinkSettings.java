@@ -38,48 +38,53 @@ import java.util.Set;
  */
 public final class JdbcSinkSettings {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkSettings.class);
-  private final boolean batching;
+
+  private final int batchSize;
+  private final int maxRetries;
   private final String connection;
   private final String user;
   private final String password;
+  private final String schemaRegistryUrl;
+  private final String defaultPKColName;
   private final List<FieldsMappings> mappings;
   private final ErrorPolicyEnum errorPolicy;
   private final InsertModeEnum insertMode;
-  private final int maxRetries;
-  private final String schemaRegistryUrl;
-  private final String defaultPKColName;
+
 
   /**
    * Creates a new instance of JdbcSinkSettings
    *
-   * @param connection  - The database connection string
-   * @param mappings    - A list of payload field mappings
-   * @param batching    - Specifies if the inserts should be batched
-   * @param errorPolicy - Specifies how an error is handled
-   * @param insertMode  - Specifies how the data is inserted into RDBMS
+   * @param connection        - The database connection string
+   * @param mappings          - A list of payload field mappings
+   * @param errorPolicy       - Specifies how an error is handled
+   * @param insertMode        - Specifies how the data is inserted into RDBMS
+   * @param maxRetries
+   * @param schemaRegistryUrl
+   * @param defaultPKColName
+   * @param batchSize
    */
   public JdbcSinkSettings(String connection,
                           String user,
                           String password,
                           List<FieldsMappings> mappings,
-                          boolean batching,
                           ErrorPolicyEnum errorPolicy,
                           InsertModeEnum insertMode,
                           int maxRetries,
                           String schemaRegistryUrl,
-                          String defaultPKColName) {
+                          String defaultPKColName,
+                          int batchSize) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
 
     this.connection = connection;
     this.user = user;
     this.password = password;
     this.mappings = mappings;
-    this.batching = batching;
     this.errorPolicy = errorPolicy;
     this.insertMode = insertMode;
     this.maxRetries = maxRetries;
     this.schemaRegistryUrl = schemaRegistryUrl;
     this.defaultPKColName = defaultPKColName;
+    this.batchSize = batchSize;
   }
 
   public int getRetries() {
@@ -92,10 +97,6 @@ public final class JdbcSinkSettings {
 
   public List<FieldsMappings> getMappings() {
     return mappings;
-  }
-
-  public boolean isBatching() {
-    return batching;
   }
 
   public ErrorPolicyEnum getErrorPolicy() {
@@ -112,6 +113,10 @@ public final class JdbcSinkSettings {
 
   public String getPassword() {
     return password;
+  }
+
+  public int getBatchSize() {
+    return batchSize;
   }
 
   public Set<String> getTableNames() {
@@ -164,12 +169,12 @@ public final class JdbcSinkSettings {
             config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
             config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
             fieldsMappings,
-            config.getBoolean(JdbcSinkConfig.DATABASE_IS_BATCHING),
             policy,
             insertMode,
             config.getInt(JdbcSinkConfig.MAX_RETRIES),
             config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
-            config.getString(JdbcSinkConfig.DEFAULT_PK_COL_NAME)
+            config.getString(JdbcSinkConfig.DEFAULT_PK_COL_NAME),
+            config.getInt(JdbcSinkConfig.BATCH_SIZE)
     );
   }
 

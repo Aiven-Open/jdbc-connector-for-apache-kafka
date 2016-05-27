@@ -1,7 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.StructFieldsDataExtractor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.RecordDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.BytePreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +35,11 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BatchedPreparedStatementBuilderTest {
+public class PreparedStatementContextIterableTest {
 
   @Test
   public void groupAllRecordsWithTheSameColumnsForInsertQuery() throws SQLException {
-    StructFieldsDataExtractor valueExtractor = mock(StructFieldsDataExtractor.class);
+    RecordDataExtractor valueExtractor = mock(RecordDataExtractor.class);
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
@@ -63,9 +64,11 @@ public class BatchedPreparedStatementBuilderTest {
                     dataBinders1,
                     dataBinders3);
 
-    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, RecordDataExtractor> map = new HashMap<>();
     map.put("topic1a", valueExtractor);
-    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder(new MySqlDialect()));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map,
+            new InsertQueryBuilder(new MySqlDialect()),
+            1000);
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -84,7 +87,9 @@ public class BatchedPreparedStatementBuilderTest {
 
     String sql3 = "INSERT INTO `tableA`(`A`,`B`) VALUES(?,?)";
 
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+    assertTrue(iter.hasNext());
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
 
     Map<String, PreparedStatementData> dataMap = new HashMap<>();
     for (PreparedStatementData d : actualStatements) {
@@ -127,14 +132,14 @@ public class BatchedPreparedStatementBuilderTest {
 
   @Test
   public void handleMultipleTablesForInsert() throws SQLException {
-    StructFieldsDataExtractor valueExtractor1 = mock(StructFieldsDataExtractor.class);
+    RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
             new IntPreparedStatementBinder("colB", 3),
             new LongPreparedStatementBinder("colC", 124566),
             new StringPreparedStatementBinder("colD", "somevalue"));
 
-    StructFieldsDataExtractor valueExtractor2 = mock(StructFieldsDataExtractor.class);
+    RecordDataExtractor valueExtractor2 = mock(RecordDataExtractor.class);
     List<PreparedStatementBinder> dataBinders2 = Lists.<PreparedStatementBinder>newArrayList(
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
@@ -160,11 +165,13 @@ public class BatchedPreparedStatementBuilderTest {
             thenReturn(dataBinders2);
 
 
-    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, RecordDataExtractor> map = new HashMap<>();
     map.put("topic1a", valueExtractor1);
     map.put("topic2a", valueExtractor2);
 
-    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, new InsertQueryBuilder(new MySqlDialect()));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map,
+            new InsertQueryBuilder(new MySqlDialect()),
+            1000);
 
     Collection<SinkRecord> records = Lists.newArrayList(
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0),
@@ -176,7 +183,10 @@ public class BatchedPreparedStatementBuilderTest {
 
     String sql2 = "INSERT INTO `tableB`(`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?)";
 
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+    assertTrue(iter.hasNext());
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
+
     assertEquals(actualStatements.size(), 2);
 
     assertEquals(sql1, actualStatements.get(0).getSql());
@@ -206,7 +216,7 @@ public class BatchedPreparedStatementBuilderTest {
 
   @Test
   public void groupAllRecordsWithTheSameColumnsForMySqlUpsert() throws SQLException {
-    StructFieldsDataExtractor valueExtractor = mock(StructFieldsDataExtractor.class);
+    RecordDataExtractor valueExtractor = mock(RecordDataExtractor.class);
 
     IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 1);
     pk1.setPrimaryKey(true);
@@ -247,11 +257,13 @@ public class BatchedPreparedStatementBuilderTest {
                     dataBinders1,
                     dataBinders3);
 
-    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, RecordDataExtractor> map = new HashMap<>();
     map.put(topic.toLowerCase(), valueExtractor);
 
     QueryBuilder queryBuilder = new UpsertQueryBuilder(new MySqlDialect());
-    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, queryBuilder);
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map,
+            queryBuilder,
+            1000);
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -278,7 +290,9 @@ public class BatchedPreparedStatementBuilderTest {
     String sql3 = "insert into `tableA`(`A`,`B`,`colPK`) values(?,?,?) " +
             "on duplicate key update `A`=values(`A`),`B`=values(`B`)";
 
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+    assertTrue(iter.hasNext());
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
 
     Map<String, PreparedStatementData> dataMap = new HashMap<>();
     for (PreparedStatementData d : actualStatements) {
@@ -321,7 +335,7 @@ public class BatchedPreparedStatementBuilderTest {
 
   @Test
   public void handleMultipleTablesForUpsert() throws SQLException {
-    StructFieldsDataExtractor valueExtractor1 = mock(StructFieldsDataExtractor.class);
+    RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
 
     IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 0);
     pk1.setPrimaryKey(true);
@@ -336,7 +350,7 @@ public class BatchedPreparedStatementBuilderTest {
             new StringPreparedStatementBinder("colD", "somevalue"),
             pk1);
 
-    StructFieldsDataExtractor valueExtractor2 = mock(StructFieldsDataExtractor.class);
+    RecordDataExtractor valueExtractor2 = mock(RecordDataExtractor.class);
     List<PreparedStatementBinder> dataBinders2 = Lists.<PreparedStatementBinder>newArrayList(
             new DoublePreparedStatementBinder("colE", -5345.22),
             new FloatPreparedStatementBinder("colF", 0),
@@ -368,12 +382,12 @@ public class BatchedPreparedStatementBuilderTest {
             thenReturn(dataBinders2);
 
 
-    Map<String, StructFieldsDataExtractor> map = new HashMap<>();
+    Map<String, RecordDataExtractor> map = new HashMap<>();
     map.put(topic1.toLowerCase(), valueExtractor1);
     map.put(topic2.toLowerCase(), valueExtractor2);
 
     QueryBuilder queryBuilder = new UpsertQueryBuilder(new MySqlDialect());
-    PreparedStatementBuilder builder = new BatchedPreparedStatementBuilder(map, queryBuilder);
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, queryBuilder, 1000);
 
     //same size as the valueextractor.get returns
     Collection<SinkRecord> records = Lists.newArrayList(
@@ -388,7 +402,9 @@ public class BatchedPreparedStatementBuilderTest {
     String sql2 = "insert into `tableB`(`colE`,`colF`,`colG`,`colH`,`colPK`) values(?,?,?,?,?) " +
             "on duplicate key update `colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(builder.build(records).getPreparedStatements());
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+    assertTrue(iter.hasNext());
+    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
 
     Map<String, PreparedStatementData> dataMap = new HashMap<>();
     for (PreparedStatementData d : actualStatements) {
