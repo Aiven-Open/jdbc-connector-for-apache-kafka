@@ -1,15 +1,14 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
-import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.common.config.ConfigException;
 import org.apache.kafka.connect.data.Schema;
 import org.junit.After;
@@ -35,7 +34,7 @@ public class DatabaseTest {
   private static final String DB_FILE = "test_database_changes_executor.sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
 
-  private final HikariDataSource connectionPool = HikariHelper.from(SQL_LITE_URI, null, null);
+  private final ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 100, 100);
 
   @Before
   public void setUp() {
@@ -53,7 +52,7 @@ public class DatabaseTest {
 
   @Test
   public void createAnInstance() {
-    new Database(connectionPool,
+    new Database(connectionProvider,
             new HashSet<String>(),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -73,7 +72,7 @@ public class DatabaseTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingAutoCreateIsNull() {
-    new Database(connectionPool,
+    new Database(connectionProvider,
             null,
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -83,7 +82,7 @@ public class DatabaseTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingSchemaEvolutionIsNull() {
-    new Database(connectionPool,
+    new Database(connectionProvider,
             new HashSet<String>(),
             null,
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -96,7 +95,7 @@ public class DatabaseTest {
 
     String tableName1 = "tableA";
     String tableName2 = "tableB";
-    Database changesExecutor = new Database(connectionPool,
+    Database changesExecutor = new Database(connectionProvider,
             Sets.newHashSet(tableName1, tableName2),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -122,7 +121,7 @@ public class DatabaseTest {
 
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
       assertTrue(DatabaseMetadata.tableExists(connection, tableName2));
 
@@ -179,7 +178,7 @@ public class DatabaseTest {
 
   @Test(expected = ConfigException.class)
   public void throwAnExceptionWhenForANewTableToCreateWhichDoesNotAllowAutoCreation() throws SQLException {
-    Database changesExecutor = new Database(connectionPool,
+    Database changesExecutor = new Database(connectionProvider,
             new HashSet<String>(),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -219,10 +218,10 @@ public class DatabaseTest {
             "PRIMARY KEY(col1));");
 
 
-    Database changesExecutor = new Database(connectionPool,
+    Database changesExecutor = new Database(connectionProvider,
             new HashSet<String>(),
             Sets.newHashSet(tableName1, tableName2),
-            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionPool)),
+            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
@@ -245,7 +244,7 @@ public class DatabaseTest {
 
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
       assertTrue(DatabaseMetadata.tableExists(connection, tableName2));
 
@@ -303,7 +302,7 @@ public class DatabaseTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreated() throws SQLException {
 
     String tableName1 = "tableA1";
-    Database changesExecutor = new Database(connectionPool,
+    Database changesExecutor = new Database(connectionProvider,
             Sets.newHashSet(tableName1),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -333,7 +332,7 @@ public class DatabaseTest {
 
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
 
       DbTable table1 = DatabaseMetadata.getTableMetadata(connection, tableName1);
@@ -371,7 +370,7 @@ public class DatabaseTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreatedButNotAllTheColumnsArePresent() throws SQLException {
 
     String tableName1 = "tableA11";
-    Database changesExecutor = new Database(connectionPool,
+    Database changesExecutor = new Database(connectionProvider,
             Sets.newHashSet(tableName1),
             new HashSet<String>(),
             new DatabaseMetadata(null, new ArrayList<DbTable>()),
@@ -399,7 +398,7 @@ public class DatabaseTest {
 
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
 
       DbTable table1 = DatabaseMetadata.getTableMetadata(connection, tableName1);
@@ -446,10 +445,10 @@ public class DatabaseTest {
             "PRIMARY KEY(col1));");
 
 
-    Database changesExecutor = new Database(connectionPool,
+    Database changesExecutor = new Database(connectionProvider,
             new HashSet<String>(),
             Sets.newHashSet(tableName1),
-            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionPool)),
+            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
             DbDialect.fromConnectionString(SQL_LITE_URI),
             2);
 
@@ -470,7 +469,7 @@ public class DatabaseTest {
 
     Connection connection1 = null;
     try {
-      connection1 = connectionPool.getConnection();
+      connection1 = connectionProvider.getConnection();
       DbTable table = DatabaseMetadata.getTableMetadata(connection1, tableName1);
       assertTrue(table.getColumns().containsKey("col4"));
     } finally {
@@ -482,7 +481,7 @@ public class DatabaseTest {
 
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
 
       DbTable table1 = DatabaseMetadata.getTableMetadata(connection, tableName1);

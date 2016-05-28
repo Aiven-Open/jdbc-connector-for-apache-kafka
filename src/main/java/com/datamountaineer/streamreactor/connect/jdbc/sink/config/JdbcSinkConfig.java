@@ -81,7 +81,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   private final static String MAX_RETRIES_DEFAULT = "10";
 
   public final static String RETRY_INTERVAL = "connect.jdbc.sink.retry.interval";
-  private final static String RETRY_INTERVAL_DEFAULT = "60000";
+  private final static int RETRY_INTERVAL_DEFAULT = 3000;
   private final static String RETRY_INTERVAL_DOC = String.format("The time, in milliseconds between the Sink retry failed " +
           "inserts, if the %s is set to RETRY. Default is %s", ERROR_POLICY, RETRY_INTERVAL_DEFAULT);
 

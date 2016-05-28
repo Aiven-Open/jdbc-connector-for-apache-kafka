@@ -16,9 +16,10 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
-import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Database;
@@ -29,7 +30,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Iterators;
-import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.kafka.connect.data.Schema;
@@ -65,27 +65,28 @@ public final class JdbcDbWriter implements DbWriter {
   private Date lastError;
   private String lastErrorMessage;
   private final int maxRetries;
+  private Connection connection = null;
 
   //provides connection pooling
-  private final HikariDataSource dataSource;
+  private final ConnectionProvider connectionProvider;
 
   /**
-   * @param hikariDataSource        - The database connection pooling
-   * @param statementBuilder        - Returns a sequence of PreparedStatement to process
-   * @param errorHandlingPolicy     - An instance of the error handling approach
-   * @param database - Contains the database metadata (tables and their columns)
-   * @param retries                 - Number of attempts to run when a SQLException occurs
+   * @param connectionProvider  - The database connection provider
+   * @param statementBuilder    - Returns a sequence of PreparedStatement to process
+   * @param errorHandlingPolicy - An instance of the error handling approach
+   * @param database            - Contains the database metadata (tables and their columns)
+   * @param retries             - Number of attempts to run when a SQLException occurs
    */
-  public JdbcDbWriter(final HikariDataSource hikariDataSource,
+  public JdbcDbWriter(final ConnectionProvider connectionProvider,
                       final PreparedStatementContextIterable statementBuilder,
                       final ErrorHandlingPolicy errorHandlingPolicy,
                       final Database database,
                       final int retries) {
-    ParameterValidator.notNull(hikariDataSource, "hikariDataSource");
+    ParameterValidator.notNull(connectionProvider, "connectionProvider");
     ParameterValidator.notNull(statementBuilder, "statementBuilder");
     ParameterValidator.notNull(database, "databaseChangesExecutor");
 
-    this.dataSource = hikariDataSource;
+    this.connectionProvider = connectionProvider;
     this.statementBuilder = statementBuilder;
     this.errorHandlingPolicy = errorHandlingPolicy;
     this.database = database;
@@ -105,9 +106,16 @@ public final class JdbcDbWriter implements DbWriter {
     } else {
 
       final Iterator<PreparedStatementContext> iterator = statementBuilder.iterator(records);
-      Connection connection = null;
       try {
-        connection = dataSource.getConnection();
+        //initialize a new connection instance if we haven't done it before
+        if (connection == null) {
+          connection = connectionProvider.getConnection();
+        } else if (!connection.isValid(3000)) {
+          //check the connection is still valid
+          logger.warn("The database connection is not valid. Reconnecting");
+          AutoCloseableHelper.close(connection);
+          connection = connectionProvider.getConnection();
+        }
         //begin transaction
         connection.setAutoCommit(false);
 
@@ -177,21 +185,13 @@ public final class JdbcDbWriter implements DbWriter {
         lastError = new Date();
         lastErrorMessage = sqlException.getMessage();
         errorHandlingPolicy.handle(records, sqlException, retries);
-      } finally {
-        if (connection != null) {
-          try {
-            connection.close();
-          } catch (Throwable t) {
-            logger.error(t.getMessage());
-          }
-        }
       }
     }
   }
 
   @Override
   public void close() {
-    dataSource.close();
+    AutoCloseableHelper.close(connection);
   }
 
   /**
@@ -204,11 +204,13 @@ public final class JdbcDbWriter implements DbWriter {
                                   final DatabaseMetadataProvider databaseMetadataProvider)
           throws IOException, SQLException {
 
-    final HikariDataSource connectionPool = HikariHelper.from(settings.getConnection(),
+    final ConnectionProvider connectionProvider = new ConnectionProvider(settings.getConnection(),
             settings.getUser(),
-            settings.getPassword());
+            settings.getPassword(),
+            settings.getRetries(),
+            settings.getRetryDelay());
 
-    final DatabaseMetadata databaseMetadata = databaseMetadataProvider.get(connectionPool);
+    final DatabaseMetadata databaseMetadata = databaseMetadataProvider.get(connectionProvider);
 
     final PreparedStatementContextIterable statementBuilder = PreparedStatementBuilderHelper.from(settings, databaseMetadata);
 
@@ -284,7 +286,7 @@ public final class JdbcDbWriter implements DbWriter {
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
     final Database database = new Database(
-            connectionPool,
+            connectionProvider,
             tablesAllowingAutoCreate,
             tablesAllowingSchemaEvolution,
             databaseMetadata,
@@ -293,12 +295,10 @@ public final class JdbcDbWriter implements DbWriter {
 
     //create an required tables
     if (!createTablesMap.isEmpty()) {
-      database.createTables(createTablesMap, connectionPool.getConnection());
+      database.createTables(createTablesMap, connectionProvider.getConnection());
     }
 
-    connectionPool.setMaximumPoolSize(2);
-
-    return new JdbcDbWriter(connectionPool,
+    return new JdbcDbWriter(connectionProvider,
             statementBuilder,
             errorHandlingPolicy,
             database,

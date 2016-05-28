@@ -1,16 +1,16 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
-import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.OracleDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Database;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.RecordDataExtractor;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
@@ -19,7 +19,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -82,6 +81,7 @@ public class JdbcDbWriterTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000,
             1000);
 
     List<DbTableColumn> columns = Lists.newArrayList(
@@ -91,7 +91,7 @@ public class JdbcDbWriterTest {
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
-    when(provider.get(any(HikariDataSource.class)))
+    when(provider.get(any(ConnectionProvider.class)))
             .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
@@ -112,6 +112,7 @@ public class JdbcDbWriterTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000,
             1000
     );
 
@@ -121,7 +122,7 @@ public class JdbcDbWriterTest {
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
-    when(provider.get(any(HikariDataSource.class)))
+    when(provider.get(any(ConnectionProvider.class)))
             .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
@@ -141,6 +142,7 @@ public class JdbcDbWriterTest {
             InsertModeEnum.INSERT,
             10, "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            1000,
             1000);
 
     List<DbTableColumn> columns = Lists.newArrayList(
@@ -149,7 +151,7 @@ public class JdbcDbWriterTest {
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
-    when(provider.get(any(HikariDataSource.class)))
+    when(provider.get(any(ConnectionProvider.class)))
             .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
@@ -165,16 +167,16 @@ public class JdbcDbWriterTest {
 
     when(builder.iterator(any(records.getClass()))).thenThrow(ex);
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            ds,
+            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
             new OracleDialect(),
             1);
 
-    JdbcDbWriter writer = new JdbcDbWriter(ds, builder, new ThrowErrorHandlingPolicy(), executor, 10);
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider, builder, new ThrowErrorHandlingPolicy(), executor, 10);
     writer.write(records);
   }
 
@@ -257,15 +259,15 @@ public class JdbcDbWriterTest {
                     new DbTableColumn("BLOB", true, false, 1)
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            ds,
+            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
             new SQLiteDialect(),
             1);
-    JdbcDbWriter writer = new JdbcDbWriter(ds,
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
             new PreparedStatementContextIterable(map, new InsertQueryBuilder(new SQLiteDialect()), 100),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -401,15 +403,15 @@ public class JdbcDbWriterTest {
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            ds,
+            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
             dbDialect,
             1);
-    JdbcDbWriter writer = new JdbcDbWriter(ds,
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
             new PreparedStatementContextIterable(map, new UpsertQueryBuilder(dbDialect), 100),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -592,15 +594,15 @@ public class JdbcDbWriterTest {
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
 
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            ds,
+            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
             dbDialect,
             1);
-    JdbcDbWriter writer = new JdbcDbWriter(ds,
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
             new PreparedStatementContextIterable(map, new UpsertQueryBuilder(dbDialect), 100),
             new ThrowErrorHandlingPolicy(),
             executor,
@@ -739,15 +741,15 @@ public class JdbcDbWriterTest {
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            ds,
+            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
             dbDialect,
             1);
-    JdbcDbWriter writer = new JdbcDbWriter(ds,
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
             new PreparedStatementContextIterable(map, new UpsertQueryBuilder(dbDialect), 100),
             new ThrowErrorHandlingPolicy(),
             executor,
