@@ -103,13 +103,28 @@ public class RecordDataExtractor {
     final List<PreparedStatementBinder> binders = new ArrayList<>(fields.size() + 1);
     final Map<String, FieldAlias> mappings = fieldsMappings.getMappings();
     //check for the autocreated PK column
-    final FieldAlias autoPK = mappings.get(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
-    if (autoPK != null) {
+    final FieldAlias connectTopicPK = mappings.get(FieldsMappings.CONNECT_TOPIC_COLUMN);
+    if (connectTopicPK != null) {
       //fake the field and binder
-      StringPreparedStatementBinder binder = new StringPreparedStatementBinder(FieldsMappings.CONNECT_AUTO_ID_COLUMN,
-              FieldsMappings.generateConnectAutoPKValue(record));
-      binder.setPrimaryKey(true);
-      binders.add(binder);
+      final StringPreparedStatementBinder binderTopic = new StringPreparedStatementBinder(
+              FieldsMappings.CONNECT_TOPIC_COLUMN,
+              record.topic());
+      binderTopic.setPrimaryKey(true);
+      binders.add(binderTopic);
+
+      final IntPreparedStatementBinder binderPartition = new IntPreparedStatementBinder(
+              FieldsMappings.CONNECT_PARTITION_COLUMN,
+              record.kafkaPartition()
+      );
+      binderPartition.setPrimaryKey(true);
+      binders.add(binderPartition);
+
+      final LongPreparedStatementBinder binderOffset = new LongPreparedStatementBinder(
+              FieldsMappings.CONNECT_OFFSET_COLUMN,
+              record.kafkaOffset()
+      );
+      binderOffset.setPrimaryKey(true);
+      binders.add(binderOffset);
     }
     for (final Field field : fields) {
       final BasePreparedStatementBinder binder = getPreparedStatementBinder(field, struct);

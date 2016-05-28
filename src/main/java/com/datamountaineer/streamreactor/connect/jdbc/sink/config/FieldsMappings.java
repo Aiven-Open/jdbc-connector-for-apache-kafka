@@ -28,7 +28,9 @@ import java.util.Map;
  */
 public final class FieldsMappings {
 
-  public final static String CONNECT_AUTO_ID_COLUMN = "__connect_auto_id";
+  public final static String CONNECT_TOPIC_COLUMN = "__connect_topic";
+  public final static String CONNECT_OFFSET_COLUMN = "__connect_offset";
+  public final static String CONNECT_PARTITION_COLUMN = "__connect_partition";
   private final String tableName;
   private final String incomingTopic;
   private final boolean allFieldsIncluded;

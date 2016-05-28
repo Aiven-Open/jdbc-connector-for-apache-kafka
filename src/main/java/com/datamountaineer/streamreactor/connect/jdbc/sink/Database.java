@@ -69,7 +69,7 @@ public class Database {
 
 
   public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
-    DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
+   DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
     final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
     final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
     //short-circuit if there is nothing to change
@@ -145,7 +145,6 @@ public class Database {
     Statement statement = null;
     try {
       statement = connection.createStatement();
-      logger.info("Changing the database by adding a new table " + tableName + "\n:" + sql);
       statement.execute(sql);
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
