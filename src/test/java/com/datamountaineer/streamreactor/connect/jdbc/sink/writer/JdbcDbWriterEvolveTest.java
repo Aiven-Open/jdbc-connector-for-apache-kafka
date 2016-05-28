@@ -50,6 +50,110 @@ public class JdbcDbWriterEvolveTest {
   }
 
   @Test
+  public void handleTableWhereAColumnIsAddedAndThenSchemaChangesToContainTheNewFieldAutomaticallyMappingToTheColumn() throws SQLException {
+    String tableName = "column_added_scenario";
+    String createTable = "CREATE TABLE " + tableName + " (" +
+            "    firstName  TEXT," +
+            "    lastName  TEXT," +
+            "    age INTEGER," +
+            "    PRIMARY KEY(firstName, lastName)" +
+            ");";
+
+    SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
+    SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
+
+    Schema schema = SchemaBuilder.struct().name("com.example.Person")
+            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("age", Schema.OPTIONAL_INT32_SCHEMA);
+
+    final String fName1 = "Alex";
+    final String lName1 = "Smith";
+    final int age1 = 21;
+
+    Struct struct1 = new Struct(schema)
+            .put("firstName", fName1)
+            .put("lastName", lName1)
+            .put("age", age1);
+
+
+    final String topic = "topic";
+    final int partition = 2;
+
+    Map<String, RecordDataExtractor> map = new HashMap<>();
+    Map<String, FieldAlias> fields = new HashMap<>();
+    map.put(topic.toLowerCase(),
+            new RecordDataExtractor(new FieldsMappings(tableName, topic, true, fields, false, true)));
+
+    List<DbTable> dbTables = Lists.newArrayList();
+    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    Database executor = new Database(
+            connectionProvider,
+            Sets.<String>newHashSet(tableName),
+            Sets.<String>newHashSet(),
+            dbMetadata,
+            new SQLiteDialect(),
+            1);
+    JdbcDbWriter writer = new JdbcDbWriter(
+            connectionProvider,
+            new PreparedStatementContextIterable(map, new InsertQueryBuilder(new SQLiteDialect()), 1000),
+            new ThrowErrorHandlingPolicy(),
+            executor,
+            10);
+
+    writer.write(Lists.newArrayList(
+            new SinkRecord(topic, partition, null, null, schema, struct1, 0)
+    ));
+
+    String query = "SELECT * FROM " + tableName + " ORDER BY firstName";
+    SqlLiteHelper.ResultSetReadCallback callback = new SqlLiteHelper.ResultSetReadCallback() {
+
+      @Override
+      public void read(ResultSet rs) throws SQLException {
+        assertEquals(rs.getString("firstName"), fName1);
+        assertEquals(rs.getString("lastName"), lName1);
+        assertEquals(rs.getInt("age"), age1);
+      }
+    };
+
+    SqlLiteHelper.select(SQL_LITE_URI, query, callback);
+
+    SqlLiteHelper.execute(SQL_LITE_URI, "ALTER TABLE " + tableName + " ADD COLUMN salary REAL NULL;");
+
+    Schema schema2 = SchemaBuilder.struct().name("com.example.Person")
+            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+            .field("salary", Schema.OPTIONAL_FLOAT64_SCHEMA);
+
+    final String fName2 = "Jane";
+    final String lName2 = "Wood";
+    final int age2 = 28;
+    final double salary2 = 1956.15;
+    Struct struct2 = new Struct(schema2)
+            .put("firstName", fName2)
+            .put("lastName", lName2)
+            .put("age", age2)
+            .put("salary", salary2);
+
+    writer.write(Lists.newArrayList(
+            new SinkRecord(topic, partition, null, null, schema2, struct2, 0)
+    ));
+
+    query = "SELECT * FROM " + tableName + " WHERE firstName='Jane'";
+    callback = new SqlLiteHelper.ResultSetReadCallback() {
+      @Override
+      public void read(ResultSet rs) throws SQLException {
+        assertEquals(rs.getString("firstName"), fName2);
+        assertEquals(rs.getString("lastName"), lName2);
+        assertEquals(rs.getInt("age"), age2);
+        assertEquals(rs.getDouble("age"), salary2);
+      }
+    };
+  }
+
+  @Test
   public void handleBatchStatementPerRecordInsertingWithAutoCreatedColumnForPK() throws SQLException {
     String tableName = "batch_100_auto_create_column";
 
