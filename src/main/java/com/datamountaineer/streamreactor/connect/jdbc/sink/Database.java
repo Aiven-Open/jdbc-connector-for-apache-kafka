@@ -69,7 +69,7 @@ public class Database {
 
 
   public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
-   DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
+    DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
     final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
     final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
     //short-circuit if there is nothing to change
