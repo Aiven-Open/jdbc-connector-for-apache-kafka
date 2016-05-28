@@ -1,20 +1,29 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.*;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.services.*;
-import com.google.common.collect.*;
-import io.confluent.kafka.schemaregistry.client.rest.*;
-import org.apache.curator.test.*;
-import org.apache.kafka.common.*;
-import org.apache.kafka.connect.data.*;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.services.EmbeddedSingleNodeKafkaCluster;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.services.RestApp;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import org.apache.curator.test.InstanceSpec;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.sink.*;
-import org.junit.*;
-import org.mockito.*;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-import java.io.*;
-import java.sql.*;
-import java.util.*;
+import java.io.File;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.AUTO_CREATE_TABLE_MAP;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
@@ -63,23 +72,23 @@ public class SinkTaskTest {
     when(context.assignment()).thenReturn(assignment);
 
     int port = InstanceSpec.getRandomPort();
-    EmbeddedSingleNodeKafkaCluster cluster  = new EmbeddedSingleNodeKafkaCluster();
+    EmbeddedSingleNodeKafkaCluster cluster = new EmbeddedSingleNodeKafkaCluster();
     RestApp registry = new RestApp(port, cluster.zookeeperConnect(), base.getTopic1());
     registry.start();
     RestService client = registry.restClient;
 
     String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
-        "\"fields\":[\n" +
-        "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
-        "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
-        "{\"name\":\"age\", \"type\": \"int\"}, \n" +
-        "{\"name\":\"bool\", \"type\": \"float\"},\n" +
-        "{\"name\":\"byte\", \"type\": \"float\"},\n" +
-        "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
-        "{\"name\":\"long\", \"type\": \"long\"},\n" +
-        "{\"name\":\"float\", \"type\": \"float\"},\n" +
-        "{\"name\":\"double\", \"type\": \"double\"}\n" +
-        "]}";
+            "\"fields\":[\n" +
+            "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
+            "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
+            "{\"name\":\"age\", \"type\": \"int\"}, \n" +
+            "{\"name\":\"bool\", \"type\": \"float\"},\n" +
+            "{\"name\":\"byte\", \"type\": \"float\"},\n" +
+            "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
+            "{\"name\":\"long\", \"type\": \"long\"},\n" +
+            "{\"name\":\"float\", \"type\": \"float\"},\n" +
+            "{\"name\":\"double\", \"type\": \"double\"}\n" +
+            "]}";
 
     //register the schema for topic1
     client.registerSchema(rawSchema, base.getTopic1());
@@ -93,16 +102,16 @@ public class SinkTaskTest {
     task.initialize(context);
 
     String createTable2 = "CREATE TABLE " + base.getTableName2() + "(" +
-        "    firstName  TEXT PRIMARY_KEY," +
-        "    lastName  TEXT PRIMARY_KEY," +
-        "    age INTEGER," +
-        "    bool  NUMERIC," +
-        "    byte  INTEGER," +
-        "    short INTEGER," +
-        "    long INTEGER," +
-        "    float NUMERIC," +
-        "    double NUMERIC," +
-        "    bytes BLOB);";
+            "    firstName  TEXT PRIMARY_KEY," +
+            "    lastName  TEXT PRIMARY_KEY," +
+            "    age INTEGER," +
+            "    bool  NUMERIC," +
+            "    byte  INTEGER," +
+            "    short INTEGER," +
+            "    long INTEGER," +
+            "    float NUMERIC," +
+            "    double NUMERIC," +
+            "    bytes BLOB);";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName1());
     SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName2());
@@ -111,15 +120,15 @@ public class SinkTaskTest {
     task.start(props);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
-        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
-        .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-        .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
-        .field("short", Schema.OPTIONAL_INT16_SCHEMA)
-        .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
-        .field("long", Schema.OPTIONAL_INT64_SCHEMA)
-        .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA);
+            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA);
 
     final String fName1 = "Alex";
     final String lName1 = "Smith";
@@ -133,19 +142,19 @@ public class SinkTaskTest {
     final byte[] bs1 = new byte[]{-32, 124};
 
     Struct struct1 = new Struct(schema)
-        .put("firstName", fName1)
-        .put("lastName", lName1)
-        .put("bool", bool1)
-        .put("short", s1)
-        .put("byte", b1)
-        .put("long", l1)
-        .put("float", f1)
-        .put("double", d1)
-        .put("age", age1);
+            .put("firstName", fName1)
+            .put("lastName", lName1)
+            .put("bool", bool1)
+            .put("short", s1)
+            .put("byte", b1)
+            .put("long", l1)
+            .put("float", f1)
+            .put("double", d1)
+            .put("age", age1);
     final short s1a = s1 + 1;
     Struct struct1a = struct1.put("short", s1a)
-        .put("float", f1 + 1)
-        .put("double", d1 + 1);
+            .put("float", f1 + 1)
+            .put("double", d1 + 1);
 
     final String fName2 = "Christina";
     final String lName2 = "Brams";
@@ -156,25 +165,22 @@ public class SinkTaskTest {
     final double d2 = 3256677.56457;
 
     Struct struct2 = new Struct(schema)
-        .put("firstName", fName2)
-        .put("lastName", lName2)
-        .put("bool", bool2)
-        .put("byte", b2)
-        .put("long", l2)
-        .put("double", d2)
-        .put("age", age2);
+            .put("firstName", fName2)
+            .put("lastName", lName2)
+            .put("bool", bool2)
+            .put("byte", b2)
+            .put("long", l2)
+            .put("double", d2)
+            .put("age", age2);
 
 
     int partition = 1;
     Collection<SinkRecord> records = Lists.newArrayList(
-        new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 2),
-        new SinkRecord(base.getTopic2(), partition, null, null, schema, struct1a, 3));
-
-    Map<String, RecordDataExtractor> map = new HashMap<>();
-    map.put(base.getTopic1().toLowerCase(),
-        new RecordDataExtractor(new FieldsMappings(base.getTableName1(), base.getTopic1(), true, new HashMap<String, FieldAlias>())));
+            new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 2),
+            new SinkRecord(base.getTopic1(), partition, null, null, schema, struct1a, 3));
     task.put(records);
 
+    Thread.sleep(300); //SQLite delay
     String query = "SELECT * FROM " + base.getTableName2() + " WHERE firstName='" + fName1 + "' and lastName='" + lName1 + "'";
 
     SqlLiteHelper.select(SQL_LITE_URI, query, new SqlLiteHelper.ResultSetReadCallback() {
@@ -191,6 +197,16 @@ public class SinkTaskTest {
       }
     });
 
-    SqlLiteHelper.execute(SQL_LITE_URI, "SELECT __connect_auto_id FROM " + base.getTableName1());
+    final String topic1 = base.getTopic1();
+    SqlLiteHelper.select(SQL_LITE_URI, "SELECT " + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
+            FieldsMappings.CONNECT_OFFSET_COLUMN + "," +
+            FieldsMappings.CONNECT_PARTITION_COLUMN + " FROM " + base.getTableName1(), new SqlLiteHelper.ResultSetReadCallback() {
+      @Override
+      public void read(ResultSet rs) throws SQLException {
+        assertEquals(rs.getInt(FieldsMappings.CONNECT_PARTITION_COLUMN), 1);
+        assertEquals(rs.getLong(FieldsMappings.CONNECT_OFFSET_COLUMN), 3);
+        assertEquals(rs.getString(FieldsMappings.CONNECT_TOPIC_COLUMN), topic1);
+      }
+    });
   }
 }

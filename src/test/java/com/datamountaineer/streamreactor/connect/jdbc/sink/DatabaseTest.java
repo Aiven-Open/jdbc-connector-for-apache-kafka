@@ -468,6 +468,12 @@ public class DatabaseTest {
 
     SqlLiteHelper.execute(SQL_LITE_URI, amendQuery.get(0));
 
+    //SQLite required delay
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException e) {
+
+    }
     Connection connection1 = null;
     try {
       connection1 = connectionPool.getConnection();
