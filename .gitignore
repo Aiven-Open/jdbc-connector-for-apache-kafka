@@ -4,3 +4,5 @@
 # sbt specific
 target/
 # Scala-IDE specific
+/kafka-connect-jdbc-sink.iml
+kafka-connect-jdbc-sink.iml

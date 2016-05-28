@@ -14,7 +14,6 @@
  * limitations under the License.
  **/
 
-
 package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
@@ -162,6 +161,15 @@ public final class JdbcSinkSettings {
       throw new ConfigException(JdbcSinkConfig.INSERT_MODE + " is not set correctly");
     }
 
+    for (FieldsMappings fm : fieldsMappings) {
+      if (insertMode.equals(InsertModeEnum.UPSERT)
+          && fm.autoCreateTable()
+          && fm.getMappings().containsKey(FieldsMappings.CONNECT_AUTO_ID_COLUMN)) {
+        throw new ConfigException("In order to use UPSERT mode and table AUTO-CREATE you need to define Primary Keys " +
+            "in your connect.jdbc.sink.export.mappings.");
+      }
+    }
+
     ErrorPolicyEnum policy = ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY).toUpperCase());
 
     return new JdbcSinkSettings(
@@ -234,7 +242,7 @@ public final class JdbcSinkSettings {
       if (autoCreateTable) {
         int mapStart = autoCreateRaw.indexOf("{" + topic);
         //if no fields were specified introduce the default PK column
-        if (mapStart > 0) {
+        if (mapStart >= 0) {
           int delimiterIndex = autoCreateRaw.indexOf(":", mapStart);
           if (delimiterIndex < 0) {
             throw new ConfigException("Invalid configuration for " + JdbcSinkConfig.AUTO_CREATE_TABLE_MAP + ". Make sure you " +

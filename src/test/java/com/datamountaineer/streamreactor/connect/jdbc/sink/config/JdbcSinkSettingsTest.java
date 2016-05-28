@@ -341,83 +341,7 @@ public class JdbcSinkSettingsTest {
     assertTrue(cols.get("f3").getName().equals("col3"));
     assertTrue(cols.get("f4").getName().equals("col4"));
   }
-
-  @Test
-  public void UpsertThrowBatchingSelectedFieldsAutoCreateDefault() throws IOException, RestClientException {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsSelectedFields("throw", "upsert", true);
-
-    client.registerSchema(rawSchema, base.getTopic1());
-    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
-    props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);
-
-    JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
-    assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-
-    List<FieldsMappings> mappings = settings.getMappings();
-    assertTrue(mappings.size() == 2);
-    assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
-    assertTrue(mappings.get(1).getTableName().equals(base.getTableName2()));
-    assertTrue(mappings.get(0).getIncomingTopic().equals(base.getTopic1()));
-    assertTrue(mappings.get(1).getIncomingTopic().equals(base.getTopic2()));
-
-    assertTrue(mappings.get(0).getMappings().size() == 3);
-    assertTrue(mappings.get(1).getMappings().size() == 2);
-
-    assertFalse(mappings.get(0).areAllFieldsIncluded());
-    assertFalse(mappings.get(1).areAllFieldsIncluded());
-    assertTrue(mappings.get(0).autoCreateTable()); //only table1
-    assertFalse(mappings.get(1).autoCreateTable());
-
-    assertFalse(mappings.get(0).evolveTableSchema());
-    assertFalse(mappings.get(1).evolveTableSchema());
-
-    Map<String, FieldAlias> cols = mappings.get(0).getMappings();
-    assertTrue(cols.get("f1").getName().equals("col1"));
-    assertTrue(cols.get("f2").getName().equals("f2"));
-
-    cols = mappings.get(1).getMappings();
-    assertTrue(cols.get("f3").getName().equals("col3"));
-    assertTrue(cols.get("f4").getName().equals("col4"));
-  }
-
-  @Test
-  public void UpsertThrowBatchingAllFieldsAutoCreateDefault() throws IOException, RestClientException {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsAllFields("throw", "upsert", true);
-
-    client.registerSchema(rawSchema, base.getTopic1());
-    props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
-    props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);
-
-    JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
-    assertTrue(settings.getInsertMode().equals(InsertModeEnum.UPSERT));
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-
-    List<FieldsMappings> mappings = settings.getMappings();
-    assertTrue(mappings.size() == 2);
-    assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
-    assertTrue(mappings.get(1).getTableName().equals(base.getTableName2()));
-    assertTrue(mappings.get(0).getIncomingTopic().equals(base.getTopic1()));
-    assertTrue(mappings.get(1).getIncomingTopic().equals(base.getTopic2()));
-
-    assertTrue(mappings.get(0).areAllFieldsIncluded());
-    assertTrue(mappings.get(1).areAllFieldsIncluded());
-    assertTrue(mappings.get(0).autoCreateTable()); //only table1
-    assertFalse(mappings.get(1).autoCreateTable());
-
-    assertFalse(mappings.get(0).evolveTableSchema());
-    assertFalse(mappings.get(1).evolveTableSchema());
-
-    assertEquals(1, mappings.get(0).getMappings().size());
-    assertTrue(mappings.get(1).getMappings().isEmpty());
-  }
-
+  
   @Test
   public void UpsertThrowBatchingAllFieldsAutoCreate() throws IOException, RestClientException {
     TestBase base = new TestBase();
@@ -450,9 +374,11 @@ public class JdbcSinkSettingsTest {
     assertFalse(mappings.get(0).evolveTableSchema());
     assertFalse(mappings.get(1).evolveTableSchema());
 
-    assertTrue(mappings.get(0).getMappings().size() == 1); //auto PK
-    assertTrue(mappings.get(0).getMappings().get(FieldsMappings.CONNECT_AUTO_ID_COLUMN).getName().equals(FieldsMappings.CONNECT_AUTO_ID_COLUMN));
-    assertTrue(mappings.get(0).getMappings().get(FieldsMappings.CONNECT_AUTO_ID_COLUMN).isPrimaryKey());
+    assertTrue(mappings.get(0).getMappings().size() == 2); //auto PK
+    assertTrue(mappings.get(0).getMappings().get("f1").getName().equals("f1"));
+    assertTrue(mappings.get(0).getMappings().get("f1").isPrimaryKey());
+    assertTrue(mappings.get(0).getMappings().get("f2").getName().equals("f2"));
+    assertTrue(mappings.get(0).getMappings().get("f2").isPrimaryKey());
 
     assertTrue(mappings.get(1).getMappings().size() == 1); //two pks
     assertTrue(mappings.get(1).getMappings().get("f3").getName().equals("f3"));
@@ -471,17 +397,6 @@ public class JdbcSinkSettingsTest {
   @Test(expected = ConfigException.class)
   public void throwTheExceptionMissingTable() {
 
-    TopicPartition tp1 = new TopicPartition("topic1", 12);
-    TopicPartition tp2 = new TopicPartition("topic1", 13);
-    HashSet<TopicPartition> assignment = Sets.newHashSet();
-
-    //Set topic assignments, used by the sinkContext mock
-    assignment.add(tp1);
-    assignment.add(tp2);
-
-    SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
-    when(context.assignment()).thenReturn(assignment);
-
     Map<String, String> props = new HashMap<>();
     //missing target
     String bad = "{topic1:;*}";
@@ -495,23 +410,20 @@ public class JdbcSinkSettingsTest {
   @Test(expected = ConfigException.class)
   public void throwTheExceptionMissingFields() {
 
-    TopicPartition tp1 = new TopicPartition("topic1", 12);
-    TopicPartition tp2 = new TopicPartition("topic1", 13);
-    HashSet<TopicPartition> assignment = Sets.newHashSet();
-
-    //Set topic assignments, used by the sinkContext mock
-    assignment.add(tp1);
-    assignment.add(tp2);
-
-    SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
-    when(context.assignment()).thenReturn(assignment);
-
     Map<String, String> props = new HashMap<>();
     //missing target
     String bad = "{topic1:table1;}";
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
     props.put(EXPORT_MAPPINGS, bad);
 
+    JdbcSinkConfig config = new JdbcSinkConfig(props);
+    JdbcSinkSettings.from(config);
+  }
+
+  @Test(expected = ConfigException.class)
+  public void throwTheExceptionUpsertNoPK() {
+    TestBase base = new TestBase();
+    Map<String, String> props = base.getPropsSelectedFieldsAutoCreatePKBad();
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings.from(config);
   }
