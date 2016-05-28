@@ -98,7 +98,9 @@ public class JdbcDbWriterEvolveTest {
 
     Map<String, RecordDataExtractor> map = new HashMap<>();
     Map<String, FieldAlias> fields = new HashMap<>();
-    fields.put(FieldsMappings.CONNECT_AUTO_ID_COLUMN, new FieldAlias(FieldsMappings.CONNECT_AUTO_ID_COLUMN, true));
+    fields.put(FieldsMappings.CONNECT_TOPIC_COLUMN, new FieldAlias(FieldsMappings.CONNECT_TOPIC_COLUMN, true));
+    fields.put(FieldsMappings.CONNECT_PARTITION_COLUMN, new FieldAlias(FieldsMappings.CONNECT_PARTITION_COLUMN, true));
+    fields.put(FieldsMappings.CONNECT_OFFSET_COLUMN, new FieldAlias(FieldsMappings.CONNECT_OFFSET_COLUMN, true));
     map.put(topic.toLowerCase(),
             new RecordDataExtractor(new FieldsMappings(tableName, topic, true, fields,
                     true, true)));
@@ -129,7 +131,9 @@ public class JdbcDbWriterEvolveTest {
       @Override
       public void read(ResultSet rs) throws SQLException {
         if (index < 100) {
-          assertEquals(rs.getString(FieldsMappings.CONNECT_AUTO_ID_COLUMN), String.format("%s.%s.%d", topic, partition, index));
+          assertEquals(rs.getString(FieldsMappings.CONNECT_TOPIC_COLUMN), topic);
+          assertEquals(rs.getInt(FieldsMappings.CONNECT_PARTITION_COLUMN), partition);
+          assertEquals(rs.getLong(FieldsMappings.CONNECT_OFFSET_COLUMN), index);
           assertEquals(rs.getString("firstName"), fName1);
           assertEquals(rs.getString("lastName"), lName1);
           assertEquals(rs.getBoolean("bool"), bool1);

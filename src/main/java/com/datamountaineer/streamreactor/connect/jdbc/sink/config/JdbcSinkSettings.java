@@ -173,10 +173,10 @@ public final class JdbcSinkSettings {
 
     for (FieldsMappings fm : fieldsMappings) {
       if (insertMode.equals(InsertModeEnum.UPSERT)
-          && fm.autoCreateTable()
-          && fm.getMappings().containsKey(FieldsMappings.CONNECT_AUTO_ID_COLUMN)) {
+              && fm.autoCreateTable()
+              && fm.getMappings().containsKey(FieldsMappings.CONNECT_PARTITION_COLUMN)) {
         throw new ConfigException("In order to use UPSERT mode and table AUTO-CREATE you need to define Primary Keys " +
-            "in your connect.jdbc.sink.export.mappings.");
+                "in your connect.jdbc.sink.export.mappings.");
       }
     }
 
@@ -270,13 +270,18 @@ public final class JdbcSinkSettings {
           for (String pk : pks) {
             if (!pk.isEmpty()) pkCols.add(pk);
           }
-          //no pks set and the default
+          //no pks set and the default; we split it in 3 columns because there are cases where data would come from different topics
+          //to the target hence we keep the topic as well
           if (pkCols.isEmpty()) {
-            pkCols.add(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
+            pkCols.add(FieldsMappings.CONNECT_TOPIC_COLUMN);
+            pkCols.add(FieldsMappings.CONNECT_OFFSET_COLUMN);
+            pkCols.add(FieldsMappings.CONNECT_PARTITION_COLUMN);
           }
 
         } else {
-          pkCols.add(FieldsMappings.CONNECT_AUTO_ID_COLUMN);
+          pkCols.add(FieldsMappings.CONNECT_TOPIC_COLUMN);
+          pkCols.add(FieldsMappings.CONNECT_OFFSET_COLUMN);
+          pkCols.add(FieldsMappings.CONNECT_PARTITION_COLUMN);
         }
       }
 
@@ -319,7 +324,7 @@ public final class JdbcSinkSettings {
       //check pks are in our fields selection if not allFields
       if (!allFields) {
         for (String pk : pkCols) {
-          if (!Objects.equals(pk, FieldsMappings.CONNECT_AUTO_ID_COLUMN) && !mappings.containsKey(pk)) {
+          if (!Objects.equals(pk, FieldsMappings.CONNECT_TOPIC_COLUMN) && !mappings.containsKey(pk)) {
             throw new ConfigException(String.format("Primary key %s mapping specified that does not exist in field selection %s.",
                     pk, rawExportMap));
           }
