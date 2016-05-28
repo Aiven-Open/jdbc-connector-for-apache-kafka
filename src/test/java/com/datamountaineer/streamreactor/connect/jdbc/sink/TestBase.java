@@ -125,7 +125,7 @@ public class TestBase {
 
   public Map<String, String> getPropsSelectedFieldsAutoCreatePKBad() {
     Map<String, String> map = getPropsSelectedFields("throw", "upsert", true);
-    map.put(AUTO_CREATE_TABLE_MAP, "{" + topic1 + ":f10,f12}" + ", " + "{" + topic2 + ":f13}");
+    map.put(AUTO_CREATE_TABLE_MAP, "{" + topic1 + ":}" + ", " + "{" + topic2 + ":f13}");
     return map;
   }
 
