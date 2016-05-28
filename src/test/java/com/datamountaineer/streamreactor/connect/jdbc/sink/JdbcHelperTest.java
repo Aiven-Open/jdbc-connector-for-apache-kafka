@@ -1,10 +1,10 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
-import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.common.JdbcHelper;
 import org.junit.After;
 import org.junit.Before;
@@ -69,7 +69,7 @@ public class JdbcHelperTest {
 
     final Map<String, DbTable> tables = new HashMap<>();
 
-    for (DbTable table : DatabaseMetadata.getTableMetadata(HikariHelper.from(SQL_LITE_URI, null, null))) {
+    for (DbTable table : DatabaseMetadata.getTableMetadata(new ConnectionProvider(SQL_LITE_URI, null, null, 1000, 100))) {
       tables.put(table.getName(), table);
     }
 

@@ -1,8 +1,8 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
-import com.datamountaineer.streamreactor.connect.jdbc.common.HikariHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.Database;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.RecordDataExtractor;
@@ -11,7 +11,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.zaxxer.hikari.HikariDataSource;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -108,16 +107,16 @@ public class JdbcDbWriterEvolveTest {
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    HikariDataSource ds = HikariHelper.from(SQL_LITE_URI, null, null);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            ds,
+            connectionProvider,
             Sets.<String>newHashSet(tableName),
             Sets.<String>newHashSet(),
             dbMetadata,
             new SQLiteDialect(),
             1);
     JdbcDbWriter writer = new JdbcDbWriter(
-            ds,
+            connectionProvider,
             new PreparedStatementContextIterable(map, new InsertQueryBuilder(new SQLiteDialect()), 1000),
             new ThrowErrorHandlingPolicy(),
             executor,

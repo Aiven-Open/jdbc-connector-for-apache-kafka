@@ -53,7 +53,6 @@
         <confluent.version>2.0.1</confluent.version>
         <kafka.version>0.9.0.1</kafka.version>
         <guava.version>19.0</guava.version>
-        <HikariCP.version>2.4.5</HikariCP.version>
         <!-- Test scope -->
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
@@ -111,12 +110,6 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-connect-avro-converter</artifactId>
             <version>${confluent.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>${HikariCP.version}</version>
         </dependency>
 
         <!-- JDBC drivers, only included in runtime so they get packaged -->

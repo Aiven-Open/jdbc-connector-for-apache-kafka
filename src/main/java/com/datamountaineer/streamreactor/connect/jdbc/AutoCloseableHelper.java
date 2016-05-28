@@ -14,13 +14,17 @@
  * limitations under the License.
  **/
 
-package com.datamountaineer.streamreactor.connect.jdbc.common;
-
-import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
+package com.datamountaineer.streamreactor.connect.jdbc;
 
 /**
- * To help with unit testing
+ * Utility class to provide the try catch around a Closeable.close.
  */
-public interface DatabaseMetadataProvider {
-  DatabaseMetadata get(final ConnectionProvider connectionProvider);
+public class AutoCloseableHelper {
+  public static void close(final AutoCloseable closeable) {
+    try {
+      closeable.close();
+    } catch (Exception e) {
+
+    }
+  }
 }

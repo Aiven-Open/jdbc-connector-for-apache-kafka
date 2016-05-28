@@ -16,9 +16,9 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.common;
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,20 +130,20 @@ public class DatabaseMetadata {
   /**
    * Creates a DatabaseMetadata instance for the tables given
    *
-   * @param connectionPooling - Database connection pooling
+   * @param connectionProvider - Database connection pooling
    * @param tables            - The tables to consider
    * @return The database metadata
    */
-  public static DatabaseMetadata getDatabaseMetadata(final HikariDataSource connectionPooling,
+  public static DatabaseMetadata getDatabaseMetadata(final ConnectionProvider connectionProvider,
                                                      final Set<String> tables) {
-    ParameterValidator.notNull(connectionPooling, "hikariDataSource");
+    ParameterValidator.notNull(connectionProvider, "connectionProvider");
     ParameterValidator.notNull(tables, "tables");
     if (tables.isEmpty()) {
       throw new IllegalArgumentException("<tables> parameter is empty");
     }
     Connection connection = null;
     try {
-      connection = connectionPooling.getConnection();
+      connection = connectionProvider.getConnection();
 
       final String catalog = connection.getCatalog();
 
@@ -237,13 +237,13 @@ public class DatabaseMetadata {
   /***
    * Returns the tables information
    *
-   * @param connectionPool
+   * @param connectionProvider
    * @return
    */
-  public static List<DbTable> getTableMetadata(final HikariDataSource connectionPool) {
+  public static List<DbTable> getTableMetadata(final ConnectionProvider connectionProvider) {
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
 
       final String catalog = connection.getCatalog();
       final DatabaseMetaData dbMetadata = connection.getMetaData();
@@ -274,7 +274,7 @@ public class DatabaseMetadata {
   /***
    * Returns the tables information
    *
-   * @param connection
+   * @param connection - The instance of the jdbc Connection
    * @return
    */
   public static DbTable getTableMetadata(final Connection connection, final String tableName) throws SQLException {

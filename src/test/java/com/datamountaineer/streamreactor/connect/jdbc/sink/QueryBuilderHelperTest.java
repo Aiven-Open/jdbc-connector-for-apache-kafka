@@ -39,7 +39,8 @@ public class QueryBuilderHelperTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
-            1000
+            1000,
+            100
     );
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
@@ -60,7 +61,8 @@ public class QueryBuilderHelperTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
-            1000);
+            1000,
+            100);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), InsertQueryBuilder.class);
@@ -80,7 +82,8 @@ public class QueryBuilderHelperTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
-            1000);
+            1000,
+            100);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -103,7 +106,8 @@ public class QueryBuilderHelperTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
-            1000);
+            1000,
+            100);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -126,7 +130,8 @@ public class QueryBuilderHelperTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
-            1000);
+            1000,
+            100);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
@@ -149,7 +154,8 @@ public class QueryBuilderHelperTest {
             10,
             "",
             JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
-            1000);
+            1000,
+            100);
 
     QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);

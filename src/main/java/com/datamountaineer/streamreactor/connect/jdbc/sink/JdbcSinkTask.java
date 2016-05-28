@@ -16,15 +16,15 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnum;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-import com.zaxxer.hikari.HikariDataSource;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -74,9 +74,9 @@ public class JdbcSinkTask extends SinkTask {
 
     DatabaseMetadataProvider provider = new DatabaseMetadataProvider() {
       @Override
-      public DatabaseMetadata get(HikariDataSource connectionPool) {
+      public DatabaseMetadata get(ConnectionProvider connectionProvider) {
         logger.info("Getting tables metadata for " + Joiner.on(",").join(settings.getTableNames()));
-        return DatabaseMetadata.getDatabaseMetadata(connectionPool, settings.getTableNames());
+        return DatabaseMetadata.getDatabaseMetadata(connectionProvider, settings.getTableNames());
       }
     };
 

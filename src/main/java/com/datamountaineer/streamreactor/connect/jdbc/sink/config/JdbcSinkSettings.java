@@ -40,6 +40,7 @@ public final class JdbcSinkSettings {
 
   private final int batchSize;
   private final int maxRetries;
+  private final int retryDelay;
   private final String connection;
   private final String user;
   private final String password;
@@ -61,6 +62,7 @@ public final class JdbcSinkSettings {
    * @param schemaRegistryUrl
    * @param defaultPKColName
    * @param batchSize
+   * @param retryDelay        -The time to wait before the operation is retried
    */
   public JdbcSinkSettings(String connection,
                           String user,
@@ -71,8 +73,15 @@ public final class JdbcSinkSettings {
                           int maxRetries,
                           String schemaRegistryUrl,
                           String defaultPKColName,
-                          int batchSize) {
+                          int batchSize,
+                          int retryDelay) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
+    if (retryDelay <= 0) {
+      throw new IllegalArgumentException("Invalid retryDelay value. Needs to be greater than zero");
+    }
+    if (batchSize <= 0) {
+      throw new IllegalArgumentException("Invalid batchSize value. Needs to be greater than zero");
+    }
 
     this.connection = connection;
     this.user = user;
@@ -84,6 +93,7 @@ public final class JdbcSinkSettings {
     this.schemaRegistryUrl = schemaRegistryUrl;
     this.defaultPKColName = defaultPKColName;
     this.batchSize = batchSize;
+    this.retryDelay = retryDelay;
   }
 
   public int getRetries() {
@@ -182,7 +192,8 @@ public final class JdbcSinkSettings {
             config.getInt(JdbcSinkConfig.MAX_RETRIES),
             config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
             config.getString(JdbcSinkConfig.DEFAULT_PK_COL_NAME),
-            config.getInt(JdbcSinkConfig.BATCH_SIZE)
+            config.getInt(JdbcSinkConfig.BATCH_SIZE),
+            config.getInt(JdbcSinkConfig.RETRY_INTERVAL)
     );
   }
 
@@ -325,5 +336,9 @@ public final class JdbcSinkSettings {
       fieldsMappingsList.add(fm);
     }
     return fieldsMappingsList;
+  }
+
+  public int getRetryDelay() {
+    return 0;
   }
 }

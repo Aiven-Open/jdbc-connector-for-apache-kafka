@@ -16,11 +16,11 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
-import com.zaxxer.hikari.HikariDataSource;
 import io.confluent.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,22 +45,22 @@ public class Database {
   private final Set<String> tablesAllowingSchemaEvolution;
   private final DatabaseMetadata databaseMetadata;
   private final DbDialect dbDialect;
-  private final HikariDataSource connectionPool;
+  private final ConnectionProvider connectionProvider;
 
-  public Database(final HikariDataSource connectionPool,
+  public Database(final ConnectionProvider connectionProvider,
                   final Set<String> tablesAllowingAutoCreate,
                   final Set<String> tablesAllowingSchemaEvolution,
                   final DatabaseMetadata databaseMetadata,
                   final DbDialect dbDialect,
                   final int executionRetries) {
     this.executionRetries = executionRetries;
-    ParameterValidator.notNull(connectionPool, "connectionPool");
+    ParameterValidator.notNull(connectionProvider, "connectionProvider");
     ParameterValidator.notNull(databaseMetadata, "databaseMetadata");
     ParameterValidator.notNull(tablesAllowingAutoCreate, "tablesAllowingAutoCreate");
     ParameterValidator.notNull(tablesAllowingSchemaEvolution, "tablesAllowingSchemaEvolution");
     ParameterValidator.notNull(dbDialect, "dbDialect");
 
-    this.connectionPool = connectionPool;
+    this.connectionProvider = connectionProvider;
     this.tablesAllowingAutoCreate = tablesAllowingAutoCreate;
     this.tablesAllowingSchemaEvolution = tablesAllowingSchemaEvolution;
     this.databaseMetadata = databaseMetadata;
@@ -79,7 +79,7 @@ public class Database {
 
     Connection connection = null;
     try {
-      connection = connectionPool.getConnection();
+      connection = connectionProvider.getConnection();
       connection.setAutoCommit(false);
 
       createTables(createMap, connection);
