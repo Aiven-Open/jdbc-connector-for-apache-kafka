@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * Creates an iterator responsible for returning the sql statement for the group of records sharing the same target table
@@ -76,20 +77,49 @@ public final class PreparedStatementContextIterable {
   public Iterator<PreparedStatementContext> iterator(final Collection<SinkRecord> records) {
 
     return new Iterator<PreparedStatementContext>() {
-      final Iterator<SinkRecord> iterator = records.iterator();
+      private final Iterator<SinkRecord> iterator = records.iterator();
+      private final Map<String, PreparedStatementData> mapStatements = new HashMap<>();
+      private final TablesToColumnUsageState state = new TablesToColumnUsageState();
+
+      private PreparedStatementData current = null;
 
       @Override
       public boolean hasNext() {
-        return iterator.hasNext();
+        return iterator.hasNext() || mapStatements.size() > 0;
+      }
+
+      private String getBatchSizeMatch() {
+        for (Map.Entry<String, PreparedStatementData> entry : mapStatements.entrySet()) {
+          if (entry.getValue().getBinders().size() == batchSize) {
+            return entry.getKey();
+          }
+        }
+        return null;
       }
 
       @Override
       public PreparedStatementContext next() {
-        final Map<String, PreparedStatementData> mapStatements = new HashMap<>();
-        final TablesToColumnUsageState state = new TablesToColumnUsageState();
 
-        int batch = batchSize;
-        while (batch > 0 && iterator.hasNext()) {
+        if (mapStatements.size() == 0 && !iterator.hasNext()) {
+          throw new NoSuchElementException();
+        }
+
+        final String keyToRemove = getBatchSizeMatch();
+        if (keyToRemove != null) {
+          final PreparedStatementData data = mapStatements.remove(keyToRemove);
+          return new PreparedStatementContext(data, state.getState());
+        }
+
+        //no more batch size
+        if (!iterator.hasNext()) {
+          //return each entries until we drain them
+          String firstKey = mapStatements.keySet().iterator().next();
+          final PreparedStatementData data = mapStatements.remove(firstKey);
+          return new PreparedStatementContext(data, state.getState());
+        }
+
+        //there are more entries in the iterator
+        while (iterator.hasNext()) {
           final SinkRecord record = iterator.next();
           logger.debug("Received record from topic:%s partition:%d and offset:$d",
                   record.topic(),
@@ -133,7 +163,7 @@ public final class PreparedStatementContextIterable {
               }
             }
 
-            final String statementKey = Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
+            final String statementKey = tableName + Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
 
             if (!mapStatements.containsKey(statementKey)) {
               final String query = extractorWithQueryBuilder
@@ -143,11 +173,29 @@ public final class PreparedStatementContextIterable {
             }
             final PreparedStatementData statementData = mapStatements.get(statementKey);
             statementData.addEntryBinders(binders);
-            batch--;
+            //we have reached a full batch size
+            //we could short circuit here
+            if (statementData.getBinders().size() == batchSize) {
+              break;
+            }
           }
         }
 
-        return new PreparedStatementContext(mapStatements.values(), state.getState());
+        //what if because of topic mappings we got no more entries
+        if (mapStatements.size() == 0) {
+          throw new NoSuchElementException();
+        }
+
+        final String maxBatchKeyToRemove = getBatchSizeMatch();
+        if (maxBatchKeyToRemove != null) {
+          final PreparedStatementData data = mapStatements.remove(maxBatchKeyToRemove);
+          return new PreparedStatementContext(data, state.getState());
+        }
+
+        //return each entries until we drain them
+        String firstKey = mapStatements.keySet().iterator().next();
+        final PreparedStatementData data = mapStatements.remove(firstKey);
+        return new PreparedStatementContext(data, state.getState());
       }
 
       @Override

@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -120,36 +121,38 @@ public final class JdbcDbWriter implements DbWriter {
         connection.setAutoCommit(false);
 
         int totalRecords = 0;
-        while (iterator.hasNext()) {
 
-          final PreparedStatementContext statementContext = iterator.next();
-          final Collection<PreparedStatementData> statementsData = statementContext.getPreparedStatements();
-          if (!statementsData.isEmpty()) {
+        //::hasNext can say it has items but ::next can actually throw NoSuchElementException
+        //see the iterator where because of filtering we might not actually have data to process
+        try {
+          while (iterator.hasNext()) {
+
+            final PreparedStatementContext statementContext = iterator.next();
+            final PreparedStatementData statementData = statementContext.getPreparedStatementData();
 
             //handle possible database changes (new tables, new columns)
             database.update(statementContext.getTablesToColumnsMap());
 
-            for (final PreparedStatementData statementData : statementsData) {
+            PreparedStatement statement = null;
+            try {
+              final String sql = statementData.getSql();
+              logger.debug(String.format("Executing SQL:\n%s", sql));
+              statement = connection.prepareStatement(sql);
+              for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
+                PreparedStatementBindData.apply(statement, entryBinders);
+                statement.addBatch();
+                totalRecords++;
+              }
+              statement.executeBatch();
 
-              PreparedStatement statement = null;
-              try {
-                final String sql = statementData.getSql();
-                logger.info(String.format("Executing SQL:\n%s", sql));
-                statement = connection.prepareStatement(sql);
-                for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
-                  PreparedStatementBindData.apply(statement, entryBinders);
-                  statement.addBatch();
-                  totalRecords++;
-                }
-                statement.executeBatch();
-
-              } finally {
-                if (statement != null) {
-                  statement.close();
-                }
+            } finally {
+              if (statement != null) {
+                statement.close();
               }
             }
           }
+        } catch (NoSuchElementException ex) {
+          //yes we can end up here; but it is not an issue
         }
         //commit the transaction
         connection.commit();

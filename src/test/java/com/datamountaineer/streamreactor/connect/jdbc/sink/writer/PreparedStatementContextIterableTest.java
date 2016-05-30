@@ -21,12 +21,14 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -87,13 +89,13 @@ public class PreparedStatementContextIterableTest {
 
     Iterator<PreparedStatementContext> iter = builder.iterator(records);
     assertTrue(iter.hasNext());
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
-
     Map<String, PreparedStatementData> dataMap = new HashMap<>();
-    for (PreparedStatementData d : actualStatements) {
-      dataMap.put(d.getSql(), d);
+    while (iter.hasNext()) {
+      PreparedStatementData data = iter.next().getPreparedStatementData();
+      dataMap.put(data.getSql(), data);
     }
-    assertEquals(actualStatements.size(), 3);
+
+    assertEquals(dataMap.size(), 3);
 
     assertTrue(dataMap.containsKey(sql1));
     assertTrue(dataMap.containsKey(sql2));
@@ -125,6 +127,192 @@ public class PreparedStatementContextIterableTest {
       List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
       assertEquals(1, ((IntPreparedStatementBinder) b.get(0)).getValue());
       assertEquals("bishbash", ((StringPreparedStatementBinder) b.get(1)).getValue());
+    }
+  }
+
+  @Test
+  public void handleStatementsForTablesWithTheSameColumnSet() throws SQLException {
+
+    List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
+            new BooleanPreparedStatementBinder("colA", true),
+            new IntPreparedStatementBinder("colB", 3),
+            new LongPreparedStatementBinder("colC", 124566),
+            new StringPreparedStatementBinder("colD", "somevalue"));
+
+    List<PreparedStatementBinder> dataBinders2 = Lists.<PreparedStatementBinder>newArrayList(
+            new BooleanPreparedStatementBinder("colA", true),
+            new IntPreparedStatementBinder("colB", 3),
+            new LongPreparedStatementBinder("colC", 124566),
+            new StringPreparedStatementBinder("colD", "somevalue"));
+
+    RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
+    when(valueExtractor1.getTableName()).thenReturn("tableA");
+    when(valueExtractor1.get(any(Struct.class), any(SinkRecord.class))).
+            thenReturn(dataBinders1,
+                    dataBinders1,
+                    dataBinders1);
+
+    RecordDataExtractor valueExtractor2 = mock(RecordDataExtractor.class);
+    when(valueExtractor2.getTableName()).thenReturn("tableB");
+    when(valueExtractor2.get(any(Struct.class), any(SinkRecord.class))).
+            thenReturn(dataBinders2);
+
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put("topic1a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor1));
+    map.put("topic1b", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor2));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 1000);
+
+    //schema is not used as we mocked the value extractors
+    Schema schema = SchemaBuilder.struct().name("record")
+            .version(1)
+            .field("id", Schema.STRING_SCHEMA)
+            .build();
+
+
+    Struct record = new Struct(schema);
+
+    //same size as the valueextractor.get returns
+    Collection<SinkRecord> records = Lists.newArrayList(
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1b", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0));
+
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
+    String sql2 = "INSERT INTO `tableB`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
+
+
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+    Map<String, PreparedStatementData> dataMap = new HashMap<>();
+    while (iter.hasNext()) {
+      PreparedStatementData data = iter.next().getPreparedStatementData();
+      dataMap.put(data.getSql(), data);
+    }
+
+    assertEquals(dataMap.size(), 2);
+
+    assertTrue(dataMap.containsKey(sql1));
+    assertTrue(dataMap.containsKey(sql2));
+
+    List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
+    assertEquals(3, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+
+    binders = dataMap.get(sql2).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+  }
+
+
+  @Test
+  public void shouldCreateMultipleBatches() throws SQLException {
+
+    List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
+            new BooleanPreparedStatementBinder("colA", true),
+            new IntPreparedStatementBinder("colB", 3),
+            new LongPreparedStatementBinder("colC", 124566),
+            new StringPreparedStatementBinder("colD", "somevalue"));
+
+    RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
+    when(valueExtractor1.getTableName()).thenReturn("tableA");
+    when(valueExtractor1.get(any(Struct.class), any(SinkRecord.class))).
+            thenReturn(dataBinders1,
+                    dataBinders1,
+                    dataBinders1);
+
+
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put("topic1a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor1));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 5);
+
+    //schema is not used as we mocked the value extractors
+    Schema schema = SchemaBuilder.struct().name("record")
+            .version(1)
+            .field("id", Schema.STRING_SCHEMA)
+            .build();
+
+
+    Struct record = new Struct(schema);
+
+    //same size as the valueextractor.get returns
+    Collection<SinkRecord> records = Collections.nCopies(14, new SinkRecord("topic1a", 1, null, null, schema, record, 0));
+
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
+
+
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+    List<PreparedStatementData> result = new ArrayList<>();
+    while (iter.hasNext()) {
+      PreparedStatementContext context = iter.next();
+      assertEquals(sql1, context.getPreparedStatementData().getSql());
+      result.add(context.getPreparedStatementData());
+    }
+
+    assertEquals(3, result.size());
+
+    for (int k = 0; k < 2; ++k) {
+      List<Iterable<PreparedStatementBinder>> binders = result.get(k).getBinders();
+      assertEquals(5, binders.size());
+      for (int i = 0; i < binders.size(); ++i) {
+        List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+        assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+        assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+        assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+        assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+      }
+    }
+
+    List<Iterable<PreparedStatementBinder>> binders = result.get(2).getBinders();
+    assertEquals(4, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+
+    records = Collections.nCopies(6, new SinkRecord("topic1a", 1, null, null, schema, record, 0));
+    iter = builder.iterator(records);
+    result = new ArrayList<>();
+    while (iter.hasNext()) {
+      PreparedStatementContext context = iter.next();
+      assertEquals(sql1, context.getPreparedStatementData().getSql());
+      result.add(context.getPreparedStatementData());
+    }
+
+    assertEquals(2, result.size());
+
+    binders = result.get(0).getBinders();
+    assertEquals(5, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+
+    binders = result.get(1).getBinders();
+    assertEquals(1, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
     }
   }
 
@@ -180,17 +368,20 @@ public class PreparedStatementContextIterableTest {
     String sql2 = "INSERT INTO `tableB`(`colE`,`colF`,`colG`,`colH`) VALUES(?,?,?,?)";
 
     Iterator<PreparedStatementContext> iter = builder.iterator(records);
-    assertTrue(iter.hasNext());
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
+    Map<String, PreparedStatementData> dataMap = new HashMap<>();
+    while (iter.hasNext()) {
+      PreparedStatementData data = iter.next().getPreparedStatementData();
+      dataMap.put(data.getSql(), data);
+    }
 
-    assertEquals(actualStatements.size(), 2);
+    assertEquals(2, dataMap.size());
 
-    assertEquals(sql1, actualStatements.get(0).getSql());
-    assertEquals(sql2, actualStatements.get(1).getSql());
+    assertTrue(dataMap.containsKey(sql1));
+    assertTrue(dataMap.containsKey(sql2));
 
-    assertEquals(3, actualStatements.get(0).getBinders().size());
+    assertEquals(3, dataMap.get(sql1).getBinders().size());
 
-    List<Iterable<PreparedStatementBinder>> binders = actualStatements.get(0).getBinders();
+    List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
     for (int i = 0; i < binders.size(); ++i) {
       List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
@@ -199,7 +390,7 @@ public class PreparedStatementContextIterableTest {
       assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
     }
 
-    binders = actualStatements.get(1).getBinders();
+    binders = dataMap.get(sql2).getBinders();
     assertEquals(1, binders.size());
     for (int i = 0; i < binders.size(); ++i) {
       List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(0));
@@ -285,14 +476,12 @@ public class PreparedStatementContextIterableTest {
             "on duplicate key update `A`=values(`A`),`B`=values(`B`)";
 
     Iterator<PreparedStatementContext> iter = builder.iterator(records);
-    assertTrue(iter.hasNext());
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
-
     Map<String, PreparedStatementData> dataMap = new HashMap<>();
-    for (PreparedStatementData d : actualStatements) {
-      dataMap.put(d.getSql(), d);
+    while (iter.hasNext()) {
+      PreparedStatementData data = iter.next().getPreparedStatementData();
+      dataMap.put(data.getSql(), data);
     }
-    assertEquals(actualStatements.size(), 3);
+    assertEquals(dataMap.size(), 3);
 
     assertTrue(dataMap.containsKey(sql1));
     assertTrue(dataMap.containsKey(sql2));
@@ -325,6 +514,127 @@ public class PreparedStatementContextIterableTest {
       assertEquals(1, ((IntPreparedStatementBinder) b.get(0)).getValue());
       assertEquals("bishbash", ((StringPreparedStatementBinder) b.get(1)).getValue());
     }
+  }
+
+  @Test(expected = NoSuchElementException.class)
+  public void shouldThrowNoSuchElementException() throws SQLException {
+
+    List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
+            new BooleanPreparedStatementBinder("colA", true),
+            new IntPreparedStatementBinder("colB", 3),
+            new LongPreparedStatementBinder("colC", 124566),
+            new StringPreparedStatementBinder("colD", "somevalue"));
+
+    RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
+    when(valueExtractor1.getTableName()).thenReturn("tableA");
+    when(valueExtractor1.get(any(Struct.class), any(SinkRecord.class))).
+            thenReturn(dataBinders1,
+                    dataBinders1,
+                    dataBinders1);
+
+
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put("topic1a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor1));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 5);
+
+    //schema is not used as we mocked the value extractors
+    Schema schema = SchemaBuilder.struct().name("record")
+            .version(1)
+            .field("id", Schema.STRING_SCHEMA)
+            .build();
+
+
+    Struct record = new Struct(schema);
+
+    //same size as the valueextractor.get returns
+    Collection<SinkRecord> records = Lists.newArrayList(
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0));
+
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
+
+
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+
+    PreparedStatementContext context = iter.next();
+    assertEquals(sql1, context.getPreparedStatementData().getSql());
+
+
+    List<Iterable<PreparedStatementBinder>> binders = context.getPreparedStatementData().getBinders();
+    assertEquals(5, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+
+    iter.next();
+  }
+
+  @Test(expected = NoSuchElementException.class)
+  public void shouldThrowNoSuchElementExceptionIfTheRemainingRecordsAreFilteredOut() throws SQLException {
+
+    List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
+            new BooleanPreparedStatementBinder("colA", true),
+            new IntPreparedStatementBinder("colB", 3),
+            new LongPreparedStatementBinder("colC", 124566),
+            new StringPreparedStatementBinder("colD", "somevalue"));
+
+    RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
+    when(valueExtractor1.getTableName()).thenReturn("tableA");
+    when(valueExtractor1.get(any(Struct.class), any(SinkRecord.class))).
+            thenReturn(dataBinders1,
+                    dataBinders1,
+                    dataBinders1);
+
+
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put("topic1a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor1));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 5);
+
+    //schema is not used as we mocked the value extractors
+    Schema schema = SchemaBuilder.struct().name("record")
+            .version(1)
+            .field("id", Schema.STRING_SCHEMA)
+            .build();
+
+
+    Struct record = new Struct(schema);
+
+    //same size as the valueextractor.get returns
+    Collection<SinkRecord> records = Lists.newArrayList(
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topic1a", 1, null, null, schema, record, 0),
+            new SinkRecord("topicNOT_MAPPED", 1, null, null, schema, record, 0)); //record for which we don't have a mapping
+
+    String sql1 = "INSERT INTO `tableA`(`colA`,`colB`,`colC`,`colD`) VALUES(?,?,?,?)";
+
+
+    Iterator<PreparedStatementContext> iter = builder.iterator(records);
+
+    PreparedStatementContext context = iter.next();
+    assertEquals(sql1, context.getPreparedStatementData().getSql());
+
+
+    List<Iterable<PreparedStatementBinder>> binders = context.getPreparedStatementData().getBinders();
+    assertEquals(5, binders.size());
+    for (int i = 0; i < binders.size(); ++i) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
+      assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
+      assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
+      assertEquals("somevalue", ((StringPreparedStatementBinder) b.get(3)).getValue());
+    }
+
+    iter.next();
   }
 
   @Test
@@ -395,14 +705,12 @@ public class PreparedStatementContextIterableTest {
             "on duplicate key update `colE`=values(`colE`),`colF`=values(`colF`),`colG`=values(`colG`),`colH`=values(`colH`)";
 
     Iterator<PreparedStatementContext> iter = builder.iterator(records);
-    assertTrue(iter.hasNext());
-    List<PreparedStatementData> actualStatements = Lists.newArrayList(iter.next().getPreparedStatements());
-
     Map<String, PreparedStatementData> dataMap = new HashMap<>();
-    for (PreparedStatementData d : actualStatements) {
-      dataMap.put(d.getSql(), d);
+    while (iter.hasNext()) {
+      PreparedStatementData data = iter.next().getPreparedStatementData();
+      dataMap.put(data.getSql(), data);
     }
-    assertEquals(actualStatements.size(), 2);
+    assertEquals(dataMap.size(), 2);
 
     assertTrue(dataMap.containsKey(sql1));
     assertTrue(dataMap.containsKey(sql2));

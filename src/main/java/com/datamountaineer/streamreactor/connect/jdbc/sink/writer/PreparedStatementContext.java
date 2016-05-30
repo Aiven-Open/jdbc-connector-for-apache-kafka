@@ -26,12 +26,12 @@ import java.util.Map;
  * Contains a list of PreparedStatements to execute as well as the tables affected and the columns referenced.
  */
 public class PreparedStatementContext {
-  private final Collection<PreparedStatementData> preparedStatements;
+  private final PreparedStatementData preparedStatementData;
   private final Map<String, Collection<SinkRecordField>> tablesToColumnsMap;
 
-  public PreparedStatementContext(Collection<PreparedStatementData> preparedStatements,
+  public PreparedStatementContext(PreparedStatementData preparedStatementData,
                                   Map<String, Collection<SinkRecordField>> tablesToColumnsMap) {
-    this.preparedStatements = preparedStatements;
+    this.preparedStatementData = preparedStatementData;
     this.tablesToColumnsMap = tablesToColumnsMap;
   }
 
@@ -40,8 +40,8 @@ public class PreparedStatementContext {
    *
    * @return Returns the list of PreparedStatements to execute
    */
-  public Collection<PreparedStatementData> getPreparedStatements() {
-    return preparedStatements;
+  public PreparedStatementData getPreparedStatementData() {
+    return preparedStatementData;
   }
 
   /**
