@@ -25,9 +25,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.AUTO_CREATE_TABLE_MAP;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
+import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.SCHEMA_REGISTRY_URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -94,7 +94,9 @@ public class SinkTaskTest {
     client.registerSchema(rawSchema, base.getTopic1());
     Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
     props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(AUTO_CREATE_TABLE_MAP, "{" + base.getTopic1() + ":}");
+    props.put(EXPORT_MAPPINGS,
+            "INSERT INTO " + base.getTableName1() + " SELECT * FROM " + base.getTopic1() + " AUTOCREATE;" +
+                    "INSERT INTO " + base.getTableName2() + " SELECT * FROM " + base.getTopic2());
     props.put(ERROR_POLICY, "RETRY");
     props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);
 

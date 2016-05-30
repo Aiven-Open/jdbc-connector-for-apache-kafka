@@ -9,6 +9,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.RecordDataExtractor;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SqlLiteHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.kafka.connect.data.Schema;
@@ -80,10 +81,13 @@ public class JdbcDbWriterEvolveTest {
     final String topic = "topic";
     final int partition = 2;
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
+    QueryBuilder queryBuilder = new InsertQueryBuilder(new SQLiteDialect());
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     Map<String, FieldAlias> fields = new HashMap<>();
     map.put(topic.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName, topic, true, fields, false, true)));
+            new DataExtractorWithQueryBuilder(
+                    queryBuilder,
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT, fields, false, true))));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
@@ -97,7 +101,7 @@ public class JdbcDbWriterEvolveTest {
             1);
     JdbcDbWriter writer = new JdbcDbWriter(
             connectionProvider,
-            new PreparedStatementContextIterable(map, new InsertQueryBuilder(new SQLiteDialect()), 1000),
+            new PreparedStatementContextIterable(map, 1000),
             new ThrowErrorHandlingPolicy(),
             executor,
             10);
@@ -200,14 +204,19 @@ public class JdbcDbWriterEvolveTest {
       records.add(new SinkRecord(topic, partition, null, null, schema, struct1, i));
     }
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
+    QueryBuilder queryBuilder = new InsertQueryBuilder(new SQLiteDialect());
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     Map<String, FieldAlias> fields = new HashMap<>();
     fields.put(FieldsMappings.CONNECT_TOPIC_COLUMN, new FieldAlias(FieldsMappings.CONNECT_TOPIC_COLUMN, true));
     fields.put(FieldsMappings.CONNECT_PARTITION_COLUMN, new FieldAlias(FieldsMappings.CONNECT_PARTITION_COLUMN, true));
     fields.put(FieldsMappings.CONNECT_OFFSET_COLUMN, new FieldAlias(FieldsMappings.CONNECT_OFFSET_COLUMN, true));
     map.put(topic.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName, topic, true, fields,
-                    true, true)));
+            new DataExtractorWithQueryBuilder(
+                    queryBuilder,
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true,
+                            InsertModeEnum.INSERT,
+                            fields,
+                            true, true))));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
@@ -221,7 +230,7 @@ public class JdbcDbWriterEvolveTest {
             1);
     JdbcDbWriter writer = new JdbcDbWriter(
             connectionProvider,
-            new PreparedStatementContextIterable(map, new InsertQueryBuilder(new SQLiteDialect()), 1000),
+            new PreparedStatementContextIterable(map, 1000),
             new ThrowErrorHandlingPolicy(),
             executor,
             10);

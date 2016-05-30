@@ -64,11 +64,9 @@ public class PreparedStatementContextIterableTest {
                     dataBinders1,
                     dataBinders3);
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
-    map.put("topic1a", valueExtractor);
-    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map,
-            new InsertQueryBuilder(new MySqlDialect()),
-            1000);
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put("topic1a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 1000);
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -165,13 +163,11 @@ public class PreparedStatementContextIterableTest {
             thenReturn(dataBinders2);
 
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
-    map.put("topic1a", valueExtractor1);
-    map.put("topic2a", valueExtractor2);
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put("topic1a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor1));
+    map.put("topic2a", new DataExtractorWithQueryBuilder(new InsertQueryBuilder(new MySqlDialect()), valueExtractor2));
 
-    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map,
-            new InsertQueryBuilder(new MySqlDialect()),
-            1000);
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 1000);
 
     Collection<SinkRecord> records = Lists.newArrayList(
             new SinkRecord("topic1a", 1, null, null, schema, struct1, 0),
@@ -257,13 +253,11 @@ public class PreparedStatementContextIterableTest {
                     dataBinders1,
                     dataBinders3);
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
-    map.put(topic.toLowerCase(), valueExtractor);
-
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     QueryBuilder queryBuilder = new UpsertQueryBuilder(new MySqlDialect());
-    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map,
-            queryBuilder,
-            1000);
+    map.put(topic.toLowerCase(), new DataExtractorWithQueryBuilder(queryBuilder, valueExtractor));
+
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 1000);
 
     //schema is not used as we mocked the value extractors
     Schema schema = SchemaBuilder.struct().name("record")
@@ -381,13 +375,11 @@ public class PreparedStatementContextIterableTest {
     when(valueExtractor2.get(eq(struct2), any(SinkRecord.class))).
             thenReturn(dataBinders2);
 
-
-    Map<String, RecordDataExtractor> map = new HashMap<>();
-    map.put(topic1.toLowerCase(), valueExtractor1);
-    map.put(topic2.toLowerCase(), valueExtractor2);
-
     QueryBuilder queryBuilder = new UpsertQueryBuilder(new MySqlDialect());
-    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, queryBuilder, 1000);
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
+    map.put(topic1.toLowerCase(), new DataExtractorWithQueryBuilder(queryBuilder, valueExtractor1));
+    map.put(topic2.toLowerCase(), new DataExtractorWithQueryBuilder(queryBuilder, valueExtractor2));
+    PreparedStatementContextIterable builder = new PreparedStatementContextIterable(map, 1000);
 
     //same size as the valueextractor.get returns
     Collection<SinkRecord> records = Lists.newArrayList(

@@ -254,23 +254,21 @@ public final class JdbcDbWriter implements DbWriter {
                   System.lineSeparator(), latest));
           AvroToDbConverter converter = new AvroToDbConverter();
           Collection<SinkRecordField> convertedFields = converter.convert(latest);
-          boolean addDefaultPk = false;
-
-          //do we have a default pk columns
-          FieldAlias pk = fm.getMappings().get(settings.getDefaultPKColName());
-          if (pk != null) {
-            addDefaultPk = pk.isPrimaryKey();
-          }
 
           logger.info("Field mappings");
           for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
             logger.info(f.getKey() + " " + f.getValue());
           }
 
-          //add pk column if we have it to schema registry list of columns.
-          if (addDefaultPk) {
-            logger.info("Adding default primary key " + settings.getDefaultPKColName());
-            convertedFields.add(new SinkRecordField(Schema.Type.STRING, settings.getDefaultPKColName(), true));
+          //do we have a default pk columns
+          FieldAlias pk = fm.getMappings().get(FieldsMappings.CONNECT_TOPIC_COLUMN);
+          if (pk != null) {
+            //add pk column if we have it to schema registry list of columns.
+            logger.info("Adding default primary key (" + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
+                    FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
+            convertedFields.add(new SinkRecordField(Schema.Type.STRING, FieldsMappings.CONNECT_TOPIC_COLUMN, true));
+            convertedFields.add(new SinkRecordField(Schema.Type.INT32, FieldsMappings.CONNECT_PARTITION_COLUMN, true));
+            convertedFields.add(new SinkRecordField(Schema.Type.INT64, FieldsMappings.CONNECT_OFFSET_COLUMN, true));
             createTablesMap.put(fm.getTableName(), convertedFields);
           }
         } catch (RestClientException e) {

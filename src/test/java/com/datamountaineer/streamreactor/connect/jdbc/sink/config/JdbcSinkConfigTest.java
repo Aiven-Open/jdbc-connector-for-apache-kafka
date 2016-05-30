@@ -7,8 +7,6 @@ import java.util.Map;
 
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.INSERT_MODE;
-import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.TOPIC_TABLE_MAPPING;
 import static org.junit.Assert.assertEquals;
 
 public class JdbcSinkConfigTest {
@@ -17,19 +15,11 @@ public class JdbcSinkConfigTest {
     Map<String, String> props = new HashMap<>();
 
     props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA, topic2=tableB");
+    props.put(JdbcSinkConfig.EXPORT_MAPPINGS,
+            "INSERT INTO tableA SELECT * FROM topic1;INSERT INTO tableB SELECT * FROM topic2");
 
-    assertEquals(new JdbcSinkConfig(props).getString(ERROR_POLICY), "THROW");
-  }
+    JdbcSinkConfig config = new JdbcSinkConfig(props);
+    assertEquals(config.getString(ERROR_POLICY), "THROW");
 
-
-  @Test
-  public void shouldDefaultToINSERT() {
-    Map<String, String> props = new HashMap<>();
-
-    props.put(DATABASE_CONNECTION_URI, "jdbc://");
-    props.put(TOPIC_TABLE_MAPPING, "topic1=tableA, topic2=tableB");
-
-    assertEquals(new JdbcSinkConfig(props).getString(INSERT_MODE), "INSERT");
   }
 }

@@ -15,7 +15,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.ErrorPolicyEnu
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
-import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -69,7 +68,7 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseBatching() throws RestClientException, SQLException, IOException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "topica", true, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>()));
 
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
@@ -77,10 +76,8 @@ public class JdbcDbWriterTest {
             null,
             fieldsMappingsList,
             ErrorPolicyEnum.NOOP,
-            InsertModeEnum.INSERT,
             10,
             "",
-            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
             1000,
             1000);
 
@@ -101,17 +98,15 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseNoopForErrorHandling() throws SQLException, IOException, RestClientException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
             null,
             null,
             fieldsMappingsList,
             ErrorPolicyEnum.NOOP,
-            InsertModeEnum.INSERT,
             10,
             "",
-            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
             1000,
             1000
     );
@@ -132,16 +127,15 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseThrowForErrorHandling() throws SQLException, IOException, RestClientException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>()));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
             null,
             null,
             fieldsMappingsList,
             ErrorPolicyEnum.THROW,
-            InsertModeEnum.INSERT,
-            10, "",
-            JdbcSinkConfig.DEFAULT_PK_COL_NAME_VALUE,
+            10,
+            "",
             1000,
             1000);
 
@@ -241,9 +235,12 @@ public class JdbcDbWriterTest {
             100,
             new SinkRecord(topic, partition, null, null, schema, struct1, 1));
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     map.put(topic.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName, topic, true, new HashMap<String, FieldAlias>())));
+            new DataExtractorWithQueryBuilder(
+                    new InsertQueryBuilder(new SQLiteDialect()),
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT,
+                            new HashMap<String, FieldAlias>()))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
@@ -268,7 +265,7 @@ public class JdbcDbWriterTest {
             new SQLiteDialect(),
             1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, new InsertQueryBuilder(new SQLiteDialect()), 100),
+            new PreparedStatementContextIterable(map, 100),
             new ThrowErrorHandlingPolicy(),
             executor,
             10);
@@ -380,12 +377,14 @@ public class JdbcDbWriterTest {
             new SinkRecord(topic, partition, null, null, schema, struct1, 1),
             new SinkRecord(topic, partition, null, null, schema, struct2, 2));
 
-
-    Map<String, RecordDataExtractor> map = new HashMap<>();
+    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     Map<String, FieldAlias> aliasMapPK = new HashMap<>();
     aliasMapPK.put("firstName", new FieldAlias("firstName", true));
     map.put(topic.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName, topic, true, aliasMapPK)));
+            new DataExtractorWithQueryBuilder(
+                    new UpsertQueryBuilder(dbDialect),
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.UPSERT, aliasMapPK))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
@@ -402,7 +401,7 @@ public class JdbcDbWriterTest {
             )));
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
             connectionProvider,
@@ -412,7 +411,7 @@ public class JdbcDbWriterTest {
             dbDialect,
             1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, new UpsertQueryBuilder(dbDialect), 100),
+            new PreparedStatementContextIterable(map, 100),
             new ThrowErrorHandlingPolicy(),
             executor,
             10);
@@ -556,17 +555,21 @@ public class JdbcDbWriterTest {
             new SinkRecord(topic1, partition, null, null, schema, struct1a, 3),
             new SinkRecord(topic2, partition, null, null, schema, struct2, 4));
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
+    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     Map<String, FieldAlias> aliasPKMap = new HashMap<>();
 
     aliasPKMap.put("firstName", new FieldAlias("firstName", true));
     aliasPKMap.put("lastName", new FieldAlias("lastName", true));
     map.put(topic1.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName1, topic1, true, aliasPKMap)));
+            new DataExtractorWithQueryBuilder(
+                    new UpsertQueryBuilder(dbDialect),
+                    new RecordDataExtractor(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.UPSERT, aliasPKMap))));
     map.put(topic2.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName2, topic2, true, aliasPKMap)));
+            new DataExtractorWithQueryBuilder(
+                    new UpsertQueryBuilder(dbDialect),
+                    new RecordDataExtractor(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.UPSERT, aliasPKMap))));
 
-    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName1, Lists.<DbTableColumn>newArrayList(
                     new DbTableColumn("firstName", true, false, 1),
@@ -603,7 +606,7 @@ public class JdbcDbWriterTest {
             dbDialect,
             1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, new UpsertQueryBuilder(dbDialect), 100),
+            new PreparedStatementContextIterable(map, 100),
             new ThrowErrorHandlingPolicy(),
             executor,
             10);
@@ -720,7 +723,6 @@ public class JdbcDbWriterTest {
             new SinkRecord(topic, partition, null, null, schema, struct2, 2));
 
 
-    Map<String, RecordDataExtractor> map = new HashMap<>();
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("firstName", new FieldAlias("firstName", true));
     aliasMap.put("lastName", new FieldAlias("lastName", false));
@@ -728,8 +730,13 @@ public class JdbcDbWriterTest {
     aliasMap.put("bool", new FieldAlias("bool", false));
     aliasMap.put("byte", new FieldAlias("byte", false));
 
+    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
+
+    Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     map.put(topic.toLowerCase(),
-            new RecordDataExtractor(new FieldsMappings(tableName, topic, false, aliasMap)));
+            new DataExtractorWithQueryBuilder(
+                    new UpsertQueryBuilder(dbDialect),
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, false, InsertModeEnum.UPSERT, aliasMap))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
@@ -740,7 +747,6 @@ public class JdbcDbWriterTest {
                     new DbTableColumn("byte", true, false, 1)
             )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
             connectionProvider,
@@ -750,7 +756,7 @@ public class JdbcDbWriterTest {
             dbDialect,
             1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, new UpsertQueryBuilder(dbDialect), 100),
+            new PreparedStatementContextIterable(map, 100),
             new ThrowErrorHandlingPolicy(),
             executor,
             10);

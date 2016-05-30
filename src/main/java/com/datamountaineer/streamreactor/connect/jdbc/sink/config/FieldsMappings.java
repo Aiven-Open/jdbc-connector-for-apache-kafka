@@ -18,9 +18,7 @@ package com.datamountaineer.streamreactor.connect.jdbc.sink.config;
 
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.google.common.base.Joiner;
-import org.apache.kafka.connect.sink.SinkRecord;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -38,6 +36,7 @@ public final class FieldsMappings {
 
   private final boolean autoCreateTable;
   private final boolean evolveTableSchema;
+  private final InsertModeEnum insertMode;
 
   /**
    * Creates a new instance of FieldsMappings
@@ -52,8 +51,9 @@ public final class FieldsMappings {
   public FieldsMappings(final String tableName,
                         final String incomingTopic,
                         final boolean allFieldsIncluded,
+                        final InsertModeEnum insertMode,
                         final Map<String, FieldAlias> mappings) {
-    this(tableName, incomingTopic, allFieldsIncluded, mappings, false, false);
+    this(tableName, incomingTopic, allFieldsIncluded, insertMode, mappings, false, false);
   }
 
   /**
@@ -63,6 +63,7 @@ public final class FieldsMappings {
    * @param incomingTopic     - The source Kafka topic
    * @param allFieldsIncluded - If set to true it considers all fields in the payload; if false it will rely on the
    *                          defined fields to include
+   * @param insertMode        - Specifies how the data is inserted into the rdbms
    * @param mappings          - Provides the map of fields to include and their alias. It could be set to Map.empty if all fields
    *                          are to be included.
    * @param evolveTableSchema - If true it allows auto table creation and table evolution
@@ -70,6 +71,7 @@ public final class FieldsMappings {
   public FieldsMappings(final String tableName,
                         final String incomingTopic,
                         final boolean allFieldsIncluded,
+                        final InsertModeEnum insertMode,
                         final Map<String, FieldAlias> mappings,
                         final boolean autoCreateTable,
                         final boolean evolveTableSchema) {
@@ -81,15 +83,12 @@ public final class FieldsMappings {
     this.tableName = tableName;
     this.incomingTopic = incomingTopic;
     this.allFieldsIncluded = allFieldsIncluded;
+    this.insertMode = insertMode;
     this.mappings = mappings;
     this.autoCreateTable = autoCreateTable;
     this.evolveTableSchema = evolveTableSchema;
   }
 
-
-  public FieldsMappings(final String tableName, final String incomingTopic) {
-    this(tableName, incomingTopic, true, new HashMap<String, FieldAlias>());
-  }
 
   /**
    * If set to true all the incoming SinkRecord payload fields are considered for inserting into the table.
@@ -122,25 +121,26 @@ public final class FieldsMappings {
     return tableName;
   }
 
-  /**
-   * Returns true if any of the filed mappings provided are part of the table primary key.
-   *
-   * @return
-   */
-  public boolean hasPrimaryKeys() {
-    for (Map.Entry<String, FieldAlias> e : mappings.entrySet()) {
-      if (e.getValue().isPrimaryKey())
-        return true;
-    }
-    return false;
-  }
-
   public boolean autoCreateTable() {
     return autoCreateTable;
   }
 
+  /**
+   * Returns true if the table schema is suppose to be evolved in sync with Schema changes; false - otherwise
+   *
+   * @return
+   */
   public boolean evolveTableSchema() {
     return evolveTableSchema;
+  }
+
+  /**
+   * Returns the way the data should be pushed into the database:insert/upsert
+   *
+   * @return
+   */
+  public InsertModeEnum getInsertMode() {
+    return insertMode;
   }
 
   @Override
@@ -154,15 +154,5 @@ public final class FieldsMappings {
             "include-all-fields:" + allFieldsIncluded + "\n" +
             "mappings:" + mapJoiner.join(mappings) + "\n" +
             "}";
-  }
-
-  /**
-   * Constructs the primary key value when the table is set with autocreate and no fields are specified
-   *
-   * @param record - The connect record structure
-   * @return - The string formed by topic.partition.offset
-   */
-  public static String generateConnectAutoPKValue(final SinkRecord record) {
-    return String.format("%s.%d.%d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
   }
 }

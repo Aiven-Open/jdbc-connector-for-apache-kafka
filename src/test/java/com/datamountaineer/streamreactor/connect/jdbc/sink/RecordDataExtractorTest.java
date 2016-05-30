@@ -12,6 +12,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.ShortPrepared
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.StringPreparedStatementBinder;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldsMappings;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -64,7 +65,7 @@ public class RecordDataExtractorTest {
             .put("bytes", bs)
             .put("age", 30);
 
-    FieldsMappings tm = new FieldsMappings("table", "topic", true, new HashMap<String, FieldAlias>());
+    FieldsMappings tm = new FieldsMappings("table", "topic", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>());
     RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
@@ -125,7 +126,7 @@ public class RecordDataExtractorTest {
     mappings.put("lastName", new FieldAlias("Name"));
     mappings.put("age", new FieldAlias("a"));
 
-    FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
+    FieldsMappings tm = new FieldsMappings("table", "topic", true, InsertModeEnum.INSERT, mappings);
     RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
@@ -173,7 +174,7 @@ public class RecordDataExtractorTest {
     mappings.put("lastName", new FieldAlias("Name"));
     mappings.put("age", new FieldAlias("age"));
 
-    FieldsMappings tm = new FieldsMappings("table", "topic", false, mappings);
+    FieldsMappings tm = new FieldsMappings("table", "topic", false, InsertModeEnum.INSERT, mappings);
     RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 2, null, null, schema, struct, 2));
@@ -229,7 +230,7 @@ public class RecordDataExtractorTest {
     mappings.put("firstName", new FieldAlias("fName", true));
     mappings.put("lastName", new FieldAlias("lName", true));
 
-    FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
+    FieldsMappings tm = new FieldsMappings("table", "topic", true, InsertModeEnum.INSERT, mappings);
     RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,
             new SinkRecord("", 1, null, null, schema, struct, 0));
@@ -321,7 +322,7 @@ public class RecordDataExtractorTest {
     Map<String, FieldAlias> mappings = new HashMap<>();
     mappings.put("long", new FieldAlias("long", true));
 
-    FieldsMappings tm = new FieldsMappings("table", "topic", true, mappings);
+    FieldsMappings tm = new FieldsMappings("table", "topic", true, InsertModeEnum.INSERT, mappings);
 
     RecordDataExtractor dataExtractor = new RecordDataExtractor(tm);
     List<PreparedStatementBinder> binders = dataExtractor.get(struct,

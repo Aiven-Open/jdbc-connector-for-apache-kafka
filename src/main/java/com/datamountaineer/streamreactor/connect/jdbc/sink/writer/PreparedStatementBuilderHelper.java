@@ -25,7 +25,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
-import org.apache.kafka.common.config.ConfigException;
+import io.confluent.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,26 +37,6 @@ import java.util.Set;
 public final class PreparedStatementBuilderHelper {
 
   private static final Logger logger = LoggerFactory.getLogger(PreparedStatementBuilderHelper.class);
-
-  /**
-   * Creates a new instance of PrepareStatementBuilder
-   *
-   * @param settings - Instance of the Jdbc sink settings
-   * @return - Returns an instance of PreparedStatementBuilder depending on the settings asking for batched or
-   * non-batched inserts
-   */
-  /*public static BatchedPreparedStatementBuilder from(final JdbcSinkSettings settings) {
-    final Map<String, StructFieldsDataExtractor> map = Maps.newHashMap();
-    for (final FieldsMappings tm : settings.getMappings()) {
-      final StructFieldsDataExtractor fieldsValuesExtractor = new StructFieldsDataExtractor(tm);
-
-      map.put(tm.getIncomingTopic().toLowerCase(), fieldsValuesExtractor);
-    }
-
-    final QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
-
-    return new BatchedPreparedStatementBuilder(map, queryBuilder);
-  }*/
 
   /**
    * This is used in the non evolving table mode. It will overlap the database columns information over the one provided
@@ -71,7 +51,7 @@ public final class PreparedStatementBuilderHelper {
   public static PreparedStatementContextIterable from(final JdbcSinkSettings settings,
                                                       final DatabaseMetadata databaseMetadata) {
 
-    final Map<String, RecordDataExtractor> map = Maps.newHashMap();
+    final Map<String, DataExtractorWithQueryBuilder> map = Maps.newHashMap();
     for (final FieldsMappings tm : settings.getMappings()) {
       FieldsMappings tableMappings = tm;
       //if the table is not set with autocreate we try to find it
@@ -84,16 +64,16 @@ public final class PreparedStatementBuilderHelper {
                   tables));
         }
         //get the columns merged
-        tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()), settings.getInsertMode());
+        tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
       }
       final RecordDataExtractor fieldsValuesExtractor = new RecordDataExtractor(tableMappings);
+      final QueryBuilder queryBuilder = QueryBuilderHelper.from(settings.getConnection(), tm.getInsertMode());
 
-      map.put(tm.getIncomingTopic().toLowerCase(), fieldsValuesExtractor);
+      map.put(tm.getIncomingTopic().toLowerCase(), new DataExtractorWithQueryBuilder(queryBuilder, fieldsValuesExtractor));
+
     }
 
-    final QueryBuilder queryBuilder = QueryBuilderHelper.from(settings);
-
-    return new PreparedStatementContextIterable(map, queryBuilder, settings.getBatchSize());
+    return new PreparedStatementContextIterable(map, settings.getBatchSize());
   }
 
   /**
@@ -105,7 +85,7 @@ public final class PreparedStatementBuilderHelper {
    * @param dbTable - The instance of DbTable
    * @return
    */
-  public static FieldsMappings validateAndMerge(final FieldsMappings tm, final DbTable dbTable, InsertModeEnum mode) {
+  public static FieldsMappings validateAndMerge(final FieldsMappings tm, final DbTable dbTable) {
     final Set<String> pkColumns = new HashSet<>();
     final Map<String, DbTableColumn> dbCols = dbTable.getColumns();
     for (DbTableColumn column : dbCols.values()) {
@@ -160,7 +140,7 @@ public final class PreparedStatementBuilderHelper {
                   Joiner.on(",").join(specifiedPKs),
                   Joiner.on(",").join(pkColumns)));
         }
-        if (mode.equals(InsertModeEnum.UPSERT)) {
+        if (tm.getInsertMode().equals(InsertModeEnum.UPSERT)) {
           throw new ConfigException(
                   String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
                           Joiner.on(",").join(specifiedPKs),
@@ -168,6 +148,6 @@ public final class PreparedStatementBuilderHelper {
         }
       }
     }
-    return new FieldsMappings(tm.getTableName(), tm.getIncomingTopic(), false, map);
+    return new FieldsMappings(tm.getTableName(), tm.getIncomingTopic(), false, tm.getInsertMode(), map);
   }
 }
