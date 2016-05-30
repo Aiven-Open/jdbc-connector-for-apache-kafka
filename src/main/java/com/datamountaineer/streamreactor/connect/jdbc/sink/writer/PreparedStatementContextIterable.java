@@ -49,27 +49,23 @@ public final class PreparedStatementContextIterable {
   };
 
   private final int batchSize;
-  private final Map<String, RecordDataExtractor> fieldsExtractorMap;
-  private final QueryBuilder queryBuilder;
+  private final Map<String, DataExtractorWithQueryBuilder> topicsMap;
 
   /**
    * Creates a new instance of PreparedStatementContextIterable
    *
-   * @param fieldsExtractorMap - A map between topics to the payload field values extractor
-   * @param queryBuilder       - An instance to the query builder (insert/upsert)
-   * @param batchSize          - The maximum amount of values to be sent to the RDBMS in one batch execution
+   * @param topicsMap - A map between topics to the payload field values extractor and the query builder strategy
+   * @param batchSize - The maximum amount of values to be sent to the RDBMS in one batch execution
    */
-  public PreparedStatementContextIterable(final Map<String, RecordDataExtractor> fieldsExtractorMap,
-                                          final QueryBuilder queryBuilder,
+  public PreparedStatementContextIterable(final Map<String, DataExtractorWithQueryBuilder> topicsMap,
                                           final int batchSize) {
     if (batchSize <= 0) {
       throw new IllegalArgumentException("Invalid batchSize specified. The value has to be a positive and non zero integer.");
     }
-    if (fieldsExtractorMap == null || fieldsExtractorMap.size() == 0) {
+    if (topicsMap == null || topicsMap.size() == 0) {
       throw new IllegalArgumentException("Invalid fieldsExtractorMap provided.");
     }
-    this.fieldsExtractorMap = fieldsExtractorMap;
-    this.queryBuilder = queryBuilder;
+    this.topicsMap = topicsMap;
     this.batchSize = batchSize;
   }
 
@@ -110,7 +106,7 @@ public final class PreparedStatementContextIterable {
           }
 
           final String topic = record.topic().toLowerCase();
-          if (!fieldsExtractorMap.containsKey(topic)) {
+          if (!topicsMap.containsKey(topic)) {
             logger.warn(String.format("For topic %s there is no mapping.Skipping record at partition %d and offset %d",
                     record.topic(),
                     record.kafkaPartition(),
@@ -118,7 +114,8 @@ public final class PreparedStatementContextIterable {
             continue;
           }
 
-          final RecordDataExtractor fieldsDataExtractor = fieldsExtractorMap.get(topic);
+          DataExtractorWithQueryBuilder extractorWithQueryBuilder = topicsMap.get(topic);
+          final RecordDataExtractor fieldsDataExtractor = extractorWithQueryBuilder.getDataExtractor();
           final Struct struct = (Struct) record.value();
           final List<PreparedStatementBinder> binders = fieldsDataExtractor.get(struct, record);
 
@@ -139,7 +136,9 @@ public final class PreparedStatementContextIterable {
             final String statementKey = Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
 
             if (!mapStatements.containsKey(statementKey)) {
-              final String query = queryBuilder.build(tableName, nonKeyColumnsName, keyColumnsName);
+              final String query = extractorWithQueryBuilder
+                      .getQueryBuilder()
+                      .build(tableName, nonKeyColumnsName, keyColumnsName);
               mapStatements.put(statementKey, new PreparedStatementData(query, Lists.<Iterable<PreparedStatementBinder>>newLinkedList()));
             }
             final PreparedStatementData statementData = mapStatements.get(statementKey);
