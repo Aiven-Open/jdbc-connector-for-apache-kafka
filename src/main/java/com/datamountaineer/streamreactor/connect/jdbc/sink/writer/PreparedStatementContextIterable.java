@@ -121,10 +121,6 @@ public final class PreparedStatementContextIterable {
         //there are more entries in the iterator
         while (iterator.hasNext()) {
           final SinkRecord record = iterator.next();
-          logger.debug("Received record from topic:%s partition:%d and offset:$d",
-                  record.topic(),
-                  record.kafkaPartition(),
-                  record.kafkaOffset());
 
           if (record.value() == null || record.value().getClass() != Struct.class) {
             final String msg = String.format("On topic %s partition %d and offset %d the payload is not of type struct",
