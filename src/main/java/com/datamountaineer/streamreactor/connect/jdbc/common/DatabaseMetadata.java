@@ -131,7 +131,7 @@ public class DatabaseMetadata {
    * Creates a DatabaseMetadata instance for the tables given
    *
    * @param connectionProvider - Database connection pooling
-   * @param tables            - The tables to consider
+   * @param tables             - The tables to consider
    * @return The database metadata
    */
   public static DatabaseMetadata getDatabaseMetadata(final ConnectionProvider connectionProvider,
@@ -195,19 +195,23 @@ public class DatabaseMetadata {
         //logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
         String schema = getOracleSchema(connection);
 
-        logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+        logger.info(String.format("[%s] Checking %s exists for catalog=%s and schema %s", product, tableName, catalog, schema));
 
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName.toUpperCase(), new String[]{"TABLE"});
       } else if (product.toLowerCase().contains("postgre")) {
         String schema = connection.getSchema();
-        logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, schema));
+        logger.info(String.format("[%s] Checking %s exists for catalog=%s and schema %s", product, tableName, catalog, schema));
         rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
       } else {
-        logger.info(String.format("[" + product + "] Checking %s exists for catalog=%s and schema %s", tableName, catalog, ""));
+        logger.info(String.format("[%s] Checking %s exists for catalog=%s and schema %s", product, tableName, catalog, ""));
         rs = meta.getTables(catalog, null, tableName, new String[]{"TABLE"});
       }
 
-      return rs.next();
+      boolean exists = rs.next();
+
+      logger.info(String.format("[%s] %s is%s present in catalog=%s", product, tableName, exists ? "" : " not", catalog));
+
+      return exists;
     } finally {
       if (rs != null) {
         rs.close();

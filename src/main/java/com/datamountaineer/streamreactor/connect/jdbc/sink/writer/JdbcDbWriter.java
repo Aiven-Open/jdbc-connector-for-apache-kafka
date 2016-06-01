@@ -175,6 +175,12 @@ public final class JdbcDbWriter implements DbWriter {
                 firstRecord.kafkaPartition()));
         logger.error(sqlException.getMessage(), sqlException);
 
+        SQLException inner = sqlException.getNextException();
+        while (inner != null) {
+          logger.error(inner.getMessage(), inner);
+          inner = inner.getNextException();
+        }
+
         if (connection != null) {
           //rollback the transaction
           try {
@@ -250,9 +256,9 @@ public final class JdbcDbWriter implements DbWriter {
 
 
   private static void validateSettings(JdbcSinkSettings settings,
-                               Set<String> tablesAllowingAutoCreate,
-                               Set<String> tablesAllowingSchemaEvolution,
-                               Map<String, Collection<SinkRecordField>> createTablesMap) {
+                                       Set<String> tablesAllowingAutoCreate,
+                                       Set<String> tablesAllowingSchemaEvolution,
+                                       Map<String, Collection<SinkRecordField>> createTablesMap) {
 
     final List<FieldsMappings> mappingsList = settings.getMappings();
     //for the mappings get the schema from the schema registry and add the default pk col.
@@ -266,10 +272,10 @@ public final class JdbcDbWriter implements DbWriter {
           all = registry.getAllSubjects();
         } catch (RestClientException e) {
           logger.info(String.format("No schemas found in Registry! Waiting for first record to create table for topic ",
-              fm.getIncomingTopic()));
+                  fm.getIncomingTopic()));
         } catch (IOException e) {
           logger.error("Unable to connect to the Schema Registry at " + settings.getSchemaRegistryUrl() + " "
-              + e.getMessage(), e);
+                  + e.getMessage(), e);
         }
 
         String lkTopic = fm.getIncomingTopic();
@@ -286,7 +292,7 @@ public final class JdbcDbWriter implements DbWriter {
         try {
           latest = registry.getLatestVersion(lkTopic).getSchema();
           logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ", lkTopic,
-              System.lineSeparator(), latest));
+                  System.lineSeparator(), latest));
           AvroToDbConverter converter = new AvroToDbConverter();
           Collection<SinkRecordField> convertedFields = converter.convert(latest);
 
@@ -300,7 +306,7 @@ public final class JdbcDbWriter implements DbWriter {
           if (pk != null) {
             //add pk column if we have it to schema registry list of columns.
             logger.info("Adding default primary key (" + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
-                FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
+                    FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
             convertedFields.add(new SinkRecordField(Schema.Type.STRING, FieldsMappings.CONNECT_TOPIC_COLUMN, true));
             convertedFields.add(new SinkRecordField(Schema.Type.INT32, FieldsMappings.CONNECT_PARTITION_COLUMN, true));
             convertedFields.add(new SinkRecordField(Schema.Type.INT64, FieldsMappings.CONNECT_OFFSET_COLUMN, true));
@@ -308,10 +314,10 @@ public final class JdbcDbWriter implements DbWriter {
           }
         } catch (RestClientException e) {
           logger.info(String.format("No schema found in Registry! Waiting for first record to create table for topic ",
-              fm.getIncomingTopic()));
+                  fm.getIncomingTopic()));
         } catch (IOException e) {
           logger.error("Unable to connect to the Schema Registry at " + settings.getSchemaRegistryUrl() + " "
-              + e.getMessage(), e);
+                  + e.getMessage(), e);
         }
       }
       if (fm.evolveTableSchema()) {
