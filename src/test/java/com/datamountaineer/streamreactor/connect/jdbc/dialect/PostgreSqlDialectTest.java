@@ -39,8 +39,8 @@ public class PostgreSqlDialectTest {
 
   @Test
   public void PostgreDialectTest() {
-    String conflict = "INSERT INTO Customer (name,salary,address,id) VALUES (?,?,?,?) ON CONFLICT (id) DO UPDATE SET " +
-            "name=EXCLUDED.name,salary=EXCLUDED.salary,address=EXCLUDED.address";
+    String conflict = "INSERT INTO Customer (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
+            "\"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"";
     String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
     assertEquals(conflict, insert);
   }
@@ -54,10 +54,10 @@ public class PostgreSqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "userid INT NOT NULL," + System.lineSeparator() +
-            "userdataid INT NOT NULL," + System.lineSeparator() +
-            "info TEXT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(userid,userdataid))";
+            "\"userid\" INT NOT NULL," + System.lineSeparator() +
+            "\"userdataid\" INT NOT NULL," + System.lineSeparator() +
+            "\"info\" TEXT NULL," + System.lineSeparator() +
+            "PRIMARY KEY(\"userid\",\"userdataid\"))";
     assertEquals(expected, actual);
   }
 
@@ -75,15 +75,15 @@ public class PostgreSqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INT NOT NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 TEXT NULL," + System.lineSeparator() +
-            "col4 FLOAT NULL," + System.lineSeparator() +
-            "col5 DOUBLE PRECISION NULL," + System.lineSeparator() +
-            "col6 BOOLEAN NULL," + System.lineSeparator() +
-            "col7 SMALLINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL," + System.lineSeparator() +
-            "PRIMARY KEY(col1))";
+            "\"col1\" INT NOT NULL," + System.lineSeparator() +
+            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col3\" TEXT NULL," + System.lineSeparator() +
+            "\"col4\" FLOAT NULL," + System.lineSeparator() +
+            "\"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
+            "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
+            "\"col7\" SMALLINT NULL," + System.lineSeparator() +
+            "\"col8\" SMALLINT NULL," + System.lineSeparator() +
+            "PRIMARY KEY(\"col1\"))";
     assertEquals(expected, actual);
   }
 
@@ -101,14 +101,14 @@ public class PostgreSqlDialectTest {
     ));
 
     String expected = "CREATE TABLE tableA (" + System.lineSeparator() +
-            "col1 INT NULL," + System.lineSeparator() +
-            "col2 BIGINT NULL," + System.lineSeparator() +
-            "col3 TEXT NULL," + System.lineSeparator() +
-            "col4 FLOAT NULL," + System.lineSeparator() +
-            "col5 DOUBLE PRECISION NULL," + System.lineSeparator() +
-            "col6 BOOLEAN NULL," + System.lineSeparator() +
-            "col7 SMALLINT NULL," + System.lineSeparator() +
-            "col8 SMALLINT NULL)";
+            "\"col1\" INT NULL," + System.lineSeparator() +
+            "\"col2\" BIGINT NULL," + System.lineSeparator() +
+            "\"col3\" TEXT NULL," + System.lineSeparator() +
+            "\"col4\" FLOAT NULL," + System.lineSeparator() +
+            "\"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
+            "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
+            "\"col7\" SMALLINT NULL," + System.lineSeparator() +
+            "\"col8\" SMALLINT NULL)";
     assertEquals(expected, actual);
   }
 
@@ -128,14 +128,14 @@ public class PostgreSqlDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE tableA " + System.lineSeparator() +
-            "ADD COLUMN col1 INT NULL," + System.lineSeparator() +
-            "ADD COLUMN col2 BIGINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col3 TEXT NULL," + System.lineSeparator() +
-            "ADD COLUMN col4 FLOAT NULL," + System.lineSeparator() +
-            "ADD COLUMN col5 DOUBLE PRECISION NULL," + System.lineSeparator() +
-            "ADD COLUMN col6 BOOLEAN NULL," + System.lineSeparator() +
-            "ADD COLUMN col7 SMALLINT NULL," + System.lineSeparator() +
-            "ADD COLUMN col8 SMALLINT NULL";
+            "ADD COLUMN \"col1\" INT NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col2\" BIGINT NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col3\" TEXT NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col4\" FLOAT NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col6\" BOOLEAN NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col7\" SMALLINT NULL," + System.lineSeparator() +
+            "ADD COLUMN \"col8\" SMALLINT NULL";
     assertEquals(expected, actual.get(0));
   }
 }

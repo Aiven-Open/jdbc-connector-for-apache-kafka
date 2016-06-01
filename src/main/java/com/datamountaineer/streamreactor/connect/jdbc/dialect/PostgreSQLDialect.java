@@ -31,14 +31,14 @@ import java.util.Map;
 /**
  * Created by andrew@datamountaineer.com on 17/05/16.
  * kafka-connect-jdbc
- *
+ * <p>
  * The user is responsible for escaping the columns otherwise create table A and create table "A" is not the same
  */
 public class PostgreSQLDialect extends DbDialect {
   private static final Logger logger = LoggerFactory.getLogger(PostgreSQLDialect.class);
 
   public PostgreSQLDialect() {
-    super(getSqlTypeMap(), "", "");
+    super(getSqlTypeMap(), "\"", "\"");
   }
 
 
@@ -56,6 +56,10 @@ public class PostgreSQLDialect extends DbDialect {
     return map;
   }
 
+  @Override
+  protected String handleTableName(String tableName) {
+    return tableName;
+  }
 
   @Override
   public String getUpsertQuery(final String table, final List<String> cols, final List<String> keyCols) {
