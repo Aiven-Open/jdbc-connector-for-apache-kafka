@@ -83,8 +83,6 @@ public class JdbcSinkTask extends SinkTask {
     //Set up the writer
     try {
       writer = JdbcDbWriter.from(settings, provider);
-    } catch (IOException e) {
-      logger.error(e.getMessage(), e);
     } catch (SQLException e) {
       logger.error(e.getMessage(), e);
     }

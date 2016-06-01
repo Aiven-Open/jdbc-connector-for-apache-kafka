@@ -205,7 +205,7 @@ public final class JdbcDbWriter implements DbWriter {
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings,
                                   final DatabaseMetadataProvider databaseMetadataProvider)
-          throws IOException, SQLException {
+          throws SQLException {
 
     final ConnectionProvider connectionProvider = new ConnectionProvider(settings.getConnection(),
             settings.getUser(),
@@ -220,69 +220,11 @@ public final class JdbcDbWriter implements DbWriter {
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
     logger.info(String.format("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName()));
 
-    final List<FieldsMappings> mappingsList = settings.getMappings();
     final Set<String> tablesAllowingAutoCreate = new HashSet<>();
     final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
     final Map<String, Collection<SinkRecordField>> createTablesMap = new HashMap<>();
 
-    //for the mappings get the schema from the schema registry and add the default pk col.
-    for (FieldsMappings fm : mappingsList) {
-      if (fm.autoCreateTable()) {
-        tablesAllowingAutoCreate.add(fm.getTableName());
-        RestService registry = new RestService(settings.getSchemaRegistryUrl());
-        List<String> all = new ArrayList<>();
-
-        try {
-          all = registry.getAllSubjects();
-        } catch (RestClientException e) {
-          logger.info(String.format("No schemas found in Registry! Waiting for first record to create table for topic ",
-                  fm.getIncomingTopic()));
-        }
-
-
-        String lkTopic = fm.getIncomingTopic();
-        //do we have our topic
-        if (!all.contains(lkTopic)) {
-          //try topic name + value
-          if (all.contains(lkTopic + "-value")) {
-            lkTopic = lkTopic + "-value";
-          }
-        }
-
-        String latest = null;
-        logger.info("Looking for schema " + lkTopic);
-        try {
-          latest = registry.getLatestVersion(lkTopic).getSchema();
-          logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ", lkTopic,
-                  System.lineSeparator(), latest));
-          AvroToDbConverter converter = new AvroToDbConverter();
-          Collection<SinkRecordField> convertedFields = converter.convert(latest);
-
-          logger.info("Field mappings");
-          for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
-            logger.info(f.getKey() + " " + f.getValue());
-          }
-
-          //do we have a default pk columns
-          FieldAlias pk = fm.getMappings().get(FieldsMappings.CONNECT_TOPIC_COLUMN);
-          if (pk != null) {
-            //add pk column if we have it to schema registry list of columns.
-            logger.info("Adding default primary key (" + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
-                    FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
-            convertedFields.add(new SinkRecordField(Schema.Type.STRING, FieldsMappings.CONNECT_TOPIC_COLUMN, true));
-            convertedFields.add(new SinkRecordField(Schema.Type.INT32, FieldsMappings.CONNECT_PARTITION_COLUMN, true));
-            convertedFields.add(new SinkRecordField(Schema.Type.INT64, FieldsMappings.CONNECT_OFFSET_COLUMN, true));
-            createTablesMap.put(fm.getTableName(), convertedFields);
-          }
-        } catch (RestClientException e) {
-          logger.info(String.format("No schema found in Registry! Waiting for first record to create table for topic ",
-                  fm.getIncomingTopic()));
-        }
-      }
-      if (fm.evolveTableSchema()) {
-        tablesAllowingSchemaEvolution.add(fm.getTableName());
-      }
-    }
+    validateSettings(settings, tablesAllowingAutoCreate, tablesAllowingSchemaEvolution, createTablesMap);
 
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
@@ -304,6 +246,78 @@ public final class JdbcDbWriter implements DbWriter {
             errorHandlingPolicy,
             database,
             settings.getRetries());
+  }
+
+
+  private static void validateSettings(JdbcSinkSettings settings,
+                               Set<String> tablesAllowingAutoCreate,
+                               Set<String> tablesAllowingSchemaEvolution,
+                               Map<String, Collection<SinkRecordField>> createTablesMap) {
+
+    final List<FieldsMappings> mappingsList = settings.getMappings();
+    //for the mappings get the schema from the schema registry and add the default pk col.
+    for (FieldsMappings fm : mappingsList) {
+      if (fm.autoCreateTable()) {
+        tablesAllowingAutoCreate.add(fm.getTableName());
+        RestService registry = new RestService(settings.getSchemaRegistryUrl());
+        List<String> all = new ArrayList<>();
+
+        try {
+          all = registry.getAllSubjects();
+        } catch (RestClientException e) {
+          logger.info(String.format("No schemas found in Registry! Waiting for first record to create table for topic ",
+              fm.getIncomingTopic()));
+        } catch (IOException e) {
+          logger.error("Unable to connect to the Schema Registry at " + settings.getSchemaRegistryUrl() + " "
+              + e.getMessage(), e);
+        }
+
+        String lkTopic = fm.getIncomingTopic();
+        //do we have our topic
+        if (!all.contains(lkTopic)) {
+          //try topic name + value
+          if (all.contains(lkTopic + "-value")) {
+            lkTopic = lkTopic + "-value";
+          }
+        }
+
+        String latest = null;
+        logger.info("Looking for schema " + lkTopic);
+        try {
+          latest = registry.getLatestVersion(lkTopic).getSchema();
+          logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ", lkTopic,
+              System.lineSeparator(), latest));
+          AvroToDbConverter converter = new AvroToDbConverter();
+          Collection<SinkRecordField> convertedFields = converter.convert(latest);
+
+          logger.info("Field mappings");
+          for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
+            logger.info(f.getKey() + " " + f.getValue());
+          }
+
+          //do we have a default pk columns
+          FieldAlias pk = fm.getMappings().get(FieldsMappings.CONNECT_TOPIC_COLUMN);
+          if (pk != null) {
+            //add pk column if we have it to schema registry list of columns.
+            logger.info("Adding default primary key (" + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
+                FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
+            convertedFields.add(new SinkRecordField(Schema.Type.STRING, FieldsMappings.CONNECT_TOPIC_COLUMN, true));
+            convertedFields.add(new SinkRecordField(Schema.Type.INT32, FieldsMappings.CONNECT_PARTITION_COLUMN, true));
+            convertedFields.add(new SinkRecordField(Schema.Type.INT64, FieldsMappings.CONNECT_OFFSET_COLUMN, true));
+            createTablesMap.put(fm.getTableName(), convertedFields);
+          }
+        } catch (RestClientException e) {
+          logger.info(String.format("No schema found in Registry! Waiting for first record to create table for topic ",
+              fm.getIncomingTopic()));
+        } catch (IOException e) {
+          logger.error("Unable to connect to the Schema Registry at " + settings.getSchemaRegistryUrl() + " "
+              + e.getMessage(), e);
+        }
+      }
+      if (fm.evolveTableSchema()) {
+        tablesAllowingSchemaEvolution.add(fm.getTableName());
+      }
+    }
   }
 
   /**
