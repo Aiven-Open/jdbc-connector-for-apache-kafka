@@ -1,7 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-
-import com.datamountaineer.streamreactor.connect.jdbc.common.JdbcHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public final class SqlLiteHelper {
-  private static final Logger logger = LoggerFactory.getLogger(JdbcHelper.class);
+  private static final Logger logger = LoggerFactory.getLogger(SqlLiteHelper.class);
 
   public static void createTable(final String uri, final String createSql) throws SQLException {
     Connection connection = null;
