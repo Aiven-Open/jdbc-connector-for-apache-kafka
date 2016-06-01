@@ -104,7 +104,7 @@ public final class PreparedStatementBuilderHelper {
       //apply the specific mappings
       for (Map.Entry<String, FieldAlias> alias : tm.getMappings().entrySet()) {
         final String colName = alias.getValue().getName();
-        if (!map.containsKey(colName)) {
+        if (!map.containsKey(colName.toLowerCase()) && !map.containsKey(colName.toUpperCase())) {
           final String error =
                   String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
                           tm.getTableName(),
@@ -112,7 +112,7 @@ public final class PreparedStatementBuilderHelper {
                           Joiner.on(",").join(map.keySet()));
           throw new ConfigException(error);
         }
-        map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName)));
+        map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())));
       }
     } else {
 
@@ -120,7 +120,7 @@ public final class PreparedStatementBuilderHelper {
       //in this case just validate the mappings
       for (Map.Entry<String, FieldAlias> alias : tm.getMappings().entrySet()) {
         final String colName = alias.getValue().getName();
-        if (!dbCols.containsKey(colName)) {
+        if (!dbCols.containsKey(colName.toLowerCase()) && !dbCols.containsKey(colName.toLowerCase())) {
           final String error =
                   String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
                           tm.getTableName(),
@@ -128,8 +128,8 @@ public final class PreparedStatementBuilderHelper {
                           Joiner.on(",").join(dbCols.keySet()));
           throw new ConfigException(error);
         }
-        map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName)));
-        if (pkColumns.contains(colName)) {
+        map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())));
+        if (pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())) {
           specifiedPKs.add(colName);
         }
       }
