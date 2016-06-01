@@ -68,7 +68,8 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseBatching() throws RestClientException, SQLException, IOException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>(),
+                    false, false, false));
 
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
@@ -98,7 +99,8 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseNoopForErrorHandling() throws SQLException, IOException, RestClientException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
+                    new HashMap<String, FieldAlias>(), false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
             null,
@@ -127,7 +129,8 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseThrowForErrorHandling() throws SQLException, IOException, RestClientException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>()));
+            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
+                    new HashMap<String, FieldAlias>(), false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
             null,
@@ -240,7 +243,7 @@ public class JdbcDbWriterTest {
             new DataExtractorWithQueryBuilder(
                     new InsertQueryBuilder(new SQLiteDialect()),
                     new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT,
-                            new HashMap<String, FieldAlias>()))));
+                            new HashMap<String, FieldAlias>(), false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
@@ -384,7 +387,8 @@ public class JdbcDbWriterTest {
     map.put(topic.toLowerCase(),
             new DataExtractorWithQueryBuilder(
                     new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.UPSERT, aliasMapPK))));
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.UPSERT,
+                            aliasMapPK, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
@@ -564,11 +568,13 @@ public class JdbcDbWriterTest {
     map.put(topic1.toLowerCase(),
             new DataExtractorWithQueryBuilder(
                     new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.UPSERT, aliasPKMap))));
+                    new RecordDataExtractor(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.UPSERT,
+                            aliasPKMap, false, false, false))));
     map.put(topic2.toLowerCase(),
             new DataExtractorWithQueryBuilder(
                     new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.UPSERT, aliasPKMap))));
+                    new RecordDataExtractor(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.UPSERT,
+                            aliasPKMap, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName1, Lists.<DbTableColumn>newArrayList(
@@ -736,7 +742,8 @@ public class JdbcDbWriterTest {
     map.put(topic.toLowerCase(),
             new DataExtractorWithQueryBuilder(
                     new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName, topic, false, InsertModeEnum.UPSERT, aliasMap))));
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, false, InsertModeEnum.UPSERT,
+                            aliasMap, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
             new DbTable(tableName, Lists.<DbTableColumn>newArrayList(

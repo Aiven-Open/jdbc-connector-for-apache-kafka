@@ -87,7 +87,7 @@ public class JdbcDbWriterEvolveTest {
     map.put(topic.toLowerCase(),
             new DataExtractorWithQueryBuilder(
                     queryBuilder,
-                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT, fields, false, true))));
+                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT, fields, false, true, false))));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
@@ -216,7 +216,7 @@ public class JdbcDbWriterEvolveTest {
                     new RecordDataExtractor(new FieldsMappings(tableName, topic, true,
                             InsertModeEnum.INSERT,
                             fields,
-                            true, true))));
+                            true, true, false))));
 
     List<DbTable> dbTables = Lists.newArrayList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);

@@ -55,7 +55,7 @@ public class PreparedStatementBuilderHelperTest {
     aliasMap.put("f2", new FieldAlias("col2", false));
     aliasMap.put("f3", new FieldAlias("colNotPresent", false));
 
-    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, InsertModeEnum.INSERT, aliasMap);
+    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, InsertModeEnum.INSERT, aliasMap, false, false, false);
     PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
   }
 
@@ -70,7 +70,7 @@ public class PreparedStatementBuilderHelperTest {
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
 
-    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, InsertModeEnum.INSERT, aliasMap);
+    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, InsertModeEnum.INSERT, aliasMap, false, false, false);
 
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
@@ -102,7 +102,7 @@ public class PreparedStatementBuilderHelperTest {
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("f1", new FieldAlias("col3"));
-    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, InsertModeEnum.INSERT, aliasMap);
+    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, InsertModeEnum.INSERT, aliasMap, false, false, false);
 
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
@@ -139,7 +139,7 @@ public class PreparedStatementBuilderHelperTest {
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("col3", new FieldAlias("col3", true));
-    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, InsertModeEnum.INSERT, aliasMap);
+    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", true, InsertModeEnum.INSERT, aliasMap, false, false, false);
 
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
@@ -173,7 +173,7 @@ public class PreparedStatementBuilderHelperTest {
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("col1", new FieldAlias("col1", false));
     aliasMap.put("col3", new FieldAlias("col3", false));
-    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, InsertModeEnum.INSERT, aliasMap);
+    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, InsertModeEnum.INSERT, aliasMap, false, false, false);
 
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
@@ -202,7 +202,7 @@ public class PreparedStatementBuilderHelperTest {
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("col2", new FieldAlias("col2", false));
     aliasMap.put("col3", new FieldAlias("col3", false));
-    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, InsertModeEnum.UPSERT, aliasMap);
+    FieldsMappings mappings = new FieldsMappings("tableA", "topic1", false, InsertModeEnum.UPSERT, aliasMap, false, false, false);
 
     PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
   }

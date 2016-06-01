@@ -216,7 +216,8 @@ public final class JdbcSinkSettings {
                 insertMode,
                 fieldAliasMap,
                 kcqlConfig.isAutoCreate(),
-                kcqlConfig.isAutoEvolve());
+                kcqlConfig.isAutoEvolve(),
+                kcqlConfig.isEnableCapitalize());
 
         if (insertMode.equals(InsertModeEnum.UPSERT)
                 && fm.autoCreateTable()

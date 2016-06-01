@@ -148,6 +148,13 @@ public final class PreparedStatementBuilderHelper {
         }
       }
     }
-    return new FieldsMappings(tm.getTableName(), tm.getIncomingTopic(), false, tm.getInsertMode(), map);
+    return new FieldsMappings(tm.getTableName(),
+            tm.getIncomingTopic(),
+            false,
+            tm.getInsertMode(),
+            map,
+            tm.autoCreateTable(),
+            tm.evolveTableSchema(),
+            tm.isCapitalizeColumnNamesAndTables());
   }
 }

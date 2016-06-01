@@ -36,25 +36,9 @@ public final class FieldsMappings {
 
   private final boolean autoCreateTable;
   private final boolean evolveTableSchema;
-  private final InsertModeEnum insertMode;
+  private final boolean capitalizeColumnNamesAndTables;
 
-  /**
-   * Creates a new instance of FieldsMappings
-   *
-   * @param tableName         - The target RDBMS table to insert the records into
-   * @param incomingTopic     - The source Kafka topic
-   * @param allFieldsIncluded - If set to true it considers all fields in the payload; if false it will rely on the
-   *                          defined fields to include
-   * @param mappings          - Provides the list of schema fields to include and their alias. It could be set to Map.empty if all fields
-   *                          are to be included.
-   */
-  public FieldsMappings(final String tableName,
-                        final String incomingTopic,
-                        final boolean allFieldsIncluded,
-                        final InsertModeEnum insertMode,
-                        final Map<String, FieldAlias> mappings) {
-    this(tableName, incomingTopic, allFieldsIncluded, insertMode, mappings, false, false);
-  }
+  private final InsertModeEnum insertMode;
 
   /**
    * Creates a new instance of FieldsMappings
@@ -74,7 +58,9 @@ public final class FieldsMappings {
                         final InsertModeEnum insertMode,
                         final Map<String, FieldAlias> mappings,
                         final boolean autoCreateTable,
-                        final boolean evolveTableSchema) {
+                        final boolean evolveTableSchema,
+                        final boolean capitalizeColumnNamesAndTables) {
+    this.capitalizeColumnNamesAndTables = capitalizeColumnNamesAndTables;
 
     ParameterValidator.notNullOrEmpty(tableName, "tableName");
     ParameterValidator.notNullOrEmpty(incomingTopic, "incomingTopic");
@@ -154,5 +140,9 @@ public final class FieldsMappings {
             "include-all-fields:" + allFieldsIncluded + "\n" +
             "mappings:" + mapJoiner.join(mappings) + "\n" +
             "}";
+  }
+
+  public boolean isCapitalizeColumnNamesAndTables() {
+    return capitalizeColumnNamesAndTables;
   }
 }

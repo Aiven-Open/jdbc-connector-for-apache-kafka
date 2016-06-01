@@ -57,11 +57,6 @@ public class PostgreSQLDialect extends DbDialect {
   }
 
   @Override
-  protected String handleTableName(String tableName) {
-    return tableName;
-  }
-
-  @Override
   public String getUpsertQuery(final String table, final List<String> cols, final List<String> keyCols) {
     if (table == null || table.trim().length() == 0)
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");

@@ -88,9 +88,9 @@ public class TestBase {
     List<FieldsMappings> list = Lists.newArrayList();
 
     Map<String, FieldAlias> mappings = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.INSERT, mappings, false, false));
+    list.add(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.INSERT, mappings, false, false,false));
     Map<String, FieldAlias> mappings2 = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.INSERT, mappings2, false, false));
+    list.add(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.INSERT, mappings2, false, false,false));
     return list;
   }
 
