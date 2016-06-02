@@ -42,7 +42,7 @@ public class AvroToDbConverter {
       if (mappings.containsKey(fieldName)) {
         fieldName = mappings.get(fieldName).getName();
       }
-      converted.add(fromAvro(avro.schema(), avro.name()));
+      converted.add(fromAvro(avro.schema(), fieldName));
     }
     return converted;
   }
