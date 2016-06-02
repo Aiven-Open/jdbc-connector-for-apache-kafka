@@ -21,8 +21,8 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
