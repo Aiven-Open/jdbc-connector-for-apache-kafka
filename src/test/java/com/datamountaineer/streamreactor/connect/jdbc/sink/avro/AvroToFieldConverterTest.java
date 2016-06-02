@@ -1,6 +1,7 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.services.EmbeddedSingleNodeKafkaCluster;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.services.RestApp;
 import com.datamountaineer.streamreactor.connect.jdbc.dialect.DbDialect;
@@ -11,6 +12,7 @@ import org.apache.curator.test.InstanceSpec;
 import org.junit.Test;
 
 import java.util.Collection;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 
@@ -78,7 +80,7 @@ public class AvroToFieldConverterTest {
             "`unionType` NUMERIC NULL);";
 
     AvroToDbConverter converter = new AvroToDbConverter();
-    Collection<SinkRecordField> fields = converter.convert(latest.getSchema());
+    Collection<SinkRecordField> fields = converter.convert(latest.getSchema(), new HashMap<String, FieldAlias>());
     DbDialect db = new SQLiteDialect();
     String ddl = db.getCreateQuery("test", fields);
     assertEquals(ddlString, ddl);

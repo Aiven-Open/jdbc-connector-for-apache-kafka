@@ -17,11 +17,13 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.avro;
 
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.config.FieldAlias;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.List;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Created by andrew@datamountaineer.com on 22/05/16.
@@ -30,12 +32,16 @@ import java.util.Collection;
 public class AvroToDbConverter {
 
 
-  public Collection<SinkRecordField> convert(String inputSchema) {
+  public Collection<SinkRecordField> convert(String inputSchema, Map<String, FieldAlias> mappings) {
     org.apache.avro.Schema schema = new org.apache.avro.Schema.Parser().parse(inputSchema);
     List<org.apache.avro.Schema.Field> fields = schema.getFields();
     List<SinkRecordField> converted = Lists.newArrayList();
 
     for (org.apache.avro.Schema.Field avro : fields) {
+      String fieldName = avro.name();
+      if(mappings.containsKey(fieldName)){
+        fieldName = mappings.get(fieldName).getName();
+      }
       converted.add(fromAvro(avro.schema(), avro.name()));
     }
     return converted;

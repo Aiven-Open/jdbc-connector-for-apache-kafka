@@ -130,8 +130,10 @@ public class RecordDataExtractor {
       final BasePreparedStatementBinder binder = getPreparedStatementBinder(field, struct);
       if (binder != null) {
         final FieldAlias fa = mappings.get(field.name());
-        if (fa != null && fa.isPrimaryKey()) {
-          binder.setPrimaryKey(true);
+        if (fa != null) {
+          if (fa.isPrimaryKey()) {
+            binder.setPrimaryKey(true);
+          }
         }
         binders.add(binder);
       }

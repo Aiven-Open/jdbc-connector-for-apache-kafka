@@ -294,7 +294,7 @@ public final class JdbcDbWriter implements DbWriter {
           logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ", lkTopic,
                   System.lineSeparator(), latest));
           AvroToDbConverter converter = new AvroToDbConverter();
-          Collection<SinkRecordField> convertedFields = converter.convert(latest);
+          Collection<SinkRecordField> convertedFields = converter.convert(latest, fm.getMappings());
 
           logger.info("Field mappings");
           for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
