@@ -115,9 +115,9 @@ public class SqlServerDialect extends Sql2003Dialect {
     builder.append(")");
     if (columns != null && columns.size() > 0) {
       builder.append(" when matched then update set ");
-      builder.append(String.format("%s.%s=incoming.%s", tableName, columns.get(0), columns.get(0)));
+      builder.append(String.format("target.%s=incoming.%s", columns.get(0), columns.get(0)));
       for (int i = 1; i < columns.size(); ++i) {
-        builder.append(String.format(",%s.%s=incoming.%s", tableName, columns.get(i), columns.get(i)));
+        builder.append(String.format(",target.%s=incoming.%s", columns.get(i), columns.get(i)));
       }
     }
 
