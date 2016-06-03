@@ -100,12 +100,12 @@ public class SqlServerDialect extends Sql2003Dialect {
     }
 
     final Iterable<String> iter = Iterables.concat(columns, keyColumns);
-    final String select = Joiner.on(", '?' ").join(iter);
+    final String select = Joiner.on(", ? ").join(iter);
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
     String tableName = handleTableName(table);
     builder.append(tableName);
-    builder.append(" with (HOLDLOCK) AS target using (select '?' ");
+    builder.append(" with (HOLDLOCK) AS target using (select ? ");
     builder.append(select);
     builder.append(") AS incoming on (");
     builder.append(String.format("target.%s=incoming.%s", keyColumns.get(0), keyColumns.get(0)));

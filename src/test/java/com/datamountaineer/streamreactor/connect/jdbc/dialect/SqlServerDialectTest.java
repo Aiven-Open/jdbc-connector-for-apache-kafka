@@ -35,8 +35,8 @@ public class SqlServerDialectTest {
   @Test
   public void produceTheRightSqlStatementWhithASinglePK() {
     String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
-    assertEquals(insert, "merge into [Customer] with (HOLDLOCK) AS target using (select '?' [name], '?' [salary], '?' " +
-        "[address], '?' [id]) AS incoming on (target.[id]=incoming.[id]) when matched then update set " +
+    assertEquals(insert, "merge into [Customer] with (HOLDLOCK) AS target using (select ? [name], ? [salary], ? " +
+        "[address], ? [id]) AS incoming on (target.[id]=incoming.[id]) when matched then update set " +
         "[name]=incoming.[name],[salary]=incoming.[salary],[address]=incoming.[address] when not matched then insert " +
         "([name], [salary], [address], [id]) values (incoming.[name],incoming.[salary],incoming.[address],incoming.[id])");
 
@@ -45,8 +45,8 @@ public class SqlServerDialectTest {
   @Test
   public void produceTheRightSqlStatementWhithACompositePK() {
     String insert = dialect.getUpsertQuery("Book", Lists.newArrayList("ISBN", "year", "pages"), Lists.newArrayList("author", "title"));
-    assertEquals(insert, "merge into [Book] with (HOLDLOCK) AS target using (select '?' [ISBN], '?' [year], '?' [pages], " +
-        "'?' [author], '?' [title]) AS incoming on (target.[author]=incoming.[author] and target.[title]=incoming.[title])" +
+    assertEquals(insert, "merge into [Book] with (HOLDLOCK) AS target using (select ? [ISBN], ? [year], ? [pages], " +
+        "? [author], ? [title]) AS incoming on (target.[author]=incoming.[author] and target.[title]=incoming.[title])" +
         " when matched then update set [ISBN]=incoming.[ISBN],[year]=incoming.[year],[pages]=incoming.[pages] when not " +
         "matched then insert ([ISBN], [year], [pages], [author], [title]) values (incoming.[ISBN],incoming.[year]," +
         "incoming.[pages],incoming.[author],incoming.[title])");
