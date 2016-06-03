@@ -16,8 +16,10 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -74,6 +76,61 @@ public class SqlServerDialect extends Sql2003Dialect {
     final List<String> query = new ArrayList<String>(1);
     query.add(builder.toString());
     return query;
+  }
+
+  @Override
+  public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
+    if (table == null || table.trim().length() == 0)
+      throw new IllegalArgumentException("<table> is not valid");
+
+    if (keyCols == null || keyCols.size() == 0) {
+      throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
+    }
+
+    List<String> columns = null;
+    if (cols != null) {
+      columns = new ArrayList<>(cols.size());
+      for (String c : cols) {
+        columns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+      }
+    }
+    List<String> keyColumns = new ArrayList<>(keyCols.size());
+    for (String c : keyCols) {
+      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
+    }
+
+    final Iterable<String> iter = Iterables.concat(columns, keyColumns);
+    final String select = Joiner.on(", ? ").join(iter);
+    final StringBuilder builder = new StringBuilder();
+    builder.append("merge into ");
+    String tableName = handleTableName(table);
+    builder.append(tableName);
+    builder.append(" with (HOLDLOCK) AS target using (select ? ");
+    builder.append(select);
+    builder.append(") AS incoming on(");
+    builder.append(String.format("target.%s=incoming.%s", keyColumns.get(0), keyColumns.get(0)));
+    for (int i = 1; i < keyColumns.size(); ++i) {
+      builder.append(String.format(" and target.%s=incoming.%s", keyColumns.get(i), keyColumns.get(i)));
+    }
+    builder.append(")");
+    if (columns != null && columns.size() > 0) {
+      builder.append(" when matched then update set ");
+      builder.append(String.format("target.%s=incoming.%s", columns.get(0), columns.get(0)));
+      for (int i = 1; i < columns.size(); ++i) {
+        builder.append(String.format(",target.%s=incoming.%s", columns.get(i), columns.get(i)));
+      }
+    }
+
+    final String insertColumns = Joiner.on(",target.").join(iter);
+    final String insertValues = Joiner.on(",incoming.").join(iter);
+
+    builder.append(" when not matched then insert(target.");
+    builder.append(insertColumns);
+    builder.append(") values(incoming.");
+    builder.append(insertValues);
+    builder.append(")");
+    return builder.toString();
+
   }
 
   @Override

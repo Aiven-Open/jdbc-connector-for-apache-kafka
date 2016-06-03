@@ -37,18 +37,19 @@ public class SqlServerDialectTest {
   @Test
   public void produceTheRightSqlStatementWhithASinglePK() {
     String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
-    assertEquals(insert, "merge into [Customer] with (HOLDLOCK) using (select ? [name], ? [salary], ? [address], ? [id]) incoming on([Customer].[id]=incoming.[id]) " +
-            "when matched then update set [Customer].[name]=incoming.[name],[Customer].[salary]=incoming.[salary],[Customer].[address]=incoming.[address]" +
-            " when not matched then insert([Customer].[name],[Customer].[salary],[Customer].[address],[Customer].[id]) values(incoming.[name],incoming.[salary],incoming.[address],incoming.[id])");
+    assertEquals(insert, "merge into [Customer] with (HOLDLOCK) AS target using (select ? [name], ? [salary], ? [address], ? [id]) AS incoming on(target.[id]=incoming.[id]) " +
+            "when matched then update set target.[name]=incoming.[name],target.[salary]=incoming.[salary],target.[address]=incoming.[address]" +
+            " when not matched then insert(target.[name],target.[salary],target.[address],target.[id]) values(incoming.[name],incoming.[salary],incoming.[address],incoming.[id])");
 
   }
 
   @Test
   public void produceTheRightSqlStatementWhithACompositePK() {
     String insert = dialect.getUpsertQuery("Book", Lists.newArrayList("ISBN", "year", "pages"), Lists.newArrayList("author", "title"));
-    assertEquals(insert, "merge into [Book] with (HOLDLOCK) using (select ? [ISBN], ? [year], ? [pages], ? [author], ? [title]) incoming on([Book].[author]=incoming.[author] and [Book].[title]=incoming.[title]) " +
-            "when matched then update set [Book].[ISBN]=incoming.[ISBN],[Book].[year]=incoming.[year],[Book].[pages]=incoming.[pages]" +
-            " when not matched then insert([Book].[ISBN],[Book].[year],[Book].[pages],[Book].[author],[Book].[title]) values(incoming.[ISBN],incoming.[year],incoming.[pages],incoming.[author],incoming.[title])");
+    assertEquals(insert, "merge into [Book] with (HOLDLOCK) AS target using (select ? [ISBN], ? [year], ? [pages], ? [author], ? [title]) AS incoming " +
+            "on(target.[author]=incoming.[author] and target.[title]=incoming.[title]) " +
+            "when matched then update set target.[ISBN]=incoming.[ISBN],target.[year]=incoming.[year],target.[pages]=incoming.[pages]" +
+            " when not matched then insert(target.[ISBN],target.[year],target.[pages],target.[author],target.[title]) values(incoming.[ISBN],incoming.[year],incoming.[pages],incoming.[author],incoming.[title])");
 
   }
 
