@@ -100,14 +100,14 @@ public class SqlServerDialect extends Sql2003Dialect {
     }
 
     final Iterable<String> iter = Iterables.concat(columns, keyColumns);
-    final String select = Joiner.on(", ? ").join(iter);
+    final String select = Joiner.on(", '?' ").join(iter);
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
     String tableName = handleTableName(table);
     builder.append(tableName);
-    builder.append(" with (HOLDLOCK) AS target using (select ? ");
+    builder.append(" with (HOLDLOCK) AS target using (select '?' ");
     builder.append(select);
-    builder.append(") AS incoming on(");
+    builder.append(") AS incoming on (");
     builder.append(String.format("target.%s=incoming.%s", keyColumns.get(0), keyColumns.get(0)));
     for (int i = 1; i < keyColumns.size(); ++i) {
       builder.append(String.format(" and target.%s=incoming.%s", keyColumns.get(i), keyColumns.get(i)));
@@ -115,18 +115,18 @@ public class SqlServerDialect extends Sql2003Dialect {
     builder.append(")");
     if (columns != null && columns.size() > 0) {
       builder.append(" when matched then update set ");
-      builder.append(String.format("target.%s=incoming.%s", columns.get(0), columns.get(0)));
+      builder.append(String.format("%s=incoming.%s", columns.get(0), columns.get(0)));
       for (int i = 1; i < columns.size(); ++i) {
-        builder.append(String.format(",target.%s=incoming.%s", columns.get(i), columns.get(i)));
+        builder.append(String.format(",%s=incoming.%s", columns.get(i), columns.get(i)));
       }
     }
 
-    final String insertColumns = Joiner.on(",target.").join(iter);
+    final String insertColumns = Joiner.on(", ").join(iter);
     final String insertValues = Joiner.on(",incoming.").join(iter);
 
-    builder.append(" when not matched then insert(target.");
+    builder.append(" when not matched then insert (");
     builder.append(insertColumns);
-    builder.append(") values(incoming.");
+    builder.append(") values (incoming.");
     builder.append(insertValues);
     builder.append(")");
     return builder.toString();
