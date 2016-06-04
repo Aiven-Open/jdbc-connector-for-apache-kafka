@@ -128,7 +128,7 @@ public class SqlServerDialect extends Sql2003Dialect {
     builder.append(insertColumns);
     builder.append(") values (incoming.");
     builder.append(insertValues);
-    builder.append(")");
+    builder.append(");");
     return builder.toString();
 
   }
