@@ -83,7 +83,6 @@ public class RecordDataExtractor {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
     if (fieldsMappings.areAllFieldsIncluded()) {
-      logger.warn("ALL FIELDS ARE INCLUDED " + record.kafkaOffset());
       fields = schema.fields();
     } else {
 
