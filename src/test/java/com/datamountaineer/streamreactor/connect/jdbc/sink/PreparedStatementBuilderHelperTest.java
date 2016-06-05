@@ -75,7 +75,7 @@ public class PreparedStatementBuilderHelperTest {
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
-    assertEquals(newMappings.areAllFieldsIncluded(), false);
+    assertEquals(newMappings.areAllFieldsIncluded(), true);
 
     Map<String, FieldAlias> newAliasMap = newMappings.getMappings();
     assertEquals(3, newAliasMap.size());
@@ -107,7 +107,7 @@ public class PreparedStatementBuilderHelperTest {
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
-    assertEquals(newMappings.areAllFieldsIncluded(), false);
+    assertEquals(newMappings.areAllFieldsIncluded(), true);
 
     Map<String, FieldAlias> newAliasMap = newMappings.getMappings();
     assertEquals(4, newAliasMap.size()); //+ the specific mapping
@@ -144,7 +144,7 @@ public class PreparedStatementBuilderHelperTest {
     FieldsMappings newMappings = PreparedStatementBuilderHelper.validateAndMerge(mappings, table);
     assertEquals(newMappings.getTableName(), mappings.getTableName());
     assertEquals(newMappings.getIncomingTopic(), mappings.getIncomingTopic());
-    assertEquals(newMappings.areAllFieldsIncluded(), false);
+    assertEquals(newMappings.areAllFieldsIncluded(), true);
 
     Map<String, FieldAlias> newAliasMap = newMappings.getMappings();
     assertEquals(3, newAliasMap.size()); //+ the specific mapping
