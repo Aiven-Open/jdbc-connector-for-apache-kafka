@@ -153,6 +153,7 @@ public final class JdbcDbWriter implements DbWriter {
           }
         } catch (NoSuchElementException ex) {
           //yes we can end up here; but it is not an issue
+          logger.warn(ex.getMessage());
         }
         //commit the transaction
         connection.commit();
@@ -164,7 +165,7 @@ public final class JdbcDbWriter implements DbWriter {
           logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
         }
         if (totalRecords == 0) {
-          logger.warn("No records have been written. Given the configuartion no data has been used from the SinkRecords.");
+          logger.warn("No records have been written. Given the configuration no data has been used from the SinkRecords.");
         }
       } catch (SQLException sqlException) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
