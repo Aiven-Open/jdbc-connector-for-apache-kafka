@@ -16,6 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.common;
 
+import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
@@ -102,14 +103,28 @@ public class DatabaseMetadata {
     return new Changes(amended, created);
   }
 
+  /**
+   * Returns true if the given table name is present in the local cache for the database available tables.
+   *
+   * @param tableName - The table name to check is present
+   * @return true if table is present; false otherwise
+   */
   public boolean containsTable(final String tableName) {
     return tables.containsKey(tableName);
   }
 
+  /**
+   * Returns a sequence of database available table names
+   *
+   * @return All the table names
+   */
   public Collection<String> getTableNames() {
     return tables.keySet();
   }
 
+  /**
+   * Contains the changes related to a new set of SinkRecord sent to the sink.
+   */
   public final class Changes {
     private final Map<String, Collection<SinkRecordField>> amendmentMap;
     private final Map<String, Collection<SinkRecordField>> createdMap;
@@ -119,10 +134,20 @@ public class DatabaseMetadata {
       this.createdMap = createdMap;
     }
 
+    /**
+     * Returns a sequence of tables whose schema has to be changed by adding new columns.
+     *
+     * @return The tables and their columns
+     */
     public Map<String, Collection<SinkRecordField>> getAmendmentMap() {
       return amendmentMap;
     }
 
+    /**
+     * Returns a sequence of tables to be created.
+     *
+     * @return The tables and their columns
+     */
     public Map<String, Collection<SinkRecordField>> getCreatedMap() {
       return createdMap;
     }
@@ -160,6 +185,9 @@ public class DatabaseMetadata {
 
       return new DatabaseMetadata(catalog, dbTables);
     } catch (SQLException ex) {
+      logger.error(
+              String.format("An error occurred trying to retrieve the database metadata for the given tables.%s", ex.getMessage()),
+              ex);
       throw new RuntimeException(ex);
     } finally {
       if (connection != null) {
@@ -172,15 +200,32 @@ public class DatabaseMetadata {
     }
   }
 
+  /**
+   * Checks the given table is present in the database.
+   *
+   * @param connection - Database connection instance
+   * @param tableName  - The table to check if it is present or not
+   * @return true if the table is present; false otherwise
+   * @throws SQLException
+   */
   public static boolean tableExists(final Connection connection,
                                     final String tableName) throws SQLException {
     final String catalog = connection.getCatalog();
     return tableExists(connection, catalog, tableName);
   }
 
-  public static boolean tableExists(final Connection connection,
-                                    final String catalog,
-                                    final String tableName) throws SQLException {
+  /**
+   * Checks the given table is present in the database
+   *
+   * @param connection _ The database connection instance
+   * @param catalog    - The database name
+   * @param tableName  - The table to check if it is present or not
+   * @return true the table is present; false otherwise
+   * @throws SQLException
+   */
+  private static boolean tableExists(final Connection connection,
+                                     final String catalog,
+                                     final String tableName) throws SQLException {
     ParameterValidator.notNull(connection, "connection");
     ParameterValidator.notNull(tableName, "tableName");
 
@@ -211,13 +256,18 @@ public class DatabaseMetadata {
 
       return exists;
     } finally {
-      if (rs != null) {
-        rs.close();
-      }
+      AutoCloseableHelper.close(rs);
     }
   }
 
 
+  /**
+   * Uses sql to retrieve the database name for Oracle. The jdbc API is not working properly.
+   *
+   * @param connection - The instance for the jdbc Connection
+   * @return -The database name
+   * @throws SQLException
+   */
   private static String getOracleSchema(final Connection connection) throws SQLException {
     Statement statement = null;
     ResultSet rs = null;
@@ -227,20 +277,17 @@ public class DatabaseMetadata {
       rs.next();
       return rs.getString("x");
     } finally {
-      if (rs != null) {
-        rs.close();
-      }
-      if (statement != null) {
-        statement.close();
-      }
+      AutoCloseableHelper.close(rs);
+
+      AutoCloseableHelper.close(statement);
     }
   }
 
   /***
    * Returns the tables information
    *
-   * @param connectionProvider
-   * @return
+   * @param connectionProvider - An instance of the ConnectionProvider
+   * @return The information related to all the table present in the database
    */
   public static List<DbTable> getTableMetadata(final ConnectionProvider connectionProvider) {
     Connection connection = null;
@@ -261,15 +308,10 @@ public class DatabaseMetadata {
       }
       return tables;
     } catch (SQLException ex) {
+      logger.error(String.format("An error has occurred trying to retrieve the tables metadata.%s", ex.getMessage()), ex);
       throw new RuntimeException("Sql exception occurred.", ex);
     } finally {
-      if (connection != null) {
-        try {
-          connection.close();
-        } catch (Throwable t) {
-          logger.error(t.getMessage(), t);
-        }
-      }
+      AutoCloseableHelper.close(connection);
     }
   }
 
@@ -277,7 +319,8 @@ public class DatabaseMetadata {
    * Returns the tables information
    *
    * @param connection - The instance of the jdbc Connection
-   * @return
+   * @param tableName  -The table for which to get the column information
+   * @return The information related to the table columns
    */
   public static DbTable getTableMetadata(final Connection connection, final String tableName) throws SQLException {
 
@@ -296,9 +339,9 @@ public class DatabaseMetadata {
     ResultSet pkColumnsRS = null;
 
     if (product.toLowerCase().equals("oracle")) {
-      //logger.info("Oracle database usage. Using " + tableName + " in uppercase..");
       String schema = getOracleSchema(connection);
-      logger.info(String.format("[" + product + "] Checking columns exists for table='%s', schema '%s' and catalog '%s'", tableName, schema, catalog));
+      logger.info(String.format("[%s] Checking columns exists for table='%s', schema '%s' and catalog '%s'",
+              product, tableName, schema, catalog));
 
       nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema.toUpperCase(), tableName.toUpperCase(), null);
       pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema.toUpperCase(), tableName.toUpperCase());
@@ -313,7 +356,6 @@ public class DatabaseMetadata {
 
       pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, null, tableName);
     }
-
 
     //final ResultSet nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema, tableName, null);
     final List<DbTableColumn> columns = new ArrayList<>();

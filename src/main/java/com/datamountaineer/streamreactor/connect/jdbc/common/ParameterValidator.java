@@ -16,6 +16,9 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.common;
 
+/**
+ * Helper class for validating function arguments
+ */
 public class ParameterValidator {
   /**
    * Checks the given value is not null or empty. If the value doesn't meet the criteria an IllegalArgumentException is
@@ -32,6 +35,7 @@ public class ParameterValidator {
 
   /**
    * Checks the give obj is not null. If the value provided is null an IllegalArgumentException is thrown.
+   *
    * @param obj
    * @param paramName
    */

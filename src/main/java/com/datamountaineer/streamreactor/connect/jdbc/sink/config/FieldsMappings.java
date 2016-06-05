@@ -92,7 +92,7 @@ public final class FieldsMappings {
   /**
    * Returns the source Kafka topic.
    *
-   * @return
+   * @return - The kafka topic name
    */
   public String getIncomingTopic() {
     return incomingTopic;
@@ -101,12 +101,17 @@ public final class FieldsMappings {
   /**
    * Returns the target database table name.
    *
-   * @return
+   * @return Table name
    */
   public String getTableName() {
     return tableName;
   }
 
+  /**
+   * Returns true if the table can be created; false - otherwise
+   *
+   * @return true if the table can be created; false - otherwise
+   */
   public boolean autoCreateTable() {
     return autoCreateTable;
   }
@@ -114,7 +119,7 @@ public final class FieldsMappings {
   /**
    * Returns true if the table schema is suppose to be evolved in sync with Schema changes; false - otherwise
    *
-   * @return
+   * @return true if the table schema is suppose to be evolved in sync with Schema changes; false - otherwise
    */
   public boolean evolveTableSchema() {
     return evolveTableSchema;
@@ -123,7 +128,7 @@ public final class FieldsMappings {
   /**
    * Returns the way the data should be pushed into the database:insert/upsert
    *
-   * @return
+   * @return - The insert mode
    */
   public InsertModeEnum getInsertMode() {
     return insertMode;

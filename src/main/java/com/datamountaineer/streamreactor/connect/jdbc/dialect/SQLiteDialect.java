@@ -137,15 +137,20 @@ public class SQLiteDialect extends DbDialect {
     final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
 
     final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("%s=?", nonKeyColumns.get(0)));
+    builder.append(nonKeyColumns.get(0));
+    builder.append("=?");
     for (int i = 1; i < nonKeyColumns.size(); ++i) {
-      builder.append(String.format(",%s=?", nonKeyColumns.get(i)));
+      builder.append(",");
+      builder.append(nonKeyColumns.get(i));
+      builder.append("=?");
     }
 
     final StringBuilder whereBuilder = new StringBuilder();
-    whereBuilder.append(String.format("%s=?", keyColumns.get(0)));
+    whereBuilder.append(keyColumns.get(0));
+    whereBuilder.append("=?");
     for (int i = 1; i < keyColumns.size(); ++i) {
-      whereBuilder.append(String.format(" and %s=?", keyColumns.get(i)));
+      whereBuilder.append(" and ")
+              .append(keyCols.get(i)).append("=?");
     }
 
     return String.format("update or ignore %s set %s where %s\n;", handleTableName(table), builder, whereBuilder) +

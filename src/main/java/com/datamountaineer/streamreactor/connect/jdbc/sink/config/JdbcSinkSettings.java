@@ -58,7 +58,7 @@ public final class JdbcSinkSettings {
    * @param mappings          - A list of payload field mappings
    * @param errorPolicy       - Specifies how an error is handled
    * @param maxRetries
-   * @param schemaRegistryUrl
+   * @param schemaRegistryUrl - The end point for the Connect Schema registry
    * @param batchSize         - how big the batch size should be
    * @param retryDelay        -The time to wait before the operation is retried
    */

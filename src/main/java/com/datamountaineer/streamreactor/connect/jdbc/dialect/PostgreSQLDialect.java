@@ -84,9 +84,14 @@ public class PostgreSQLDialect extends DbDialect {
     String updateSet = null;
     if (nonKeyColumns.size() > 0) {
       final StringBuilder updateSetBuilder = new StringBuilder();
-      updateSetBuilder.append(String.format("%s=EXCLUDED.%s", nonKeyColumns.get(0), nonKeyColumns.get(0)));
+      updateSetBuilder.append(nonKeyColumns.get(0));
+      updateSetBuilder.append("=EXCLUDED.");
+      updateSetBuilder.append(nonKeyColumns.get(0));
       for (int i = 1; i < nonKeyColumns.size(); ++i) {
-        updateSetBuilder.append(String.format(",%s=EXCLUDED.%s", nonKeyColumns.get(i), nonKeyColumns.get(i)));
+        updateSetBuilder.append(",");
+        updateSetBuilder.append(nonKeyColumns.get(i));
+        updateSetBuilder.append("=EXCLUDED.");
+        updateSetBuilder.append(nonKeyColumns.get(i));
       }
       updateSet = updateSetBuilder.toString();
     }

@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * Provides support for Oracle database
  */
-public class OracleDialect extends Sql2003Dialect {
+public class OracleDialect extends DbDialect {
   public OracleDialect() {
     super(getSqlTypeMap(), "\"", "\"");
   }
@@ -69,7 +69,9 @@ public class OracleDialect extends Sql2003Dialect {
         first = false;
       }
       builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
+      builder.append(escapeColumnNamesStart)
+              .append(f.getName())
+              .append(escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));
       builder.append(" NULL");
@@ -108,7 +110,6 @@ public class OracleDialect extends Sql2003Dialect {
     builder.append("merge into ");
     String tableName = handleTableName(table);
     builder.append(tableName);
-    builder.append(getMergeHints());
     builder.append(" using (select ? ");
     builder.append(select);
     builder.append(" FROM dual) incoming on(");

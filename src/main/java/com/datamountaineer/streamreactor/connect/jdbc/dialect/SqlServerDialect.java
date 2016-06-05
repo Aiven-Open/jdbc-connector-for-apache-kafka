@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SqlServerDialect extends Sql2003Dialect {
+public class SqlServerDialect extends DbDialect {
 
   public SqlServerDialect() {
     super(getSqlTypeMap(), "[", "]");
@@ -131,10 +131,5 @@ public class SqlServerDialect extends Sql2003Dialect {
     builder.append(");");
     return builder.toString();
 
-  }
-
-  @Override
-  public String getMergeHints() {
-    return " with (HOLDLOCK)";
   }
 }

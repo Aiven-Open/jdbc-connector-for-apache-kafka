@@ -46,6 +46,14 @@ public abstract class DbDialect {
     this.schemaTypeToSqlTypeMap = schemaTypeToSqlTypeMap;
   }
 
+  /**
+   * Returns the create SQL statement
+   *
+   * @param tableName     - The name of the table
+   * @param nonKeyColumns - The sequence of non primary key columns
+   * @param keyColumns    - The sequence of primary key columns
+   * @return SQL create statement
+   */
   public final String getInsert(final String tableName,
                                 final List<String> nonKeyColumns,
                                 final List<String> keyColumns) {
@@ -67,10 +75,14 @@ public abstract class DbDialect {
     builder.append("(");
     Iterator<String> iter = Iterables.concat(nonKeyColumns, keyColumns).iterator();
     iter.hasNext();
-    builder.append(escapeColumnNamesStart + iter.next() + escapeColumnNamesEnd);
+    builder.append(escapeColumnNamesStart)
+            .append(iter.next())
+            .append(escapeColumnNamesEnd);
     while (iter.hasNext()) {
       builder.append(",");
-      builder.append(escapeColumnNamesStart + iter.next() + escapeColumnNamesEnd);
+      builder.append(escapeColumnNamesStart)
+              .append(iter.next())
+              .append(escapeColumnNamesEnd);
     }
     builder.append(") VALUES(");
     builder.append("?");
@@ -141,8 +153,8 @@ public abstract class DbDialect {
   /**
    * Returns the query for creating a new table in the database
    *
-   * @param tableName
-   * @param fields
+   * @param tableName - The table name
+   * @param fields    - List of table columns
    * @return The create query for the dialect
    */
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
@@ -196,8 +208,8 @@ public abstract class DbDialect {
   /**
    * Returns the query to alter a table by adding a new table
    *
-   * @param tableName
-   * @param fields
+   * @param tableName -The name of the table
+   * @param fields    - The list of table columns
    * @return The alter query for the dialect
    */
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
@@ -225,9 +237,8 @@ public abstract class DbDialect {
       builder.append(getSqlType(f.getType()));
       builder.append(" NULL");
     }
-    //builder.append(";");
 
-    final List<String> query = new ArrayList<String>(1);
+    final List<String> query = new ArrayList<>(1);
     query.add(builder.toString());
     return query;
   }
@@ -235,7 +246,7 @@ public abstract class DbDialect {
   /**
    * Maps the Schema type to a database data type.
    *
-   * @param type
+   * @param type - The connect field type
    * @return The sqlType for the dialect
    */
   String getSqlType(Schema.Type type) {
@@ -247,6 +258,12 @@ public abstract class DbDialect {
     return sqlType;
   }
 
+  /**
+   * Returns the escaped name of the table
+   *
+   * @param tableName - The table name
+   * @return Table name
+   */
   protected String handleTableName(String tableName) {
     return escapeColumnNamesStart + tableName + escapeColumnNamesEnd;
   }
@@ -254,10 +271,10 @@ public abstract class DbDialect {
   /**
    * Extracts the database protocol from a jdbc URI.
    *
-   * @param connection
+   * @param connection- JDBC Connection instance
    * @return The sql protocol
    */
-  public static String extractProtocol(final String connection) {
+  static String extractProtocol(final String connection) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
     if (!connection.startsWith("jdbc:"))
       throw new IllegalArgumentException("connection is not a valid jdbc URI");

@@ -39,6 +39,10 @@ public final class FieldAlias {
     this.name = name;
   }
 
+  /**
+   * Creates a new instance of FieldAlias
+   * @param name - The field name
+   */
   public FieldAlias(final String name) {
     this(name, false);
   }
@@ -65,7 +69,7 @@ public final class FieldAlias {
    * Checks the two objects for equality by delegating to their respective
    * {@link Object#equals(Object)} methods.
    *
-   * @param o the {@link Pair} to which this one is to be checked for equality
+   * @param o the {@link FieldAlias} to which this one is to be checked for equality
    *          equal
    */
   @Override
