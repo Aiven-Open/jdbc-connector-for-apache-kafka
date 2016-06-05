@@ -82,11 +82,13 @@ public class RecordDataExtractor {
     if (fieldsMappings.areAllFieldsIncluded()) {
       fields = schema.fields();
     } else {
+
+      final Map<String, FieldAlias> mappings = fieldsMappings.getMappings();
       fields = Collections2.filter(schema.fields(), new Predicate<Field>() {
         @Override
         public boolean apply(Field input) {
-          return fieldsMappings.getMappings().containsKey(input.name()) ||
-                  fieldsMappings.areAllFieldsIncluded();
+          return fieldsMappings.areAllFieldsIncluded() ||
+                  mappings.containsKey(input.name());
         }
 
         @Override

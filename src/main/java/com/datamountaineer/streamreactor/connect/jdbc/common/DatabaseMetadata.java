@@ -75,25 +75,25 @@ public class DatabaseMetadata {
     Map<String, Collection<SinkRecordField>> created = null;
     Map<String, Collection<SinkRecordField>> amended = null;
     for (final Map.Entry<String, Collection<SinkRecordField>> entry : tableColumnsMap.entrySet()) {
-      if (!tables.containsKey(entry.getKey())) {
+      final DbTable table = tables.get(entry.getKey());
+      if (table == null) {
         //we don't have this table
         if (created == null) created = new HashMap<>();
         created.put(entry.getKey(), tableColumnsMap.get(entry.getKey()));
       } else {
-        final DbTable table = tables.get(entry.getKey());
         final Map<String, DbTableColumn> existingColumnsMap = table.getColumns();
         for (final SinkRecordField field : entry.getValue()) {
           if (!existingColumnsMap.containsKey(field.getName())) {
             if (amended == null) {
               amended = new HashMap<>();
             }
+            Collection<SinkRecordField> newFileds = amended.get(table.getName());
             //new field which hasn't been seen before
-            if (!amended.containsKey(table.getName())) {
+            if (newFileds == null) {
               logger.info(String.format("Detected new field %s for table %s in SinkRecord.", field.getName(), table.getName()));
-              amended.put(table.getName(), new ArrayList<SinkRecordField>());
+              newFileds = new ArrayList<>();
+              amended.put(table.getName(), newFileds);
             }
-
-            final Collection<SinkRecordField> newFileds = amended.get(table.getName());
             newFileds.add(field);
           }
         }
