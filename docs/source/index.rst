@@ -1,10 +1,8 @@
 Kafka Connect JDBC Sink
 =======================
 
-Kafka Connect JDBC Sink is a connector to write data from Kafka to a sink target that supports JDBC.
-
-.. toctree::
-:maxdepth: 3
+The JDBC sink allows for writing data from Kafka topics to an RDBMS. It has been tested against MYSQL, Oracle, Postgres
+and SQL Server.
 
 Prerequisites
 -------------
@@ -17,8 +15,7 @@ Sink Connector QuickStart
 -------------------------
 
 
-To see some of the features of the JDBC we will write data from a topic to a SQLLite database, in INSERT mode and use
-the RETRY functionality to recover from errors on insert.
+To see some of the features of the JDBC we will write data from a topic to a SQLLite database in INSERT mode.
 
 .. note::
 
@@ -50,16 +47,14 @@ Now we create a configuration file that will load data from this database. This 
     connect.jdbc.connection.user=
     connect.jdbc.connection.password=
     connect.jdbc.sink.error.policy=RETRY
-    connect.jdbc.sink.batching.enabled=true
-    connect.jdbc.sink.export.mappings={orders:orders;qty->quantity,product->,price->}
-    connect.jdbc.sink.mode=INSERT
+    connect.jdbc.sink.export.mappings=INSERT INTO orders SELECT qty AS quantity, product, price FROM orders
 
-This configuration defines source topic ``topics``, the connection to target database  ``connect.jdbc.connection.uri``,
+This configuration defines the source topics ``topics``, the connection to target database  ``connect.jdbc.connection.uri``,
 the error policy ``connect.jdbc.sink.error.policy``, the mappings of topics/fields ``connect.jdbc.sink.export.mappings``
-and the sink write mode ``connect.jdbc.sink.mode``.
+and the sink write mode. The sink selects only qty, product and price from the orders topic and
+sends them to the orders table.  The qty field from the topic is remapped as quantity in the target table.
 
-Now, run the connector as a standalone Kafka Connect worker in another terminal (this assumes Avro settings and that
-Kafka and the Schema Registry are running locally on the default ports):
+Now, run the connector as a standalone Kafka Connect worker in another terminal:
 
 .. sourcecode:: bash
 
@@ -89,8 +84,7 @@ Check the sink is up with no errors.
         connect.jdbc.sink.max.retries = 10
         connect.jdbc.connection.password = [hidden]
         connect.jdbc.connection.uri = jdbc:sqlite:/Users/andrew/test.db
-        connect.jdbc.sink.export.mappings = {orders:orders;qty->quantity,product->,price->}
-        connect.jdbc.sink.retry.interval = 60000
+        connect.jdbc.sink.export.mappings = INSERT INTO orders SELECT qty AS quantity, product, price FROM orders
 
 .. tip::
 
@@ -112,7 +106,9 @@ The producer console is now waiting for input. Copy and paste the following into
 
     ➜ {"id": 999, "product": "foo", "qty": 100, "price": 50}
 
-In our mappings we wanted ``qty`` to go to ``quantity`` in our table. Back in the logs on the sink you should see this:
+In our mappings we wanted ``qty`` to be mapped to ``quantity`` in our table.
+
+If you go back to the Sink logs you will see 1 row being inserted:
 
 .. sourcecode:: bash
 
@@ -128,7 +124,7 @@ Check Sqlite:
             999||foo|100|50.0
 
 Since we have set our error policy to RETRY we can test to see what happens if a second record is inserted with the same
-primary key. Back at the producer console insert the same record again which will cause a primary key violation:
+primary key. Back at the kafka producer console insert the same record again which will cause a primary key violation:
 
 .. sourcecode:: bash
 
@@ -146,7 +142,7 @@ You should now see a primary key constraint violation and the sink pausing and r
     ERROR RetriableException from SinkTask jdbc-datamountaineer-1-0:
     org.apache.kafka.connect.errors.RetriableException: java.sql.SQLException: UNIQUE constraint failed: orders.id
 
-No lets fix this and have the sink recover. Connect to Sqlite again and delete the row:
+No lets fix this and have the sink recover without our intervention. Connect to Sqlite again and delete the row:
 
 .. sourcecode:: bash
 
@@ -181,16 +177,19 @@ Features
 --------
 
 1. Error Polices.
-2. Write modes.
-3. Topic to table mappings.
-4. Field Selection.
-5. Auto create tables.
-6. Auto evolve tables.
+2. Kafka connect query language.
+3. Write modes.
+4. Topic to table mappings.
+5. Field Selection.
+6. Auto create tables.
+7. Auto evolve tables.
 
 Error Polices
 ~~~~~~~~~~~~~
 
-The sink has three error policies that determine how failed writes to the target database are handled.
+The sink has three error policies that determine how failed writes to the target database are handled. The error policies
+affect the behaviour of the schema evolution characteristics of the sink. See the schema evolution section for more
+information.
 
 **Throw**.
 
@@ -204,63 +203,109 @@ Any error on write to the target database is ignored and processing continues.
 .. warning::
 
     This can lead to missed errors if you don't have adequate monitoring. Data is not lost as it's still in Kafka
-    subject to Kafka's retention policy.
+    subject to Kafka's retention policy. The sink currently does **not** distinguish between integrity constraint
+    violations and or SQL expections thrown by the driver,
 
 **Retry**.
 
 Any error on write to the target database causes the RetryIterable exception to be thrown. This causes the
-Kafka connect framework to pause and replay the message. Offsets are not committed. For example, if the table is offline,
-by accident or accidentally modified or even having a DDL statement applied cause a write failure, the message can be
-replayed.
+Kafka connect framework to pause and replay the message. Offsets are not committed. For example, if the table is offline
+it will cause a write failure, the message can be replayed. With the Retry policy the issue can be fixed without stopping
+the sink.
 
-The error policies effect the behaviour of the schema evolution characteristics of the sink. See the schema evolution
-section for more information.
+
+Kafka Connect Query Language
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**K** afka **C** onnect **Q** uery **L** anguage found here `GitHub repo <https://github.com/datamountaineer/kafka-connector-query-language>`_
+allows for routing and mapping using a SQL like syntax, consolidating typically features in to one configuration option.
+
+The JDBC sink supports the following:
+
+.. sourcecode:: bash
+
+    <write mode> INTO <target table> SELECT <fields> FROM <source topic> <AUTOCREATE> <PK> <PK_FIELDS> <AUTOEVOLVE>
+
+Example:
+
+.. sourcecode:: sql
+
+    #Insert mode, select all fields from topicA and write to tableA
+    INSERT INTO tableA SELECT * FROM topicA
+
+    #Insert mode, select 3 fields and rename from topicB and write to tableB
+    INSERT INTO tableB SELECT x AS a, y AS b and z AS c FROM topicB
+
+    #Insert mode, select all fields from topicC, auto create tableC and auto evolve, default pks will be created
+    INSERT INTO tableC SELECT * FROM topicC AUTOCREATE AUTOEVOLVE
+
+    #Upsert mode, select all fields from topicC, auto create tableC and auto evolve, use field1 and field2 as the primary keys
+    UPSERT INTO tableC SELECT * FROM topicC AUTOCREATE PK field1, field2 AUTOEVOLVE
 
 Write Modes
 ~~~~~~~~~~~
 
-The sink supports both **insert** and **upsert** modes.
+The sink supports both **insert** and **upsert** modes.  This mapping is set in the ``connect.jdbc.sink.export.mappings`` option.
 
 **Insert**
 
-In this mode the sink prepares insert statements to execute either in batch transactions or individually, dependent on
-the ``connect.jdbc.sink.batching.enabled`` setting. Typically you would use this in append only tables such as ledgers.
-Combined with the error policy setting, ``connect.jdbc.sink.error.policy``, this allows for idempotent writes. For
-example, sent to NOOP, violations of primary keys would be rejected by the database and sink would log the error and
-continue processing but you miss real errors.
+Insert is the default write mode of the sink. Records are batched by the sink and inserted into the target tables wrapped
+in a transaction. Any errors occurring during writes are delegated to the error handler defined by the ``connect.jdbc.error.policy``.
 
 **Update**
 
-In this mode the sink prepares upsert statements, the exact syntax is dependent on the target database.
-The SQL dialect is obtained from the connection URI. When the sink tries to write, it executes the appropriate upsert
-statement. For example, with MySQL it will use the
-`ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_ to apply an update if a primary key
-constraint is violated. If the update fails the sink fails back to the error policy.
+In this mode the sink prepares upsert statements, the exact syntax is dependent on the target database. The SQL dialect
+is obtained from the connection URI. When the sink tries to write, it executes the appropriate upsert statement.
+For example, with MySQL it will use the
+`ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_ to apply an update if a primary
+key constraint is violated. If the update fails the sink falls back to the error policy.
 
 The following dialects and upsert statements are supported:
 
 1.  MySQL - `ON DUPLICATE KEY <http://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html>`_
 2.  ORACLE - `MERGE <https://docs.oracle.com/cd/B28359_01/server.111/b28286/statements_9016.htm>`_.
-    This requires knowledge for the primary keys to build the merge statement. The database metadata is queried.
 3.  MSSQL - `MERGE <https://msdn.microsoft.com/en-us/library/bb510625.aspx>`_.
-    This requires knowledge for the primary keys to build the merge statement. The database metadata is queried.
-    This requires knowledge for the primary keys to build the merge statement. The database metadata is queried.
-    to retrieve this.
 4.  PostgreSQL - *9.5 and above.* `ON CONFLICT <http://www.postgresql.org/docs/9.5/static/sql-insert.html>`_.
-    This requires knowledge for the primary keys to build the merge statement. The database metadata is queried.
 
-.. warning:: Postgre UPSERT is only supported on versions 9.5 and above.
 
 .. note::
 
     Primary keys are required to be set on the target tables for upsert mode.
 
+**Insert Idempotency**
+
+Kafka currently provides at least once delivery semantics. Therefore, this mode may produce errors if unique constraints
+have been implemented on the target tables. If the error policy has been set to NOOP then the sink will discard the error
+and continue to process, however, it currently makes no attempt to distinguish violation of integrity constraints from other
+SQLExceptions such as casting issues.
+
+**Upsert Idempotency**
+
+Kafka currently provides at least once delivery semantics and order is a guaranteed within partitions.
+
+This mode will, if the same record is delivered twice to the sink, result in an idempotent write. The existing record
+will be updated with the values of the second which are the same.
+
+If records are delivered with the same field or group of fields that are used as the primary key on the target table,
+but different values, the existing record in the target table will be updated.
+
+Since records are delivered in the order they were written per partition the write is idempotent on failure or restart.
+Redelivery produces the same result.
+
+
 Topic Routing
 ~~~~~~~~~~~~~
 
-The sink supports topic routing that allows mapping the messages from topics to a specific table. For example map
-a topic called "bloomberg_prices" to a table called "prices". This mapping is set in the
-``connect.jdbc.sink.export.mappings`` option.
+The sink supports topic routing that allows mapping the messages from topics to a specific table. For example, map a
+topic called "bloomberg_prices" to a table called "prices". This mapping is set in the ``connect.jdbc.sink.export.mappings``
+option.
+
+Example:
+
+.. sourcecode:: sql
+
+    //Select all
+    INSERT INTO table1 SELECT * FROM topic1; INSERT INTO tableA SELECT * FROM topicC
 
 .. tip::
 
@@ -269,24 +314,20 @@ a topic called "bloomberg_prices" to a table called "prices". This mapping is se
 Field Selection
 ~~~~~~~~~~~~~~~
 
-The sink supports selecting fields from the source topic or selecting all fields and mapping of these fields to columns
-in the target table. For example, map a field called "qty"  in a topic to a column called "quantity" in the target
-table.
+The JDBC sink supports field selection and mapping. This mapping is set in the ``connect.jdbc.sink.export.mappings`` option.
 
-All fields can be selected by using "*" in the field part of ``connect.jdbc.sink.export.mappings``.
 
-Leaving the column name empty means trying to map to a column in the target table with the same name as the field in the
-source topic.
+Examples:
 
-.. tip::
+.. sourcecode:: sql
 
-    Check your mappings!
+    //Rename or map columns
+    INSERT INTO table1 SELECT lst_price AS price, qty AS quantity FROM topicA
 
-    All database column names are checked at startup if mappings are provided. If they do not exist in the target table the
-    configuration will not pass validation checks and refuse to start. If ``connect.jdbc.sink.auto.create`` is enabled
-    this does not apply since the table will be created based on the first message received for the topic.
+    //Select all
+    INSERT INTO table1 SELECT * FROM topic1
 
-    If no mappings are supplied the checks happen when the first message is received and processed for the source topics.
+.. tip:: Check you mappings to ensure the target columns exist.
 
 
 .. warning::
@@ -295,14 +336,37 @@ source topic.
     field mappings it is assumed the user is not interested in new upstream fields. For example they may be tapping into a
     pipeline for a Kafka stream job and not be intended as the final recipient of the stream.
 
+    If you chose field selection you must include the primary key fields otherwise the insert will fail.
+
 Auto Create Tables
 ~~~~~~~~~~~~~~~~~~
 
-The sink supports auto creation of tables for each topic. This feature is **not** supported with field selection.
-The ``connect.jdbc.sink.auto.create.tables`` option controls which topics are enabled for auto table creation with optional
-fields to be used as the primary keys. If no fields are specified the sink creates a field, controlled by the
-``connect.jdbc.sink.pk.col.name`` option. The default column name is ``__connect_auto_id`` and it's value will be filled
-a concatenation of the topic name, partition and offset.
+The sink supports auto creation of tables for each topic.
+
+Any table auto created will have primary keys added. These can either be user specified fields from the topic schema or 3 default
+columns set by the sink. If the defaults are requested the sink creates 3 columns, **__connect_topic**, **__connect_partition** and
+**__connect_offset**. These columns are set as primary keys and used as such in insert and upsert modes. They are filled with the
+topic name, partition and offset of the record they came from.
+
+This mapping is set in the ``connect.jdbc.sink.export.mappings`` option.
+
+
+Examples
+
+.. sourcecode:: sql
+
+    //AutoCreate the target table
+    INSERT INTO table SELECT * FROM topic AUTOCREATE
+
+    //AuoCreate the target table with USER defined PKS from the record
+    INSERT INTO table SELECT * FROM topic AUTOCREATE PK field1, field2
+
+..	note::
+
+    The fields specified as the primary keys must be in the SELECT clause or all fields (*) must be selected
+
+The sink will try and create the table at start up if a schema for the topic is found in the Schema Registry. If no
+schema is found the table is created when the first record is received for the topic.
 
 
 Auto Evolve Tables
@@ -315,24 +379,31 @@ Upstream changes must follow the schema evolution rules laid out in the Schema R
 and FULLY compatible schemas. If new fields are added the sink will attempt to perform a ALTER table DDL statement against
 the target table to add columns. All columns added to the target table are set as nullable.
 
-Fields can not be deleted upstream. Fields should be of Avro union type [null, <dataType>] with a default
-set. This allows the sink to either retrieve the default value or null. Effectively the sink would not be aware that field
-has been deleted as a value is always supplied to it.
+Fields cannot be deleted upstream. Fields should be of Avro union type [null, <dataType>] with a default set. This allows
+the sink to either retrieve the default value or null. Effectively the sink would not be aware that field has been deleted
+as a value is always supplied to it.
 
 .. warning::
 
-    If a upstream field is removed and the topic is not following the Schema Registry's evolution rules, i.e. not
-    full or backwards compatible, any errors will default to the error policy.
-
-**TODO - Upstream changes to data types are only handled for ???**
+    If a upstream field is removed and the topic is not following the Schema Registry's  evolution rules, i.e. not full
+    or backwards compatible, any errors will default to the error policy.
 
 Downstream changes are handled by the sink. If columns are removed, the mapped fields from the topic are ignored. If
-columns are added we attempt to find a matching field by name in the topic. Changes to data types can only be promotions.
+columns are added, we attempt to find a matching field by name in the topic. Changes to data types can only be promotions.
+
+This mapping is set in the ``connect.jdbc.sink.export.mappings`` option.
+
+
+Example:
+
+.. sourcecode:: sql
+
+    UPSERT into EVOLUTION4 SELECT * FROM demo-evolution AUTOEVOLVE
 
 
 .. tip::
 
-    If adding columns to the target database set them a nullable and/or with a default value.
+    If you are adding columns to the target database set them a nullable and/or with a default value.
 
 Configuration
 -------------
@@ -359,7 +430,7 @@ Alternatively, you can set the ``CLASSPATH`` variable before running. For exampl
 
 .. sourcecode:: bash
 
-    $ CLASSPATH=/usr/local/firebird/* ./bin/copycat-distributed ./config/copycat-distributed.properties
+    $ CLASSPATH=/usr/local/firebird/* ./bin/connect-distributed ./config/connect-distributed.properties
 
 would add the JDBC driver for the Firebird database, located in ``/usr/local/firebird``, and allow you to use JDBC
 connection URLs like ``jdbc:firebirdsql:localhost/3050:/var/lib/firebird/example.db``.
@@ -388,14 +459,14 @@ Specifies the JDBC connection password.
 * Type: password (shows ``[hidden]`` in logs)
 * Importance: high
 
-``connect.jdbc.sink.batching.enabled``
+``connect.jdbc.sink.batching.size``
 
-Specifies if a given sequence of SinkRecords are batched in a transaction or not. If ``true`` records delivered to
-the task in each `put` are batched in one transaction. Otherwise each record is inserted in its own transaction.
+Specifies how many records to insert together at one time. If the connect framework provides less records when it is
+calling the sink it won't wait to fulfill this value but rather execute it.
 
-* Type: boolean
+* Type: int
 * Importance: high
-* Default : true
+* Default: 3000
 
 
 ``connect.jdbc.sink.error.policy``
@@ -429,78 +500,13 @@ The interval, in milliseconds between retries if the sink is using ``connect.jdb
 * Importance: medium
 * Default : 60000 (1 minute)
 
-``connect.jdbc.sink.mode``
-
-Specifies how the data should be landed into the RDBMS. Two options are supported: **insert** **upsert**.
-
-* Type: string
-* Importance: high
-* Default: insert
 
 ``connect.jdbc.sink.export.mappings``
 
-Specifies to the mappings of topic to table. Additionally which fields to select from the source topic and their mappings
-to columns in the target table. Multiple mappings can be set comma separated wrapped in {}. Before ``;`` is topic
-to table mappings, after the field mappings.
+This mandatory configuration expects a KCQL statement specifing the source (topic) and target (table) mappings as well
+as and field selections. Additionally AUTOCREATE (with and without primary keys) and AUTOEVOLVE can be set to control the
+sinks behaviour. Multiple route mappings can be separated by a `;`.
 
-Examples:
-
-.. sourcecode:: bash
-
-    {TOPIC1:TABLE1;field1->col1,field5->col5,field7->col10}
-    {TOPIC2:TABLE2;field1->,field2->}
-    {TOPIC3:TABLE3;*}
-
-* Type: string
-* Importance: high
-
-.. warning::
-
-    Explicit mapping of topics to tables is required. If not present the sink will not start and fail validation checks.
-
-.. note::
-
-    Specifying * for field mappings means select and try to map all fields in the topic to matching fields in the target
-    table. Leaving the column name empty means trying to map field in the topic to a column in the database based on name.
-
-``connect.jdbc.sink.evolve.tables``
-
-Specifies if the sink is allowed to evolve target tables. If set and new fields are add to the upstream topic
-the sink will attempt to create a corresponding additional column in the mapped database. If an explict field mapping has
-been set in ``connect.jdbc.sink.export.mappings`` the sink will **not** evolve the table as fields have been choosen by the
-operator. The format is a comma separated list of the topics. The sink is then allowed to evolve the mapped tables.
-For example, ``connect.jdbc.sink.evolve.tables=topic1,topic2``
-
-* Type : string
-* Importance : medium
-* Default : not set.
-
-.. warning:: Field selection disables this feature.
-
-``connect.jdbc.sink.auto.create.tables``
-
-Enables auto creation of tables in the target database based on the schema of the source topic.
-The tables are created based of the latest schema for the topic. The format is {table:column list}. The column
-list is a comma separated list of fields to take from the topic to form the primary key. If left blank, as for topicC,
-the sink will add a primary key column to the table called ``__connect_auto_id``. This key will be filled with a
-concatenated string if the form of topicname|partition|offset, e.g. topicC|1|99.
-
-.. sourcecode:: bash
-
-    {topicA:a1,a2},{topicB:b1,b2},{topicC:}
-
-* Type : string
-* Importance: medium
-* Default : false
-
-``connect.jdbc.sink.pk.col.name``
-
-The column name to create in a target table if ``connect.jdbc.sink.auto.create.tables`` is enabled and no fields set as
-the primary key.
-
-* Type : string
-* Importance : medium
-* Default : __connect_auto_id
 
 ``connect.jdbc.sink.schema.registry.url``
 
@@ -526,54 +532,37 @@ The most complicated option is the ``connect.jdbc.sink.export.map``. This exampl
     #Maximum number of tasks the Connector can start
     tasks.max=5
     #Input topics (Required by Connect Framework)
-    topics=orders,otc_trades,greeks,bloomberg_prices
-    #Target database connection URI, MUST INCLUDE DATABASE
+    topics=goldman_prices,bloomberg_prices
+    #Target database connection URI
     connect.jdbc.connection.uri=jdbc:mariadb://mariadb.landoop.com:3306/jdbc_sink_03
     #Target database username and password
     connect.jdbc.connection.user=testjdbcsink
     connect.jdbc.connection.password=datamountaineers
-    #Location of the JDBC jar
-    connect.jdbc.sink.driver.jar=/home/datamountaineers/connect-jdbc/connect/connect-hdfs-to-jdbc-wip/mariadb-java-client-1.4.4.jar
-    #Name of the JDBC Driver class to load
-    connect.jdbc.sink.driver.manager.class=org.mariadb.jdbc.Driver
     #Error policy to handle failures (default is ``throw``)
     connect.jdbc.sink.error.policy=THROW
-    #Enable batching, all records the a task receives each time it's called are batched together in one transaction
-    connect.jdbc.sink.batching.enabled=true
-    #The topic to table mappings
-    connect.jdbc.sink.export.mappings={orders:orders_table;product->product,qty->quantity,price->},{otc_trades:trades;*},{bloomberg_prices:prices;source->,lst_bid->}
-    #write mode
-    connect.jdbc.sink.mode=UPSERT
+   #The topic to table mappings
+    connect.jdbc.sink.export.mappings=UPSERT INTO prices SELECT * FROM bloomberg_prices AUTOCREATE,UPSERT INTO prices SELECT * FROM
+    goldman_prices AUTOCREATE
 
-For the first mapping **{orders:orders_table;product->product,qty->quantity,price->}** tells the sink the following:
-
-1. Map the *orders* topic to a table called *orders_table*.
-2. Select fields *product*, *qty* and *price*  from the topic.
-3. Map a field called *product*  from the *orders*  topic to a column called *product* in the *orders_table*.
-4. Map a field called *qty*  from the *orders*  topic to a column called *quantity* in the *orders_table*.
-5. Map a field called *price*  from the *orders*  topic to a column called *price* in the *orders_tables*. Here the target column
-   is left blank to the field name is taken.
-
-For the second mapping **{otc_trades:trades;*}** tells the sink the following:
-
-1. Map the *otc_trades* topic to a table called *trades*.
-2. Select all fields from the topics message and map them against matching column names in the trades table.
-   **The * indicates select all fields from the topic.**
-
-The final mapping **{bloomberg_prices:prices;source->,lst_bid->}** tells the sink the following:
-
-1. Map the *bloomberg_prices* topic to a table called *prices*.
-2. Select fields *source*  and *lst_bid*  from the topic.
-3. Map a field called *source*  from the *bloomberg_prices*  topic to a column called *source*  in the *prices* table.
-4. Map a field called *lst_bid*  from the *bloomberg_prices*  topic to a column called *lst_bid*  in the *prices* table.
-
+In this example we tell the sink to AUTOCREATE the prices table and use the default PKs, topic name, partition and offset.
+We also tell the sink to map all fields in the Bloomberg prices and Goldman prices topic into the table prices and run in
+UPSERT mode.
 
 Deployment Guidelines
 ---------------------
 
-TODO
+ANTONIOS?????
 
 TroubleShooting
 ---------------
 
-TODO
+**AutoCreate and AutoEvolve**
+
+Ensure you have permissions to execute DDL statements against the database and target table.
+
+**Tables not found**
+
+The sink checks against the metadata of the target database if the tables exist at startup. Ensure the connection URI is
+correct for your target database.
+
+EXAMPLE connection strings.
