@@ -47,7 +47,7 @@ public class JdbcSinkConfig extends AbstractConfig {
           "INSERT INTO TABLE1 SELECT field1 as col1,field5 as col5, field7 as col10 FROM TOPIC1;" +
           "INSERT INTO TABLE2 SELECT field1,field2 FROM TOPIC2;" +
           "INSERT INTO TABLE3 SELECT field1,field2 FROM TOPIC3;" +
-          "UPSERT INTO TABLE4 SELECT field1 as col1,* FROM TOPIC4;" +
+          "UPSERT INTO TABLE4 SELECT * FROM TOPIC4;" +
           System.lineSeparator() +
           "The first mapping specifies map TOPIC1 to TABLE1 and select only field1, field2 and field7 from the topic payload. " +
           "Field1 is mapped to col1, field5 to col5 and field7 to col10." +

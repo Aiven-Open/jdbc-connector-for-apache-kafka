@@ -89,6 +89,7 @@ public class DatabaseMetadata {
             }
             //new field which hasn't been seen before
             if (!amended.containsKey(table.getName())) {
+              logger.info(String.format("Detected new field %s for table %s in SinkRecord.", field.getName(), table.getName()));
               amended.put(table.getName(), new ArrayList<SinkRecordField>());
             }
 

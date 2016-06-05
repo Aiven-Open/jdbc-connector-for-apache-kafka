@@ -321,6 +321,7 @@ public final class JdbcDbWriter implements DbWriter {
         }
       }
       if (fm.evolveTableSchema()) {
+        logger.info(String.format("Allowing schema evolution for table %s", fm.getTableName()));
         tablesAllowingSchemaEvolution.add(fm.getTableName());
       }
     }

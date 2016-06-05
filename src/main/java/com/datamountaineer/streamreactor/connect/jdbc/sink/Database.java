@@ -68,6 +68,11 @@ public class Database {
   }
 
 
+  /**
+   * Apply any changes to the target table structures
+   *
+   * @param tablesToColumnsMap A map of table and sinkRecords for that table.
+   * */
   public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
     final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
@@ -96,6 +101,12 @@ public class Database {
     }
   }
 
+  /**
+   * Create tables
+   *
+   * @param tableMap A map of table and sinkRecords for that table.
+   * @param connection The database connection to use.
+   * */
   public void createTables(final Map<String, Collection<SinkRecordField>> tableMap,
                            final Connection connection) {
     if (tableMap == null || tableMap.size() == 0) {
@@ -133,6 +144,13 @@ public class Database {
     }
   }
 
+  /**
+   * Create a table
+   *
+   * @param tableName The table to create
+   * @param fields The sinkRecord fields to use to create the columns
+   * @param connection The database connection to use.
+   * */
   private DbTable createTable(final String tableName,
                               final Collection<SinkRecordField> fields,
                               final Connection connection) {
@@ -188,6 +206,12 @@ public class Database {
 
   }
 
+  /**
+   * Evolve tables, add new columns
+   *
+   * @param tableMap A map of table and sinkRecords for that table.
+   * @param connection The database connection to use.
+   * */
   private void evolveTables(final Map<String, Collection<SinkRecordField>> tableMap,
                             final Connection connection) {
     if (tableMap == null || tableMap.size() == 0) {
@@ -195,6 +219,7 @@ public class Database {
     }
     for (final Map.Entry<String, Collection<SinkRecordField>> entry : tableMap.entrySet()) {
       final String tableName = entry.getKey();
+
       if (!databaseMetadata.containsTable(tableName)) {
         throw new RuntimeException(String.format("%s is set for amendments but hasn't been created yet", entry.getKey()));
       }
