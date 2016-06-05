@@ -17,9 +17,11 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
+import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.binders.PreparedStatementBinder;
-import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,6 +32,7 @@ import java.util.Map;
  * Used by the PreparedStatements to track which tables are used and which columns
  */
 final class TablesToColumnUsageState {
+  private final static Logger logger = LoggerFactory.getLogger(TablesToColumnUsageState.class);
   private final Map<String, Map<String, SinkRecordField>> tablesToColumnsMap = new HashMap<>();
 
   /**
@@ -82,6 +85,7 @@ final class TablesToColumnUsageState {
     }
     for (final PreparedStatementBinder binder : binders) {
       if (!target.containsKey(binder.getFieldName())) {
+        logger.warn("adding new field to " + binder.getFieldName());
         target.put(binder.getFieldName(), new SinkRecordField(binder.getFieldType(), binder.getFieldName(), binder.isPrimaryKey()));
       }
     }

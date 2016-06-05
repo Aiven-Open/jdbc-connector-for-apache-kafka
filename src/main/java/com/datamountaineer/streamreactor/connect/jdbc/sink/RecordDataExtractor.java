@@ -35,6 +35,8 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +55,7 @@ import java.util.Map;
  * (statement.setString(index, value))
  */
 public class RecordDataExtractor {
+  private final static Logger logger = LoggerFactory.getLogger(RecordDataExtractor.class);
   private final static Comparator<PreparedStatementBinder> sorter = new Comparator<PreparedStatementBinder>() {
     @Override
     public int compare(PreparedStatementBinder left, PreparedStatementBinder right) {
@@ -80,6 +83,7 @@ public class RecordDataExtractor {
     final Schema schema = struct.schema();
     final Collection<Field> fields;
     if (fieldsMappings.areAllFieldsIncluded()) {
+      logger.warn("ALL FIELDS ARE INCLUDED " + record.kafkaOffset());
       fields = schema.fields();
     } else {
 
