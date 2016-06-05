@@ -102,6 +102,25 @@ public class Database {
   }
 
   /**
+   * Apply any changes to the target table structures
+   *
+   * @param tablesToColumnsMap A map of table and sinkRecords for that table.
+   */
+  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap,
+                     final Connection connection) throws SQLException {
+    DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
+    final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
+    final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
+    //short-circuit if there is nothing to change
+    if ((createMap == null || createMap.isEmpty()) && (amendmentsMap == null || amendmentsMap.isEmpty())) {
+      return;
+    }
+
+    createTables(createMap, connection);
+    evolveTables(amendmentsMap, connection);
+  }
+
+  /**
    * Create tables
    *
    * @param tableMap   A map of table and sinkRecords for that table.

@@ -131,7 +131,7 @@ public final class JdbcDbWriter implements DbWriter {
             final PreparedStatementData statementData = statementContext.getPreparedStatementData();
 
             //handle possible database changes (new tables, new columns)
-            database.update(statementContext.getTablesToColumnsMap());
+            database.update(statementContext.getTablesToColumnsMap(), connection);
 
             PreparedStatement statement = null;
             try {
