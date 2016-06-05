@@ -72,7 +72,7 @@ public class Database {
    * Apply any changes to the target table structures
    *
    * @param tablesToColumnsMap A map of table and sinkRecords for that table.
-   * */
+   */
   public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
     final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
@@ -104,9 +104,9 @@ public class Database {
   /**
    * Create tables
    *
-   * @param tableMap A map of table and sinkRecords for that table.
+   * @param tableMap   A map of table and sinkRecords for that table.
    * @param connection The database connection to use.
-   * */
+   */
   public void createTables(final Map<String, Collection<SinkRecordField>> tableMap,
                            final Connection connection) {
     if (tableMap == null || tableMap.size() == 0) {
@@ -147,10 +147,10 @@ public class Database {
   /**
    * Create a table
    *
-   * @param tableName The table to create
-   * @param fields The sinkRecord fields to use to create the columns
+   * @param tableName  The table to create
+   * @param fields     The sinkRecord fields to use to create the columns
    * @param connection The database connection to use.
-   * */
+   */
   private DbTable createTable(final String tableName,
                               final Collection<SinkRecordField> fields,
                               final Connection connection) {
@@ -164,9 +164,18 @@ public class Database {
     try {
       statement = connection.createStatement();
       statement.execute(sql);
+      logger.info(String.format("Database structure changed database %s%s%s",
+              databaseMetadata.getDatabaseName(),
+              System.lineSeparator(),
+              sql));
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
-      logger.error("Creating table failed,", e);
+      logger.error("Creating table failed." + e.getMessage(), e);
+      SQLException inner = e.getNextException();
+      while (inner != null) {
+        logger.error(inner.getMessage(), inner);
+        inner = e.getNextException();
+      }
       //tricky part work out if the table already exists
       try {
         if (DatabaseMetadata.tableExists(connection, tableName)) {
@@ -209,9 +218,9 @@ public class Database {
   /**
    * Evolve tables, add new columns
    *
-   * @param tableMap A map of table and sinkRecords for that table.
+   * @param tableMap   A map of table and sinkRecords for that table.
    * @param connection The database connection to use.
-   * */
+   */
   private void evolveTables(final Map<String, Collection<SinkRecordField>> tableMap,
                             final Connection connection) {
     if (tableMap == null || tableMap.size() == 0) {
@@ -268,13 +277,24 @@ public class Database {
                 amendTableQuery));
 
         statement.executeUpdate(amendTableQuery);
-        logger.info(String.format("DDL %s applied.", amendTableQuery));
+
+        logger.info(String.format("Database structure changed for database %s%s%s",
+                databaseMetadata.getDatabaseName(),
+                System.lineSeparator(),
+                amendTableQuery));
       }
       //commit the transaction
       connection.commit();
 
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
+      logger.error("Amending database structure failed." + e.getMessage(), e);
+      SQLException inner = e.getNextException();
+      while (inner != null) {
+        logger.error(inner.getMessage(), inner);
+        inner = e.getNextException();
+      }
+
       //see if it there was a race with other tasks to add the colums
       try {
         final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
