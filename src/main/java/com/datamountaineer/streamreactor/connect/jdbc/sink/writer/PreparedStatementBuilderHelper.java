@@ -150,7 +150,7 @@ public final class PreparedStatementBuilderHelper {
     }
     return new FieldsMappings(tm.getTableName(),
             tm.getIncomingTopic(),
-            false,
+            tm.areAllFieldsIncluded(),
             tm.getInsertMode(),
             map,
             tm.autoCreateTable(),
