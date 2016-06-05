@@ -166,7 +166,6 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
@@ -261,7 +260,6 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
@@ -408,7 +406,6 @@ public class JdbcDbWriterTest {
 
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
@@ -605,7 +602,6 @@ public class JdbcDbWriterTest {
 
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,
@@ -756,7 +752,6 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(),
             dbMetadata,

@@ -16,7 +16,6 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
 import com.datamountaineer.streamreactor.connect.jdbc.common.ParameterValidator;
@@ -45,60 +44,22 @@ public class Database {
   private final Set<String> tablesAllowingSchemaEvolution;
   private final DatabaseMetadata databaseMetadata;
   private final DbDialect dbDialect;
-  private final ConnectionProvider connectionProvider;
 
-  public Database(final ConnectionProvider connectionProvider,
-                  final Set<String> tablesAllowingAutoCreate,
+  public Database(final Set<String> tablesAllowingAutoCreate,
                   final Set<String> tablesAllowingSchemaEvolution,
                   final DatabaseMetadata databaseMetadata,
                   final DbDialect dbDialect,
                   final int executionRetries) {
     this.executionRetries = executionRetries;
-    ParameterValidator.notNull(connectionProvider, "connectionProvider");
     ParameterValidator.notNull(databaseMetadata, "databaseMetadata");
     ParameterValidator.notNull(tablesAllowingAutoCreate, "tablesAllowingAutoCreate");
     ParameterValidator.notNull(tablesAllowingSchemaEvolution, "tablesAllowingSchemaEvolution");
     ParameterValidator.notNull(dbDialect, "dbDialect");
 
-    this.connectionProvider = connectionProvider;
     this.tablesAllowingAutoCreate = tablesAllowingAutoCreate;
     this.tablesAllowingSchemaEvolution = tablesAllowingSchemaEvolution;
     this.databaseMetadata = databaseMetadata;
     this.dbDialect = dbDialect;
-  }
-
-
-  /**
-   * Apply any changes to the target table structures
-   *
-   * @param tablesToColumnsMap A map of table and sinkRecords for that table.
-   */
-  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap) throws SQLException {
-    DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
-    final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
-    final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
-    //short-circuit if there is nothing to change
-    if ((createMap == null || createMap.isEmpty()) && (amendmentsMap == null || amendmentsMap.isEmpty())) {
-      return;
-    }
-
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
-      connection.setAutoCommit(false);
-
-      createTables(createMap, connection);
-      evolveTables(amendmentsMap, connection);
-
-      connection.commit();
-    } catch (RuntimeException ex) {
-      connection.rollback();
-      throw ex;
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
-    }
   }
 
   /**

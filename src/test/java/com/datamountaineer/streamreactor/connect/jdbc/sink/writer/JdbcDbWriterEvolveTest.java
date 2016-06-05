@@ -95,7 +95,6 @@ public class JdbcDbWriterEvolveTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(tableName),
             Sets.<String>newHashSet(),
             dbMetadata,
@@ -210,7 +209,6 @@ public class JdbcDbWriterEvolveTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(),
             Sets.<String>newHashSet(tableName),
             dbMetadata,
@@ -335,7 +333,6 @@ public class JdbcDbWriterEvolveTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(tableName),
             Sets.<String>newHashSet(),
             dbMetadata,
@@ -424,7 +421,6 @@ public class JdbcDbWriterEvolveTest {
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
 
     Database executor = new Database(
-            connectionProvider,
             Sets.<String>newHashSet(tableName),
             Sets.<String>newHashSet(tableName), //allow auto evolution
             dbMetadata,
@@ -483,7 +479,7 @@ public class JdbcDbWriterEvolveTest {
         assertEquals(rs.getString("firstName"), fName2);
         assertEquals(rs.getString("lastName"), lName2);
         assertEquals(rs.getInt("age"), age2);
-        assertEquals(rs.getDouble("salary"), salary2);
+        assertTrue(Double.compare(rs.getDouble("salary"), salary2) == 0);
       }
     };
   }

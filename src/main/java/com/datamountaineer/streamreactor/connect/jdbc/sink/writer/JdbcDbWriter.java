@@ -236,7 +236,6 @@ public final class JdbcDbWriter implements DbWriter {
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
     final Database database = new Database(
-            connectionProvider,
             tablesAllowingAutoCreate,
             tablesAllowingSchemaEvolution,
             databaseMetadata,
