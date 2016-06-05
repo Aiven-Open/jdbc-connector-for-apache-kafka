@@ -247,6 +247,7 @@ public class Database {
         } catch (RuntimeException ex) {
           if (--retryAttempts <= 0) {
             //we want to stop the execution
+            logger.error(ex.getMessage());
             throw ex;
           }
           try {
