@@ -267,7 +267,7 @@ public class Database {
                 System.lineSeparator(),
                 amendTableQuery));
 
-        statement.execute(amendTableQuery);
+        statement.executeUpdate(amendTableQuery);
         logger.info(String.format("DDL %s applied.", amendTableQuery));
       }
       //commit the transaction
