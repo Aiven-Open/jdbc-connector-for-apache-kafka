@@ -133,7 +133,7 @@ public final class PreparedStatementContextIterable {
 
           final String topic = record.topic().toLowerCase();
           if (!topicsMap.containsKey(topic)) {
-            logger.warn(String.format("For topic %s there is no mapping.Skipping record at partition %d and offset %d",
+            logger.warn(String.format("For topic %s there is no mapping. Skipping record at partition %d and offset %d",
                     record.topic(),
                     record.kafkaPartition(),
                     record.kafkaOffset()));

@@ -261,7 +261,7 @@ public class DatabaseMetadata {
       }
       return tables;
     } catch (SQLException ex) {
-      throw new RuntimeException("Sql exception occured.", ex);
+      throw new RuntimeException("Sql exception occurred.", ex);
     } finally {
       if (connection != null) {
         try {
@@ -327,14 +327,6 @@ public class DatabaseMetadata {
     }
 
     while (nonPKcolumnsRS.next()) {
-//      ResultSetMetaData meta = nonPKcolumnsRS.getMetaData();
-//      for (int i = 1; i <= nonPKcolumnsRS.getMetaData().getColumnCount(); i++) {
-//        logger.info("column MetaData ");
-//        logger.info("column number " + i);
-//        // get the column's name.
-//        logger.info(meta.getColumnName(i));
-//      }
-
       final String colName = nonPKcolumnsRS.getString("COLUMN_NAME");
       final int sqlType = nonPKcolumnsRS.getInt("DATA_TYPE");
       boolean isNullable = !pkColumns.contains(colName);

@@ -244,6 +244,7 @@ public class Database {
             //should we exponentially wait?
             Thread.sleep(1000);
           } catch (InterruptedException e) {
+            logger.error(e.getMessage(), e);
           }
         }
       }
@@ -267,6 +268,7 @@ public class Database {
                 amendTableQuery));
 
         statement.execute(amendTableQuery);
+        logger.info(String.format("DDL %s applied.", amendTableQuery));
       }
       //commit the transaction
       connection.commit();
