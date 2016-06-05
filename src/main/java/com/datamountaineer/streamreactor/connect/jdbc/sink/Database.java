@@ -278,14 +278,14 @@ public class Database {
                 amendTableQuery));
 
         statement.executeUpdate(amendTableQuery);
+        //commit the transaction
+        connection.commit();
 
         logger.info(String.format("Database structure changed for database %s%s%s",
                 databaseMetadata.getDatabaseName(),
                 System.lineSeparator(),
                 amendTableQuery));
       }
-      //commit the transaction
-      connection.commit();
 
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
