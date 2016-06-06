@@ -1,9 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.common;
 
 
-import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
-import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
-import com.datamountaineer.streamreactor.connect.jdbc.common.DbTableColumn;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;

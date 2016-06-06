@@ -153,7 +153,6 @@ public class SQLiteDialect extends DbDialect {
               .append(keyCols.get(i)).append("=?");
     }
 
-    return String.format("update or ignore %s set %s where %s\n;", handleTableName(table), builder, whereBuilder) +
-            String.format("insert or ignore into %s(%s) values (%s)", handleTableName(table), queryColumns, bindingValues);
+    return String.format("insert or ignore into %s(%s) values(%s)", handleTableName(table), queryColumns, bindingValues);
   }
 }

@@ -106,4 +106,20 @@ public class OracleDialectTest {
             "\"col8\" SMALLINT NULL)";
     assertEquals(expected, actual.get(0));
   }
+
+  @Test
+  public void createTheUpsertStatement() {
+    String expected = "merge into \"ARTICLE\" " +
+            "using (select ? \"body\", ? \"title\", ? \"author\" FROM dual) incoming on" +
+            "(\"ARTICLE\".\"title\"=incoming.\"title\" and \"ARTICLE\".\"author\"=incoming.\"author\") " +
+            "when matched then update set \"ARTICLE\".\"body\"=incoming.\"body\" " +
+            "when not matched then insert(\"ARTICLE\".\"body\",\"ARTICLE\".\"title\",\"ARTICLE\".\"author\") " +
+            "values(incoming.\"body\",incoming.\"title\",incoming.\"author\")";
+
+    String upsert = dialect.getUpsertQuery("ARTICLE",
+            Lists.newArrayList("body"),
+            Lists.newArrayList("title", "author"));
+
+    assertEquals(expected, upsert);
+  }
 }
