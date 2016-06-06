@@ -97,8 +97,7 @@ Next we need to add data to the orders topic we asked the sink to drain. Start t
 
     ➜ bin/kafka-avro-console-producer \
      --broker-list localhost:9092 --topic orders \
-     --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"id","type":"int"},
-     {"name":"product", "type": "string"}, {"name":"qty", "type": "int"}, {"name":"price", "type": "float"}]}'
+     --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"id","type":"int"},{"name":"product", "type": "string"}, {"name":"qty", "type": "int"}, {"name":"price", "type": "float"}]}'
 
 The producer console is now waiting for input. Copy and paste the following into the terminal:
 
