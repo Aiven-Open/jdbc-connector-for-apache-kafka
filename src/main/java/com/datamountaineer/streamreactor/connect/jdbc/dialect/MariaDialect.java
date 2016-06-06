@@ -21,7 +21,6 @@ import com.google.common.collect.Iterables;
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
