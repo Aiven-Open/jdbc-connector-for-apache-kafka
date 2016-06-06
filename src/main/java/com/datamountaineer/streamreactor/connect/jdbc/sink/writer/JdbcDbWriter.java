@@ -271,11 +271,14 @@ public final class JdbcDbWriter implements DbWriter {
         try {
           all = registry.getAllSubjects();
         } catch (RestClientException e) {
-          logger.info(String.format("No schemas found in Registry! Waiting for first record to create table for topic ",
-                  fm.getIncomingTopic()));
+          logger.info(String.format(
+                  "No schemas found in Registry! Waiting for first record to create table for topic %s", fm.getIncomingTopic()));
         } catch (IOException e) {
-          logger.error("Unable to connect to the Schema Registry at " + settings.getSchemaRegistryUrl() + " "
-                  + e.getMessage(), e);
+          logger.error(
+                  String.format("Unable to connect to the Schema Registry at %s %s",
+                          settings.getSchemaRegistryUrl(),
+                          e.getMessage()),
+                  e);
         }
 
         String lkTopic = fm.getIncomingTopic();
@@ -291,8 +294,10 @@ public final class JdbcDbWriter implements DbWriter {
         logger.info("Looking for schema " + lkTopic);
         try {
           latest = registry.getLatestVersion(lkTopic).getSchema();
-          logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ", lkTopic,
-                  System.lineSeparator(), latest));
+          logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ",
+                  lkTopic,
+                  System.lineSeparator(),
+                  latest));
           AvroToDbConverter converter = new AvroToDbConverter();
           Collection<SinkRecordField> convertedFields = converter.convert(latest, fm.getMappings());
 
@@ -313,13 +318,17 @@ public final class JdbcDbWriter implements DbWriter {
             createTablesMap.put(fm.getTableName(), convertedFields);
           }
         } catch (RestClientException e) {
-          logger.info(String.format("No schema found in Registry! Waiting for first record to create table for topic ",
+          logger.info(String.format(
+                  "No schema found in Registry! Waiting for first record to create table for topic %s",
                   fm.getIncomingTopic()));
         } catch (IOException e) {
-          logger.error("Unable to connect to the Schema Registry at " + settings.getSchemaRegistryUrl() + " "
-                  + e.getMessage(), e);
+          logger.error(String.format("Unable to connect to the Schema Registry at %s %s",
+                  settings.getSchemaRegistryUrl(),
+                  e.getMessage()),
+                  e);
         }
       }
+
       if (fm.evolveTableSchema()) {
         logger.info(String.format("Allowing schema evolution for table %s", fm.getTableName()));
         tablesAllowingSchemaEvolution.add(fm.getTableName());
