@@ -113,16 +113,34 @@ public class OracleDialect extends DbDialect {
     builder.append(" using (select ? ");
     builder.append(select);
     builder.append(" FROM dual) incoming on(");
-    builder.append(String.format("%s.%s=incoming.%s", tableName, keyColumns.get(0), keyColumns.get(0)));
+    builder.append(tableName);
+    builder.append(".");
+    builder.append(keyColumns.get(0));
+    builder.append("=incoming.");
+    builder.append(keyColumns.get(0));
     for (int i = 1; i < keyColumns.size(); ++i) {
-      builder.append(String.format(" and %s.%s=incoming.%s", tableName, keyColumns.get(i), keyColumns.get(i)));
+      builder.append(" and ");
+      builder.append(tableName);
+      builder.append(".");
+      builder.append(keyColumns.get(i));
+      builder.append("=incoming.");
+      builder.append(keyColumns.get(i));
     }
     builder.append(")");
     if (columns != null && columns.size() > 0) {
       builder.append(" when matched then update set ");
-      builder.append(String.format("%s.%s=incoming.%s", tableName, columns.get(0), columns.get(0)));
+      builder.append(tableName);
+      builder.append(".");
+      builder.append(columns.get(0));
+      builder.append("=incoming.");
+      builder.append(columns.get(0));
       for (int i = 1; i < columns.size(); ++i) {
-        builder.append(String.format(",%s.%s=incoming.%s", tableName, columns.get(i), columns.get(i)));
+        builder.append(",");
+        builder.append(tableName);
+        builder.append(".");
+        builder.append(columns.get(i));
+        builder.append("=incoming.");
+        builder.append(columns.get(i));
       }
     }
 

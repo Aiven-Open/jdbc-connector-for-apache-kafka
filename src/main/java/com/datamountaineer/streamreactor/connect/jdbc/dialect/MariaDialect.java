@@ -69,7 +69,6 @@ class MariaDialect extends DbDialect {
     }
     //MySql doesn't support SQL 2003:merge so here how the upsert is handled
     final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
-    final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
 
     final StringBuilder builder = new StringBuilder();
     builder.append("insert into ");
@@ -77,7 +76,11 @@ class MariaDialect extends DbDialect {
     builder.append("(");
     builder.append(queryColumns);
     builder.append(") values(");
-    builder.append(bindingValues);
+    int total = nonKeyColumns.size() + keyColumns.size() - 1;
+    builder.append("?");
+    while (total-- > 0) {
+      builder.append(",?");
+    }
     builder.append(") on duplicate key update ");
 
     builder.append(nonKeyColumns.get(0));
