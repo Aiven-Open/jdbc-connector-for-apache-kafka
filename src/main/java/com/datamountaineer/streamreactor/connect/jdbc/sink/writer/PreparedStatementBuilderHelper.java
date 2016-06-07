@@ -77,8 +77,8 @@ public final class PreparedStatementBuilderHelper {
   }
 
   /**
-   * In non table evolution we merge the field mappings with the database structure. This way we avoid the problems
-   * caused when the user sets * for all fields the payload has 4 fields but only 3 found in the database.
+   * If the table is not set to autoevelovewe merge the field mappings with the database structure.
+   * This way we avoid the problems caused when the user sets * for all fields the payload has 4 fields but only 3 found in the database.
    * Furthermore if the mapping is not found in the database an exception is thrown
    *
    * @param tm      - Field mappings
@@ -102,8 +102,8 @@ public final class PreparedStatementBuilderHelper {
       }
 
       //apply the specific mappings
-      for (Map.Entry<String, FieldAlias> alias : tm.getMappings().entrySet()) {
-        final String colName = alias.getValue().getName();
+      for (Map.Entry<String, FieldAlias> kv : tm.getMappings().entrySet()) {
+        final String colName = kv.getValue().getName();
         if (!map.containsKey(colName.toLowerCase()) && !map.containsKey(colName.toUpperCase())) {
           final String error =
                   String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
@@ -112,7 +112,9 @@ public final class PreparedStatementBuilderHelper {
                           Joiner.on(",").join(map.keySet()));
           throw new ConfigException(error);
         }
-        map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())));
+
+        //we want to add this entry. kv.getKey is the payload field which gets mapped on the column
+        map.put(kv.getKey(), new FieldAlias(colName, pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())));
       }
     } else {
 

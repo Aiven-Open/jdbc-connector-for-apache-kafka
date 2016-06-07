@@ -42,8 +42,7 @@ import java.util.Map;
 /**
  * <h1>JdbcSinkTask</h1>
  * <p>
- * Kafka Connect Jdbc sink task. Called by framework to put records to the
- * target sink
+ * Kafka Connect Jdbc sink task. Called by framework to store records  in the database
  **/
 public class JdbcSinkTask extends SinkTask {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);
