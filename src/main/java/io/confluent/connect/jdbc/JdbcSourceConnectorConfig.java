@@ -105,7 +105,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String TABLE_BLACKLIST_DOC =
       "List of tables to exclude from copying. If specified, table.whitelist may not be set.";
   public static final String TABLE_BLACKLIST_DEFAULT = "";
-  private static final String TABLE_BLACKLIST_DISPLAY = "";
+  private static final String TABLE_BLACKLIST_DISPLAY = "Table Blacklist";
 
   public static final String QUERY_CONFIG = "query";
   private static final String QUERY_DOC =
