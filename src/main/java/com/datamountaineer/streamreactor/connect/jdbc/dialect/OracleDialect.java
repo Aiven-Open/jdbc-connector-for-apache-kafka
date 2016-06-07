@@ -160,9 +160,4 @@ public class OracleDialect extends DbDialect {
     return builder.toString();
 
   }
-
-  @Override
-  protected String handleTableName(String tableName) {
-    return escapeColumnNamesStart + tableName.toUpperCase() + escapeColumnNamesEnd;
-  }
 }

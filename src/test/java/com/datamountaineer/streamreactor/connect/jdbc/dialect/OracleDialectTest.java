@@ -21,7 +21,7 @@ public class OracleDialectTest {
             new SinkRecordField(Schema.Type.STRING, "info", false)
     ));
 
-    String expected = "CREATE TABLE \"TABLEA\" (" + System.lineSeparator() +
+    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
             "\"userid\" INTEGER NOT NULL," + System.lineSeparator() +
             "\"userdataid\" INTEGER NOT NULL," + System.lineSeparator() +
             "\"info\" VARCHAR(256) NULL," + System.lineSeparator() +
@@ -42,7 +42,7 @@ public class OracleDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE \"TABLEA\" (" + System.lineSeparator() +
+    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
             "\"col1\" INTEGER NOT NULL," + System.lineSeparator() +
             "\"col2\" NUMBER(19) NULL," + System.lineSeparator() +
             "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
@@ -68,7 +68,7 @@ public class OracleDialectTest {
             new SinkRecordField(Schema.Type.INT16, "col8", false)
     ));
 
-    String expected = "CREATE TABLE \"TABLEA\" (" + System.lineSeparator() +
+    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
             "\"col1\" INTEGER NULL," + System.lineSeparator() +
             "\"col2\" NUMBER(19) NULL," + System.lineSeparator() +
             "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
@@ -95,7 +95,7 @@ public class OracleDialectTest {
 
     assertEquals(1, actual.size());
 
-    String expected = "ALTER TABLE \"TABLEA\" ADD(" + System.lineSeparator() +
+    String expected = "ALTER TABLE \"tableA\" ADD(" + System.lineSeparator() +
             "\"col1\" INTEGER NULL," + System.lineSeparator() +
             "\"col2\" NUMBER(19) NULL," + System.lineSeparator() +
             "\"col3\" VARCHAR(256) NULL," + System.lineSeparator() +
