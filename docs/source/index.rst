@@ -141,7 +141,7 @@ You should now see a primary key constraint violation and the sink pausing and r
     ERROR RetriableException from SinkTask jdbc-datamountaineer-1-0:
     org.apache.kafka.connect.errors.RetriableException: java.sql.SQLException: UNIQUE constraint failed: orders.id
 
-No lets fix this and have the sink recover without our intervention. Connect to Sqlite again and delete the row:
+No lets fix this and have the sink recover without our intervention in the sink. Connect to Sqlite again and delete the row:
 
 .. sourcecode:: bash
 
@@ -190,12 +190,12 @@ The sink has three error policies that determine how failed writes to the target
 affect the behaviour of the schema evolution characteristics of the sink. See the schema evolution section for more
 information.
 
-**Throw**.
+**Throw**
 
 Any error on write to the target database will be propagated up and processing is stopped. This is the default
 behaviour.
 
-**Noop**.
+**Noop**
 
 Any error on write to the target database is ignored and processing continues.
 
@@ -205,12 +205,15 @@ Any error on write to the target database is ignored and processing continues.
     subject to Kafka's retention policy. The sink currently does **not** distinguish between integrity constraint
     violations and or SQL expections thrown by the driver,
 
-**Retry**.
+**Retry**
 
 Any error on write to the target database causes the RetryIterable exception to be thrown. This causes the
 Kafka connect framework to pause and replay the message. Offsets are not committed. For example, if the table is offline
 it will cause a write failure, the message can be replayed. With the Retry policy the issue can be fixed without stopping
 the sink.
+
+The length of time the sink will retry can be controlled by using the ``connect.jdbc.sink.max.retries`` and the
+``connect.jdbc.sink.retry.interval``.
 
 
 Kafka Connect Query Language
@@ -326,7 +329,7 @@ Examples:
     //Select all
     INSERT INTO table1 SELECT * FROM topic1
 
-.. tip:: Check you mappings to ensure the target columns exist.
+.. tip:: Check your mappings to ensure the target columns exist.
 
 
 .. warning::
@@ -367,6 +370,10 @@ Examples
 The sink will try and create the table at start up if a schema for the topic is found in the Schema Registry. If no
 schema is found the table is created when the first record is received for the topic.
 
+.. tip::
+
+    Pre-create your topics with more than 1 partition to catch any DDL errors such as permission issues at startup!
+
 
 Auto Evolve Tables
 ~~~~~~~~~~~~~~~~~~
@@ -379,7 +386,7 @@ and FULLY compatible schemas. If new fields are added the sink will attempt to p
 the target table to add columns. All columns added to the target table are set as nullable.
 
 Fields cannot be deleted upstream. Fields should be of Avro union type [null, <dataType>] with a default set. This allows
-the sink to either retrieve the default value or null. Effectively the sink would not be aware that field has been deleted
+the sink to either retrieve the default value or null. The sink is not be aware that the field has been deleted
 as a value is always supplied to it.
 
 .. warning::
@@ -388,10 +395,11 @@ as a value is always supplied to it.
     or backwards compatible, any errors will default to the error policy.
 
 Downstream changes are handled by the sink. If columns are removed, the mapped fields from the topic are ignored. If
-columns are added, we attempt to find a matching field by name in the topic. Changes to data types can only be promotions.
+columns are added, we attempt to find a matching field by name in the topic.
+
+Changes to data types can only be promotions.
 
 This mapping is set in the ``connect.jdbc.sink.export.mappings`` option.
-
 
 Example:
 
@@ -485,6 +493,7 @@ The errors will be logged automatically.
 ``connect.jdbc.sink.max.retries``
 
 The maximum number of times a message is retried. Only valid when the ``connect.jdbc.sink.error.policy`` is set to ``retry``.
+For unlimited retries set to -1.
 
 * Type: string
 * Importance: high
@@ -504,7 +513,7 @@ The interval, in milliseconds between retries if the sink is using ``connect.jdb
 
 This mandatory configuration expects a KCQL statement specifing the source (topic) and target (table) mappings as well
 as and field selections. Additionally AUTOCREATE (with and without primary keys) and AUTOEVOLVE can be set to control the
-sinks behaviour. Multiple route mappings can be separated by a `;`.
+sinks behaviour. Multiple route mappings can be separated by a ``;``.
 
 
 ``connect.jdbc.sink.schema.registry.url``
@@ -550,7 +559,7 @@ UPSERT mode.
 Deployment Guidelines
 ---------------------
 
-ANTONIOS?????
+
 
 TroubleShooting
 ---------------
@@ -565,3 +574,26 @@ The sink checks against the metadata of the target database if the tables exist 
 correct for your target database.
 
 EXAMPLE connection strings.
+
+.. sourcecode:: sql
+
+    #MySQL
+    jdbc:mysql://mariadb_host:3306/jdbc_sink_01?useServerPrepStmts=false&rewriteBatchedStatements=true
+
+    #Postgress
+    jdbc:postgresql://postgres_host:5432/jdbc_sink_01?currentSchema=public
+
+    #Oracle
+    jdbc:oracle:thin:@oracle_host:1521/XE:1521/XE
+
+    #SQL Server
+    jdbc:sqlserver://sqlserver_host:1433;databaseName=jdbc_sink_01
+
+
+Oracle is case **sensitive** for table names. Wrap table names and columns in quotes to ensure the sink finds the tables.
+
+**Duplicate Primary Keys**
+
+If the sink is in RETRY error mode duplicate keys can still be an issue if within the batch of records the sink receives you
+have duplicates. The sink batches records to write based on the ``connect.jdbc.sink.batch.size`` option. The error policy runs
+at this batch level.
