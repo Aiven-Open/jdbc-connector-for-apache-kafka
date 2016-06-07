@@ -27,23 +27,9 @@ public class JdbcSinkSettingsTest {
 
   private static final String DB_FILE = "test_db_writer_sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
-  int port;
-  TestBase base = new TestBase();
-  RestService client;
-
-
-  String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
-          "\"fields\":[\n" +
-          "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
-          "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
-          "{\"name\":\"age\", \"type\": \"int\"}, \n" +
-          "{\"name\":\"bool\", \"type\": \"float\"},\n" +
-          "{\"name\":\"byte\", \"type\": \"float\"},\n" +
-          "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
-          "{\"name\":\"long\", \"type\": \"long\"},\n" +
-          "{\"name\":\"float\", \"type\": \"float\"},\n" +
-          "{\"name\":\"double\", \"type\": \"double\"}\n" +
-          "]}";
+  private int port;
+  private final TestBase base = new TestBase();
+  private RestService client;
 
 
   @Before
@@ -66,7 +52,7 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void InsertThrowBatchingAllFields() throws Exception {
+  public void InsertThrowBatchingAllFields() {
     Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
@@ -97,7 +83,7 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertThrowBatchingSelectedFields() throws IOException, RestClientException {
+  public void InsertThrowBatchingSelectedFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("throw", "insert", false);
 
@@ -137,7 +123,7 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void InsertNoopBatchingAllFields() throws IOException, RestClientException {
+  public void InsertNoopBatchingAllFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("noop", "insert", false);
 
@@ -170,7 +156,7 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertNoopBatchingSelectedFields() throws IOException, RestClientException {
+  public void InsertNoopBatchingSelectedFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("noop", "insert", false);
 
@@ -210,7 +196,7 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertRetryBatchingAllFields() throws IOException, RestClientException {
+  public void InsertRetryBatchingAllFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("retry", "insert", false);
 
@@ -243,7 +229,7 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertRetryBatchingSelectedFields() throws IOException, RestClientException {
+  public void InsertRetryBatchingSelectedFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("retry", "insert", false);
 
@@ -284,7 +270,7 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void UpsertThrowBatchingAllFields() throws IOException, RestClientException {
+  public void UpsertThrowBatchingAllFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("throw", "upsert", false);
 
@@ -316,7 +302,7 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void UpsertThrowBatchingSelectedFields() throws IOException, RestClientException {
+  public void UpsertThrowBatchingSelectedFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("throw", "upsert", false);
 
@@ -359,6 +345,18 @@ public class JdbcSinkSettingsTest {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFieldsAutoCreatePK();
 
+    String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
+        "\"fields\":[\n" +
+        "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
+        "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
+        "{\"name\":\"age\", \"type\": \"int\"}, \n" +
+        "{\"name\":\"bool\", \"type\": \"float\"},\n" +
+        "{\"name\":\"byte\", \"type\": \"float\"},\n" +
+        "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
+        "{\"name\":\"long\", \"type\": \"long\"},\n" +
+        "{\"name\":\"float\", \"type\": \"float\"},\n" +
+        "{\"name\":\"double\", \"type\": \"double\"}\n" +
+        "]}";
     client.registerSchema(rawSchema, base.getTopic1());
     props.put(DATABASE_CONNECTION_URI, SQL_LITE_URI);
     props.put(SCHEMA_REGISTRY_URL, "http://localhost:" + port);

@@ -52,7 +52,7 @@ public class RestApp {
     prop.setProperty(SchemaRegistryConfig.KAFKASTORE_CONNECTION_URL_CONFIG, zkConnect);
     prop.put(SchemaRegistryConfig.KAFKASTORE_TOPIC_CONFIG, kafkaTopic);
     prop.put(SchemaRegistryConfig.COMPATIBILITY_CONFIG, compatibilityType);
-    prop.put(SchemaRegistryConfig.MASTER_ELIGIBILITY, masterEligibility);
+    prop.put(SchemaRegistryConfig.MASTER_ELIGIBILITY, true);
   }
 
   public void start() throws Exception {

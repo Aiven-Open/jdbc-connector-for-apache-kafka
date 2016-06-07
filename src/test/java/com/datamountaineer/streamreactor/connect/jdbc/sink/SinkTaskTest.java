@@ -42,7 +42,7 @@ public class SinkTaskTest {
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     deleteSqlLiteFile();
   }
 
@@ -141,7 +141,6 @@ public class SinkTaskTest {
     final long l1 = 12425436;
     final float f1 = (float) 2356.3;
     final double d1 = -2436546.56457;
-    final byte[] bs1 = new byte[]{-32, 124};
 
     Struct struct1 = new Struct(schema)
             .put("firstName", fName1)

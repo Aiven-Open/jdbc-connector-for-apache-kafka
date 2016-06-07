@@ -85,7 +85,7 @@ final class TablesToColumnUsageState {
     }
     for (final PreparedStatementBinder binder : binders) {
       if (!target.containsKey(binder.getFieldName())) {
-        logger.warn("adding new field to " + binder.getFieldName());
+        logger.debug("adding new field to " + binder.getFieldName());
         target.put(binder.getFieldName(), new SinkRecordField(binder.getFieldType(), binder.getFieldName(), binder.isPrimaryKey()));
       }
     }

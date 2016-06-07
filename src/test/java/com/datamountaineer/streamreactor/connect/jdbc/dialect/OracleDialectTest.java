@@ -11,7 +11,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class OracleDialectTest {
-  final OracleDialect dialect = new OracleDialect();
+  private final OracleDialect dialect = new OracleDialect();
 
   @Test
   public void handleCreateTableMultiplePKColumns() {

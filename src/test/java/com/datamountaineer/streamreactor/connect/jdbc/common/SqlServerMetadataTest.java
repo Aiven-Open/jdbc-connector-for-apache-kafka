@@ -1,8 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.common;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -19,7 +16,7 @@ public class SqlServerMetadataTest {
   private final String psw = "12345678";
 
   //@Test
-  public void shouldReturnTrueIfTheTableExists() throws SQLException, ClassNotFoundException {
+  public void shouldReturnTrueIfTheTableExists() throws SQLException {
     String table = "Products";
     Connection connection = DriverManager.getConnection(URI, user, psw);
     try {

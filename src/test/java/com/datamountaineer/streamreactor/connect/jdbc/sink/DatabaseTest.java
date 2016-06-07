@@ -11,6 +11,7 @@ import com.datamountaineer.streamreactor.connect.jdbc.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.connect.data.Schema;
 import org.junit.After;
 import org.junit.Before;
@@ -98,7 +99,7 @@ public class DatabaseTest {
             new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    map.put(tableName2, Lists.<SinkRecordField>newArrayList(
+    map.put(tableName2, Lists.newArrayList(
             new SinkRecordField(Schema.Type.STRING, "col1", true),
             new SinkRecordField(Schema.Type.STRING, "col2", true),
             new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
@@ -226,7 +227,7 @@ public class DatabaseTest {
             new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    map.put(tableName2, Lists.<SinkRecordField>newArrayList(
+    map.put(tableName2, Lists.newArrayList(
             new SinkRecordField(Schema.Type.STRING, "col1", true),
             new SinkRecordField(Schema.Type.STRING, "col2", true),
             new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
@@ -451,7 +452,7 @@ public class DatabaseTest {
             new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Lists.<SinkRecordField>newArrayList(
+    List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Lists.newArrayList(
             new SinkRecordField(Schema.Type.INT64, "col4", false)
     ));
 
@@ -461,7 +462,8 @@ public class DatabaseTest {
     try {
       Thread.sleep(500);
     } catch (InterruptedException e) {
-
+      System.out.print(e.getMessage());
+      throw new InterruptException(e);
     }
     Connection connection1 = null;
     try {

@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Properties;
 import java.util.Random;
 
@@ -40,23 +39,22 @@ public class KafkaEmbedded {
    *               broker should listen to.  Note that you cannot change the `log.dirs` setting
    *               currently.
    */
-  public KafkaEmbedded(Properties config) throws IOException {
+  public KafkaEmbedded(Properties config) {
     logDir = randomTempDirectory();
     effectiveConfig = effectiveConfigFrom(config);
-    boolean loggingEnabled = true;
-    KafkaConfig kafkaConfig = new KafkaConfig(effectiveConfig, loggingEnabled);
+    KafkaConfig kafkaConfig = new KafkaConfig(effectiveConfig, true);
     kafka = new KafkaServerStartable(kafkaConfig);
   }
 
   private File randomTempDirectory() {
     int randomNumber = Math.abs(new Random().nextInt());
-    String path = String.join(File.separator,
-        System.getProperty("java.io.tmpdir"),
-        "kafka-embedded-logs-dir-" + randomNumber);
+    String path =
+        System.getProperty("java.io.tmpdir") + File.separator +
+        "kafka-embedded-logs-dir-" + randomNumber;
     return new File(path);
   }
 
-  private Properties effectiveConfigFrom(Properties initialConfig) throws IOException {
+  private Properties effectiveConfigFrom(Properties initialConfig) {
     Properties effectiveConfig = new Properties();
     //effectiveConfig.load(this.getClass().getResourceAsStream("/broker-defaults.properties"));
     effectiveConfig.putAll(initialConfig);
@@ -70,7 +68,7 @@ public class KafkaEmbedded {
    * You can use this to tell Kafka producers and consumers how to connect to this instance.
    */
   public String brokerList() {
-    return String.join(":", kafka.serverConfig().hostName(), kafka.serverConfig().port().toString());
+    return kafka.serverConfig().hostName() + ":" + kafka.serverConfig().port().toString();
   }
 
 
@@ -151,8 +149,7 @@ public class KafkaEmbedded {
         sessionTimeoutMs,
         connectionTimeoutMs,
         ZKStringSerializer$.MODULE$);
-    boolean isSecure = false;
-    ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConnect()), isSecure);
+    ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConnect()), false);
     AdminUtils.createTopic(zkUtils, topic, partitions, replication, topicConfig);
     zkClient.close();
   }

@@ -18,7 +18,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.InsertModeEnum
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -28,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -66,7 +64,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test
-  public void writerShouldUseBatching() throws RestClientException, SQLException, IOException {
+  public void writerShouldUseBatching() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>(),
                     false, false, false));
@@ -97,7 +95,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test
-  public void writerShouldUseNoopForErrorHandling() throws SQLException, IOException, RestClientException {
+  public void writerShouldUseNoopForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
                     new HashMap<String, FieldAlias>(), false, false, false));
@@ -127,7 +125,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test
-  public void writerShouldUseThrowForErrorHandling() throws SQLException, IOException, RestClientException {
+  public void writerShouldUseThrowForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
             Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
                     new HashMap<String, FieldAlias>(), false, false, false));
@@ -156,7 +154,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test(expected = RuntimeException.class)
-  public void errorPolicyShouldThrowTheException() throws SQLException {
+  public void errorPolicyShouldThrowTheException() {
     PreparedStatementContextIterable builder = mock(PreparedStatementContextIterable.class);
     Exception ex = new SQLException("some error description");
     Collection<SinkRecord> records = new ArrayList<>();
@@ -245,7 +243,7 @@ public class JdbcDbWriterTest {
                             new HashMap<String, FieldAlias>(), false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+            new DbTable(tableName, Lists.newArrayList(
                     new DbTableColumn("firstName", true, false, 1),
                     new DbTableColumn("lastName", true, false, 1),
                     new DbTableColumn("age", false, false, 1),
@@ -389,7 +387,7 @@ public class JdbcDbWriterTest {
                             aliasMapPK, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+            new DbTable(tableName, Lists.newArrayList(
                     new DbTableColumn("firstName", true, false, 1),
                     new DbTableColumn("lastName", true, false, 1),
                     new DbTableColumn("age", false, false, 1),
@@ -574,7 +572,7 @@ public class JdbcDbWriterTest {
                             aliasPKMap, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName1, Lists.<DbTableColumn>newArrayList(
+            new DbTable(tableName1, Lists.newArrayList(
                     new DbTableColumn("firstName", true, false, 1),
                     new DbTableColumn("lastName", true, false, 1),
                     new DbTableColumn("age", false, false, 1),
@@ -586,7 +584,7 @@ public class JdbcDbWriterTest {
                     new DbTableColumn("double", true, false, 1),
                     new DbTableColumn("BLOB", true, false, 1)
             )),
-            new DbTable(tableName2, Lists.<DbTableColumn>newArrayList(
+            new DbTable(tableName2, Lists.newArrayList(
                     new DbTableColumn("firstName", true, false, 1),
                     new DbTableColumn("lastName", true, false, 1),
                     new DbTableColumn("age", false, false, 1),
@@ -742,7 +740,7 @@ public class JdbcDbWriterTest {
                             aliasMap, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName, Lists.<DbTableColumn>newArrayList(
+            new DbTable(tableName, Lists.newArrayList(
                     new DbTableColumn("firstName", true, false, 1),
                     new DbTableColumn("lastName", true, false, 1),
                     new DbTableColumn("age", false, false, 1),

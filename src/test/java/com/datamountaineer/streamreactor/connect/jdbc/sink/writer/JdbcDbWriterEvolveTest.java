@@ -95,7 +95,7 @@ public class JdbcDbWriterEvolveTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(tableName),
+            Sets.newHashSet(tableName),
             Sets.<String>newHashSet(),
             dbMetadata,
             new SQLiteDialect(),
@@ -210,7 +210,7 @@ public class JdbcDbWriterEvolveTest {
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
             Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(tableName),
+            Sets.newHashSet(tableName),
             dbMetadata,
             new SQLiteDialect(),
             1);
@@ -333,7 +333,7 @@ public class JdbcDbWriterEvolveTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(tableName),
+            Sets.newHashSet(tableName),
             Sets.<String>newHashSet(),
             dbMetadata,
             new SQLiteDialect(),
@@ -421,8 +421,8 @@ public class JdbcDbWriterEvolveTest {
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
 
     Database executor = new Database(
-            Sets.<String>newHashSet(tableName),
-            Sets.<String>newHashSet(tableName), //allow auto evolution
+            Sets.newHashSet(tableName),
+            Sets.newHashSet(tableName), //allow auto evolution
             dbMetadata,
             new SQLiteDialect(),
             1);

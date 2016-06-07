@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class MySqlDialectTest {
-  final MySqlDialect dialect = new MySqlDialect();
+  private final MySqlDialect dialect = new MySqlDialect();
 
   @Test
   public void handleCreateTableMultiplePKColumns() {
@@ -113,8 +113,8 @@ public class MySqlDialectTest {
             "`score`=values(`score`)";
 
     String upsert = dialect.getUpsertQuery("actor",
-            Lists.<String>newArrayList("first_name", "last_name", "score"),
-            Lists.<String>newArrayList("actor_id"));
+            Lists.newArrayList("first_name", "last_name", "score"),
+            Lists.newArrayList("actor_id"));
     assertEquals(expected, upsert);
   }
 }

@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class PreparedStatementContextIterableTest {
 
   @Test
-  public void groupAllRecordsWithTheSameColumnsForInsertQuery() throws SQLException {
+  public void groupAllRecordsWithTheSameColumnsForInsertQuery() {
     RecordDataExtractor valueExtractor = mock(RecordDataExtractor.class);
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -103,8 +103,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
     assertEquals(3, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -113,8 +113,8 @@ public class PreparedStatementContextIterableTest {
 
     binders = dataMap.get(sql2).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
       assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
       assertEquals(-24, ((BytePreparedStatementBinder) b.get(2)).getValue());
@@ -123,15 +123,15 @@ public class PreparedStatementContextIterableTest {
 
     binders = dataMap.get(sql3).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(1, ((IntPreparedStatementBinder) b.get(0)).getValue());
       assertEquals("bishbash", ((StringPreparedStatementBinder) b.get(1)).getValue());
     }
   }
 
   @Test
-  public void handleStatementsForTablesWithTheSameColumnSet() throws SQLException {
+  public void handleStatementsForTablesWithTheSameColumnSet() {
 
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -196,8 +196,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
     assertEquals(3, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -206,8 +206,8 @@ public class PreparedStatementContextIterableTest {
 
     binders = dataMap.get(sql2).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -217,7 +217,7 @@ public class PreparedStatementContextIterableTest {
 
 
   @Test
-  public void shouldCreateMultipleBatches() throws SQLException {
+  public void shouldCreateMultipleBatches() {
 
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -265,8 +265,8 @@ public class PreparedStatementContextIterableTest {
     for (int k = 0; k < 2; ++k) {
       List<Iterable<PreparedStatementBinder>> binders = result.get(k).getBinders();
       assertEquals(5, binders.size());
-      for (int i = 0; i < binders.size(); ++i) {
-        List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+      for (Iterable<PreparedStatementBinder> binder : binders) {
+        List<PreparedStatementBinder> b = Lists.newArrayList(binder);
         assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
         assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
         assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -276,8 +276,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = result.get(2).getBinders();
     assertEquals(4, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -297,8 +297,8 @@ public class PreparedStatementContextIterableTest {
 
     binders = result.get(0).getBinders();
     assertEquals(5, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -307,8 +307,8 @@ public class PreparedStatementContextIterableTest {
 
     binders = result.get(1).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -317,7 +317,7 @@ public class PreparedStatementContextIterableTest {
   }
 
   @Test
-  public void handleMultipleTablesForInsert() throws SQLException {
+  public void handleMultipleTablesForInsert() {
     RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -382,8 +382,8 @@ public class PreparedStatementContextIterableTest {
     assertEquals(3, dataMap.get(sql1).getBinders().size());
 
     List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -489,8 +489,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql1).getBinders();
     assertEquals(3, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -499,8 +499,8 @@ public class PreparedStatementContextIterableTest {
 
     binders = dataMap.get(sql2).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
       assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
       assertEquals((byte) -24, ((BytePreparedStatementBinder) b.get(2)).getValue());
@@ -509,15 +509,15 @@ public class PreparedStatementContextIterableTest {
 
     binders = dataMap.get(sql3).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(1, ((IntPreparedStatementBinder) b.get(0)).getValue());
       assertEquals("bishbash", ((StringPreparedStatementBinder) b.get(1)).getValue());
     }
   }
 
   @Test(expected = NoSuchElementException.class)
-  public void shouldThrowNoSuchElementException() throws SQLException {
+  public void shouldThrowNoSuchElementException() {
 
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -565,8 +565,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = context.getPreparedStatementData().getBinders();
     assertEquals(5, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -577,7 +577,7 @@ public class PreparedStatementContextIterableTest {
   }
 
   @Test(expected = NoSuchElementException.class)
-  public void shouldThrowNoSuchElementExceptionIfTheRemainingRecordsAreFilteredOut() throws SQLException {
+  public void shouldThrowNoSuchElementExceptionIfTheRemainingRecordsAreFilteredOut() {
 
     List<PreparedStatementBinder> dataBinders1 = Lists.<PreparedStatementBinder>newArrayList(
             new BooleanPreparedStatementBinder("colA", true),
@@ -626,8 +626,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = context.getPreparedStatementData().getBinders();
     assertEquals(5, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
@@ -638,7 +638,7 @@ public class PreparedStatementContextIterableTest {
   }
 
   @Test
-  public void handleMultipleTablesForUpsert() throws SQLException {
+  public void handleMultipleTablesForUpsert() {
     RecordDataExtractor valueExtractor1 = mock(RecordDataExtractor.class);
 
     IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("colPK", 0);
@@ -717,8 +717,8 @@ public class PreparedStatementContextIterableTest {
 
     List<Iterable<PreparedStatementBinder>> binders = dataMap.get(sql2).getBinders();
     assertEquals(1, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(0, Double.compare(-5345.22, ((DoublePreparedStatementBinder) b.get(0)).getValue()));
       assertEquals(0, Float.compare(((FloatPreparedStatementBinder) b.get(1)).getValue(), 0));
       assertEquals(-24, ((BytePreparedStatementBinder) b.get(2)).getValue());
@@ -727,8 +727,8 @@ public class PreparedStatementContextIterableTest {
 
     binders = dataMap.get(sql1).getBinders();
     assertEquals(3, binders.size());
-    for (int i = 0; i < binders.size(); ++i) {
-      List<PreparedStatementBinder> b = Lists.newArrayList(binders.get(i));
+    for (Iterable<PreparedStatementBinder> binder : binders) {
+      List<PreparedStatementBinder> b = Lists.newArrayList(binder);
       assertEquals(true, ((BooleanPreparedStatementBinder) b.get(0)).getValue());
       assertEquals(3, ((IntPreparedStatementBinder) b.get(1)).getValue());
       assertEquals(124566, ((LongPreparedStatementBinder) b.get(2)).getValue());
