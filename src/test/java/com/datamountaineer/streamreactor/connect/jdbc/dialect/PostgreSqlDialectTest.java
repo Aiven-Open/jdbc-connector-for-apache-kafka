@@ -38,12 +38,13 @@ public class PostgreSqlDialectTest {
   }
 
   @Test
-  public void PostgreDialectTest() {
-    String conflict = "INSERT INTO \"Customer\" (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
+  public void produceTheUpsertQuery() {
+    String expected = "INSERT INTO \"Customer\" (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
             "\"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"";
     String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
-    assertEquals(conflict, insert);
+    assertEquals(expected, insert);
   }
+
 
   @Test
   public void handleCreateTableMultiplePKColumns() {

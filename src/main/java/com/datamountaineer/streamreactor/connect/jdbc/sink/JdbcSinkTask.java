@@ -16,6 +16,7 @@
 
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
+import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
@@ -41,8 +42,7 @@ import java.util.Map;
 /**
  * <h1>JdbcSinkTask</h1>
  * <p>
- * Kafka Connect Jdbc sink task. Called by framework to put records to the
- * target sink
+ * Kafka Connect Jdbc sink task. Called by framework to store records  in the database
  **/
 public class JdbcSinkTask extends SinkTask {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);
@@ -114,7 +114,7 @@ public class JdbcSinkTask extends SinkTask {
   @Override
   public void stop() {
     logger.info("Stopping Jdbc sink.");
-    writer.close();
+    AutoCloseableHelper.close(writer);
   }
 
   @Override
@@ -126,7 +126,6 @@ public class JdbcSinkTask extends SinkTask {
   @Override
   public String version() {
     return getClass().getPackage().getImplementationVersion();
-
   }
 
 }

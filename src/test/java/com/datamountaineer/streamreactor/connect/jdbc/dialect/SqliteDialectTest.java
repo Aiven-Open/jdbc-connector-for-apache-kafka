@@ -25,4 +25,11 @@ public class SqliteDialectTest {
     assertEquals("ALTER TABLE `tableA` ADD `col2` REAL NULL;", queries.get(1));
     assertEquals("ALTER TABLE `tableA` ADD `col3` TEXT NULL;", queries.get(2));
   }
+
+  @Test
+  public void produceTheRightSqlStatementWhithACompositePK() {
+    String insert = new SQLiteDialect().getUpsertQuery("Book", Lists.newArrayList("ISBN", "year", "pages"), Lists.newArrayList("author", "title"));
+    assertEquals("insert or ignore into `Book`(`ISBN`,`year`,`pages`,`author`,`title`) values(?,?,?,?,?)", insert);
+
+  }
 }

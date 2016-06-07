@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.dialect;
 
-import com.datamountaineer.streamreactor.connect.jdbc.dialect.MySqlDialect;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
 import org.apache.kafka.connect.data.Schema;
@@ -105,5 +104,17 @@ public class MySqlDialectTest {
             "ADD COLUMN `col7` TINYINT NULL," + System.lineSeparator() +
             "ADD COLUMN `col8` SMALLINT NULL";
     assertEquals(expected, actual.get(0));
+  }
+
+  @Test
+  public void createTheUpsertQuery() {
+    String expected = "insert into `actor`(`first_name`,`last_name`,`score`,`actor_id`) " +
+            "values(?,?,?,?) on duplicate key update `first_name`=values(`first_name`),`last_name`=values(`last_name`)," +
+            "`score`=values(`score`)";
+
+    String upsert = dialect.getUpsertQuery("actor",
+            Lists.<String>newArrayList("first_name", "last_name", "score"),
+            Lists.<String>newArrayList("actor_id"));
+    assertEquals(expected, upsert);
   }
 }
