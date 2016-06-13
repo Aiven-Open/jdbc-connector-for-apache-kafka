@@ -93,13 +93,33 @@ Configuration Options
   * Default: 60000
   * Importance: low
 
+``table.types``
+  By default, the JDBC connector will only detect tables with type TABLE from the source Database. This config allows a command seperated list of table types to extract. Optons include:
+
+  * TABLE
+
+  * VIEW
+
+  * SYSTEM TABLE
+
+  * GLOBAL TEMPORARY
+
+  * LOCAL TEMPORARY
+
+  * ALIAS
+
+  * SYNONYM
+
+  In most cased it only makes sense to have either Table or View, depending on the usecase.
+
+  * Type: list
+  * Default: [TABLE]
+  * Importance: low
+
 ``validate.non.null``
   By default, the JDBC connector will validate that all incrementing and timestamp tables have NOT NULL set for the columns being used as their ID/timestamp. If the tables don't, JDBC connector will fail to start. Setting this to false will disable these checks.
 
   * Type: boolean
   * Default: true
   * Importance: low
-
-
-
 

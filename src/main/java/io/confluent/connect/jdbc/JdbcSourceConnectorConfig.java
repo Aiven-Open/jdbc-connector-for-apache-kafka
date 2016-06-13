@@ -155,14 +155,16 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String TABLE_TYPE_CONFIG = "table.types";
   private static final String TABLE_TYPE_DOC =
       "By default, the JDBC connector will only detect tables with type TABLE from the source Database. "
-      + "This config allows a command seperated list of table types to extract. Optons include:\n "
-      + "* TABLE "
-      + "* SYSTEM TABLE "
-      + "GLOBAL TEMPORARY "
-      + "* LOCAL TEMPORARY "
-      + "* ALIAS "
-      + "* SYNONYM "
-      + "In most cased it only makes sense to have either Table or View, depending on the usecase. ";
+      + "This config allows a command seperated list of table types to extract. Optons include:\n"
+      + "* TABLE\n"
+      + "* VIEW\n"
+      + "* SYSTEM TABLE\n"
+      + "* GLOBAL TEMPORARY\n"
+      + "* LOCAL TEMPORARY\n"
+      + "* ALIAS\n"
+      + "* SYNONYM\n"
+      + "In most cased it only makes sense to have either Table or View, depending on the usecase.";
+  private static final String TABLE_TYPE_DISPLAY = "Table Types";
 
   public static ConfigDef baseConfigDef() {
     return new ConfigDef()
@@ -171,6 +173,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
                 TABLE_RECOMMENDER)
         .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT, Importance.MEDIUM, TABLE_BLACKLIST_DOC, DATABASE_GROUP, 3, Width.LONG, TABLE_BLACKLIST_DISPLAY,
                 TABLE_RECOMMENDER)
+        .define(TABLE_TYPE_CONFIG, Type.LIST, TABLE_TYPE_DEFAULT, Importance.LOW,
+                TABLE_TYPE_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TABLE_TYPE_DISPLAY)
         .define(MODE_CONFIG, Type.STRING, MODE_UNSPECIFIED, ConfigDef.ValidString.in(MODE_UNSPECIFIED, MODE_BULK, MODE_TIMESTAMP, MODE_INCREMENTING, MODE_TIMESTAMP_INCREMENTING),
                 Importance.HIGH, MODE_DOC, MODE_GROUP, 1, Width.MEDIUM, MODE_DISPLAY, Arrays.asList(INCREMENTING_COLUMN_NAME_CONFIG, TIMESTAMP_COLUMN_NAME_CONFIG, VALIDATE_NON_NULL_CONFIG))
         .define(INCREMENTING_COLUMN_NAME_CONFIG, Type.STRING, INCREMENTING_COLUMN_NAME_DEFAULT, Importance.MEDIUM, INCREMENTING_COLUMN_NAME_DOC, MODE_GROUP, 2, Width.MEDIUM, INCREMENTING_COLUMN_NAME_DISPLAY,
@@ -184,8 +188,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW, BATCH_MAX_ROWS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, BATCH_MAX_ROWS_DISPLAY)
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
-        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY)
-        .define(TABLE_TYPE_CONFIG, Type.LIST, TABLE_TYPE_DEFAULT, Importance.HIGH, TABLE_TYPE_DOC);
+        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
   }
   static ConfigDef config = baseConfigDef();
 
