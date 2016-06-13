@@ -92,16 +92,20 @@ public class JdbcUtils {
     DatabaseMetaData metadata = conn.getMetaData();
     ResultSet rs = metadata.getTables(null, null, "%", null);
     List<String> tableNames = new ArrayList<>();
-    while (rs.next()) {
-      if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
-        String colName = rs.getString(GET_TABLES_NAME_COLUMN);
-        // SQLite JDBC driver does not correctly mark these as system tables
-        if (metadata.getDatabaseProductName().equals("SQLite") && colName.startsWith("sqlite_")) {
-          continue;
-        }
+    try {
+      while (rs.next()) {
+        if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
+          String colName = rs.getString(GET_TABLES_NAME_COLUMN);
+          // SQLite JDBC driver does not correctly mark these as system tables
+          if (metadata.getDatabaseProductName().equals("SQLite") && colName.startsWith("sqlite_")) {
+            continue;
+          }
 
-        tableNames.add(colName);
+          tableNames.add(colName);
+        }
       }
+    } finally {
+      rs.close();
     }
     return tableNames;
   }
@@ -119,15 +123,19 @@ public class JdbcUtils {
     int matches = 0;
 
     ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%");
-    // Some database drivers (SQLite) don't include all the columns
-    if (rs.getMetaData().getColumnCount() >= GET_COLUMNS_IS_AUTOINCREMENT) {
-      while (rs.next()) {
-        if (rs.getString(GET_COLUMNS_IS_AUTOINCREMENT).equals("YES")) {
-          result = rs.getString(GET_COLUMNS_COLUMN_NAME);
-          matches++;
+    try {
+      // Some database drivers (SQLite) don't include all the columns
+      if (rs.getMetaData().getColumnCount() >= GET_COLUMNS_IS_AUTOINCREMENT) {
+        while (rs.next()) {
+          if (rs.getString(GET_COLUMNS_IS_AUTOINCREMENT).equals("YES")) {
+            result = rs.getString(GET_COLUMNS_COLUMN_NAME);
+            matches++;
+          }
         }
+        return (matches == 1 ? result : null);
       }
-      return (matches == 1 ? result : null);
+    } finally {
+      rs.close();
     }
 
     // Fallback approach is to query for a single row. This unfortunately does not work with any
@@ -154,13 +162,16 @@ public class JdbcUtils {
   public static boolean isColumnNullable(Connection conn, String table, String column)
       throws SQLException {
     ResultSet rs = conn.getMetaData().getColumns(null, null, table, column);
-    if (rs.getMetaData().getColumnCount() > GET_COLUMNS_IS_NULLABLE) {
-      // Should only be one match
-      if (!rs.next()) {
-        return false;
+    try {
+      if (rs.getMetaData().getColumnCount() > GET_COLUMNS_IS_NULLABLE) {
+        // Should only be one match
+        if (!rs.next()) {
+          return false;
+        }
+        return rs.getString(GET_COLUMNS_IS_NULLABLE).equals("YES");
       }
-      String val = rs.getString(GET_COLUMNS_IS_NULLABLE);
-      return rs.getString(GET_COLUMNS_IS_NULLABLE).equals("YES");
+    } finally {
+      rs.close();
     }
 
     return false;
