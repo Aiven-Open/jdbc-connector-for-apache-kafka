@@ -90,9 +90,8 @@ public class JdbcUtils {
    */
   public static List<String> getTables(Connection conn, Set<String> types) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
-    ResultSet rs = metadata.getTables(null, null, "%", null);
-    List<String> tableNames = new ArrayList<>();
-    try {
+    try (ResultSet rs = metadata.getTables(null, null, "%", null)) {
+      List<String> tableNames = new ArrayList<>();
       while (rs.next()) {
         if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
           String colName = rs.getString(GET_TABLES_NAME_COLUMN);
@@ -104,10 +103,8 @@ public class JdbcUtils {
           tableNames.add(colName);
         }
       }
-    } finally {
-      rs.close();
+      return tableNames;
     }
-    return tableNames;
   }
 
   /**
@@ -122,8 +119,7 @@ public class JdbcUtils {
     String result = null;
     int matches = 0;
 
-    ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%");
-    try {
+    try (ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%")) {
       // Some database drivers (SQLite) don't include all the columns
       if (rs.getMetaData().getColumnCount() >= GET_COLUMNS_IS_AUTOINCREMENT) {
         while (rs.next()) {
@@ -134,17 +130,14 @@ public class JdbcUtils {
         }
         return (matches == 1 ? result : null);
       }
-    } finally {
-      rs.close();
     }
 
     // Fallback approach is to query for a single row. This unfortunately does not work with any
     // empty table
     log.trace("Falling back to SELECT detection of auto-increment column for {}:{}", conn, table);
-    Statement stmt = conn.createStatement();
-    try {
+    try (Statement stmt = conn.createStatement()) {
       String quoteString = getIdentifierQuoteString(conn);
-      rs = stmt.executeQuery("SELECT * FROM " + quoteString + table + quoteString + " LIMIT 1");
+      ResultSet rs = stmt.executeQuery("SELECT * FROM " + quoteString + table + quoteString + " LIMIT 1");
       ResultSetMetaData rsmd = rs.getMetaData();
       for (int i = 1; i < rsmd.getColumnCount(); i++) {
         if (rsmd.isAutoIncrement(i)) {
@@ -152,17 +145,13 @@ public class JdbcUtils {
           matches++;
         }
       }
-    } finally {
-      rs.close();
-      stmt.close();
     }
     return (matches == 1 ? result : null);
   }
 
   public static boolean isColumnNullable(Connection conn, String table, String column)
       throws SQLException {
-    ResultSet rs = conn.getMetaData().getColumns(null, null, table, column);
-    try {
+    try (ResultSet rs = conn.getMetaData().getColumns(null, null, table, column)) {
       if (rs.getMetaData().getColumnCount() > GET_COLUMNS_IS_NULLABLE) {
         // Should only be one match
         if (!rs.next()) {
@@ -170,8 +159,6 @@ public class JdbcUtils {
         }
         return rs.getString(GET_COLUMNS_IS_NULLABLE).equals("YES");
       }
-    } finally {
-      rs.close();
     }
 
     return false;
@@ -215,9 +202,6 @@ public class JdbcUtils {
    * @return
    */
   public static Timestamp getCurrentTimeOnDB(Connection conn, Calendar cal) throws SQLException, ConnectException {
-
-    Statement stmt = conn.createStatement();
-    ResultSet rs = null;
     String query;
 
     // This is ugly, but to run a function, everyone does 'select function()'
@@ -231,9 +215,9 @@ public class JdbcUtils {
     else
       query = "select CURRENT_TIMESTAMP;";
 
-    try {
+    try (Statement stmt = conn.createStatement()) {
       log.debug("executing query " + query + " to get current time from database");
-      rs = stmt.executeQuery(query);
+      ResultSet rs = stmt.executeQuery(query);
       if (rs.next())
         return rs.getTimestamp(1, cal);
       else
@@ -241,13 +225,7 @@ public class JdbcUtils {
     } catch (SQLException e) {
       log.error("Failed to get current time from DB using query " + query + " on database " + dbProduct, e);
       throw e;
-    } finally {
-      if (rs != null)
-        rs.close();
-      if (stmt != null)
-        stmt.close();
     }
-
   }
 }
 
