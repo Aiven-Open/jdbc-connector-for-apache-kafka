@@ -94,7 +94,7 @@ Configuration Options
   * Importance: low
 
 ``table.types``
-  By default, the JDBC connector will only detect tables with type TABLE from the source Database. This config allows a command seperated list of table types to extract. Optons include:
+  By default, the JDBC connector will only detect tables with type TABLE from the source Database. This config allows a command separated list of table types to extract. Options include:
 
   * TABLE
 
@@ -110,7 +110,7 @@ Configuration Options
 
   * SYNONYM
 
-  In most cased it only makes sense to have either Table or View, depending on the usecase.
+  In most cases it only makes sense to have either TABLE or VIEW.
 
   * Type: list
   * Default: [TABLE]

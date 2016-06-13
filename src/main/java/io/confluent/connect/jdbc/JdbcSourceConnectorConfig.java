@@ -155,7 +155,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String TABLE_TYPE_CONFIG = "table.types";
   private static final String TABLE_TYPE_DOC =
       "By default, the JDBC connector will only detect tables with type TABLE from the source Database. "
-      + "This config allows a command seperated list of table types to extract. Optons include:\n"
+      + "This config allows a command separated list of table types to extract. Options include:\n"
       + "* TABLE\n"
       + "* VIEW\n"
       + "* SYSTEM TABLE\n"
@@ -163,7 +163,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "* LOCAL TEMPORARY\n"
       + "* ALIAS\n"
       + "* SYNONYM\n"
-      + "In most cased it only makes sense to have either Table or View, depending on the usecase.";
+      + "In most cases it only makes sense to have either TABLE or VIEW.";
   private static final String TABLE_TYPE_DISPLAY = "Table Types";
 
   public static ConfigDef baseConfigDef() {
