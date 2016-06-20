@@ -47,7 +47,12 @@ import java.util.TimeZone;
 public class DataConverter {
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
-  private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+  private static final ThreadLocal<Calendar> UTC_CALENDAR = new ThreadLocal<Calendar>() {
+    @Override
+    protected Calendar initialValue() {
+      return new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    }
+  };
 
   public static Schema convertSchema(String tableName, ResultSetMetaData metadata)
       throws SQLException {
@@ -350,19 +355,19 @@ public class DataConverter {
 
       // Date is day + moth + year
       case Types.DATE: {
-        colValue = resultSet.getDate(col, UTC_CALENDAR);
+        colValue = resultSet.getDate(col, UTC_CALENDAR.get());
         break;
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        colValue = resultSet.getTime(col, UTC_CALENDAR);
+        colValue = resultSet.getTime(col, UTC_CALENDAR.get());
         break;
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        colValue = resultSet.getTimestamp(col, UTC_CALENDAR);
+        colValue = resultSet.getTimestamp(col, UTC_CALENDAR.get());
         break;
       }
 
