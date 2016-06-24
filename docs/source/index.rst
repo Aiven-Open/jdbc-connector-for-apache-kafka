@@ -40,7 +40,7 @@ Now we create a configuration file that will load data from this database. This 
 .. sourcecode:: bash
 
     name=jdbc-datamountaineer-1
-    connector.class=com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcSinkConnector
+    connector.class=io.confluent.connect.jdbc.sink.JdbcSinkConnector
     tasks.max=1
     topics=orders
     connect.jdbc.connection.uri=jdbc:sqlite:test.db
@@ -536,7 +536,7 @@ The most complicated option is the ``connect.jdbc.sink.export.map``. This exampl
     #Name for the sink connector, must be unique in the cluster
     name=jdbc-datamountaineer-1
     #Name of the Connector class
-    connector.class=com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcSinkConnector
+    connector.class=io.confluent.connect.jdbc.sink.JdbcSinkConnector
     #Maximum number of tasks the Connector can start
     tasks.max=5
     #Input topics (Required by Connect Framework)
