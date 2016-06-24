@@ -145,16 +145,13 @@ public class DatabaseMetadata {
    * @return The database metadata
    */
   public static DatabaseMetadata getDatabaseMetadata(final ConnectionProvider connectionProvider,
-                                                     final Set<String> tables) {
+                                                     final Set<String> tables) throws SQLException {
     ParameterValidator.notNull(connectionProvider, "connectionProvider");
     ParameterValidator.notNull(tables, "tables");
     if (tables.isEmpty()) {
       throw new IllegalArgumentException("<tables> parameter is empty");
     }
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
-
+    try (Connection connection = connectionProvider.getConnection()) {
       final String catalog = connection.getCatalog();
 
       final DatabaseMetaData dbMetadata = connection.getMetaData();
@@ -166,19 +163,7 @@ public class DatabaseMetadata {
           dbTables.add(new DbTable(table, columns));
         }
       }
-
       return new DatabaseMetadata(catalog, dbTables);
-    } catch (SQLException ex) {
-      logger.error("Error occurred trying to retrieve the database metadata for the given tables", ex);
-      throw new RuntimeException(ex);
-    } finally {
-      if (connection != null) {
-        try {
-          connection.close();
-        } catch (Throwable t) {
-          logger.error(t.getMessage(), t);
-        }
-      }
     }
   }
 
@@ -271,11 +256,8 @@ public class DatabaseMetadata {
    * @param connectionProvider - An instance of the ConnectionProvider
    * @return The information related to all the table present in the database
    */
-  public static List<DbTable> getTableMetadata(final ConnectionProvider connectionProvider) {
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
-
+  public static List<DbTable> getTableMetadata(final ConnectionProvider connectionProvider) throws SQLException {
+    try (Connection connection = connectionProvider.getConnection()) {
       final String catalog = connection.getCatalog();
       final DatabaseMetaData dbMetadata = connection.getMetaData();
       final String schema = dbMetadata.getUserName();
@@ -289,11 +271,6 @@ public class DatabaseMetadata {
         tables.add(new DbTable(tableName, columns));
       }
       return tables;
-    } catch (SQLException ex) {
-      logger.error("Error occurred trying to retrieve table metadata", ex);
-      throw new RuntimeException(ex);
-    } finally {
-      AutoCloseableHelper.close(connection);
     }
   }
 

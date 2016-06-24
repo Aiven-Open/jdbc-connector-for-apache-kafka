@@ -9,7 +9,6 @@ import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig
 import com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.base.Joiner;
-import com.google.common.io.CharStreams;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -17,8 +16,6 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
@@ -51,7 +48,7 @@ public class JdbcSinkTask extends SinkTask {
 
     DatabaseMetadataProvider provider = new DatabaseMetadataProvider() {
       @Override
-      public DatabaseMetadata get(ConnectionProvider connectionProvider) {
+      public DatabaseMetadata get(ConnectionProvider connectionProvider) throws SQLException {
         logger.info("Getting tables metadata for " + Joiner.on(",").join(settings.getTableNames()));
         return DatabaseMetadata.getDatabaseMetadata(connectionProvider, settings.getTableNames());
       }
