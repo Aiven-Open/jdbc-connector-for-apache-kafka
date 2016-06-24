@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.common;
 
-import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
@@ -199,31 +198,24 @@ public class DatabaseMetadata {
 
     DatabaseMetaData meta = connection.getMetaData();
 
-    ResultSet rs = null;
-    try {
+    final String product = meta.getDatabaseProductName();
 
-      final String product = meta.getDatabaseProductName();
+    final String schema;
+    if (product.toLowerCase().equals("oracle")) {
+      schema = getOracleSchema(connection).toUpperCase();
+      logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, schema);
+    } else if (product.toLowerCase().contains("postgre")) {
+      schema = connection.getSchema();
+      logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, schema);
+    } else {
+      logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, "");
+      schema = null;
+    }
 
-      if (product.toLowerCase().equals("oracle")) {
-        String schema = getOracleSchema(connection);
-        logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, schema);
-        rs = meta.getTables(catalog, schema.toUpperCase(), tableName, new String[]{"TABLE"});
-      } else if (product.toLowerCase().contains("postgre")) {
-        String schema = connection.getSchema();
-        logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, schema);
-        rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
-      } else {
-        logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, "");
-        rs = meta.getTables(catalog, null, tableName, new String[]{"TABLE"});
-      }
-
+    try (ResultSet rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"})) {
       boolean exists = rs.next();
-
       logger.info("Table '{}' is{} present in catalog={} - [{}]", tableName, exists ? "" : " not", catalog, product);
-
       return exists;
-    } finally {
-      AutoCloseableHelper.close(rs);
     }
   }
 
@@ -236,17 +228,12 @@ public class DatabaseMetadata {
    * @throws SQLException
    */
   private static String getOracleSchema(final Connection connection) throws SQLException {
-    Statement statement = null;
-    ResultSet rs = null;
-    try {
-      statement = connection.createStatement();
-      rs = statement.executeQuery("select sys_context('userenv','current_schema') x from dual");
+    try (
+        Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("select sys_context('userenv','current_schema') x from dual")
+    ) {
       rs.next();
       return rs.getString("x");
-    } finally {
-      AutoCloseableHelper.close(rs);
-
-      AutoCloseableHelper.close(statement);
     }
   }
 

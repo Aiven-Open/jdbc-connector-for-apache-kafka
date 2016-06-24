@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink.writer;
 
-import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
@@ -98,7 +97,10 @@ public final class JdbcDbWriter implements DbWriter {
         } else if (!connection.isValid(3000)) {
           //check the connection is still valid
           logger.warn("The database connection is not valid. Reconnecting");
-          AutoCloseableHelper.close(connection);
+          try {
+            connection.close();
+          } catch (Exception ignore) {
+          }
           connection = connectionProvider.getConnection();
         }
         //begin transaction
@@ -185,7 +187,10 @@ public final class JdbcDbWriter implements DbWriter {
 
   @Override
   public void close() {
-    AutoCloseableHelper.close(connection);
+    try {
+      connection.close();
+    } catch (SQLException ignore) {
+    }
   }
 
   /**

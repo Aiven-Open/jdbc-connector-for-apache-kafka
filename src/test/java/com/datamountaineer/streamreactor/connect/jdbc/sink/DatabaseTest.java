@@ -1,7 +1,6 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
 
-import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DbTable;
@@ -182,12 +181,8 @@ public class DatabaseTest {
             new SinkRecordField(Schema.Type.FLOAT64, "col4", false)
     ));
 
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
+    try (Connection connection = connectionProvider.getConnection())  {
       changesExecutor.update(map, connection);
-    } finally {
-      AutoCloseableHelper.close(connection);
     }
   }
 

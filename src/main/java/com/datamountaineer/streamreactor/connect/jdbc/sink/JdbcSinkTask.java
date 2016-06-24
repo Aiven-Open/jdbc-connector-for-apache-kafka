@@ -1,6 +1,5 @@
 package com.datamountaineer.streamreactor.connect.jdbc.sink;
 
-import com.datamountaineer.streamreactor.connect.jdbc.AutoCloseableHelper;
 import com.datamountaineer.streamreactor.connect.jdbc.ConnectionProvider;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadata;
 import com.datamountaineer.streamreactor.connect.jdbc.common.DatabaseMetadataProvider;
@@ -69,7 +68,7 @@ public class JdbcSinkTask extends SinkTask {
   @Override
   public void stop() {
     logger.info("Stopping Jdbc sink.");
-    AutoCloseableHelper.close(writer);
+    writer.close();
   }
 
   @Override
