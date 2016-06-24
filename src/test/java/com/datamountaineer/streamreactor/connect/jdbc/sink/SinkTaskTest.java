@@ -33,10 +33,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-/**
- * Created by andrew@datamountaineer.com on 15/05/16.
- * kafka-connect-jdbc
- */
 public class SinkTaskTest {
   private static final String DB_FILE = "test_db_writer_sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;

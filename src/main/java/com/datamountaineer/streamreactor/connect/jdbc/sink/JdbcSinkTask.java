@@ -20,25 +20,15 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * <h1>JdbcSinkTask</h1>
- * <p>
- * Kafka Connect Jdbc sink task. Called by framework to store records  in the database
- **/
 public class JdbcSinkTask extends SinkTask {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);
+
   private JdbcDbWriter writer = null;
 
-  /**
-   * Parse the configurations and setup the writer
-   *
-   * @param props A Map of properties to set the tasks
-   **/
   @Override
   public void start(final Map<String, String> props) {
     final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
     int retryInterval = sinkConfig.getInt(JdbcSinkConfig.RETRY_INTERVAL);
-    //set retry interval for sink
 
     final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
 
@@ -54,7 +44,6 @@ public class JdbcSinkTask extends SinkTask {
       }
     };
 
-    //Set up the writer
     try {
       writer = JdbcDbWriter.from(settings, provider);
     } catch (SQLException e) {
@@ -62,11 +51,6 @@ public class JdbcSinkTask extends SinkTask {
     }
   }
 
-  /**
-   * Pass the SinkRecords to the writer for Writing
-   *
-   * @param records The sink records to write to the database
-   **/
   @Override
   public void put(Collection<SinkRecord> records) {
     if (records.isEmpty()) {
@@ -82,9 +66,6 @@ public class JdbcSinkTask extends SinkTask {
     }
   }
 
-  /**
-   * Clean up Jdbc connections
-   **/
   @Override
   public void stop() {
     logger.info("Stopping Jdbc sink.");

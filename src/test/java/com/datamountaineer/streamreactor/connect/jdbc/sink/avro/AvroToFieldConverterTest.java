@@ -16,10 +16,6 @@ import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by andrew@datamountaineer.com on 22/05/16.
- * kafka-connect-jdbc
- */
 public class AvroToFieldConverterTest {
 
   @Test

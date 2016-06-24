@@ -7,10 +7,6 @@ import java.util.*;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.DATABASE_CONNECTION_URI;
 import static junit.framework.TestCase.assertTrue;
 
-/**
- * Created by andrew@datamountaineer.com on 15/05/16.
- * kafka-connect-jdbc
- */
 public class SinkConnectorTest {
 
   private static final String DB_FILE = "test_db_writer_sqllite.db";

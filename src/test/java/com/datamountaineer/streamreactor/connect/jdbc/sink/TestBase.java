@@ -17,12 +17,6 @@ import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSin
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.ERROR_POLICY;
 import static com.datamountaineer.streamreactor.connect.jdbc.sink.config.JdbcSinkConfig.EXPORT_MAPPINGS;
 
-/**
- * Created by andrew@datamountaineer.com on 20/05/16.
- * kafka-connect-jdbc
- */
-
-
 //name=jdbc-datamountaineer-1
 //    connector.class=com.datamountaineer.streamreactor.connect.jdbc.sink.JdbcSinkConnector
 //    tasks.max=1

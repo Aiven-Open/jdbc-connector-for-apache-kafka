@@ -9,10 +9,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by andrew@datamountaineer.com on 17/05/16.
- * kafka-connect-jdbc
- */
 public class PostgreSqlDialectTest {
 
   private final DbDialect dialect = new PostgreSQLDialect();

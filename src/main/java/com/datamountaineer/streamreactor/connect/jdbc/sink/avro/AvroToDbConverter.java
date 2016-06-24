@@ -9,10 +9,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by andrew@datamountaineer.com on 22/05/16.
- * kafka-connect-jdbc
- */
 public class AvroToDbConverter {
 
 
