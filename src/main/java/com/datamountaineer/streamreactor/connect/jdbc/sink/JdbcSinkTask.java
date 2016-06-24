@@ -39,13 +39,6 @@ public class JdbcSinkTask extends SinkTask {
    **/
   @Override
   public void start(final Map<String, String> props) {
-    try {
-      final String ascii = CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream("/jdbc.ascii")));
-      logger.info(ascii);
-    } catch (IOException e) {
-      logger.warn("Can't load the ascii art!");
-    }
-
     final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
     int retryInterval = sinkConfig.getInt(JdbcSinkConfig.RETRY_INTERVAL);
     //set retry interval for sink
