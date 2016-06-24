@@ -240,11 +240,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testManualIncrementingRestoreOffset() throws Exception {
-    Map<String, Object> offset = new HashMap<>();
-    offset.put(JdbcSourceTask.INCREMENTING_FIELD, 1L);
-
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
 
     PowerMock.replayAll();
 
@@ -264,10 +262,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testAutoincrementRestoreOffset() throws Exception {
-    Map<String, Object> offset = new HashMap<>();
-    offset.put(JdbcSourceTask.INCREMENTING_FIELD, 1L);
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
 
     PowerMock.replayAll();
 
@@ -290,10 +287,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testTimestampRestoreOffset() throws Exception {
-    Map<String, Object> offset = new HashMap<>();
-    offset.put(JdbcSourceTask.TIMESTAMP_FIELD, 10L);
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), null);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
 
     PowerMock.replayAll();
 
@@ -316,11 +312,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testTimestampAndIncrementingRestoreOffset() throws Exception {
-    Map<String, Object> offset = new HashMap<>();
-    offset.put(JdbcSourceTask.TIMESTAMP_FIELD, 10L);
-    offset.put(JdbcSourceTask.INCREMENTING_FIELD, 3L);
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), 3L);
     expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset));
+            Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
 
     PowerMock.replayAll();
 
@@ -518,12 +512,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
           extracted = (T) (Long) rawTimestamp.getTime();
           break;
         }
-        case INCREMENTING_OFFSET:
-          extracted = (T)(record.sourceOffset()).get(JdbcSourceTask.INCREMENTING_FIELD);
+        case INCREMENTING_OFFSET: {
+          TimestampIncrementingOffset offset = TimestampIncrementingOffset.fromMap(record.sourceOffset());
+          extracted = (T) (Long) offset.getIncrementingOffset();
           break;
+        }
         case TIMESTAMP_OFFSET: {
-          java.util.Date rawTimestamp
-              = (java.util.Date) record.sourceOffset().get(JdbcSourceTask.TIMESTAMP_FIELD);
+          TimestampIncrementingOffset offset = TimestampIncrementingOffset.fromMap(record.sourceOffset());
+          Timestamp rawTimestamp = offset.getTimestampOffset();
           extracted = (T) (Long) rawTimestamp.getTime();
           break;
         }
@@ -556,8 +552,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
       Object incrementing = ((Struct)record.value()).get("id");
       long incrementingValue = incrementing instanceof Integer ? (long)(Integer)incrementing
                                                            : (Long)incrementing;
-      long offsetValue = (Long)(record.sourceOffset())
-          .get(JdbcSourceTask.INCREMENTING_FIELD);
+      long offsetValue = TimestampIncrementingOffset.fromMap(record.sourceOffset()).getIncrementingOffset();
       assertEquals(incrementingValue, offsetValue);
     }
   }
@@ -565,9 +560,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   private void assertTimestampOffsets(List<SourceRecord> records) {
     // Should use timestamps as offsets
     for(SourceRecord record : records) {
-      long timestampValue = ((java.util.Date) ((Struct)record.value()).get("modified")).getTime();
-      long offsetValue = (Long)(record.sourceOffset()
-          .get(JdbcSourceTask.TIMESTAMP_FIELD));
+      Timestamp timestampValue = (Timestamp) ((Struct)record.value()).get("modified");
+      Timestamp offsetValue = TimestampIncrementingOffset.fromMap(record.sourceOffset()).getTimestampOffset();
       assertEquals(timestampValue, offsetValue);
     }
   }
