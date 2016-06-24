@@ -29,12 +29,6 @@ public class ConnectionProvider {
     this.password = password;
   }
 
-  /**
-   * Returns a new instance of jdbc Connection
-   *
-   * @return
-   * @throws SQLException
-   */
   public Connection getConnection() throws SQLException {
     Connection connection = null;
     int retriesLeft = retries;
@@ -50,8 +44,8 @@ public class ConnectionProvider {
         logger.warn(String.format("Trying to open the database failed. Retries left %d", retriesLeft), e);
         try {
           Thread.sleep(delayBetweenRetries);
-        } catch (InterruptedException e1) {
-
+        } catch (InterruptedException ie) {
+          throw new SQLException(ie);
         }
       }
     }
