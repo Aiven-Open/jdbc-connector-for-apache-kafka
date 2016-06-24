@@ -120,7 +120,7 @@ public final class JdbcDbWriter implements DbWriter {
             PreparedStatement statement = null;
             try {
               final String sql = statementData.getSql();
-              logger.debug(String.format("Executing SQL:\n%s", sql));
+              logger.debug("Executing SQL: {}", sql);
               statement = connection.prepareStatement(sql);
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
@@ -146,7 +146,7 @@ public final class JdbcDbWriter implements DbWriter {
         if (maxRetries != retries) {
           retries = maxRetries;
           SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
-          logger.info(String.format("Recovered from error % at %s", formatter.format(lastError), lastErrorMessage));
+          logger.info("Recovered from error '{}' ({})", lastErrorMessage, formatter.format(lastError));
         }
         if (totalRecords == 0) {
           logger.warn("No records have been written. Given the configuration no data has been used from the SinkRecords.");
@@ -154,11 +154,11 @@ public final class JdbcDbWriter implements DbWriter {
       } catch (SQLException sqlException) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
         assert firstRecord != null;
-        logger.error(String.format("Following error has occurred inserting data starting at topic:%s offset:%d partition:%d",
-                firstRecord.topic(),
-                firstRecord.kafkaOffset(),
-                firstRecord.kafkaPartition()));
-        logger.error(sqlException.getMessage(), sqlException);
+        logger.error("Error occurred inserting data starting at topic:{} offset:{} partition:{}",
+                     firstRecord.topic(),
+                     firstRecord.kafkaOffset(),
+                     firstRecord.kafkaPartition(),
+                     sqlException);
 
         SQLException inner = sqlException.getNextException();
         while (inner != null) {
@@ -209,7 +209,7 @@ public final class JdbcDbWriter implements DbWriter {
     final PreparedStatementContextIterable statementBuilder = PreparedStatementBuilderHelper.from(settings, databaseMetadata);
 
     final ErrorHandlingPolicy errorHandlingPolicy = ErrorHandlingPolicyHelper.from(settings.getErrorPolicy());
-    logger.info(String.format("Created the error policy handler as %s", errorHandlingPolicy.getClass().getCanonicalName()));
+    logger.info("Created the error policy handler as {}", errorHandlingPolicy.getClass().getCanonicalName());
 
     final Set<String> tablesAllowingAutoCreate = new HashSet<>();
     final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
@@ -255,14 +255,9 @@ public final class JdbcDbWriter implements DbWriter {
         try {
           all = registry.getAllSubjects();
         } catch (RestClientException e) {
-          logger.info(String.format(
-                  "No schemas found in Registry! Waiting for first record to create table for topic %s", fm.getIncomingTopic()));
+          logger.info("No schemas found in Registry! Waiting for first record to create table for topic {}", fm.getIncomingTopic());
         } catch (IOException e) {
-          logger.error(
-                  String.format("Unable to connect to the Schema Registry at %s %s",
-                          settings.getSchemaRegistryUrl(),
-                          e.getMessage()),
-                  e);
+          logger.error("Unable to connect to the Schema Registry at {}", settings.getSchemaRegistryUrl(), e);
         }
 
         String lkTopic = fm.getIncomingTopic();
@@ -278,10 +273,7 @@ public final class JdbcDbWriter implements DbWriter {
         logger.info("Looking for schema " + lkTopic);
         try {
           latest = registry.getLatestVersion(lkTopic).getSchema();
-          logger.info(String.format("Found the following schema in the Registry for topic %s%s%s ",
-                  lkTopic,
-                  System.lineSeparator(),
-                  latest));
+          logger.info("Found the following schema in the registry for topic {}{}{}", lkTopic, System.lineSeparator(), latest);
           AvroToDbConverter converter = new AvroToDbConverter();
           Collection<SinkRecordField> convertedFields = converter.convert(latest, fm.getMappings());
 
@@ -302,19 +294,14 @@ public final class JdbcDbWriter implements DbWriter {
             createTablesMap.put(fm.getTableName(), convertedFields);
           }
         } catch (RestClientException e) {
-          logger.info(String.format(
-                  "No schema found in Registry! Waiting for first record to create table for topic %s",
-                  fm.getIncomingTopic()));
+          logger.info("No schema found in Registry! Waiting for first record to create table for topic %s", fm.getIncomingTopic());
         } catch (IOException e) {
-          logger.error(String.format("Unable to connect to the Schema Registry at %s %s",
-                  settings.getSchemaRegistryUrl(),
-                  e.getMessage()),
-                  e);
+          logger.error("Unable to connect to the Schema Registry at {}", settings.getSchemaRegistryUrl(), e);
         }
       }
 
       if (fm.evolveTableSchema()) {
-        logger.info(String.format("Allowing schema evolution for table %s", fm.getTableName()));
+        logger.info("Allowing schema evolution for table {}", fm.getTableName());
         tablesAllowingSchemaEvolution.add(fm.getTableName());
       }
     }

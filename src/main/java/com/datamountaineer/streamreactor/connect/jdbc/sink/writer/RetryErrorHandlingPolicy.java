@@ -19,16 +19,14 @@ public final class RetryErrorHandlingPolicy implements ErrorHandlingPolicy {
     if (retryCount == 0) {
       throw new RuntimeException(error);
     } else {
-      logger.warn(String.format("Error policy set to RETRY. The following events will be replayed. " +
-          "Remaining attempts %d", retryCount));
-
       if (!records.isEmpty()) {
         final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
         assert firstRecord != null;
-        logger.warn(String.format("Going to retry inserting data starting at topic: %s offset: %d partition: %d",
-            firstRecord.topic(),
-            firstRecord.kafkaOffset(),
-            firstRecord.kafkaPartition()));
+        logger.warn("Going to retry inserting data starting at topic: {} offset: {} partition: {}. Remaining attempts {}",
+                    firstRecord.topic(),
+                    firstRecord.kafkaOffset(),
+                    firstRecord.kafkaPartition(),
+                    retryCount);
         throw new RetriableException(error);
       } else {
         throw new RetriableException(error);

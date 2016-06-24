@@ -123,9 +123,9 @@ public final class PreparedStatementBuilderHelper {
 
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
-          logger.warn(String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
+          logger.warn("Invalid mappings. Not all PK columns have been specified. PK specified {} out of existing {}",
                   Joiner.on(",").join(specifiedPKs),
-                  Joiner.on(",").join(pkColumns)));
+                  Joiner.on(",").join(pkColumns));
         }
         if (tm.getInsertMode().equals(InsertModeEnum.UPSERT)) {
           throw new ConfigException(

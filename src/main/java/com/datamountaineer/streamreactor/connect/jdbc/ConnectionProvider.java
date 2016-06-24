@@ -41,7 +41,7 @@ public class ConnectionProvider {
         if (retriesLeft == 0) {
           exception = e;
         }
-        logger.warn(String.format("Trying to open the database failed. Retries left %d", retriesLeft), e);
+        logger.warn("Trying to open the database failed. {} retries left", retriesLeft, e);
         try {
           Thread.sleep(delayBetweenRetries);
         } catch (InterruptedException ie) {

@@ -119,19 +119,15 @@ public class Database {
                               final Collection<SinkRecordField> fields,
                               final Connection connection) {
     final String sql = dbDialect.getCreateQuery(tableName, fields);
-    logger.info(String.format("Changing database structure for database %s%s%s",
-            databaseMetadata.getDatabaseName(),
-            System.lineSeparator(),
-            sql));
+    logger.info("Changing database structure for database {}{}{}",
+                databaseMetadata.getDatabaseName(), System.lineSeparator(), sql);
 
     Statement statement = null;
     try {
       statement = connection.createStatement();
       statement.execute(sql);
-      logger.info(String.format("Database structure changed database %s%s%s",
-              databaseMetadata.getDatabaseName(),
-              System.lineSeparator(),
-              sql));
+      logger.info("Database structure changed database {}{}{}",
+                  databaseMetadata.getDatabaseName(), System.lineSeparator(), sql);
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
       logger.error("Creating table failed." + e.getMessage(), e);
@@ -197,7 +193,7 @@ public class Database {
         throw new RuntimeException(String.format("%s is set for amendments but hasn't been created yet", entry.getKey()));
       }
       if (!tablesAllowingSchemaEvolution.contains(entry.getKey())) {
-        logger.warn(String.format("Table %s is not configured with schema evolution", entry.getKey()));
+        logger.warn("Table {} is not configured with schema evolution", entry.getKey());
         continue;
       }
 
@@ -236,19 +232,15 @@ public class Database {
       statement = connection.createStatement();
 
       for (String amendTableQuery : amendTableQueries) {
-        logger.info(String.format("Changing database structure for database %s%s%s",
-                databaseMetadata.getDatabaseName(),
-                System.lineSeparator(),
-                amendTableQuery));
+        logger.info("Changing database structure for database {}{}{}",
+                    databaseMetadata.getDatabaseName(), System.lineSeparator(), amendTableQuery);
 
         statement.executeUpdate(amendTableQuery);
         //commit the transaction
         connection.commit();
 
-        logger.info(String.format("Database structure changed for database %s%s%s",
-                databaseMetadata.getDatabaseName(),
-                System.lineSeparator(),
-                amendTableQuery));
+        logger.info("Database structure changed for database {}{}{}",
+                    databaseMetadata.getDatabaseName(), System.lineSeparator(), amendTableQuery);
       }
 
       return DatabaseMetadata.getTableMetadata(connection, tableName);

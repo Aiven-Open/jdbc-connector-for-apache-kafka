@@ -75,7 +75,7 @@ public class DatabaseMetadata {
             Collection<SinkRecordField> newFileds = amended.get(table.getName());
             //new field which hasn't been seen before
             if (newFileds == null) {
-              logger.info(String.format("Detected new field %s for table %s in SinkRecord.", field.getName(), table.getName()));
+              logger.info("Detected new field {} for table {} in SinkRecord.", field.getName(), table.getName());
               newFileds = new ArrayList<>();
               amended.put(table.getName(), newFileds);
             }
@@ -169,9 +169,7 @@ public class DatabaseMetadata {
 
       return new DatabaseMetadata(catalog, dbTables);
     } catch (SQLException ex) {
-      logger.error(
-              String.format("An error occurred trying to retrieve the database metadata for the given tables.%s", ex.getMessage()),
-              ex);
+      logger.error("Error occurred trying to retrieve the database metadata for the given tables", ex);
       throw new RuntimeException(ex);
     } finally {
       if (connection != null) {
@@ -223,20 +221,20 @@ public class DatabaseMetadata {
 
       if (product.toLowerCase().equals("oracle")) {
         String schema = getOracleSchema(connection);
-        logger.info(String.format("[%s] Checking %s exists for catalog=%s and schema %s", product, tableName, catalog, schema));
+        logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, schema);
         rs = meta.getTables(catalog, schema.toUpperCase(), tableName, new String[]{"TABLE"});
       } else if (product.toLowerCase().contains("postgre")) {
         String schema = connection.getSchema();
-        logger.info(String.format("[%s] Checking %s exists for catalog=%s and schema %s", product, tableName, catalog, schema));
+        logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, schema);
         rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"});
       } else {
-        logger.info(String.format("[%s] Checking %s exists for catalog=%s and schema %s", product, tableName, catalog, ""));
+        logger.info("[{}] Checking {} exists for catalog={} and schema {}", product, tableName, catalog, "");
         rs = meta.getTables(catalog, null, tableName, new String[]{"TABLE"});
       }
 
       boolean exists = rs.next();
 
-      logger.info(String.format("Table '%s' is%s present in catalog=%s - [%s]", tableName, exists ? "" : " not", catalog, product));
+      logger.info("Table '{}' is{} present in catalog={} - [{}]", tableName, exists ? "" : " not", catalog, product);
 
       return exists;
     } finally {
@@ -292,8 +290,8 @@ public class DatabaseMetadata {
       }
       return tables;
     } catch (SQLException ex) {
-      logger.error(String.format("An error has occurred trying to retrieve the tables metadata.%s", ex.getMessage()), ex);
-      throw new RuntimeException("Sql exception occurred.", ex);
+      logger.error("Error occurred trying to retrieve table metadata", ex);
+      throw new RuntimeException(ex);
     } finally {
       AutoCloseableHelper.close(connection);
     }
@@ -324,8 +322,7 @@ public class DatabaseMetadata {
 
     if (product.toLowerCase().equals("oracle")) {
       String schema = getOracleSchema(connection);
-      logger.info(String.format("[%s] Checking columns exists for table='%s', schema '%s' and catalog '%s'",
-              product, tableName, schema, catalog));
+      logger.info("[{}] Checking columns exists for table='{}', schema '{}' and catalog '{}'", product, tableName, schema, catalog);
 
       nonPKcolumnsRS = dbMetaData.getColumns(catalog, schema.toUpperCase(), tableName.toUpperCase(), null);
       pkColumnsRS = dbMetaData.getPrimaryKeys(catalog, schema.toUpperCase(), tableName.toUpperCase());
