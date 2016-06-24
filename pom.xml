@@ -50,8 +50,8 @@
     </scm>
 
     <properties>
-        <confluent.version>2.0.1</confluent.version>
-        <kafka.version>0.9.0.1</kafka.version>
+        <confluent.version>3.0.0</confluent.version>
+        <kafka.version>0.10.0.0</kafka.version>
         <guava.version>19.0</guava.version>
         <!-- Test scope -->
         <junit.version>4.12</junit.version>
@@ -108,12 +108,6 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-json</artifactId>
             <version>${kafka.version}</version>
         </dependency>
 

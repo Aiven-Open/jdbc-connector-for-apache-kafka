@@ -2,6 +2,8 @@ package io.confluent.connect.jdbc.sink;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+
+import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
@@ -9,6 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
 
 public final class JdbcSinkConnector extends SinkConnector {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkConnector.class);
@@ -38,6 +42,11 @@ public final class JdbcSinkConnector extends SinkConnector {
 
   @Override
   public void stop() {
+  }
+
+  @Override
+  public ConfigDef config() {
+    return JdbcSinkConfig.getConfigDef();
   }
 
   @Override

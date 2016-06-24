@@ -88,7 +88,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   private final static String SCHEMA_REGISTRY_URL_DEFAULT = "http://localhost:8081";
 
 
-  private static ConfigDef getConfigDef() {
+  public static ConfigDef getConfigDef() {
     return new ConfigDef()
             .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
             .define(DATABASE_CONNECTION_USER, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, DATABASE_CONNECTION_USER_DOC)

@@ -6,13 +6,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Properties;
 import java.util.Random;
 
 import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
-import kafka.utils.CoreUtils;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 
@@ -93,35 +100,31 @@ public class KafkaEmbedded {
   /**
    * Stop the broker.
    */
-  public void stop() {
+  public void stop() throws IOException {
     log.debug("Shutting down embedded Kafka broker at {} (with ZK ensemble at {}) ...",
         brokerList(), zookeeperConnect());
     kafka.shutdown();
     kafka.awaitShutdown();
     log.debug("Removing logs.dir at {} ...", logDir);
-    CoreUtils.rm(logDir);
+    rm(logDir.toPath());
     log.debug("Shutdown of embedded Kafka broker at {} completed (with ZK ensemble at {}) ...",
         brokerList(), zookeeperConnect());
   }
 
-  /**
-   * Create a Kafka topic with 1 partition and a replication factor of 1.
-   *
-   * @param topic The name of the topic.
-   */
-  public void createTopic(String topic) {
-    createTopic(topic, 1, 1, new Properties());
-  }
+  private void rm(Path dir) throws IOException {
+    Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        Files.delete(file);
+        return FileVisitResult.CONTINUE;
+      }
 
-  /**
-   * Create a Kafka topic with the given parameters.
-   *
-   * @param topic       The name of the topic.
-   * @param partitions  The number of partitions for this topic.
-   * @param replication The replication factor for (the partitions of) this topic.
-   */
-  public void createTopic(String topic, int partitions, int replication) {
-    createTopic(topic, partitions, replication, new Properties());
+      @Override
+      public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+        Files.delete(dir);
+        return FileVisitResult.CONTINUE;
+      }
+    });
   }
 
   /**
@@ -150,7 +153,7 @@ public class KafkaEmbedded {
         connectionTimeoutMs,
         ZKStringSerializer$.MODULE$);
     ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConnect()), false);
-    AdminUtils.createTopic(zkUtils, topic, partitions, replication, topicConfig);
+    AdminUtils.createTopic(zkUtils, topic, partitions, replication, topicConfig, RackAwareMode.Disabled$.MODULE$);
     zkClient.close();
   }
 
