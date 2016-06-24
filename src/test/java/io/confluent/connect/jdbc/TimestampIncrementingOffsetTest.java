@@ -22,7 +22,6 @@ import org.junit.Test;
 import java.sql.Timestamp;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class TimestampIncrementingOffsetTest {
@@ -86,34 +85,6 @@ public class TimestampIncrementingOffsetTest {
     assertEquals(zero, incOnly.getTimestampOffset());
     assertEquals(ts, tsInc.getTimestampOffset());
     assertEquals(nanos, nanosOffset.getTimestampOffset());
-  }
-
-  @Test
-  public void testSetTimestampOffset() {
-    assertNotEquals(unset, tsOnly);
-    assertEquals(ts, tsOnly.getTimestampOffset());
-    tsOnly.setTimestampOffset(null);
-    assertNotNull(tsOnly.getTimestampOffset());
-    assertEquals(new Timestamp(0), tsOnly.getTimestampOffset());
-    assertEquals(unset, tsOnly);
-    tsInc.setTimestampOffset(null);
-    assertNotNull(tsInc.getTimestampOffset());
-    assertEquals(new Timestamp(0), tsInc.getTimestampOffset());
-    assertEquals(incOnly, tsInc);
-  }
-
-  @Test
-  public void testSetIncrementingOffset() {
-    assertNotEquals(unset, incOnly);
-    assertEquals(id, incOnly.getIncrementingOffset());
-    incOnly.setIncrementingOffset(null);
-    assertNotNull(incOnly.getIncrementingOffset());
-    assertEquals(-1, incOnly.getIncrementingOffset());
-    assertEquals(unset, incOnly);
-    tsInc.setIncrementingOffset(null);
-    assertNotNull(tsInc.getIncrementingOffset());
-    assertEquals(-1, tsInc.getIncrementingOffset());
-    assertEquals(tsOnly, tsInc);
   }
 
   @Test

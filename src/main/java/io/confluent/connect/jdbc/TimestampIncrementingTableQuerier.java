@@ -154,9 +154,10 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       stmt.setTimestamp(2, tsOffset, UTC_CALENDAR);
       stmt.setLong(3, incOffset);
       stmt.setTimestamp(4, tsOffset, UTC_CALENDAR);
-      log.debug("Executing prepared statement with start time value = " + tsOffset.toString()
-              + " end time " + endTime.toString()
-              + " and incrementing value = " + incOffset.toString());
+      log.debug("Executing prepared statement with start time value = {} end time = {} and incrementing value = {}",
+              JdbcUtils.formatUTC(tsOffset),
+              JdbcUtils.formatUTC(endTime),
+              incOffset);
     } else if (incrementingColumn != null) {
       Long incOffset = offset.getIncrementingOffset();
       stmt.setLong(1, incOffset);
@@ -166,8 +167,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
       stmt.setTimestamp(1, tsOffset, UTC_CALENDAR);
       stmt.setTimestamp(2, endTime, UTC_CALENDAR);
-      log.debug("Executing prepared statement with timestamp value = " + JdbcUtils.formatUTC(tsOffset)
-              + " end time " + JdbcUtils.formatUTC(endTime));
+      log.debug("Executing prepared statement with timestamp value = {} end time = {}",
+              JdbcUtils.formatUTC(tsOffset),
+              JdbcUtils.formatUTC(endTime));
     }
     return stmt.executeQuery();
   }
@@ -175,8 +177,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   @Override
   public SourceRecord extractRecord() throws SQLException {
     Struct record = DataConverter.convertRecord(schema, resultSet);
+    Long id = null;
+    Timestamp latest = null;
     if (incrementingColumn != null) {
-      Long id;
       switch (schema.field(incrementingColumn).schema().type()) {
         case INT32:
           id = (long) (Integer) record.get(incrementingColumn);
@@ -193,16 +196,13 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       // using a timestamp, then we may see updates to older rows.
       long incrementingOffset = offset.getIncrementingOffset();
       assert (incrementingOffset == -1 || id > incrementingOffset) || timestampColumn != null;
-      offset.setIncrementingOffset(id);
     }
-
-
     if (timestampColumn != null) {
-      Timestamp latest = (Timestamp) record.get(timestampColumn);
+      latest = (Timestamp) record.get(timestampColumn);
       Timestamp timestampOffset = offset.getTimestampOffset();
       assert timestampOffset != null && timestampOffset.compareTo(latest) <= 0;
-      offset.setTimestampOffset(latest);
     }
+    offset = new TimestampIncrementingOffset(latest, id);
 
     // TODO: Key?
     final String topic;

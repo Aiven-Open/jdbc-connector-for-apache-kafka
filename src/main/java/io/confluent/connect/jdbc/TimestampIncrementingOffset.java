@@ -21,63 +21,56 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TimestampIncrementingOffset {
-  private Long incrementingOffset;
-  private Timestamp timestampOffset;
+  private static final String INCREMENTING_FIELD = "incrementing";
+  private static final String TIMESTAMP_FIELD = "timestamp";
+  private static final String TIMESTAMP_NANOS_FIELD = "timestamp_nanos";
 
-  public TimestampIncrementingOffset() {}
+  private final Long incrementingOffset;
+  private final Timestamp timestampOffset;
 
-  public TimestampIncrementingOffset(Timestamp ts, Long id) {
-    this.timestampOffset = ts;
-    this.incrementingOffset = id;
+  public TimestampIncrementingOffset() {
+    this.timestampOffset = null;
+    this.incrementingOffset = null;
+  }
+
+  public TimestampIncrementingOffset(Timestamp timestampOffset, Long incrementingOffset) {
+    this.timestampOffset = timestampOffset;
+    this.incrementingOffset = incrementingOffset;
   }
 
   public long getIncrementingOffset() {
     return incrementingOffset == null ? -1 : incrementingOffset;
   }
 
-  public void setIncrementingOffset(Long incrementingOffset) {
-    if (incrementingOffset != null && incrementingOffset < -1)
-      throw new IllegalArgumentException("incrementingOffset must be -1 or non-negative");
-    this.incrementingOffset = incrementingOffset;
-  }
-
   public Timestamp getTimestampOffset() {
     return timestampOffset == null ? new Timestamp(0) : timestampOffset;
   }
-
-  public void setTimestampOffset(Timestamp timestampOffset) {
-    this.timestampOffset = timestampOffset;
-  }
-
-  private static final String INCREMENTING_FIELD = "incrementing";
-  private static final String TIMESTAMP_MILLIS_FIELD = "timestamp_millis";
-  private static final String TIMESTAMP_NANOS_FIELD = "timestamp_nanos";
 
   public Map<String, Object> toMap() {
     Map<String, Object> map = new HashMap<>();
     if (incrementingOffset != null)
       map.put(INCREMENTING_FIELD, incrementingOffset);
     if (timestampOffset != null) {
-      map.put(TIMESTAMP_MILLIS_FIELD, timestampOffset.getTime());
+      map.put(TIMESTAMP_FIELD, timestampOffset.getTime());
       map.put(TIMESTAMP_NANOS_FIELD, timestampOffset.getNanos());
     }
     return map;
   }
 
   public static TimestampIncrementingOffset fromMap(Map<String, ?> map) {
-    TimestampIncrementingOffset offset = new TimestampIncrementingOffset();
     if (map == null || map.isEmpty())
-      return offset;
-    Object incr = map.get(INCREMENTING_FIELD);
-    if (incr != null)
-      offset.setIncrementingOffset((Long) incr);
-    Object millis = map.get(TIMESTAMP_MILLIS_FIELD);
+      return new TimestampIncrementingOffset();
+
+    Long incr = (Long) map.get(INCREMENTING_FIELD);
+    Long millis = (Long) map.get(TIMESTAMP_FIELD);
+    Timestamp ts = null;
     if (millis != null) {
-      Timestamp ts = new Timestamp((Long) millis);
-      ts.setNanos((Integer) map.get(TIMESTAMP_NANOS_FIELD));
-      offset.setTimestampOffset(ts);
+      ts = new Timestamp(millis);
+      Integer nanos = (Integer) map.get(TIMESTAMP_NANOS_FIELD);
+      if (nanos != null)
+          ts.setNanos(nanos);
     }
-    return offset;
+    return new TimestampIncrementingOffset(ts, incr);
   }
 
   @Override
