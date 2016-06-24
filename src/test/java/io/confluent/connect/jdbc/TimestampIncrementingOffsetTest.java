@@ -25,24 +25,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class TimestampIncrementingOffsetTest {
-  private TimestampIncrementingOffset unset;
-  private TimestampIncrementingOffset tsOnly;
-  private TimestampIncrementingOffset incOnly;
-  private TimestampIncrementingOffset tsInc;
-  private TimestampIncrementingOffset nanosOffset;
-  private Timestamp ts;
+  private final Timestamp ts = new Timestamp(100L);
+  private final long id = 1000L;
+  private final TimestampIncrementingOffset unset = new TimestampIncrementingOffset(null, null);
+  private final TimestampIncrementingOffset tsOnly = new TimestampIncrementingOffset(ts, null);
+  private final TimestampIncrementingOffset incOnly = new TimestampIncrementingOffset(null, id);
+  private final TimestampIncrementingOffset tsInc = new TimestampIncrementingOffset(ts, id);
   private Timestamp nanos;
-  private long id;
+  private TimestampIncrementingOffset nanosOffset;
 
   @Before
   public void setUp() {
-    ts = new Timestamp(100L);
-    id = 1000L;
-    unset = new TimestampIncrementingOffset();
-    tsOnly = new TimestampIncrementingOffset(ts, null);
-    incOnly = new TimestampIncrementingOffset(null, id);
-    tsInc = new TimestampIncrementingOffset(ts, id);
-
     long millis = System.currentTimeMillis();
     nanos = new Timestamp(millis);
     nanos.setNanos((int)(millis % 1000) * 1000000 + 123456);
@@ -99,9 +92,7 @@ public class TimestampIncrementingOffsetTest {
   @Test
   public void testEquals() {
     assertEquals(nanosOffset, nanosOffset);
-    assertEquals(new TimestampIncrementingOffset(), new TimestampIncrementingOffset());
-    assertEquals(new TimestampIncrementingOffset(), new TimestampIncrementingOffset(null, null));
-    assertEquals(unset, new TimestampIncrementingOffset());
+    assertEquals(new TimestampIncrementingOffset(null, null), new TimestampIncrementingOffset(null, null));
     assertEquals(unset, new TimestampIncrementingOffset(null, null));
 
     TimestampIncrementingOffset x = new TimestampIncrementingOffset(null, id);

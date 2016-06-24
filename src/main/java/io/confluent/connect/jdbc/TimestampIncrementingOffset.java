@@ -28,11 +28,12 @@ public class TimestampIncrementingOffset {
   private final Long incrementingOffset;
   private final Timestamp timestampOffset;
 
-  public TimestampIncrementingOffset() {
-    this.timestampOffset = null;
-    this.incrementingOffset = null;
-  }
-
+  /**
+   * @param timestampOffset the timestamp offset.
+   *                        If null, {@link #getTimestampOffset()} will return {@code new Timestamp(0)}.
+   * @param incrementingOffset the incrementing offset.
+   *                           If null, {@link #getIncrementingOffset()} will return -1.
+   */
   public TimestampIncrementingOffset(Timestamp timestampOffset, Long incrementingOffset) {
     this.timestampOffset = timestampOffset;
     this.incrementingOffset = incrementingOffset;
@@ -47,7 +48,7 @@ public class TimestampIncrementingOffset {
   }
 
   public Map<String, Object> toMap() {
-    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> map = new HashMap<>(3);
     if (incrementingOffset != null)
       map.put(INCREMENTING_FIELD, incrementingOffset);
     if (timestampOffset != null) {
@@ -59,7 +60,7 @@ public class TimestampIncrementingOffset {
 
   public static TimestampIncrementingOffset fromMap(Map<String, ?> map) {
     if (map == null || map.isEmpty())
-      return new TimestampIncrementingOffset();
+      return new TimestampIncrementingOffset(null, null);
 
     Long incr = (Long) map.get(INCREMENTING_FIELD);
     Long millis = (Long) map.get(TIMESTAMP_FIELD);
