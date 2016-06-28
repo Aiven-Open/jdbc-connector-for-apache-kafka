@@ -41,7 +41,7 @@ import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientExcept
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
  */
-public final class JdbcDbWriter implements DbWriter {
+public final class JdbcDbWriter {
   private static final Logger logger = LoggerFactory.getLogger(JdbcDbWriter.class);
 
   private final PreparedStatementContextIterable statementBuilder;
@@ -85,7 +85,6 @@ public final class JdbcDbWriter implements DbWriter {
    *
    * @param records - The sequence of records to insert
    */
-  @Override
   public void write(final Collection<SinkRecord> records) {
     if (records.isEmpty()) {
       logger.warn("Received empty sequence of SinkRecord");
@@ -192,7 +191,6 @@ public final class JdbcDbWriter implements DbWriter {
     }
   }
 
-  @Override
   public void close() {
     closeConnectionQuietly();
   }
