@@ -45,7 +45,7 @@ public class ConnectionProvider {
         try {
           Thread.sleep(delayBetweenRetries);
         } catch (InterruptedException ie) {
-          throw new SQLException(ie);
+          throw new RuntimeException(ie);
         }
       }
     }
