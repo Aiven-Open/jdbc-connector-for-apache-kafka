@@ -98,10 +98,7 @@ public final class JdbcDbWriter implements DbWriter {
         } else if (!connection.isValid(3000)) {
           //check the connection is still valid
           logger.warn("The database connection is not valid. Reconnecting");
-          try {
-            connection.close();
-          } catch (Exception ignore) {
-          }
+          closeConnectionQuietly();
           connection = connectionProvider.getConnection();
         }
         //begin transaction
@@ -186,12 +183,17 @@ public final class JdbcDbWriter implements DbWriter {
     }
   }
 
-  @Override
-  public void close() {
+  private void closeConnectionQuietly() {
     try {
       connection.close();
-    } catch (SQLException ignore) {
+    } catch (SQLException sqle) {
+      logger.warn("Ignoring error closing connection", sqle);
     }
+  }
+
+  @Override
+  public void close() {
+    closeConnectionQuietly();
   }
 
   /**
