@@ -281,8 +281,8 @@ public class DatabaseMetadata {
     final String product = dbMetaData.getDatabaseProductName();
     Connection connection = dbMetaData.getConnection();
 
-    ResultSet nonPKcolumnsRS = null;
-    ResultSet pkColumnsRS = null;
+    final ResultSet nonPKcolumnsRS;
+    final ResultSet pkColumnsRS;
 
     if (product.toLowerCase().equals("oracle")) {
       String schema = getOracleSchema(connection);

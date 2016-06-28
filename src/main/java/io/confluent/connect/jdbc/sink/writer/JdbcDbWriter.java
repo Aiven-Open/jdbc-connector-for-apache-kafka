@@ -278,10 +278,9 @@ public final class JdbcDbWriter implements DbWriter {
           }
         }
 
-        String latest = null;
         logger.info("Looking for schema " + lkTopic);
         try {
-          latest = registry.getLatestVersion(lkTopic).getSchema();
+          final String latest = registry.getLatestVersion(lkTopic).getSchema();
           logger.info("Found the following schema in the registry for topic {}{}{}", lkTopic, System.lineSeparator(), latest);
           AvroToDbConverter converter = new AvroToDbConverter();
           Collection<SinkRecordField> convertedFields = converter.convert(latest, fm.getMappings());
