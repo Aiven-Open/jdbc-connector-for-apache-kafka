@@ -1,6 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -27,13 +26,6 @@ import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
  */
 public final class PreparedStatementContextIterable {
   private static final Logger logger = LoggerFactory.getLogger(PreparedStatementContextIterable.class);
-
-  private static final Function<PreparedStatementBinder, String> fieldNamesFunc = new Function<PreparedStatementBinder, String>() {
-    @Override
-    public String apply(PreparedStatementBinder input) {
-      return input.getFieldName();
-    }
-  };
 
   private final int batchSize;
   private final Map<String, DataExtractorWithQueryBuilder> topicsMap;
