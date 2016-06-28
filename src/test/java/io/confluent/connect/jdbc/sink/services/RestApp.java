@@ -42,11 +42,6 @@ public class RestApp {
   }
 
   public RestApp(int port, String zkConnect, String kafkaTopic, String compatibilityType) {
-    this(port, zkConnect, kafkaTopic, compatibilityType, true);
-  }
-
-  public RestApp(int port, String zkConnect, String kafkaTopic,
-                 String compatibilityType, boolean masterEligibility) {
     prop = new Properties();
     prop.setProperty(SchemaRegistryConfig.PORT_CONFIG, ((Integer) port).toString());
     prop.setProperty(SchemaRegistryConfig.KAFKASTORE_CONNECTION_URL_CONFIG, zkConnect);
