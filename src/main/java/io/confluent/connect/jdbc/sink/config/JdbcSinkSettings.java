@@ -223,6 +223,6 @@ public final class JdbcSinkSettings {
   }
 
   public int getRetryDelay() {
-    return 0;
+    return retryDelay;
   }
 }
