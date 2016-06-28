@@ -123,6 +123,7 @@ public class SQLiteDialect extends DbDialect {
     final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
     final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
 
+    // FIXME this is not actually used
     final StringBuilder builder = new StringBuilder();
     builder.append(nonKeyColumns.get(0));
     builder.append("=?");
@@ -132,6 +133,7 @@ public class SQLiteDialect extends DbDialect {
       builder.append("=?");
     }
 
+    // FIXME this is not actually used
     final StringBuilder whereBuilder = new StringBuilder();
     whereBuilder.append(keyColumns.get(0));
     whereBuilder.append("=?");
