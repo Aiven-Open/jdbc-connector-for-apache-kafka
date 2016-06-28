@@ -53,7 +53,7 @@ public class SqlServerDialect extends DbDialect {
         first = false;
       }
       builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
+      builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
       builder.append(" ");
       builder.append(getSqlType(f.getType()));
       builder.append(" NULL");
