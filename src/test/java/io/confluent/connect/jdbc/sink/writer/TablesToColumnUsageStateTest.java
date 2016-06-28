@@ -1,6 +1,16 @@
 package io.confluent.connect.jdbc.sink.writer;
 
 
+import com.google.common.collect.Lists;
+
+import org.apache.kafka.connect.data.Schema;
+import org.junit.Test;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 import io.confluent.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
 import io.confluent.connect.jdbc.sink.binders.BytePreparedStatementBinder;
@@ -11,14 +21,6 @@ import io.confluent.connect.jdbc.sink.binders.LongPreparedStatementBinder;
 import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
 import io.confluent.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
 import io.confluent.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import com.google.common.collect.Lists;
-import org.apache.kafka.connect.data.Schema;
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -59,11 +61,11 @@ public class TablesToColumnUsageStateTest {
     cols.add(new FloatPreparedStatementBinder("npk5", (float) 12.5));
     cols.add(new DoublePreparedStatementBinder("npk6", -1212.5));
     cols.add(new LongPreparedStatementBinder("npk7", 8823111));
-    IntPreparedStatementBinder pk1= new IntPreparedStatementBinder("pk1", 0);
+    IntPreparedStatementBinder pk1 = new IntPreparedStatementBinder("pk1", 0);
     pk1.setPrimaryKey(true);
     cols.add(pk1);
 
-    IntPreparedStatementBinder pk2= new IntPreparedStatementBinder("pk2", 0);
+    IntPreparedStatementBinder pk2 = new IntPreparedStatementBinder("pk2", 0);
     pk2.setPrimaryKey(true);
     cols.add(pk2);
 

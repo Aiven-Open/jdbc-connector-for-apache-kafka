@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 /**
  * Handles binding Ints for a prepared statement
- * */
+ */
 public final class IntPreparedStatementBinder extends BasePreparedStatementBinder {
   private final int value;
 
@@ -21,7 +21,7 @@ public final class IntPreparedStatementBinder extends BasePreparedStatementBinde
    *
    * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
-   * */
+   */
   @Override
   public void bind(int index, PreparedStatement statement) throws SQLException {
     statement.setInt(index, value);
@@ -29,13 +29,14 @@ public final class IntPreparedStatementBinder extends BasePreparedStatementBinde
 
   /**
    * @return The value to be bound.
-   * */
+   */
   public int getValue() {
     return value;
   }
 
   /**
    * Returns the field's schema type
+   *
    * @return Int
    */
   @Override

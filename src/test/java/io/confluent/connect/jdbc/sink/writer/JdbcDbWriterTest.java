@@ -1,23 +1,8 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.ConnectionProvider;
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
-import io.confluent.connect.jdbc.sink.common.DbTable;
-import io.confluent.connect.jdbc.sink.common.DbTableColumn;
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.dialect.OracleDialect;
-import io.confluent.connect.jdbc.sink.dialect.SQLiteDialect;
-import io.confluent.connect.jdbc.sink.Database;
-import io.confluent.connect.jdbc.sink.RecordDataExtractor;
-import io.confluent.connect.jdbc.sink.SqlLiteHelper;
-import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
-import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -36,6 +21,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.ConnectionProvider;
+import io.confluent.connect.jdbc.sink.Database;
+import io.confluent.connect.jdbc.sink.RecordDataExtractor;
+import io.confluent.connect.jdbc.sink.SqlLiteHelper;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
+import io.confluent.connect.jdbc.sink.common.DbTable;
+import io.confluent.connect.jdbc.sink.common.DbTableColumn;
+import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
+import io.confluent.connect.jdbc.sink.config.FieldAlias;
+import io.confluent.connect.jdbc.sink.config.FieldsMappings;
+import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
+import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import io.confluent.connect.jdbc.sink.dialect.OracleDialect;
+import io.confluent.connect.jdbc.sink.dialect.SQLiteDialect;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -66,29 +68,28 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseBatching() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>(),
-                    false, false, false));
-
+        Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>(),
+                                              false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-            null,
-            null,
-            fieldsMappingsList,
-            ErrorPolicyEnum.NOOP,
-            10,
-            "",
-            1000,
-            1000);
+                                                     null,
+                                                     null,
+                                                     fieldsMappingsList,
+                                                     ErrorPolicyEnum.NOOP,
+                                                     10,
+                                                     "",
+                                                     1000,
+                                                     1000);
 
     List<DbTableColumn> columns = Lists.newArrayList(
-            new DbTableColumn("col1", true, false, 1),
-            new DbTableColumn("col2", false, true, 1)
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, true, 1)
     );
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
     when(provider.get(any(ConnectionProvider.class)))
-            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+        .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getStatementBuilder().getClass(), PreparedStatementContextIterable.class);
@@ -97,28 +98,28 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseNoopForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
-                    new HashMap<String, FieldAlias>(), false, false, false));
+        Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
+                                              new HashMap<String, FieldAlias>(), false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-            null,
-            null,
-            fieldsMappingsList,
-            ErrorPolicyEnum.NOOP,
-            10,
-            "",
-            1000,
-            1000
+                                                     null,
+                                                     null,
+                                                     fieldsMappingsList,
+                                                     ErrorPolicyEnum.NOOP,
+                                                     10,
+                                                     "",
+                                                     1000,
+                                                     1000
     );
 
     List<DbTableColumn> columns = Lists.newArrayList(
-            new DbTableColumn("col1", true, false, 1),
-            new DbTableColumn("col2", false, true, 1));
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, true, 1));
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
     when(provider.get(any(ConnectionProvider.class)))
-            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+        .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
@@ -127,27 +128,27 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseThrowForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
-            Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
-                    new HashMap<String, FieldAlias>(), false, false, false));
+        Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
+                                              new HashMap<String, FieldAlias>(), false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-            null,
-            null,
-            fieldsMappingsList,
-            ErrorPolicyEnum.THROW,
-            10,
-            "",
-            1000,
-            1000);
+                                                     null,
+                                                     null,
+                                                     fieldsMappingsList,
+                                                     ErrorPolicyEnum.THROW,
+                                                     10,
+                                                     "",
+                                                     1000,
+                                                     1000);
 
     List<DbTableColumn> columns = Lists.newArrayList(
-            new DbTableColumn("col1", true, false, 1),
-            new DbTableColumn("col2", false, true, 1));
+        new DbTableColumn("col1", true, false, 1),
+        new DbTableColumn("col2", false, true, 1));
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
     when(provider.get(any(ConnectionProvider.class)))
-            .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+        .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
@@ -164,11 +165,11 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(),
-            dbMetadata,
-            new OracleDialect(),
-            1);
+        Sets.<String>newHashSet(),
+        Sets.<String>newHashSet(),
+        dbMetadata,
+        new OracleDialect(),
+        1);
 
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider, builder, new ThrowErrorHandlingPolicy(), executor, 10);
     writer.write(records);
@@ -178,32 +179,32 @@ public class JdbcDbWriterTest {
   public void handleBatchedStatementPerRecordInsertingSameRecord100Times() throws SQLException {
     String tableName = "batched_statement_test_100";
     String createTable = "CREATE TABLE " + tableName + " (" +
-            "    firstName  TEXT," +
-            "    lastName  TEXT," +
-            "    age INTEGER," +
-            "    bool  NUMERIC," +
-            "    byte  INTEGER," +
-            "    short INTEGER," +
-            "    long INTEGER," +
-            "    float NUMERIC," +
-            "    double NUMERIC," +
-            "    bytes BLOB " +
-            ");";
+                         "    firstName  TEXT," +
+                         "    lastName  TEXT," +
+                         "    age INTEGER," +
+                         "    bool  NUMERIC," +
+                         "    byte  INTEGER," +
+                         "    short INTEGER," +
+                         "    long INTEGER," +
+                         "    float NUMERIC," +
+                         "    double NUMERIC," +
+                         "    bytes BLOB " +
+                         ");";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
-            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
-            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
-            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
-            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
-            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
-            .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+        .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+        .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+        .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+        .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+        .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
 
     final String fName1 = "Alex";
     final String lName1 = "Smith";
@@ -216,58 +217,57 @@ public class JdbcDbWriterTest {
     final double d1 = -2436546.56457;
     final byte[] bs1 = new byte[]{-32, 124};
 
-
     Struct struct1 = new Struct(schema)
-            .put("firstName", fName1)
-            .put("lastName", lName1)
-            .put("bool", bool1)
-            .put("short", s1)
-            .put("byte", b1)
-            .put("long", l1)
-            .put("float", f1)
-            .put("double", d1)
-            .put("bytes", bs1)
-            .put("age", age1);
+        .put("firstName", fName1)
+        .put("lastName", lName1)
+        .put("bool", bool1)
+        .put("short", s1)
+        .put("byte", b1)
+        .put("long", l1)
+        .put("float", f1)
+        .put("double", d1)
+        .put("bytes", bs1)
+        .put("age", age1);
 
     String topic = "topic";
     int partition = 2;
     Collection<SinkRecord> records = Collections.nCopies(
-            100,
-            new SinkRecord(topic, partition, null, null, schema, struct1, 1));
+        100,
+        new SinkRecord(topic, partition, null, null, schema, struct1, 1));
 
     Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     map.put(topic.toLowerCase(),
             new DataExtractorWithQueryBuilder(
-                    new InsertQueryBuilder(new SQLiteDialect()),
-                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT,
-                            new HashMap<String, FieldAlias>(), false, false, false))));
+                new InsertQueryBuilder(new SQLiteDialect()),
+                new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT,
+                                                           new HashMap<String, FieldAlias>(), false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName, Lists.newArrayList(
-                    new DbTableColumn("firstName", true, false, 1),
-                    new DbTableColumn("lastName", true, false, 1),
-                    new DbTableColumn("age", false, false, 1),
-                    new DbTableColumn("bool", true, false, 1),
-                    new DbTableColumn("byte", true, false, 1),
-                    new DbTableColumn("short", true, false, 1),
-                    new DbTableColumn("long", true, false, 1),
-                    new DbTableColumn("float", true, false, 1),
-                    new DbTableColumn("double", true, false, 1),
-                    new DbTableColumn("BLOB", true, false, 1)
-            )));
+        new DbTable(tableName, Lists.newArrayList(
+            new DbTableColumn("firstName", true, false, 1),
+            new DbTableColumn("lastName", true, false, 1),
+            new DbTableColumn("age", false, false, 1),
+            new DbTableColumn("bool", true, false, 1),
+            new DbTableColumn("byte", true, false, 1),
+            new DbTableColumn("short", true, false, 1),
+            new DbTableColumn("long", true, false, 1),
+            new DbTableColumn("float", true, false, 1),
+            new DbTableColumn("double", true, false, 1),
+            new DbTableColumn("BLOB", true, false, 1)
+        )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(),
-            dbMetadata,
-            new SQLiteDialect(),
-            1);
+        Sets.<String>newHashSet(),
+        Sets.<String>newHashSet(),
+        dbMetadata,
+        new SQLiteDialect(),
+        1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, 100),
-            new ThrowErrorHandlingPolicy(),
-            executor,
-            10);
+                                           new PreparedStatementContextIterable(map, 100),
+                                           new ThrowErrorHandlingPolicy(),
+                                           executor,
+                                           10);
 
     writer.write(records);
 
@@ -288,7 +288,9 @@ public class JdbcDbWriterTest {
           assertEquals(Double.compare(rs.getDouble("double"), d1), 0);
           assertTrue(Arrays.equals(rs.getBytes("bytes"), bs1));
           assertEquals(rs.getInt("age"), age1);
-        } else throw new RuntimeException(String.format("%d is too high", index));
+        } else {
+          throw new RuntimeException(String.format("%d is too high", index));
+        }
         index++;
       }
 
@@ -302,32 +304,32 @@ public class JdbcDbWriterTest {
   public void handleBatchStatementPerRecord() throws SQLException {
     String tableName = "batched_statement_test";
     String createTable = "CREATE TABLE " + tableName + " (" +
-            "    firstName  TEXT PRIMARY_KEY," +
-            "    lastName  TEXT," +
-            "    age INTEGER," +
-            "    bool  NUMERIC," +
-            "    byte  INTEGER," +
-            "    short INTEGER," +
-            "    long INTEGER," +
-            "    float NUMERIC," +
-            "    double NUMERIC," +
-            "    bytes BLOB " +
-            ");";
+                         "    firstName  TEXT PRIMARY_KEY," +
+                         "    lastName  TEXT," +
+                         "    age INTEGER," +
+                         "    bool  NUMERIC," +
+                         "    byte  INTEGER," +
+                         "    short INTEGER," +
+                         "    long INTEGER," +
+                         "    float NUMERIC," +
+                         "    double NUMERIC," +
+                         "    bytes BLOB " +
+                         ");";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
-            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
-            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
-            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
-            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
-            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
-            .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+        .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+        .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+        .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+        .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+        .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
 
     final String fName1 = "Alex";
     final String lName1 = "Smith";
@@ -340,18 +342,17 @@ public class JdbcDbWriterTest {
     final double d1 = -2436546.56457;
     final byte[] bs1 = new byte[]{-32, 124};
 
-
     Struct struct1 = new Struct(schema)
-            .put("firstName", fName1)
-            .put("lastName", lName1)
-            .put("bool", bool1)
-            .put("short", s1)
-            .put("byte", b1)
-            .put("long", l1)
-            .put("float", f1)
-            .put("double", d1)
-            .put("bytes", bs1)
-            .put("age", age1);
+        .put("firstName", fName1)
+        .put("lastName", lName1)
+        .put("bool", bool1)
+        .put("short", s1)
+        .put("byte", b1)
+        .put("long", l1)
+        .put("float", f1)
+        .put("double", d1)
+        .put("bytes", bs1)
+        .put("age", age1);
 
     final String fName2 = "Christina";
     final String lName2 = "Brams";
@@ -362,19 +363,19 @@ public class JdbcDbWriterTest {
     final double d2 = 3256677.56457;
 
     Struct struct2 = new Struct(schema)
-            .put("firstName", fName2)
-            .put("lastName", lName2)
-            .put("bool", bool2)
-            .put("byte", b2)
-            .put("long", l2)
-            .put("double", d2)
-            .put("age", age2);
+        .put("firstName", fName2)
+        .put("lastName", lName2)
+        .put("bool", bool2)
+        .put("byte", b2)
+        .put("long", l2)
+        .put("double", d2)
+        .put("age", age2);
 
     String topic = "topic";
     int partition = 2;
     Collection<SinkRecord> records = Lists.newArrayList(
-            new SinkRecord(topic, partition, null, null, schema, struct1, 1),
-            new SinkRecord(topic, partition, null, null, schema, struct2, 2));
+        new SinkRecord(topic, partition, null, null, schema, struct1, 1),
+        new SinkRecord(topic, partition, null, null, schema, struct2, 2));
 
     DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
     Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
@@ -382,38 +383,38 @@ public class JdbcDbWriterTest {
     aliasMapPK.put("firstName", new FieldAlias("firstName", true));
     map.put(topic.toLowerCase(),
             new DataExtractorWithQueryBuilder(
-                    new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.UPSERT,
-                            aliasMapPK, false, false, false))));
+                new UpsertQueryBuilder(dbDialect),
+                new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.UPSERT,
+                                                           aliasMapPK, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName, Lists.newArrayList(
-                    new DbTableColumn("firstName", true, false, 1),
-                    new DbTableColumn("lastName", true, false, 1),
-                    new DbTableColumn("age", false, false, 1),
-                    new DbTableColumn("bool", true, false, 1),
-                    new DbTableColumn("byte", true, false, 1),
-                    new DbTableColumn("short", true, false, 1),
-                    new DbTableColumn("long", true, false, 1),
-                    new DbTableColumn("float", true, false, 1),
-                    new DbTableColumn("double", true, false, 1),
-                    new DbTableColumn("BLOB", true, false, 1)
-            )));
+        new DbTable(tableName, Lists.newArrayList(
+            new DbTableColumn("firstName", true, false, 1),
+            new DbTableColumn("lastName", true, false, 1),
+            new DbTableColumn("age", false, false, 1),
+            new DbTableColumn("bool", true, false, 1),
+            new DbTableColumn("byte", true, false, 1),
+            new DbTableColumn("short", true, false, 1),
+            new DbTableColumn("long", true, false, 1),
+            new DbTableColumn("float", true, false, 1),
+            new DbTableColumn("double", true, false, 1),
+            new DbTableColumn("BLOB", true, false, 1)
+        )));
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
 
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(),
-            dbMetadata,
-            dbDialect,
-            1);
+        Sets.<String>newHashSet(),
+        Sets.<String>newHashSet(),
+        dbMetadata,
+        dbDialect,
+        1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, 100),
-            new ThrowErrorHandlingPolicy(),
-            executor,
-            10);
+                                           new PreparedStatementContextIterable(map, 100),
+                                           new ThrowErrorHandlingPolicy(),
+                                           executor,
+                                           10);
 
     writer.write(records);
 
@@ -445,7 +446,9 @@ public class JdbcDbWriterTest {
           assertEquals(Double.compare(rs.getDouble("double"), d2), 0);
           assertNull(rs.getBytes("bytes"));
           assertEquals(rs.getInt("age"), age2);
-        } else throw new RuntimeException(String.format("%d is too high", index));
+        } else {
+          throw new RuntimeException(String.format("%d is too high", index));
+        }
         index++;
       }
 
@@ -459,29 +462,29 @@ public class JdbcDbWriterTest {
   public void handleBatchedUpsert() throws SQLException {
     String tableName1 = "batched_upsert_test_1";
     String createTable1 = "CREATE TABLE " + tableName1 + " (" +
-            "    firstName  TEXT PRIMARY_KEY," +
-            "    lastName  TEXT PRIMARY_KEY," +
-            "    age INTEGER," +
-            "    bool  NUMERIC," +
-            "    byte  INTEGER," +
-            "    short INTEGER," +
-            "    long INTEGER," +
-            "    float NUMERIC," +
-            "    double NUMERIC," +
-            "    bytes BLOB);";
+                          "    firstName  TEXT PRIMARY_KEY," +
+                          "    lastName  TEXT PRIMARY_KEY," +
+                          "    age INTEGER," +
+                          "    bool  NUMERIC," +
+                          "    byte  INTEGER," +
+                          "    short INTEGER," +
+                          "    long INTEGER," +
+                          "    float NUMERIC," +
+                          "    double NUMERIC," +
+                          "    bytes BLOB);";
 
     String tableName2 = "batched_upsert_test_2";
     String createTable2 = "CREATE TABLE " + tableName2 + " (" +
-            "    firstName  TEXT PRIMARY_KEY," +
-            "    lastName  TEXT PRIMARY_KEY," +
-            "    age INTEGER," +
-            "    bool  NUMERIC," +
-            "    byte  INTEGER," +
-            "    short INTEGER," +
-            "    long INTEGER," +
-            "    float NUMERIC," +
-            "    double NUMERIC," +
-            "    bytes BLOB);";
+                          "    firstName  TEXT PRIMARY_KEY," +
+                          "    lastName  TEXT PRIMARY_KEY," +
+                          "    age INTEGER," +
+                          "    bool  NUMERIC," +
+                          "    byte  INTEGER," +
+                          "    short INTEGER," +
+                          "    long INTEGER," +
+                          "    float NUMERIC," +
+                          "    double NUMERIC," +
+                          "    bytes BLOB);";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable1);
@@ -489,16 +492,16 @@ public class JdbcDbWriterTest {
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable2);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
-            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
-            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
-            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
-            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
-            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
-            .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+        .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+        .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+        .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+        .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+        .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
 
     final String fName1 = "Alex";
     final String lName1 = "Smith";
@@ -512,20 +515,20 @@ public class JdbcDbWriterTest {
     final byte[] bs1 = new byte[]{-32, 124};
 
     Struct struct1 = new Struct(schema)
-            .put("firstName", fName1)
-            .put("lastName", lName1)
-            .put("bool", bool1)
-            .put("short", s1)
-            .put("byte", b1)
-            .put("long", l1)
-            .put("float", f1)
-            .put("double", d1)
-            .put("bytes", bs1)
-            .put("age", age1);
+        .put("firstName", fName1)
+        .put("lastName", lName1)
+        .put("bool", bool1)
+        .put("short", s1)
+        .put("byte", b1)
+        .put("long", l1)
+        .put("float", f1)
+        .put("double", d1)
+        .put("bytes", bs1)
+        .put("age", age1);
     final short s1a = s1 + 1;
     Struct struct1a = struct1.put("short", s1a)
-            .put("float", f1 + 1)
-            .put("double", d1 + 1);
+        .put("float", f1 + 1)
+        .put("double", d1 + 1);
 
     final String fName2 = "Christina";
     final String lName2 = "Brams";
@@ -536,23 +539,23 @@ public class JdbcDbWriterTest {
     final double d2 = 3256677.56457;
 
     Struct struct2 = new Struct(schema)
-            .put("firstName", fName2)
-            .put("lastName", lName2)
-            .put("bool", bool2)
-            .put("byte", b2)
-            .put("long", l2)
-            .put("double", d2)
-            .put("age", age2);
+        .put("firstName", fName2)
+        .put("lastName", lName2)
+        .put("bool", bool2)
+        .put("byte", b2)
+        .put("long", l2)
+        .put("double", d2)
+        .put("age", age2);
 
     String topic1 = "topic1";
     String topic2 = "topic2";
 
     int partition = 2;
     Collection<SinkRecord> records = Lists.newArrayList(
-            new SinkRecord(topic1, partition, null, null, schema, struct1, 1),
-            new SinkRecord(topic2, partition, null, null, schema, struct2, 2),
-            new SinkRecord(topic1, partition, null, null, schema, struct1a, 3),
-            new SinkRecord(topic2, partition, null, null, schema, struct2, 4));
+        new SinkRecord(topic1, partition, null, null, schema, struct1, 1),
+        new SinkRecord(topic2, partition, null, null, schema, struct2, 2),
+        new SinkRecord(topic1, partition, null, null, schema, struct1a, 3),
+        new SinkRecord(topic2, partition, null, null, schema, struct2, 4));
 
     DbDialect dbDialect = DbDialect.fromConnectionString(SQL_LITE_URI);
     Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
@@ -562,54 +565,54 @@ public class JdbcDbWriterTest {
     aliasPKMap.put("lastName", new FieldAlias("lastName", true));
     map.put(topic1.toLowerCase(),
             new DataExtractorWithQueryBuilder(
-                    new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.UPSERT,
-                            aliasPKMap, false, false, false))));
+                new UpsertQueryBuilder(dbDialect),
+                new RecordDataExtractor(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.UPSERT,
+                                                           aliasPKMap, false, false, false))));
     map.put(topic2.toLowerCase(),
             new DataExtractorWithQueryBuilder(
-                    new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.UPSERT,
-                            aliasPKMap, false, false, false))));
+                new UpsertQueryBuilder(dbDialect),
+                new RecordDataExtractor(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.UPSERT,
+                                                           aliasPKMap, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName1, Lists.newArrayList(
-                    new DbTableColumn("firstName", true, false, 1),
-                    new DbTableColumn("lastName", true, false, 1),
-                    new DbTableColumn("age", false, false, 1),
-                    new DbTableColumn("bool", true, false, 1),
-                    new DbTableColumn("byte", true, false, 1),
-                    new DbTableColumn("short", true, false, 1),
-                    new DbTableColumn("long", true, false, 1),
-                    new DbTableColumn("float", true, false, 1),
-                    new DbTableColumn("double", true, false, 1),
-                    new DbTableColumn("BLOB", true, false, 1)
-            )),
-            new DbTable(tableName2, Lists.newArrayList(
-                    new DbTableColumn("firstName", true, false, 1),
-                    new DbTableColumn("lastName", true, false, 1),
-                    new DbTableColumn("age", false, false, 1),
-                    new DbTableColumn("bool", true, false, 1),
-                    new DbTableColumn("byte", true, false, 1),
-                    new DbTableColumn("short", true, false, 1),
-                    new DbTableColumn("long", true, false, 1),
-                    new DbTableColumn("float", true, false, 1),
-                    new DbTableColumn("double", true, false, 1),
-                    new DbTableColumn("BLOB", true, false, 1)
-            )));
+        new DbTable(tableName1, Lists.newArrayList(
+            new DbTableColumn("firstName", true, false, 1),
+            new DbTableColumn("lastName", true, false, 1),
+            new DbTableColumn("age", false, false, 1),
+            new DbTableColumn("bool", true, false, 1),
+            new DbTableColumn("byte", true, false, 1),
+            new DbTableColumn("short", true, false, 1),
+            new DbTableColumn("long", true, false, 1),
+            new DbTableColumn("float", true, false, 1),
+            new DbTableColumn("double", true, false, 1),
+            new DbTableColumn("BLOB", true, false, 1)
+        )),
+        new DbTable(tableName2, Lists.newArrayList(
+            new DbTableColumn("firstName", true, false, 1),
+            new DbTableColumn("lastName", true, false, 1),
+            new DbTableColumn("age", false, false, 1),
+            new DbTableColumn("bool", true, false, 1),
+            new DbTableColumn("byte", true, false, 1),
+            new DbTableColumn("short", true, false, 1),
+            new DbTableColumn("long", true, false, 1),
+            new DbTableColumn("float", true, false, 1),
+            new DbTableColumn("double", true, false, 1),
+            new DbTableColumn("BLOB", true, false, 1)
+        )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
 
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(),
-            dbMetadata,
-            dbDialect,
-            1);
+        Sets.<String>newHashSet(),
+        Sets.<String>newHashSet(),
+        dbMetadata,
+        dbDialect,
+        1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, 100),
-            new ThrowErrorHandlingPolicy(),
-            executor,
-            10);
+                                           new PreparedStatementContextIterable(map, 100),
+                                           new ThrowErrorHandlingPolicy(),
+                                           executor,
+                                           10);
 
     writer.write(records);
 
@@ -629,9 +632,7 @@ public class JdbcDbWriterTest {
       }
     });
 
-
     query = "SELECT * FROM " + tableName2 + " WHERE firstName='" + fName2 + "' and lastName='" + lName2 + "'";
-
 
     SqlLiteHelper.select(SQL_LITE_URI, query, new SqlLiteHelper.ResultSetReadCallback() {
       @Override
@@ -653,27 +654,27 @@ public class JdbcDbWriterTest {
   public void handleBatchStatementPerRecordWhenThePayloadHasMoreFieldsThanTheTable() throws SQLException {
     String tableName = "batched_statement_more_fields_than_columns_test";
     String createTable = "CREATE TABLE " + tableName + " (" +
-            "    firstName  TEXT PRIMARY_KEY," +
-            "    lastName  TEXT," +
-            "    age INTEGER," +
-            "    bool  NUMERIC," +
-            "    byte  INTEGER" +
-            ");";
+                         "    firstName  TEXT PRIMARY_KEY," +
+                         "    lastName  TEXT," +
+                         "    age INTEGER," +
+                         "    bool  NUMERIC," +
+                         "    byte  INTEGER" +
+                         ");";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName);
     SqlLiteHelper.createTable(SQL_LITE_URI, createTable);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
-            .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
-            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-            .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
-            .field("short", Schema.OPTIONAL_INT16_SCHEMA)
-            .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
-            .field("long", Schema.OPTIONAL_INT64_SCHEMA)
-            .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-            .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
-            .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+        .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+        .field("short", Schema.OPTIONAL_INT16_SCHEMA)
+        .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
+        .field("long", Schema.OPTIONAL_INT64_SCHEMA)
+        .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
+        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
 
     final String fName1 = "Alex";
     final String lName1 = "Smith";
@@ -686,18 +687,17 @@ public class JdbcDbWriterTest {
     final double d1 = -2436546.56457;
     final byte[] bs1 = new byte[]{-32, 124};
 
-
     Struct struct1 = new Struct(schema)
-            .put("firstName", fName1)
-            .put("lastName", lName1)
-            .put("bool", bool1)
-            .put("short", s1)
-            .put("byte", b1)
-            .put("long", l1)
-            .put("float", f1)
-            .put("double", d1)
-            .put("bytes", bs1)
-            .put("age", age1);
+        .put("firstName", fName1)
+        .put("lastName", lName1)
+        .put("bool", bool1)
+        .put("short", s1)
+        .put("byte", b1)
+        .put("long", l1)
+        .put("float", f1)
+        .put("double", d1)
+        .put("bytes", bs1)
+        .put("age", age1);
 
     final String fName2 = "Christina";
     final String lName2 = "Brams";
@@ -708,20 +708,19 @@ public class JdbcDbWriterTest {
     final double d2 = 3256677.56457;
 
     Struct struct2 = new Struct(schema)
-            .put("firstName", fName2)
-            .put("lastName", lName2)
-            .put("bool", bool2)
-            .put("byte", b2)
-            .put("long", l2)
-            .put("double", d2)
-            .put("age", age2);
+        .put("firstName", fName2)
+        .put("lastName", lName2)
+        .put("bool", bool2)
+        .put("byte", b2)
+        .put("long", l2)
+        .put("double", d2)
+        .put("age", age2);
 
     String topic = "topic";
     int partition = 2;
     Collection<SinkRecord> records = Lists.newArrayList(
-            new SinkRecord(topic, partition, null, null, schema, struct1, 1),
-            new SinkRecord(topic, partition, null, null, schema, struct2, 2));
-
+        new SinkRecord(topic, partition, null, null, schema, struct1, 1),
+        new SinkRecord(topic, partition, null, null, schema, struct2, 2));
 
     Map<String, FieldAlias> aliasMap = new HashMap<>();
     aliasMap.put("firstName", new FieldAlias("firstName", true));
@@ -735,31 +734,31 @@ public class JdbcDbWriterTest {
     Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     map.put(topic.toLowerCase(),
             new DataExtractorWithQueryBuilder(
-                    new UpsertQueryBuilder(dbDialect),
-                    new RecordDataExtractor(new FieldsMappings(tableName, topic, false, InsertModeEnum.UPSERT,
-                            aliasMap, false, false, false))));
+                new UpsertQueryBuilder(dbDialect),
+                new RecordDataExtractor(new FieldsMappings(tableName, topic, false, InsertModeEnum.UPSERT,
+                                                           aliasMap, false, false, false))));
 
     List<DbTable> dbTables = Lists.newArrayList(
-            new DbTable(tableName, Lists.newArrayList(
-                    new DbTableColumn("firstName", true, false, 1),
-                    new DbTableColumn("lastName", true, false, 1),
-                    new DbTableColumn("age", false, false, 1),
-                    new DbTableColumn("bool", true, false, 1),
-                    new DbTableColumn("byte", true, false, 1)
-            )));
+        new DbTable(tableName, Lists.newArrayList(
+            new DbTableColumn("firstName", true, false, 1),
+            new DbTableColumn("lastName", true, false, 1),
+            new DbTableColumn("age", false, false, 1),
+            new DbTableColumn("bool", true, false, 1),
+            new DbTableColumn("byte", true, false, 1)
+        )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-            Sets.<String>newHashSet(),
-            Sets.<String>newHashSet(),
-            dbMetadata,
-            dbDialect,
-            1);
+        Sets.<String>newHashSet(),
+        Sets.<String>newHashSet(),
+        dbMetadata,
+        dbDialect,
+        1);
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-            new PreparedStatementContextIterable(map, 100),
-            new ThrowErrorHandlingPolicy(),
-            executor,
-            10);
+                                           new PreparedStatementContextIterable(map, 100),
+                                           new ThrowErrorHandlingPolicy(),
+                                           executor,
+                                           10);
 
     writer.write(records);
 
@@ -781,7 +780,9 @@ public class JdbcDbWriterTest {
           assertEquals(rs.getBoolean("bool"), bool2);
           assertEquals(rs.getByte("byte"), b2);
           assertEquals(rs.getInt("age"), age2);
-        } else throw new RuntimeException(String.format("%d is too high", index));
+        } else {
+          throw new RuntimeException(String.format("%d is too high", index));
+        }
         index++;
       }
 

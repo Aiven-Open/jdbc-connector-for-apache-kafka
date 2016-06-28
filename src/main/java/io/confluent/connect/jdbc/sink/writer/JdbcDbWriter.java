@@ -1,21 +1,7 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.ConnectionProvider;
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.Database;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.avro.AvroToDbConverter;
-import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.collect.Iterators;
 
-import io.confluent.kafka.schemaregistry.client.rest.RestService;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -37,6 +23,21 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import io.confluent.connect.jdbc.sink.ConnectionProvider;
+import io.confluent.connect.jdbc.sink.Database;
+import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.avro.AvroToDbConverter;
+import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.config.FieldAlias;
+import io.confluent.connect.jdbc.sink.config.FieldsMappings;
+import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
  */
@@ -56,11 +57,11 @@ public final class JdbcDbWriter implements DbWriter {
   private final ConnectionProvider connectionProvider;
 
   /**
-   * @param connectionProvider  - The database connection provider
-   * @param statementBuilder    - Returns a sequence of PreparedStatement to process
+   * @param connectionProvider - The database connection provider
+   * @param statementBuilder - Returns a sequence of PreparedStatement to process
    * @param errorHandlingPolicy - An instance of the error handling approach
-   * @param database            - Contains the database metadata (tables and their columns)
-   * @param retries             - Number of attempts to run when a SQLException occurs
+   * @param database - Contains the database metadata (tables and their columns)
+   * @param retries - Number of attempts to run when a SQLException occurs
    */
   public JdbcDbWriter(final ConnectionProvider connectionProvider,
                       final PreparedStatementContextIterable statementBuilder,
@@ -204,13 +205,13 @@ public final class JdbcDbWriter implements DbWriter {
    */
   public static JdbcDbWriter from(final JdbcSinkSettings settings,
                                   final DatabaseMetadataProvider databaseMetadataProvider)
-          throws SQLException {
+      throws SQLException {
 
     final ConnectionProvider connectionProvider = new ConnectionProvider(settings.getConnection(),
-            settings.getUser(),
-            settings.getPassword(),
-            settings.getRetries(),
-            settings.getRetryDelay());
+                                                                         settings.getUser(),
+                                                                         settings.getPassword(),
+                                                                         settings.getRetries(),
+                                                                         settings.getRetryDelay());
 
     final DatabaseMetadata databaseMetadata = databaseMetadataProvider.get(connectionProvider);
 
@@ -228,11 +229,11 @@ public final class JdbcDbWriter implements DbWriter {
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
     final Database database = new Database(
-            tablesAllowingAutoCreate,
-            tablesAllowingSchemaEvolution,
-            databaseMetadata,
-            dbDialect,
-            settings.getRetries());
+        tablesAllowingAutoCreate,
+        tablesAllowingSchemaEvolution,
+        databaseMetadata,
+        dbDialect,
+        settings.getRetries());
 
     //create an required tables
     if (!createTablesMap.isEmpty()) {
@@ -240,10 +241,10 @@ public final class JdbcDbWriter implements DbWriter {
     }
 
     return new JdbcDbWriter(connectionProvider,
-            statementBuilder,
-            errorHandlingPolicy,
-            database,
-            settings.getRetries());
+                            statementBuilder,
+                            errorHandlingPolicy,
+                            database,
+                            settings.getRetries());
   }
 
 
@@ -295,7 +296,7 @@ public final class JdbcDbWriter implements DbWriter {
           if (pk != null) {
             //add pk column if we have it to schema registry list of columns.
             logger.info("Adding default primary key (" + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
-                    FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
+                        FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
             convertedFields.add(new SinkRecordField(Schema.Type.STRING, FieldsMappings.CONNECT_TOPIC_COLUMN, true));
             convertedFields.add(new SinkRecordField(Schema.Type.INT32, FieldsMappings.CONNECT_PARTITION_COLUMN, true));
             convertedFields.add(new SinkRecordField(Schema.Type.INT64, FieldsMappings.CONNECT_OFFSET_COLUMN, true));

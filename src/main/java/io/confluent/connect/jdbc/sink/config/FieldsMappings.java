@@ -1,9 +1,10 @@
 package io.confluent.connect.jdbc.sink.config;
 
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Joiner;
 
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 /**
  * Contains the Schema field names to consider as well as their mappings to the target table columns
@@ -27,13 +28,13 @@ public final class FieldsMappings {
   /**
    * Creates a new instance of FieldsMappings
    *
-   * @param tableName         - The target RDBMS table to insert the records into
-   * @param incomingTopic     - The source Kafka topic
+   * @param tableName - The target RDBMS table to insert the records into
+   * @param incomingTopic - The source Kafka topic
    * @param allFieldsIncluded - If set to true it considers all fields in the payload; if false it will rely on the
-   *                          defined fields to include
-   * @param insertMode        - Specifies how the data is inserted into the rdbms
-   * @param mappings          - Provides the map of fields to include and their alias. It could be set to Map.empty if all fields
-   *                          are to be included.
+   * defined fields to include
+   * @param insertMode - Specifies how the data is inserted into the rdbms
+   * @param mappings - Provides the map of fields to include and their alias. It could be set to Map.empty if all fields
+   * are to be included.
    * @param evolveTableSchema - If true it allows auto table creation and table evolution
    */
   public FieldsMappings(final String tableName,
@@ -122,13 +123,13 @@ public final class FieldsMappings {
   public String toString() {
     Joiner.MapJoiner mapJoiner = Joiner.on(",\n").withKeyValueSeparator("=");
     return "{\n" +
-            "topic:" + incomingTopic + "\n" +
-            "table:" + tableName + "\n" +
-            "auto-create:" + autoCreateTable + "\n" +
-            "evolve-schema:" + evolveTableSchema + "\n" +
-            "include-all-fields:" + allFieldsIncluded + "\n" +
-            "mappings:" + mapJoiner.join(mappings) + "\n" +
-            "}";
+           "topic:" + incomingTopic + "\n" +
+           "table:" + tableName + "\n" +
+           "auto-create:" + autoCreateTable + "\n" +
+           "evolve-schema:" + evolveTableSchema + "\n" +
+           "include-all-fields:" + allFieldsIncluded + "\n" +
+           "mappings:" + mapJoiner.join(mappings) + "\n" +
+           "}";
   }
 
   public boolean isCapitalizeColumnNamesAndTables() {

@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +7,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 /**
  * Used by the PreparedStatements to track which tables are used and which columns
@@ -35,7 +36,7 @@ final class TablesToColumnUsageState {
   /**
    * Updates is local state from the given parameters.
    *
-   * @param table   - The database table to get the new data
+   * @param table - The database table to get the new data
    * @param binders - A collection of PreparedStatementBinders containing the field/column and the schema type
    */
   public void trackUsage(final String table, final List<PreparedStatementBinder> binders) {
@@ -58,7 +59,7 @@ final class TablesToColumnUsageState {
   /**
    * Adds a new record to the target if that field name is not present already
    *
-   * @param target  - A map of fields/columns already seen
+   * @param target - A map of fields/columns already seen
    * @param binders - A collection of PreparedStatementBinder each one containing the field/column and the the schema type
    */
   private static void addFields(final Map<String, SinkRecordField> target,

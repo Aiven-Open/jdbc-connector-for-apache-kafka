@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 /**
  * Handles binding Longs for a prepared statement
- * */
+ */
 public final class LongPreparedStatementBinder extends BasePreparedStatementBinder {
   private final long value;
 
@@ -22,7 +22,7 @@ public final class LongPreparedStatementBinder extends BasePreparedStatementBind
    *
    * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
-   * */
+   */
   @Override
   public void bind(int index, PreparedStatement statement) throws SQLException {
     statement.setLong(index, value);
@@ -30,13 +30,14 @@ public final class LongPreparedStatementBinder extends BasePreparedStatementBind
 
   /**
    * @return The value to be bound.
-   * */
+   */
   public long getValue() {
     return value;
   }
 
   /**
    * Returns the field's schema type
+   *
    * @return Long
    */
   @Override

@@ -1,11 +1,10 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.RecordDataExtractor;
-import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -18,6 +17,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import io.confluent.connect.jdbc.sink.RecordDataExtractor;
+import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
 
 /**
  * Creates an iterator responsible for returning the sql statement for the group of records sharing the same target table
@@ -108,9 +110,9 @@ public final class PreparedStatementContextIterable {
 
           if (record.value() == null || record.value().getClass() != Struct.class) {
             final String msg = String.format("On topic %s partition %d and offset %d the payload is not of type struct",
-                    record.topic(),
-                    record.kafkaPartition(),
-                    record.kafkaOffset());
+                                             record.topic(),
+                                             record.kafkaPartition(),
+                                             record.kafkaOffset());
             logger.error(msg);
             throw new IllegalArgumentException(msg);
           }
@@ -118,9 +120,9 @@ public final class PreparedStatementContextIterable {
           final String topic = record.topic().toLowerCase();
           if (!topicsMap.containsKey(topic)) {
             logger.warn("For topic {} there is no mapping. Skipping record at partition {} and offset {}",
-                    record.topic(),
-                    record.kafkaPartition(),
-                    record.kafkaOffset());
+                        record.topic(),
+                        record.kafkaPartition(),
+                        record.kafkaOffset());
             continue;
           }
 
@@ -147,8 +149,8 @@ public final class PreparedStatementContextIterable {
 
             if (!mapStatements.containsKey(statementKey)) {
               final String query = extractorWithQueryBuilder
-                      .getQueryBuilder()
-                      .build(tableName, nonKeyColumnsName, keyColumnsName);
+                  .getQueryBuilder()
+                  .build(tableName, nonKeyColumnsName, keyColumnsName);
               mapStatements.put(statementKey, new PreparedStatementData(query, Lists.<Iterable<PreparedStatementBinder>>newLinkedList()));
             }
             final PreparedStatementData statementData = mapStatements.get(statementKey);

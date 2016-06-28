@@ -12,7 +12,7 @@ public class NoopErrorHandlingPolicyTest {
   public void hideTheException() {
     int retries = 0;
     new NoopErrorHandlingPolicy()
-            .handle(Collections.<SinkRecord>emptyList(), new IllegalArgumentException(), retries);
+        .handle(Collections.<SinkRecord>emptyList(), new IllegalArgumentException(), retries);
   }
 }
 

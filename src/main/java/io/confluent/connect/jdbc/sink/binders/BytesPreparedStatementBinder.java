@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 /**
  * Handles binding Bytes for a prepared statement
- * */
+ */
 public final class BytesPreparedStatementBinder extends BasePreparedStatementBinder {
   private final byte[] value;
 
@@ -21,7 +21,7 @@ public final class BytesPreparedStatementBinder extends BasePreparedStatementBin
    *
    * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
-   * */
+   */
   @Override
   public void bind(int index, PreparedStatement statement) throws SQLException {
     statement.setBytes(index, value);
@@ -29,13 +29,14 @@ public final class BytesPreparedStatementBinder extends BasePreparedStatementBin
 
   /**
    * @return The value to be bound.
-   * */
+   */
   public byte[] getValue() {
     return value;
   }
 
   /**
    * Returns the field's schema type
+   *
    * @return Bytes
    */
   @Override

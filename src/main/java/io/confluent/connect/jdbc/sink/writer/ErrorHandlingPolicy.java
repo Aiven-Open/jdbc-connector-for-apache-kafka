@@ -1,9 +1,10 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.Collection;
+
+import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
 
 /**
  * Defines the approach to take when the db operation fails inserting the new records
@@ -11,8 +12,9 @@ import java.util.Collection;
 public interface ErrorHandlingPolicy {
   /**
    * Called when the sql operation to insert the SinkRecords fails
-   *  @param records    The list of records received by the SinkTask
-   * @param error      - The error raised when the insert failed
+   *
+   * @param records The list of records received by the SinkTask
+   * @param error - The error raised when the insert failed
    */
   void handle(Collection<SinkRecord> records, final Throwable error, final int retryCount);
 }
@@ -20,6 +22,7 @@ public interface ErrorHandlingPolicy {
 final class ErrorHandlingPolicyHelper {
   /**
    * Creates a new instance of ErrorHandling policy given the enum value.
+   *
    * @param value - The enum value specifying how errors should be handled during a database data insert.
    * @return new instance of ErrorHandlingPolicy
    */

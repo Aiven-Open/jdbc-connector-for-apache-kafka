@@ -12,8 +12,6 @@ public interface PreparedStatementBinder {
 
   /**
    * Returns true if the field is a primary key one
-   *
-   * @return
    */
   boolean isPrimaryKey();
 
@@ -34,7 +32,7 @@ public interface PreparedStatementBinder {
   /**
    * Bind the value to the prepared statement.
    *
-   * @param index     The ordinal position to bind the variable to.
+   * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
    */
 

@@ -1,8 +1,8 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
-
 import java.util.List;
+
+import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
 
 
 public final class PreparedStatementData {

@@ -1,10 +1,5 @@
 package io.confluent.connect.jdbc.sink.config;
 
-import io.confluent.connect.jdbc.sink.TestBase;
-import io.confluent.connect.jdbc.sink.services.EmbeddedSingleNodeKafkaCluster;
-import io.confluent.connect.jdbc.sink.services.RestApp;
-import io.confluent.kafka.schemaregistry.client.rest.RestService;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.kafka.common.config.ConfigException;
 import org.junit.After;
@@ -16,6 +11,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.TestBase;
+import io.confluent.connect.jdbc.sink.services.EmbeddedSingleNodeKafkaCluster;
+import io.confluent.connect.jdbc.sink.services.RestApp;
+import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -84,7 +85,6 @@ public class JdbcSinkSettingsTest {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsSelectedFields("throw", "insert", false);
 
-
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     for (FieldsMappings fm : settings.getMappings()) {
@@ -123,7 +123,6 @@ public class JdbcSinkSettingsTest {
   public void InsertNoopBatchingAllFields() {
     TestBase base = new TestBase();
     Map<String, String> props = base.getPropsAllFields("noop", "insert", false);
-
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
@@ -343,17 +342,17 @@ public class JdbcSinkSettingsTest {
     Map<String, String> props = base.getPropsAllFieldsAutoCreatePK();
 
     String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
-        "\"fields\":[\n" +
-        "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
-        "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
-        "{\"name\":\"age\", \"type\": \"int\"}, \n" +
-        "{\"name\":\"bool\", \"type\": \"float\"},\n" +
-        "{\"name\":\"byte\", \"type\": \"float\"},\n" +
-        "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
-        "{\"name\":\"long\", \"type\": \"long\"},\n" +
-        "{\"name\":\"float\", \"type\": \"float\"},\n" +
-        "{\"name\":\"double\", \"type\": \"double\"}\n" +
-        "]}";
+                       "\"fields\":[\n" +
+                       "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
+                       "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
+                       "{\"name\":\"age\", \"type\": \"int\"}, \n" +
+                       "{\"name\":\"bool\", \"type\": \"float\"},\n" +
+                       "{\"name\":\"byte\", \"type\": \"float\"},\n" +
+                       "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
+                       "{\"name\":\"long\", \"type\": \"long\"},\n" +
+                       "{\"name\":\"float\", \"type\": \"float\"},\n" +
+                       "{\"name\":\"double\", \"type\": \"double\"}\n" +
+                       "]}";
     client.registerSchema(rawSchema, base.getTopic1());
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, SQL_LITE_URI);
     props.put(JdbcSinkConfig.SCHEMA_REGISTRY_URL, "http://localhost:" + port);

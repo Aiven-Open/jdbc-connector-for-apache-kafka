@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink;
 
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
-import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -11,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import io.confluent.connect.jdbc.sink.config.FieldAlias;
+import io.confluent.connect.jdbc.sink.config.FieldsMappings;
+import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
 
 //name=jdbc-datamountaineer-1
@@ -33,29 +33,29 @@ public class TestBase {
   private static final String topic2 = "topic2";
   private static final String topics = topic1 + "," + topic2;
   private static final String insert1 =
-          "INSERT INTO " + tableName1 + " SELECT f1 as col1, f2 FROM " + topic1;
+      "INSERT INTO " + tableName1 + " SELECT f1 as col1, f2 FROM " + topic1;
 
   private static final String insertAll1 =
-          "INSERT INTO " + tableName1 + " SELECT * FROM " + topic1;
+      "INSERT INTO " + tableName1 + " SELECT * FROM " + topic1;
 
   private static final String upsert1 =
-          "UPSERT INTO " + tableName1 + " SELECT f1 as col1, f2 FROM " + topic1;
+      "UPSERT INTO " + tableName1 + " SELECT f1 as col1, f2 FROM " + topic1;
 
   private static final String upsertAll1 =
-          "UPSERT INTO " + tableName1 + " SELECT * FROM " + topic1;
+      "UPSERT INTO " + tableName1 + " SELECT * FROM " + topic1;
 
 
   private static final String insert2 =
-          "INSERT INTO " + tableName2 + " SELECT f3 as col3, f4 as col4 FROM " + topic2;
+      "INSERT INTO " + tableName2 + " SELECT f3 as col3, f4 as col4 FROM " + topic2;
 
   private static final String insertAll2 =
-          "INSERT INTO " + tableName2 + " SELECT * FROM " + topic2;
+      "INSERT INTO " + tableName2 + " SELECT * FROM " + topic2;
 
   private static final String upsert2 =
-          "UPSERT INTO " + tableName2 + " SELECT f3 as col3, f4 as col4 FROM " + topic2;
+      "UPSERT INTO " + tableName2 + " SELECT f3 as col3, f4 as col4 FROM " + topic2;
 
   private static final String upsertAll2 =
-          "UPSERT INTO " + tableName2 + " SELECT * FROM " + topic2;
+      "UPSERT INTO " + tableName2 + " SELECT * FROM " + topic2;
 
   public String getTableName1() {
     return tableName1;
@@ -78,9 +78,9 @@ public class TestBase {
     List<FieldsMappings> list = Lists.newArrayList();
 
     Map<String, FieldAlias> mappings = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.INSERT, mappings, false, false,false));
+    list.add(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.INSERT, mappings, false, false, false));
     Map<String, FieldAlias> mappings2 = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.INSERT, mappings2, false, false,false));
+    list.add(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.INSERT, mappings2, false, false, false));
     return list;
   }
 

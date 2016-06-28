@@ -14,7 +14,7 @@ public class JdbcSinkConfigTest {
 
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JdbcSinkConfig.EXPORT_MAPPINGS,
-            "INSERT INTO tableA SELECT * FROM topic1;INSERT INTO tableB SELECT * FROM topic2");
+              "INSERT INTO tableA SELECT * FROM topic1;INSERT INTO tableB SELECT * FROM topic2");
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     assertEquals(config.getString(JdbcSinkConfig.ERROR_POLICY), "THROW");

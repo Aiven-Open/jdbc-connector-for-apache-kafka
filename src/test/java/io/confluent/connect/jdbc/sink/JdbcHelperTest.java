@@ -1,9 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
 
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DbTable;
-import io.confluent.connect.jdbc.sink.common.DbTableColumn;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,6 +10,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DbTable;
+import io.confluent.connect.jdbc.sink.common.DbTableColumn;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,25 +40,23 @@ public class JdbcHelperTest {
   @Test
   public void returnTheDatabaseTableInformation() throws SQLException {
     String createEmployees = "CREATE TABLE employees\n" +
-            "( employee_id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-            "  last_name VARCHAR NOT NULL,\n" +
-            "  first_name VARCHAR,\n" +
-            "  hire_date DATE\n" +
-            ");";
-
+                             "( employee_id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                             "  last_name VARCHAR NOT NULL,\n" +
+                             "  first_name VARCHAR,\n" +
+                             "  hire_date DATE\n" +
+                             ");";
 
     String createProducts = "CREATE TABLE products\n" +
-            "( product_id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-            "  product_name VARCHAR NOT NULL,\n" +
-            "  quantity INTEGER NOT NULL DEFAULT 0\n" +
-            ");";
+                            "( product_id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                            "  product_name VARCHAR NOT NULL,\n" +
+                            "  quantity INTEGER NOT NULL DEFAULT 0\n" +
+                            ");";
 
     String createNonPkTable = "CREATE TABLE nonPk (id numeric, response text)";
 
     SqlLiteHelper.createTable(SQL_LITE_URI, createEmployees);
     SqlLiteHelper.createTable(SQL_LITE_URI, createProducts);
     SqlLiteHelper.createTable(SQL_LITE_URI, createNonPkTable);
-
 
     final Map<String, DbTable> tables = new HashMap<>();
 
@@ -103,7 +102,6 @@ public class JdbcHelperTest {
     assertFalse(columns.get("hire_date").isPrimaryKey());
     // sqlite returns VARCHAR for DATE. why?!
     // assertEquals(columns.get("hire_date").getSqlType(), Types.DATE);
-
 
     DbTable products = tables.get("products");
     columns = products.getColumns();

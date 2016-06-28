@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Properties;
@@ -43,8 +42,8 @@ public class KafkaEmbedded {
 
   /**
    * @param config Broker configuration settings.  Used to modify, for example, on which port the
-   *               broker should listen to.  Note that you cannot change the `log.dirs` setting
-   *               currently.
+   * broker should listen to.  Note that you cannot change the `log.dirs` setting
+   * currently.
    */
   public KafkaEmbedded(Properties config) {
     logDir = randomTempDirectory();
@@ -91,10 +90,10 @@ public class KafkaEmbedded {
    */
   public void start() {
     log.debug("Starting embedded Kafka broker at {} (with log.dirs={} and ZK ensemble at {}) ...",
-        brokerList(), logDir, zookeeperConnect());
+              brokerList(), logDir, zookeeperConnect());
     kafka.startup();
     log.debug("Startup of embedded Kafka broker at {} completed (with ZK ensemble at {}) ...",
-        brokerList(), zookeeperConnect());
+              brokerList(), zookeeperConnect());
   }
 
   /**
@@ -102,13 +101,13 @@ public class KafkaEmbedded {
    */
   public void stop() throws IOException {
     log.debug("Shutting down embedded Kafka broker at {} (with ZK ensemble at {}) ...",
-        brokerList(), zookeeperConnect());
+              brokerList(), zookeeperConnect());
     kafka.shutdown();
     kafka.awaitShutdown();
     log.debug("Removing logs.dir at {} ...", logDir);
     rm(logDir.toPath());
     log.debug("Shutdown of embedded Kafka broker at {} completed (with ZK ensemble at {}) ...",
-        brokerList(), zookeeperConnect());
+              brokerList(), zookeeperConnect());
   }
 
   private void rm(Path dir) throws IOException {
@@ -130,8 +129,8 @@ public class KafkaEmbedded {
   /**
    * Create a Kafka topic with the given parameters.
    *
-   * @param topic       The name of the topic.
-   * @param partitions  The number of partitions for this topic.
+   * @param topic The name of the topic.
+   * @param partitions The number of partitions for this topic.
    * @param replication The replication factor for (partitions of) this topic.
    * @param topicConfig Additional topic-level configuration settings.
    */
@@ -140,7 +139,7 @@ public class KafkaEmbedded {
                           int replication,
                           Properties topicConfig) {
     log.debug("Creating topic { name: {}, partitions: {}, replication: {}, config: {} }",
-        topic, partitions, replication, topicConfig);
+              topic, partitions, replication, topicConfig);
     int sessionTimeoutMs = 10 * 1000;
     int connectionTimeoutMs = 8 * 1000;
     // Note: You must initialize the ZkClient with ZKStringSerializer.  If you don't, then

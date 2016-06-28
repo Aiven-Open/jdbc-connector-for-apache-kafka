@@ -1,14 +1,8 @@
 package io.confluent.connect.jdbc.sink;
 
 
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DbTable;
-import io.confluent.connect.jdbc.sink.common.DbTableColumn;
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.dialect.SQLiteDialect;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.confluent.common.config.ConfigException;
 
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.connect.data.Schema;
@@ -25,6 +19,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.common.config.ConfigException;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DbTable;
+import io.confluent.connect.jdbc.sink.common.DbTableColumn;
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import io.confluent.connect.jdbc.sink.dialect.SQLiteDialect;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,19 +64,19 @@ public class DatabaseTest {
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingAutoCreateIsNull() {
     new Database(null,
-            new HashSet<String>(),
-            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                 new HashSet<String>(),
+                 new DatabaseMetadata(null, new ArrayList<DbTable>()),
+                 DbDialect.fromConnectionString(SQL_LITE_URI),
+                 2);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingSchemaEvolutionIsNull() {
     new Database(new HashSet<String>(),
-            null,
-            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                 null,
+                 new DatabaseMetadata(null, new ArrayList<DbTable>()),
+                 DbDialect.fromConnectionString(SQL_LITE_URI),
+                 2);
   }
 
   @Test
@@ -84,25 +85,25 @@ public class DatabaseTest {
     String tableName1 = "tableA";
     String tableName2 = "tableB";
     Database changesExecutor = new Database(Sets.newHashSet(tableName1, tableName2),
-            new HashSet<String>(),
-            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                                            new HashSet<String>(),
+                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
+                                            DbDialect.fromConnectionString(SQL_LITE_URI),
+                                            2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT32, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", false),
-            new SinkRecordField(Schema.Type.INT8, "col3", false),
-            new SinkRecordField(Schema.Type.INT64, "col4", false),
-            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
+        new SinkRecordField(Schema.Type.INT32, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", false),
+        new SinkRecordField(Schema.Type.INT8, "col3", false),
+        new SinkRecordField(Schema.Type.INT64, "col4", false),
+        new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
     map.put(tableName2, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.STRING, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", true),
-            new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
-            new SinkRecordField(Schema.Type.BYTES, "col4", false)
+        new SinkRecordField(Schema.Type.STRING, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", true),
+        new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
+        new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
 
     Connection connection = null;
@@ -166,22 +167,22 @@ public class DatabaseTest {
   @Test(expected = ConfigException.class)
   public void throwAnExceptionWhenForANewTableToCreateWhichDoesNotAllowAutoCreation() throws SQLException {
     Database changesExecutor = new Database(new HashSet<String>(),
-            new HashSet<String>(),
-            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                                            new HashSet<String>(),
+                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
+                                            DbDialect.fromConnectionString(SQL_LITE_URI),
+                                            2);
 
     String tableName = "tableA";
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT32, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", false),
-            new SinkRecordField(Schema.Type.INT8, "col3", false),
-            new SinkRecordField(Schema.Type.INT64, "col3", false),
-            new SinkRecordField(Schema.Type.FLOAT64, "col4", false)
+        new SinkRecordField(Schema.Type.INT32, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", false),
+        new SinkRecordField(Schema.Type.INT8, "col3", false),
+        new SinkRecordField(Schema.Type.INT64, "col3", false),
+        new SinkRecordField(Schema.Type.FLOAT64, "col4", false)
     ));
 
-    try (Connection connection = connectionProvider.getConnection())  {
+    try (Connection connection = connectionProvider.getConnection()) {
       changesExecutor.update(map, connection);
     }
   }
@@ -194,39 +195,38 @@ public class DatabaseTest {
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName2);
     SqlLiteHelper.createTable(SQL_LITE_URI, "CREATE TABLE " + tableName2 + " (\n" +
-            "col1 TEXT NOT NULL ,\n" +
-            "col2 TEXT NOT NULL ,\n" +
-            "col3 REAL NULL," +
-            "PRIMARY KEY(col1,col2));");
+                                            "col1 TEXT NOT NULL ,\n" +
+                                            "col2 TEXT NOT NULL ,\n" +
+                                            "col3 REAL NULL," +
+                                            "PRIMARY KEY(col1,col2));");
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, "CREATE TABLE " + tableName1 + " (\n" +
-            "col1 NUMERIC NOT NULL ,\n" +
-            "col2 TEXT NULL,\n" +
-            "col3 NUMERIC NULL," +
-            "PRIMARY KEY(col1));");
-
+                                            "col1 NUMERIC NOT NULL ,\n" +
+                                            "col2 TEXT NULL,\n" +
+                                            "col3 NUMERIC NULL," +
+                                            "PRIMARY KEY(col1));");
 
     Database changesExecutor = new Database(new HashSet<String>(),
-            Sets.newHashSet(tableName1, tableName2),
-            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                                            Sets.newHashSet(tableName1, tableName2),
+                                            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
+                                            DbDialect.fromConnectionString(SQL_LITE_URI),
+                                            2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT32, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", false),
-            new SinkRecordField(Schema.Type.INT8, "col3", false),
-            new SinkRecordField(Schema.Type.INT64, "col4", false),
-            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
+        new SinkRecordField(Schema.Type.INT32, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", false),
+        new SinkRecordField(Schema.Type.INT8, "col3", false),
+        new SinkRecordField(Schema.Type.INT64, "col4", false),
+        new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
     map.put(tableName2, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.STRING, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", true),
-            new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
-            new SinkRecordField(Schema.Type.BYTES, "col4", false)
+        new SinkRecordField(Schema.Type.STRING, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", true),
+        new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
+        new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
 
     Connection connection = null;
@@ -266,7 +266,6 @@ public class DatabaseTest {
       columnMap = table2.getColumns();
       assertTrue(columnMap.containsKey("col4"));
 
-
       //weird sqlite shows col1 as nonpk and only col2 as pk
       assertFalse(columnMap.get("col1").isPrimaryKey());
       assertFalse(columnMap.get("col1").allowsNull());
@@ -292,29 +291,28 @@ public class DatabaseTest {
 
     String tableName1 = "tableA1";
     Database changesExecutor = new Database(Sets.newHashSet(tableName1),
-            new HashSet<String>(),
-            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                                            new HashSet<String>(),
+                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
+                                            DbDialect.fromConnectionString(SQL_LITE_URI),
+                                            2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT32, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", false),
-            new SinkRecordField(Schema.Type.INT8, "col3", false),
-            new SinkRecordField(Schema.Type.INT64, "col4", false),
-            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
+        new SinkRecordField(Schema.Type.INT32, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", false),
+        new SinkRecordField(Schema.Type.INT8, "col3", false),
+        new SinkRecordField(Schema.Type.INT64, "col4", false),
+        new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
-
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, "CREATE TABLE " + tableName1 + " (\n" +
-            "col1 NUMERIC NOT NULL ,\n" +
-            "col2 TEXT NULL,\n" +
-            "col3 NUMERIC NULL,\n" +
-            "col4 NUMERIC NULL,\n" +
-            "col5 REAL NULL,\n" +
-            "PRIMARY KEY(col1));");
+                                            "col1 NUMERIC NOT NULL ,\n" +
+                                            "col2 TEXT NULL,\n" +
+                                            "col3 NUMERIC NULL,\n" +
+                                            "col4 NUMERIC NULL,\n" +
+                                            "col5 REAL NULL,\n" +
+                                            "PRIMARY KEY(col1));");
 
     Connection connection = null;
     try {
@@ -359,27 +357,26 @@ public class DatabaseTest {
 
     String tableName1 = "tableA11";
     Database changesExecutor = new Database(Sets.newHashSet(tableName1),
-            new HashSet<String>(),
-            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                                            new HashSet<String>(),
+                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
+                                            DbDialect.fromConnectionString(SQL_LITE_URI),
+                                            2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT32, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", false),
-            new SinkRecordField(Schema.Type.INT8, "col3", false),
-            new SinkRecordField(Schema.Type.INT64, "col4", false),
-            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
+        new SinkRecordField(Schema.Type.INT32, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", false),
+        new SinkRecordField(Schema.Type.INT8, "col3", false),
+        new SinkRecordField(Schema.Type.INT64, "col4", false),
+        new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
-
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, "CREATE TABLE " + tableName1 + " (\n" +
-            "col1 NUMERIC NOT NULL ,\n" +
-            "col2 TEXT NULL,\n" +
-            "col3 NUMERIC NULL,\n" +
-            "PRIMARY KEY(col1));");
+                                            "col1 NUMERIC NOT NULL ,\n" +
+                                            "col2 TEXT NULL,\n" +
+                                            "col3 NUMERIC NULL,\n" +
+                                            "PRIMARY KEY(col1));");
 
     Connection connection = null;
     try {
@@ -426,29 +423,28 @@ public class DatabaseTest {
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
     SqlLiteHelper.createTable(SQL_LITE_URI, "CREATE TABLE " + tableName1 + " (\n" +
-            "col1 NUMERIC NOT NULL ,\n" +
-            "col2 TEXT NULL,\n" +
-            "col3 NUMERIC NULL," +
-            "PRIMARY KEY(col1));");
-
+                                            "col1 NUMERIC NOT NULL ,\n" +
+                                            "col2 TEXT NULL,\n" +
+                                            "col3 NUMERIC NULL," +
+                                            "PRIMARY KEY(col1));");
 
     Database changesExecutor = new Database(new HashSet<String>(),
-            Sets.newHashSet(tableName1),
-            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
-            DbDialect.fromConnectionString(SQL_LITE_URI),
-            2);
+                                            Sets.newHashSet(tableName1),
+                                            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
+                                            DbDialect.fromConnectionString(SQL_LITE_URI),
+                                            2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT32, "col1", true),
-            new SinkRecordField(Schema.Type.STRING, "col2", false),
-            new SinkRecordField(Schema.Type.INT8, "col3", false),
-            new SinkRecordField(Schema.Type.INT64, "col4", false),
-            new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
+        new SinkRecordField(Schema.Type.INT32, "col1", true),
+        new SinkRecordField(Schema.Type.STRING, "col2", false),
+        new SinkRecordField(Schema.Type.INT8, "col3", false),
+        new SinkRecordField(Schema.Type.INT64, "col4", false),
+        new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
     List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Lists.newArrayList(
-            new SinkRecordField(Schema.Type.INT64, "col4", false)
+        new SinkRecordField(Schema.Type.INT64, "col4", false)
     ));
 
     SqlLiteHelper.execute(SQL_LITE_URI, amendQuery.get(0));

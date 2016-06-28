@@ -76,7 +76,6 @@ public class MySqlMetadataTest {
     }
   }
 
-
   /**
    * > CREATE DATABASE the_db;
    * > CREATE TABLE tutorials_tbl(

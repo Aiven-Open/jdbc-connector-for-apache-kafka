@@ -1,8 +1,8 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.common.config.ConfigException;
+import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 
 /**
  * Helper class for creating an instance of QueryBuilder

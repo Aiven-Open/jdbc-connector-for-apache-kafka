@@ -1,8 +1,7 @@
 package io.confluent.connect.jdbc.sink.common;
 
-import io.confluent.connect.jdbc.sink.ConnectionProvider;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
 import com.google.common.collect.Lists;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import io.confluent.connect.jdbc.sink.ConnectionProvider;
+import io.confluent.connect.jdbc.sink.SinkRecordField;
 
 /**
  * Contains all the database tables metadata.
@@ -62,7 +64,9 @@ public class DatabaseMetadata {
       final DbTable table = tables.get(entry.getKey());
       if (table == null) {
         //we don't have this table
-        if (created == null) created = new HashMap<>();
+        if (created == null) {
+          created = new HashMap<>();
+        }
         created.put(entry.getKey(), tableColumnsMap.get(entry.getKey()));
       } else {
         final Map<String, DbTableColumn> existingColumnsMap = table.getColumns();
@@ -140,7 +144,7 @@ public class DatabaseMetadata {
    * Creates a DatabaseMetadata instance for the tables given
    *
    * @param connectionProvider - Database connection pooling
-   * @param tables             - The tables to consider
+   * @param tables - The tables to consider
    * @return The database metadata
    */
   public static DatabaseMetadata getDatabaseMetadata(final ConnectionProvider connectionProvider,
@@ -170,9 +174,8 @@ public class DatabaseMetadata {
    * Checks the given table is present in the database.
    *
    * @param connection - Database connection instance
-   * @param tableName  - The table to check if it is present or not
+   * @param tableName - The table to check if it is present or not
    * @return true if the table is present; false otherwise
-   * @throws SQLException
    */
   public static boolean tableExists(final Connection connection,
                                     final String tableName) throws SQLException {
@@ -184,17 +187,15 @@ public class DatabaseMetadata {
    * Checks the given table is present in the database
    *
    * @param connection _ The database connection instance
-   * @param catalog    - The database name
-   * @param tableName  - The table to check if it is present or not
+   * @param catalog - The database name
+   * @param tableName - The table to check if it is present or not
    * @return true the table is present; false otherwise
-   * @throws SQLException
    */
   private static boolean tableExists(final Connection connection,
                                      final String catalog,
                                      final String tableName) throws SQLException {
     ParameterValidator.notNull(connection, "connection");
     ParameterValidator.notNull(tableName, "tableName");
-
 
     DatabaseMetaData meta = connection.getMetaData();
 
@@ -225,7 +226,6 @@ public class DatabaseMetadata {
    *
    * @param connection - The instance for the jdbc Connection
    * @return -The database name
-   * @throws SQLException
    */
   private static String getOracleSchema(final Connection connection) throws SQLException {
     try (
@@ -265,7 +265,7 @@ public class DatabaseMetadata {
    * Returns the tables information
    *
    * @param connection - The instance of the jdbc Connection
-   * @param tableName  -The table for which to get the column information
+   * @param tableName -The table for which to get the column information
    * @return The information related to the table columns
    */
   public static DbTable getTableMetadata(final Connection connection, final String tableName) throws SQLException {
@@ -319,8 +319,9 @@ public class DatabaseMetadata {
       boolean isNullable = !pkColumns.contains(colName);
       //nonPKcolumnsRS.getInt("NULLABLE") == DatabaseMetaData.attributeNullable;
       //sqlite reports in this case for PK as true allows nullable
-      if (isNullable)
+      if (isNullable) {
         isNullable = Objects.equals("YES", nonPKcolumnsRS.getString("IS_NULLABLE"));
+      }
 
       columns.add(new DbTableColumn(colName, pkColumns.contains(colName), isNullable, sqlType));
     }

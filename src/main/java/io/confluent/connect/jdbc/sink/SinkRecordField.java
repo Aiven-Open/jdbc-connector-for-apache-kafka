@@ -10,7 +10,7 @@ public class SinkRecordField {
   private final Schema.Type type;
   private final String name;
 
-  public SinkRecordField(final Schema.Type type, final String name, final  boolean isPrimaryKey) {
+  public SinkRecordField(final Schema.Type type, final String name, final boolean isPrimaryKey) {
     this.type = type;
     this.name = name;
     this.isPrimaryKey = isPrimaryKey;

@@ -1,9 +1,9 @@
 package io.confluent.connect.jdbc.sink.writer;
 
+import java.util.List;
+
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-
-import java.util.List;
 
 public final class InsertQueryBuilder implements QueryBuilder {
 

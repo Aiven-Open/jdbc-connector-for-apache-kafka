@@ -12,7 +12,7 @@ public final class FieldAlias {
   /**
    * Creates a new instance of FieldAlias
    *
-   * @param name         - The field alias name (or the actual field name)
+   * @param name - The field alias name (or the actual field name)
    * @param isPrimaryKey - If true the field is part of the the table primary key
    */
   public FieldAlias(final String name, final boolean isPrimaryKey) {
@@ -25,6 +25,7 @@ public final class FieldAlias {
 
   /**
    * Creates a new instance of FieldAlias
+   *
    * @param name - The field name
    */
   public FieldAlias(final String name) {
@@ -54,7 +55,7 @@ public final class FieldAlias {
    * {@link Object#equals(Object)} methods.
    *
    * @param o the {@link FieldAlias} to which this one is to be checked for equality
-   *          equal
+   * equal
    */
   @Override
   public boolean equals(Object o) {

@@ -76,7 +76,6 @@ public class PostgresMetadataTest {
     }
   }
 
-
   /**
    * > create database the_db;
    * > \connect the_db

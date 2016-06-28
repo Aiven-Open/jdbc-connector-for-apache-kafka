@@ -21,7 +21,6 @@ public class ZooKeeperEmbedded {
 
   /**
    * Starts a ZooKeeper instance that listens on port 2181.
-   * @throws Exception
    */
   public ZooKeeperEmbedded() throws Exception {
     this(DEFAULT_PORT);
@@ -31,7 +30,6 @@ public class ZooKeeperEmbedded {
    * Starts a ZooKeeper instance that listens at the defined port.
    *
    * @param port The port (aka `clientPort`) to listen to.  Default: 2181.
-   * @throws Exception
    */
   public ZooKeeperEmbedded(int port) throws Exception {
     log.debug("Starting embedded ZooKeeper server on port {} ...", port);

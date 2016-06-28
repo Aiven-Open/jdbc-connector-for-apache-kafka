@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.Properties;
 
 
-
 /**
  * Runs an in-memory, "embedded" Kafka cluster with 1 ZooKeeper instance and 1 Kafka broker.
  */
@@ -21,8 +20,6 @@ public class EmbeddedSingleNodeKafkaCluster {
 
   /**
    * Creates and starts a Kafka cluster.
-   *
-   * @throws Exception
    */
   public EmbeddedSingleNodeKafkaCluster() throws Exception {
     this(new Properties());
@@ -32,7 +29,6 @@ public class EmbeddedSingleNodeKafkaCluster {
    * Creates and starts a Kafka cluster.
    *
    * @param brokerConfig Additional broker configuration settings.
-   * @throws Exception
    */
   public EmbeddedSingleNodeKafkaCluster(Properties brokerConfig) throws Exception {
     log.debug("Initiating embedded Kafka cluster startup");
@@ -46,7 +42,7 @@ public class EmbeddedSingleNodeKafkaCluster {
     broker = new KafkaEmbedded(effectiveBrokerConfig);
     broker.start();
     log.debug("Kafka instance is running at {}, connected to ZooKeeper at {}",
-        broker.brokerList(), broker.zookeeperConnect());
+              broker.brokerList(), broker.zookeeperConnect());
   }
 
   private Properties effectiveBrokerConfigFrom(Properties brokerConfig, ZooKeeperEmbedded zookeeper) {
@@ -97,8 +93,8 @@ public class EmbeddedSingleNodeKafkaCluster {
   /**
    * Create a Kafka topic with the given parameters.
    *
-   * @param topic       The name of the topic.
-   * @param partitions  The number of partitions for this topic.
+   * @param topic The name of the topic.
+   * @param partitions The number of partitions for this topic.
    * @param replication The replication factor for (the partitions of) this topic.
    */
   public void createTopic(String topic, int partitions, int replication) {
@@ -108,8 +104,8 @@ public class EmbeddedSingleNodeKafkaCluster {
   /**
    * Create a Kafka topic with the given parameters.
    *
-   * @param topic       The name of the topic.
-   * @param partitions  The number of partitions for this topic.
+   * @param topic The name of the topic.
+   * @param partitions The number of partitions for this topic.
    * @param replication The replication factor for (partitions of) this topic.
    * @param topicConfig Additional topic-level configuration settings.
    */

@@ -1,9 +1,8 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -11,6 +10,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 public class SqlServerDialect extends DbDialect {
 
@@ -64,8 +66,9 @@ public class SqlServerDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
-    if (table == null || table.trim().length() == 0)
+    if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table> is not valid");
+    }
 
     if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");

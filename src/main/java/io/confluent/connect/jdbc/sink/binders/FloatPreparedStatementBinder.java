@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 /**
  * Handles binding Floats for a prepared statement
- * */
+ */
 public final class FloatPreparedStatementBinder extends BasePreparedStatementBinder {
   private final float value;
 
@@ -21,7 +21,7 @@ public final class FloatPreparedStatementBinder extends BasePreparedStatementBin
    *
    * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
-   * */
+   */
   @Override
   public void bind(int index, PreparedStatement statement) throws SQLException {
     statement.setFloat(index, value);
@@ -29,13 +29,14 @@ public final class FloatPreparedStatementBinder extends BasePreparedStatementBin
 
   /**
    * @return The value to be bound.
-   * */
+   */
   public float getValue() {
     return value;
   }
 
   /**
    * Returns the field's schema type
+   *
    * @return Float
    */
   @Override

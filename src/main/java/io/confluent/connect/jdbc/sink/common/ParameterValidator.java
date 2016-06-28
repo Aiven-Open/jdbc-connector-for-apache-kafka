@@ -8,7 +8,7 @@ public class ParameterValidator {
    * Checks the given value is not null or empty. If the value doesn't meet the criteria an IllegalArgumentException is
    * thrown
    *
-   * @param value     - The value to be checked
+   * @param value - The value to be checked
    * @param paramName - The parameter name of the caller function
    */
   public static void notNullOrEmpty(final String value, final String paramName) {
@@ -19,9 +19,6 @@ public class ParameterValidator {
 
   /**
    * Checks the give obj is not null. If the value provided is null an IllegalArgumentException is thrown.
-   *
-   * @param obj
-   * @param paramName
    */
   public static void notNull(final Object obj, final String paramName) {
     if (obj == null) {

@@ -1,8 +1,9 @@
 package io.confluent.connect.jdbc.sink;
 
-import org.junit.*;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
 

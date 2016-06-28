@@ -1,20 +1,8 @@
 package io.confluent.connect.jdbc.sink;
 
-import io.confluent.connect.jdbc.sink.binders.BasePreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.BytePreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.IntPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.LongPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.binders.StringPreparedStatementBinder;
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -28,6 +16,20 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.binders.BasePreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.BytePreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.BytesPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.DoublePreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.FloatPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.IntPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.LongPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.ShortPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.binders.StringPreparedStatementBinder;
+import io.confluent.connect.jdbc.sink.config.FieldAlias;
+import io.confluent.connect.jdbc.sink.config.FieldsMappings;
 
 /**
  * This class holds the field mappings to extract from the Connect record.
@@ -75,7 +77,7 @@ public class RecordDataExtractor {
         @Override
         public boolean apply(Field input) {
           return fieldsMappings.areAllFieldsIncluded() ||
-                  mappings.containsKey(input.name());
+                 mappings.containsKey(input.name());
         }
 
         @Override
@@ -96,21 +98,21 @@ public class RecordDataExtractor {
     if (connectTopicPK != null) {
       //fake the field and binder
       final StringPreparedStatementBinder binderTopic = new StringPreparedStatementBinder(
-              FieldsMappings.CONNECT_TOPIC_COLUMN,
-              record.topic());
+          FieldsMappings.CONNECT_TOPIC_COLUMN,
+          record.topic());
       binderTopic.setPrimaryKey(true);
       binders.add(binderTopic);
 
       final IntPreparedStatementBinder binderPartition = new IntPreparedStatementBinder(
-              FieldsMappings.CONNECT_PARTITION_COLUMN,
-              record.kafkaPartition()
+          FieldsMappings.CONNECT_PARTITION_COLUMN,
+          record.kafkaPartition()
       );
       binderPartition.setPrimaryKey(true);
       binders.add(binderPartition);
 
       final LongPreparedStatementBinder binderOffset = new LongPreparedStatementBinder(
-              FieldsMappings.CONNECT_OFFSET_COLUMN,
-              record.kafkaOffset()
+          FieldsMappings.CONNECT_OFFSET_COLUMN,
+          record.kafkaOffset()
       );
       binderOffset.setPrimaryKey(true);
       binders.add(binderOffset);
@@ -135,21 +137,22 @@ public class RecordDataExtractor {
   /**
    * Return a PreparedStatementBinder for a struct fields.
    *
-   * @param field  The struct field to get the binder for.
+   * @param field The struct field to get the binder for.
    * @param struct The struct which the field belongs to.
    * @return A PreparedStatementBinder for the field.
    */
   private BasePreparedStatementBinder getPreparedStatementBinder(final Field field, final Struct struct) {
     final Object value = struct.get(field);
-    if (value == null)
+    if (value == null) {
       return null;
-
+    }
 
     final String fieldName;
-    if (fieldsMappings.getMappings().containsKey(field.name()))
+    if (fieldsMappings.getMappings().containsKey(field.name())) {
       fieldName = fieldsMappings.getMappings().get(field.name()).getName();
-    else
+    } else {
       fieldName = field.name();
+    }
 
     //match on fields schema type to find the correct casting.
     BasePreparedStatementBinder binder;

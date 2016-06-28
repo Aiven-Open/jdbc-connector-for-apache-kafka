@@ -12,10 +12,10 @@ public final class DbTableColumn {
   /**
    * Creates a new instance of DbTableColumn
    *
-   * @param name         - The column name
+   * @param name - The column name
    * @param isPrimaryKey - true if the column is a primary key
-   * @param allowsNull   - true if the column allows null
-   * @param sqlType      - The actual database type (not used for now)
+   * @param allowsNull - true if the column allows null
+   * @param sqlType - The actual database type (not used for now)
    */
   public DbTableColumn(final String name, final boolean isPrimaryKey, final boolean allowsNull, final int sqlType) {
     this.isPrimaryKey = isPrimaryKey;

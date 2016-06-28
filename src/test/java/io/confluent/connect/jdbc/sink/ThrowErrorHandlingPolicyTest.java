@@ -12,6 +12,6 @@ public class ThrowErrorHandlingPolicyTest {
   public void throwTheException() {
     int retries = 0;
     new ThrowErrorHandlingPolicy()
-            .handle(Collections.<SinkRecord>emptyList(), new NumberFormatException(), retries);
+        .handle(Collections.<SinkRecord>emptyList(), new NumberFormatException(), retries);
   }
 }

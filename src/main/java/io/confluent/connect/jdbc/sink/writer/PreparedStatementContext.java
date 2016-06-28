@@ -1,9 +1,9 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-
 import java.util.Collection;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.SinkRecordField;
 
 /**
  * Contains a list of PreparedStatements to execute as well as the tables affected and the columns referenced.

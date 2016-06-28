@@ -1,6 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
-import org.apache.kafka.connect.errors.*;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 

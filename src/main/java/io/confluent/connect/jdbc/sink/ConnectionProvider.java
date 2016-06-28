@@ -1,12 +1,13 @@
 package io.confluent.connect.jdbc.sink;
 
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 /**
  * Responsible for creating the database connection. It provides automatic retries.

@@ -1,11 +1,5 @@
 package io.confluent.connect.jdbc.sink;
 
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DbTable;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.common.config.ConfigException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +11,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import io.confluent.common.config.ConfigException;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DbTable;
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 
 /**
  * Controls the database changes - creating/amending tables.
@@ -69,7 +69,7 @@ public class Database {
   /**
    * Create tables
    *
-   * @param tableMap   A map of table and sinkRecords for that table.
+   * @param tableMap A map of table and sinkRecords for that table.
    * @param connection The database connection to use.
    */
   public void createTables(final Map<String, Collection<SinkRecordField>> tableMap,
@@ -112,8 +112,8 @@ public class Database {
   /**
    * Create a table
    *
-   * @param tableName  The table to create
-   * @param fields     The sinkRecord fields to use to create the columns
+   * @param tableName The table to create
+   * @param fields The sinkRecord fields to use to create the columns
    * @param connection The database connection to use.
    */
   private DbTable createTable(final String tableName,
@@ -179,7 +179,7 @@ public class Database {
   /**
    * Evolve tables, add new columns
    *
-   * @param tableMap   A map of table and sinkRecords for that table.
+   * @param tableMap A map of table and sinkRecords for that table.
    * @param connection The database connection to use.
    */
   private void evolveTables(final Map<String, Collection<SinkRecordField>> tableMap,

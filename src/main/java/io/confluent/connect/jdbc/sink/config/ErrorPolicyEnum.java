@@ -15,7 +15,7 @@ public enum ErrorPolicyEnum {
 
   /**
    * The exception causes the Connect framework to retry the message
-   * */
+   */
   RETRY("retry");
 
   private final String value;

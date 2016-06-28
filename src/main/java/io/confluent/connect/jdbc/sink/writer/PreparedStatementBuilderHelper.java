@@ -1,16 +1,7 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DbTable;
-import io.confluent.connect.jdbc.sink.common.DbTableColumn;
-import io.confluent.connect.jdbc.sink.RecordDataExtractor;
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
-import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
-import io.confluent.common.config.ConfigException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +10,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import io.confluent.common.config.ConfigException;
+import io.confluent.connect.jdbc.sink.RecordDataExtractor;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DbTable;
+import io.confluent.connect.jdbc.sink.common.DbTableColumn;
+import io.confluent.connect.jdbc.sink.config.FieldAlias;
+import io.confluent.connect.jdbc.sink.config.FieldsMappings;
+import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
+import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
 
 public final class PreparedStatementBuilderHelper {
 
@@ -29,10 +30,6 @@ public final class PreparedStatementBuilderHelper {
    * by the user - provides validation and also allows for columns auto mapping (Say user flags all fields to be included
    * and the payload has only 3 ouf of the 4 incoming mapping. It will therefore only consider the 3 fields discarding the
    * 4th avoiding the error)
-   *
-   * @param settings
-   * @param databaseMetadata
-   * @return
    */
   public static PreparedStatementContextIterable from(final JdbcSinkSettings settings,
                                                       final DatabaseMetadata databaseMetadata) {
@@ -45,9 +42,9 @@ public final class PreparedStatementBuilderHelper {
         if (!databaseMetadata.containsTable(tm.getTableName())) {
           final String tables = Joiner.on(",").join(databaseMetadata.getTableNames());
           throw new ConfigException(String.format("%s table is not found in the database available tables:%s. Make sure you" +
-                          " set the table to be autocreated or manually add it to the database.",
-                  tm.getTableName(),
-                  tables));
+                                                  " set the table to be autocreated or manually add it to the database.",
+                                                  tm.getTableName(),
+                                                  tables));
         }
         //get the columns merged
         tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
@@ -67,9 +64,8 @@ public final class PreparedStatementBuilderHelper {
    * This way we avoid the problems caused when the user sets * for all fields the payload has 4 fields but only 3 found in the database.
    * Furthermore if the mapping is not found in the database an exception is thrown
    *
-   * @param tm      - Field mappings
+   * @param tm - Field mappings
    * @param dbTable - The instance of DbTable
-   * @return
    */
   public static FieldsMappings validateAndMerge(final FieldsMappings tm, final DbTable dbTable) {
     final Set<String> pkColumns = new HashSet<>();
@@ -92,10 +88,10 @@ public final class PreparedStatementBuilderHelper {
         final String colName = kv.getValue().getName();
         if (!map.containsKey(colName.toLowerCase()) && !map.containsKey(colName.toUpperCase())) {
           final String error =
-                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
-                          tm.getTableName(),
-                          colName,
-                          Joiner.on(",").join(map.keySet()));
+              String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                            tm.getTableName(),
+                            colName,
+                            Joiner.on(",").join(map.keySet()));
           throw new ConfigException(error);
         }
 
@@ -110,10 +106,10 @@ public final class PreparedStatementBuilderHelper {
         final String colName = alias.getValue().getName();
         if (!dbCols.containsKey(colName.toLowerCase()) && !dbCols.containsKey(colName.toLowerCase())) {
           final String error =
-                  String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
-                          tm.getTableName(),
-                          colName,
-                          Joiner.on(",").join(dbCols.keySet()));
+              String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
+                            tm.getTableName(),
+                            colName,
+                            Joiner.on(",").join(dbCols.keySet()));
           throw new ConfigException(error);
         }
         map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())));
@@ -125,24 +121,24 @@ public final class PreparedStatementBuilderHelper {
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
           logger.warn("Invalid mappings. Not all PK columns have been specified. PK specified {} out of existing {}",
-                  Joiner.on(",").join(specifiedPKs),
-                  Joiner.on(",").join(pkColumns));
+                      Joiner.on(",").join(specifiedPKs),
+                      Joiner.on(",").join(pkColumns));
         }
         if (tm.getInsertMode().equals(InsertModeEnum.UPSERT)) {
           throw new ConfigException(
-                  String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
-                          Joiner.on(",").join(specifiedPKs),
-                          Joiner.on(",").join(pkColumns)));
+              String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
+                            Joiner.on(",").join(specifiedPKs),
+                            Joiner.on(",").join(pkColumns)));
         }
       }
     }
     return new FieldsMappings(tm.getTableName(),
-            tm.getIncomingTopic(),
-            tm.areAllFieldsIncluded(),
-            tm.getInsertMode(),
-            map,
-            tm.autoCreateTable(),
-            tm.evolveTableSchema(),
-            tm.isCapitalizeColumnNamesAndTables());
+                              tm.getIncomingTopic(),
+                              tm.areAllFieldsIncluded(),
+                              tm.getInsertMode(),
+                              map,
+                              tm.autoCreateTable(),
+                              tm.evolveTableSchema(),
+                              tm.isCapitalizeColumnNamesAndTables());
   }
 }

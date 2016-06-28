@@ -1,13 +1,15 @@
 package io.confluent.connect.jdbc.sink.avro;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
 import com.google.common.collect.Lists;
+
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.config.FieldAlias;
 
 public class AvroToDbConverter {
 

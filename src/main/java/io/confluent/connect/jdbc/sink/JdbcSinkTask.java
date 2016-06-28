@@ -1,12 +1,7 @@
 package io.confluent.connect.jdbc.sink;
 
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
-import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
-import io.confluent.connect.jdbc.sink.writer.JdbcDbWriter;
 import com.google.common.base.Joiner;
+
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -17,6 +12,13 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
+import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
+import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
+import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
+import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
+import io.confluent.connect.jdbc.sink.writer.JdbcDbWriter;
 
 public class JdbcSinkTask extends SinkTask {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);

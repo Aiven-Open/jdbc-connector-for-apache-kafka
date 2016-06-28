@@ -17,15 +17,15 @@ package io.confluent.connect.jdbc.sink.services;
  */
 
 
-import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import org.eclipse.jetty.server.Server;
 
 import java.util.Properties;
 
 import io.confluent.kafka.schemaregistry.avro.AvroCompatibilityLevel;
+import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
-import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.storage.SchemaRegistry;
 import io.confluent.kafka.schemaregistry.zookeeper.SchemaRegistryIdentity;
 
@@ -60,8 +60,9 @@ public class RestApp {
     restServer = restApp.createServer();
     restServer.start();
     restConnect = restServer.getURI().toString();
-    if (restConnect.endsWith("/"))
-      restConnect = restConnect.substring(0, restConnect.length()-1);
+    if (restConnect.endsWith("/")) {
+      restConnect = restConnect.substring(0, restConnect.length() - 1);
+    }
     restClient = new RestService(restConnect);
   }
 

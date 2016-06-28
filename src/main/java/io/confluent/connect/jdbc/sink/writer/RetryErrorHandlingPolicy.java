@@ -1,10 +1,11 @@
 package io.confluent.connect.jdbc.sink.writer;
 
 import com.google.common.collect.Iterators;
+
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 

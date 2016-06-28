@@ -20,7 +20,7 @@ public final class BooleanPreparedStatementBinder extends BasePreparedStatementB
   /**
    * Bind the value to the prepared statement.
    *
-   * @param index     The ordinal position to bind the variable to.
+   * @param index The ordinal position to bind the variable to.
    * @param statement The prepared statement to bind to.
    */
   @Override

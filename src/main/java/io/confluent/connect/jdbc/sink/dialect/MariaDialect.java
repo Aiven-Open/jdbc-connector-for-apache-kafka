@@ -2,6 +2,7 @@ package io.confluent.connect.jdbc.sink.dialect;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -33,13 +34,14 @@ class MariaDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(final String table, final List<String> cols, final List<String> keyCols) {
-    if (table == null || table.trim().length() == 0)
+    if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
+    }
 
     if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException(
-              String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
-                      table));
+          String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
+                        table));
     }
     List<String> nonKeyColumns = new ArrayList<>(cols.size());
     for (String c : cols) {

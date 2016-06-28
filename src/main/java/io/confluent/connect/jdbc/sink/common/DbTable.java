@@ -14,7 +14,7 @@ public class DbTable {
   /**
    * Creates a new instance of DbTable
    *
-   * @param name    - The table name
+   * @param name - The table name
    * @param columns - Contains all the table columns information
    */
   public DbTable(String name, List<DbTableColumn> columns) {

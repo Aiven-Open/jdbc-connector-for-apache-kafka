@@ -1,9 +1,8 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -11,6 +10,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 /**
  * Describes which SQL dialect to use. Different databases support different syntax for upserts.
@@ -32,9 +34,9 @@ public abstract class DbDialect {
   /**
    * Returns the create SQL statement
    *
-   * @param tableName     - The name of the table
+   * @param tableName - The name of the table
    * @param nonKeyColumns - The sequence of non primary key columns
-   * @param keyColumns    - The sequence of primary key columns
+   * @param keyColumns - The sequence of primary key columns
    * @return SQL create statement
    */
   public final String getInsert(final String tableName,
@@ -43,11 +45,13 @@ public abstract class DbDialect {
     if (tableName == null || tableName.trim().length() == 0) {
       throw new IllegalArgumentException("tableName parameter is not a valid table name.");
     }
-    if (nonKeyColumns == null)
+    if (nonKeyColumns == null) {
       throw new IllegalArgumentException("nonKeyColumns parameter is null.");
+    }
 
-    if (keyColumns == null)
+    if (keyColumns == null) {
       throw new IllegalArgumentException("keyColumns parameter is null");
+    }
 
     if (nonKeyColumns.isEmpty() && keyColumns.isEmpty()) {
       throw new IllegalArgumentException("Illegal arguments. Both nonKeyColumns and keyColumns are empty");
@@ -59,13 +63,13 @@ public abstract class DbDialect {
     Iterator<String> iter = Iterables.concat(nonKeyColumns, keyColumns).iterator();
     iter.hasNext();
     builder.append(escapeColumnNamesStart)
-            .append(iter.next())
-            .append(escapeColumnNamesEnd);
+        .append(iter.next())
+        .append(escapeColumnNamesEnd);
     while (iter.hasNext()) {
       builder.append(",");
       builder.append(escapeColumnNamesStart)
-              .append(iter.next())
-              .append(escapeColumnNamesEnd);
+          .append(iter.next())
+          .append(escapeColumnNamesEnd);
     }
     builder.append(") VALUES(");
     builder.append("?");
@@ -80,8 +84,8 @@ public abstract class DbDialect {
   /**
    * Gets the query allowing to insert a new row into the RDBMS even if it does previously exists
    *
-   * @param table       - Contains the name of the target table
-   * @param columns     - Contains the table non primary key columns which will get data inserted in
+   * @param table - Contains the name of the target table
+   * @param columns - Contains the table non primary key columns which will get data inserted in
    * @param keyColumns- Contains the table primary key columns
    * @return The upsert query for the dialect
    */
@@ -137,7 +141,7 @@ public abstract class DbDialect {
    * Returns the query for creating a new table in the database
    *
    * @param tableName - The table name
-   * @param fields    - List of table columns
+   * @param fields - List of table columns
    * @return The create query for the dialect
    */
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
@@ -192,7 +196,7 @@ public abstract class DbDialect {
    * Returns the query to alter a table by adding a new table
    *
    * @param tableName -The name of the table
-   * @param fields    - The list of table columns
+   * @param fields - The list of table columns
    * @return The alter query for the dialect
    */
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
@@ -236,7 +240,7 @@ public abstract class DbDialect {
     final String sqlType = schemaTypeToSqlTypeMap.get(type);
     if (sqlType == null) {
       throw new IllegalArgumentException(String.format("%s type doesn't have a mapping for SQL database column type",
-              type.toString()));
+                                                       type.toString()));
     }
     return sqlType;
   }
@@ -259,8 +263,9 @@ public abstract class DbDialect {
    */
   static String extractProtocol(final String connection) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
-    if (!connection.startsWith("jdbc:"))
+    if (!connection.startsWith("jdbc:")) {
       throw new IllegalArgumentException("connection is not a valid jdbc URI");
+    }
 
     int index = connection.indexOf("://", "jdbc:".length());
     if (index < 0) {

@@ -1,17 +1,17 @@
 package io.confluent.connect.jdbc.sink;
 
+import org.junit.Assert;
+import org.junit.Test;
+
+import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.connect.jdbc.sink.dialect.MySqlDialect;
 import io.confluent.connect.jdbc.sink.dialect.OracleDialect;
 import io.confluent.connect.jdbc.sink.dialect.SQLiteDialect;
 import io.confluent.connect.jdbc.sink.dialect.SqlServerDialect;
-import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.connect.jdbc.sink.writer.InsertQueryBuilder;
 import io.confluent.connect.jdbc.sink.writer.QueryBuilder;
 import io.confluent.connect.jdbc.sink.writer.QueryBuilderHelper;
 import io.confluent.connect.jdbc.sink.writer.UpsertQueryBuilder;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -31,7 +31,7 @@ public class QueryBuilderHelperTest {
   @Test
   public void shouldCreateAnUpsertQueryBuilderWithSqlServerDialect() {
     QueryBuilder queryBuilder = QueryBuilderHelper.from("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE",
-            InsertModeEnum.UPSERT);
+                                                        InsertModeEnum.UPSERT);
     assertEquals(queryBuilder.getClass(), UpsertQueryBuilder.class);
 
     UpsertQueryBuilder upsertQueryBuilder = (UpsertQueryBuilder) queryBuilder;

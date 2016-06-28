@@ -1,12 +1,13 @@
 package io.confluent.connect.jdbc.sink.config;
 
-import com.datamountaineer.connector.config.Config;
-import com.datamountaineer.connector.config.WriteModeEnum;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+
+import com.datamountaineer.connector.config.Config;
+import com.datamountaineer.connector.config.WriteModeEnum;
+
 import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 /**
  * Holds the Jdbc Sink settings
@@ -38,13 +41,12 @@ public final class JdbcSinkSettings {
   /**
    * Creates a new instance of JdbcSinkSettings
    *
-   * @param connection        - The database connection string
-   * @param mappings          - A list of payload field mappings
-   * @param errorPolicy       - Specifies how an error is handled
-   * @param maxRetries
+   * @param connection - The database connection string
+   * @param mappings - A list of payload field mappings
+   * @param errorPolicy - Specifies how an error is handled
    * @param schemaRegistryUrl - The end point for the Connect Schema registry
-   * @param batchSize         - how big the batch size should be
-   * @param retryDelay        -The time to wait before the operation is retried
+   * @param batchSize - how big the batch size should be
+   * @param retryDelay -The time to wait before the operation is retried
    */
   public JdbcSinkSettings(String connection,
                           String user,
@@ -118,10 +120,10 @@ public final class JdbcSinkSettings {
   @Override
   public String toString() {
     return String.format("JdbcSinkSettings(\n" +
-            "connection=%s\n" +
-            "table columns=%s\n" +
-            "error policy=%s\n" +
-            ")", connection, Joiner.on(";").join(mappings), errorPolicy.toString());
+                         "connection=%s\n" +
+                         "table columns=%s\n" +
+                         "error policy=%s\n" +
+                         ")", connection, Joiner.on(";").join(mappings), errorPolicy.toString());
   }
 
   /**
@@ -137,15 +139,15 @@ public final class JdbcSinkSettings {
     ErrorPolicyEnum policy = ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY).toUpperCase());
 
     return new JdbcSinkSettings(
-            config.getString(JdbcSinkConfig.DATABASE_CONNECTION_URI),
-            config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
-            config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
-            fieldsMappings,
-            policy,
-            config.getInt(JdbcSinkConfig.MAX_RETRIES),
-            config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
-            config.getInt(JdbcSinkConfig.BATCH_SIZE),
-            config.getInt(JdbcSinkConfig.RETRY_INTERVAL)
+        config.getString(JdbcSinkConfig.DATABASE_CONNECTION_URI),
+        config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
+        config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
+        fieldsMappings,
+        policy,
+        config.getInt(JdbcSinkConfig.MAX_RETRIES),
+        config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
+        config.getInt(JdbcSinkConfig.BATCH_SIZE),
+        config.getInt(JdbcSinkConfig.RETRY_INTERVAL)
     );
   }
 
@@ -195,26 +197,26 @@ public final class JdbcSinkSettings {
           insertMode = InsertModeEnum.UPSERT;
         }
         FieldsMappings fm = new FieldsMappings(kcqlConfig.getTarget(),
-                kcqlConfig.getSource(),
-                kcqlConfig.isIncludeAllFields(),
-                insertMode,
-                fieldAliasMap,
-                kcqlConfig.isAutoCreate(),
-                kcqlConfig.isAutoEvolve(),
-                kcqlConfig.isEnableCapitalize());
+                                               kcqlConfig.getSource(),
+                                               kcqlConfig.isIncludeAllFields(),
+                                               insertMode,
+                                               fieldAliasMap,
+                                               kcqlConfig.isAutoCreate(),
+                                               kcqlConfig.isAutoEvolve(),
+                                               kcqlConfig.isEnableCapitalize());
 
         if (insertMode.equals(InsertModeEnum.UPSERT)
-                && fm.autoCreateTable()
-                && fm.getMappings().containsKey(FieldsMappings.CONNECT_PARTITION_COLUMN)) {
+            && fm.autoCreateTable()
+            && fm.getMappings().containsKey(FieldsMappings.CONNECT_PARTITION_COLUMN)) {
           throw new ConfigException("In order to use UPSERT mode and table AUTO-CREATE you need to define Primary Keys " +
-                  "in your connect.jdbc.sink.export.mappings.");
+                                    "in your connect.jdbc.sink.export.mappings.");
         }
 
         logger.info("Creating field mapping:\n" + fm);
         fieldsMappingsList.add(fm);
       } catch (IllegalArgumentException ex) {
         throw new ConfigException(JdbcSinkConfig.EXPORT_MAPPINGS + " is not set correctly." + System.lineSeparator()
-                + ex.getMessage() + ":" + kcql, ex);
+                                  + ex.getMessage() + ":" + kcql, ex);
       }
     }
     return fieldsMappingsList;

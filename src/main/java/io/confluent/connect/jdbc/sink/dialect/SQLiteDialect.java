@@ -1,9 +1,8 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -12,6 +11,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
 /**
  * Provides SQL insert support for SQLite
@@ -38,8 +40,6 @@ public class SQLiteDialect extends DbDialect {
   /**
    * Returns the query for creating a new table in the database
    *
-   * @param tableName
-   * @param fields
    * @return The create query for the dialect
    */
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
@@ -89,21 +89,24 @@ public class SQLiteDialect extends DbDialect {
     }
     final List<String> queries = new ArrayList<>(fields.size());
     for (final SinkRecordField f : fields) {
-      queries.add(String.format("ALTER TABLE %s ADD %s%s%s %s NULL;", handleTableName(tableName), escapeColumnNamesStart, f.getName(), escapeColumnNamesEnd, getSqlType(f.getType())));
+      queries.add(String.format("ALTER TABLE %s ADD %s%s%s %s NULL;", handleTableName(tableName), escapeColumnNamesStart, f.getName(), escapeColumnNamesEnd,
+                                getSqlType(f.getType())));
     }
     return queries;
   }
 
   @Override
   public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
-    if (table == null || table.trim().length() == 0)
+    if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table> is not a valid parameter");
-    if (cols == null || cols.size() == 0)
+    }
+    if (cols == null || cols.size() == 0) {
       throw new IllegalArgumentException("<columns> is invalid.Expecting non null and non empty collection");
+    }
     if (keyCols == null || keyCols.size() == 0) {
       throw new IllegalArgumentException(
-              String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
-                      table)
+          String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
+                        table)
       );
     }
 
@@ -134,7 +137,7 @@ public class SQLiteDialect extends DbDialect {
     whereBuilder.append("=?");
     for (int i = 1; i < keyColumns.size(); ++i) {
       whereBuilder.append(" and ")
-              .append(keyCols.get(i)).append("=?");
+          .append(keyCols.get(i)).append("=?");
     }
 
     return String.format("insert or ignore into %s(%s) values(%s)", handleTableName(table), queryColumns, bindingValues);
