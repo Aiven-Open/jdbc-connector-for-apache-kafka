@@ -117,22 +117,15 @@ public final class JdbcDbWriter {
             //handle possible database changes (new tables, new columns)
             database.update(statementContext.getTablesToColumnsMap(), connection);
 
-            PreparedStatement statement = null;
-            try {
-              final String sql = statementData.getSql();
-              logger.debug("Executing SQL: {}", sql);
-              statement = connection.prepareStatement(sql);
+            final String sql = statementData.getSql();
+            logger.debug("Executing SQL: {}", sql);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
               for (Iterable<PreparedStatementBinder> entryBinders : statementData.getBinders()) {
                 PreparedStatementBindData.apply(statement, entryBinders);
                 statement.addBatch();
                 totalRecords++;
               }
               statement.executeBatch();
-
-            } finally {
-              if (statement != null) {
-                statement.close();
-              }
             }
           }
         } catch (NoSuchElementException ex) {
