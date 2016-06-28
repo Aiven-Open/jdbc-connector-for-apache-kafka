@@ -49,8 +49,9 @@ public class TimestampIncrementingOffset {
 
   public Map<String, Object> toMap() {
     Map<String, Object> map = new HashMap<>(3);
-    if (incrementingOffset != null)
+    if (incrementingOffset != null) {
       map.put(INCREMENTING_FIELD, incrementingOffset);
+    }
     if (timestampOffset != null) {
       map.put(TIMESTAMP_FIELD, timestampOffset.getTime());
       map.put(TIMESTAMP_NANOS_FIELD, timestampOffset.getNanos());
@@ -59,8 +60,9 @@ public class TimestampIncrementingOffset {
   }
 
   public static TimestampIncrementingOffset fromMap(Map<String, ?> map) {
-    if (map == null || map.isEmpty())
+    if (map == null || map.isEmpty()) {
       return new TimestampIncrementingOffset(null, null);
+    }
 
     Long incr = (Long) map.get(INCREMENTING_FIELD);
     Long millis = (Long) map.get(TIMESTAMP_FIELD);
@@ -68,21 +70,27 @@ public class TimestampIncrementingOffset {
     if (millis != null) {
       ts = new Timestamp(millis);
       Integer nanos = (Integer) map.get(TIMESTAMP_NANOS_FIELD);
-      if (nanos != null)
-          ts.setNanos(nanos);
+      if (nanos != null) {
+        ts.setNanos(nanos);
+      }
     }
     return new TimestampIncrementingOffset(ts, incr);
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     TimestampIncrementingOffset that = (TimestampIncrementingOffset) o;
 
-    if (incrementingOffset != null ? !incrementingOffset.equals(that.incrementingOffset) : that.incrementingOffset != null)
+    if (incrementingOffset != null ? !incrementingOffset.equals(that.incrementingOffset) : that.incrementingOffset != null) {
       return false;
+    }
     return timestampOffset != null ? timestampOffset.equals(that.timestampOffset) : that.timestampOffset == null;
 
   }
