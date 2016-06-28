@@ -52,8 +52,7 @@ public class Database {
    *
    * @param tablesToColumnsMap A map of table and sinkRecords for that table.
    */
-  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap,
-                     final Connection connection) throws SQLException {
+  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap, final Connection connection) {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
     final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
     final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
