@@ -18,47 +18,31 @@ public class PostgresMetadataTest {
   //@Test
   public void shouldReturnTrueIfTheTableExists() throws SQLException {
     String table = "playground";
-    Connection connection = DriverManager.getConnection(URI, user, psw);
-    try {
+    try (Connection connection = DriverManager.getConnection(URI, user, psw)) {
       assertTrue(DatabaseMetadata.tableExists(connection, table));
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
   //@Test
   public void shouldReturnFalseIfTheTableDoesNotExists() throws SQLException {
     String table = "bibble";
-    Connection connection = DriverManager.getConnection(URI, user, psw);
-    try {
+    try (Connection connection = DriverManager.getConnection(URI, user, psw)) {
       assertFalse(DatabaseMetadata.tableExists(connection, table));
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
   //@Test
   public void shouldReturnFalseEvenIfTheTableIsInAnotherDatabase() throws SQLException {
     String table = "company";
-    Connection connection = DriverManager.getConnection(URI, user, psw);
-    try {
+    try (Connection connection = DriverManager.getConnection(URI, user, psw)) {
       assertFalse(DatabaseMetadata.tableExists(connection, table));
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
   //@Test
   public void shouldReturnTheTablesInfo() throws SQLException {
     String tableName = "playground";
-    Connection connection = DriverManager.getConnection(URI, user, psw);
-    try {
+    try (Connection connection = DriverManager.getConnection(URI, user, psw)) {
       DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
       assertEquals(tableName, table.getName());
       Map<String, DbTableColumn> map = table.getColumns();
@@ -69,10 +53,6 @@ public class PostgresMetadataTest {
       assertTrue(map.containsKey("install_date"));
 
       assertTrue(map.get("equip_id").isPrimaryKey());
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 

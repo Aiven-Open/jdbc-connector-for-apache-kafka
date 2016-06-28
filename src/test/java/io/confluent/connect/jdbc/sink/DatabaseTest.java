@@ -106,9 +106,7 @@ public class DatabaseTest {
         new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
 
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
+    try (Connection connection = connectionProvider.getConnection()) {
       changesExecutor.update(map, connection);
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
       assertTrue(DatabaseMetadata.tableExists(connection, tableName2));
@@ -157,10 +155,6 @@ public class DatabaseTest {
       assertFalse(columnMap.get("col4").isPrimaryKey());
       assertTrue(columnMap.get("col4").allowsNull());
 
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
@@ -229,9 +223,7 @@ public class DatabaseTest {
         new SinkRecordField(Schema.Type.BYTES, "col4", false)
     ));
 
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
+    try (Connection connection = connectionProvider.getConnection()) {
       changesExecutor.update(map, connection);
 
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
@@ -279,10 +271,6 @@ public class DatabaseTest {
       assertFalse(columnMap.get("col4").isPrimaryKey());
       assertTrue(columnMap.get("col4").allowsNull());
 
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
@@ -314,9 +302,7 @@ public class DatabaseTest {
                                             "col5 REAL NULL,\n" +
                                             "PRIMARY KEY(col1));");
 
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
+    try (Connection connection = connectionProvider.getConnection()) {
       changesExecutor.update(map, connection);
 
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
@@ -345,10 +331,6 @@ public class DatabaseTest {
       assertTrue(columnMap.get("col5").allowsNull());
 
 
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
@@ -378,9 +360,7 @@ public class DatabaseTest {
                                             "col3 NUMERIC NULL,\n" +
                                             "PRIMARY KEY(col1));");
 
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
+    try (Connection connection = connectionProvider.getConnection()) {
       changesExecutor.update(map, connection);
 
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
@@ -409,10 +389,6 @@ public class DatabaseTest {
       assertTrue(columnMap.get("col5").allowsNull());
 
 
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
@@ -456,20 +432,12 @@ public class DatabaseTest {
       System.out.print(e.getMessage());
       throw new InterruptException(e);
     }
-    Connection connection1 = null;
-    try {
-      connection1 = connectionProvider.getConnection();
-      DbTable table = DatabaseMetadata.getTableMetadata(connection1, tableName1);
+    try (Connection connection = connectionProvider.getConnection()) {
+      DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName1);
       assertTrue(table.getColumns().containsKey("col4"));
-    } finally {
-      if (connection1 != null) {
-        connection1.close();
-      }
     }
 
-    Connection connection = null;
-    try {
-      connection = connectionProvider.getConnection();
+    try (Connection connection = connectionProvider.getConnection()) {
       changesExecutor.update(map, connection);
 
       assertTrue(DatabaseMetadata.tableExists(connection, tableName1));
@@ -497,10 +465,6 @@ public class DatabaseTest {
       assertFalse(columnMap.get("col5").isPrimaryKey());
       assertTrue(columnMap.get("col5").allowsNull());
 
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
