@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -16,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,12 +90,12 @@ public class JdbcDbWriterEvolveTest {
                 queryBuilder,
                 new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT, fields, false, true, false))));
 
-    List<DbTable> dbTables = Lists.newArrayList();
+    List<DbTable> dbTables = Collections.emptyList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.newHashSet(tableName),
-        Sets.<String>newHashSet(),
+        Collections.singleton(tableName),
+        Collections.<String>emptySet(),
         dbMetadata,
         new SQLiteDialect(),
         1);
@@ -108,7 +106,7 @@ public class JdbcDbWriterEvolveTest {
         executor,
         10);
 
-    writer.write(Lists.newArrayList(
+    writer.write(Collections.singletonList(
         new SinkRecord(topic, partition, null, null, schema, struct1, 0)
     ));
 
@@ -143,7 +141,7 @@ public class JdbcDbWriterEvolveTest {
         .put("age", age2)
         .put("salary", salary2);
 
-    writer.write(Lists.newArrayList(
+    writer.write(Collections.singletonList(
         new SinkRecord(topic, partition, null, null, schema2, struct2, 0)
     ));
 
@@ -198,9 +196,8 @@ public class JdbcDbWriterEvolveTest {
                 queryBuilder,
                 new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT, fields, false, true, false))));
 
-    List<DbTable> dbTables = Lists.newArrayList();
-    dbTables.add(
-        new DbTable(tableName, Lists.newArrayList(
+    List<DbTable> dbTables = Collections.singletonList(
+        new DbTable(tableName, Arrays.asList(
             new DbTableColumn("firstName", true, false, 0),
             new DbTableColumn("lastName", true, false, 0),
             new DbTableColumn("age", false, false, 0)
@@ -209,8 +206,8 @@ public class JdbcDbWriterEvolveTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.<String>newHashSet(),
-        Sets.newHashSet(tableName),
+        Collections.<String>emptySet(),
+        Collections.singleton(tableName),
         dbMetadata,
         new SQLiteDialect(),
         1);
@@ -237,7 +234,7 @@ public class JdbcDbWriterEvolveTest {
         .put("age", age2)
         .put("salary", salary2);
 
-    writer.write(Lists.newArrayList(
+    writer.write(Arrays.asList(
         new SinkRecord(topic, partition, null, null, schema, struct1, 0),
         new SinkRecord(topic, partition, null, null, schema2, struct2, 1)
     ));
@@ -327,12 +324,12 @@ public class JdbcDbWriterEvolveTest {
                                                            fields,
                                                            true, true, false))));
 
-    List<DbTable> dbTables = Lists.newArrayList();
+    List<DbTable> dbTables = Collections.emptyList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.newHashSet(tableName),
-        Sets.<String>newHashSet(),
+        Collections.singleton(tableName),
+        Collections.<String>emptySet(),
         dbMetadata,
         new SQLiteDialect(),
         1);
@@ -415,13 +412,13 @@ public class JdbcDbWriterEvolveTest {
                 queryBuilder,
                 new RecordDataExtractor(new FieldsMappings(tableName, topic, true, InsertModeEnum.INSERT, fields, false, true, false))));
 
-    List<DbTable> dbTables = Lists.newArrayList();
+    List<DbTable> dbTables = Collections.emptyList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
 
     Database executor = new Database(
-        Sets.newHashSet(tableName),
-        Sets.newHashSet(tableName), //allow auto evolution
+        Collections.singleton(tableName),
+        Collections.singleton(tableName), //allow auto evolution
         dbMetadata,
         new SQLiteDialect(),
         1);
@@ -433,7 +430,7 @@ public class JdbcDbWriterEvolveTest {
         executor,
         10);
 
-    writer.write(Lists.newArrayList(
+    writer.write(Collections.singleton(
         new SinkRecord(topic, partition, null, null, schema, struct1, 0)
     ));
 
@@ -468,7 +465,7 @@ public class JdbcDbWriterEvolveTest {
         .put("age", age2)
         .put("salary", salary2);
 
-    writer.write(Lists.newArrayList(
+    writer.write(Collections.singleton(
         new SinkRecord(topic, partition, null, null, schema2, struct2, 0)
     ));
 

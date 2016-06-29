@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import org.apache.curator.test.InstanceSpec;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
@@ -18,6 +15,7 @@ import org.mockito.Mockito;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,7 +54,7 @@ public class SinkTaskTest {
     TestBase base = new TestBase();
     TopicPartition tp1 = new TopicPartition(base.getTopic1(), 12);
     TopicPartition tp2 = new TopicPartition(base.getTopic2(), 13);
-    HashSet<TopicPartition> assignment = Sets.newHashSet();
+    HashSet<TopicPartition> assignment = new HashSet<>();
 
     //Set topic assignments, used by the sinkContext mock
     assignment.add(tp1);
@@ -170,7 +168,7 @@ public class SinkTaskTest {
         .put("age", age2);
 
     int partition = 1;
-    Collection<SinkRecord> records = Lists.newArrayList(
+    Collection<SinkRecord> records = Arrays.asList(
         new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 2),
         new SinkRecord(base.getTopic1(), partition, null, null, schema, struct1a, 3));
     task.put(records);

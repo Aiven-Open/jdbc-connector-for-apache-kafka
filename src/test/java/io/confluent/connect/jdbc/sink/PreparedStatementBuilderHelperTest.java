@@ -1,10 +1,9 @@
 package io.confluent.connect.jdbc.sink;
 
-import com.google.common.collect.Lists;
-
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,16 +35,17 @@ public class PreparedStatementBuilderHelperTest {
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
 
-    List<DbTable> tables = Lists.newArrayList(
+    List<DbTable> tables = Arrays.asList(
         new DbTable("tableA", new ArrayList<DbTableColumn>()),
-        new DbTable("tableB", new ArrayList<DbTableColumn>()));
+        new DbTable("tableB", new ArrayList<DbTableColumn>())
+    );
     PreparedStatementBuilderHelper.from(settings, new DatabaseMetadata(null, tables));
   }
 
   @Test(expected = ConfigException.class)
   public void throwAnExceptionIfTheFieldMapsToAnInExistingColumn() {
 
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", false, false, 1),
         new DbTableColumn("col2", false, false, 1),
         new DbTableColumn("col3", false, false, 1));
@@ -63,7 +63,7 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleAllFieldsMappingSetting() {
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, false, 1),
         new DbTableColumn("col3", false, false, 1));
@@ -95,7 +95,7 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleAllFieldsMappingSettingAndTheMappingsProvided() {
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, false, 1),
         new DbTableColumn("col3", false, false, 1));
@@ -132,7 +132,7 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleAllFieldsIncludedAndAnExistingMapping() {
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, false, 1),
         new DbTableColumn("col3", false, false, 1));
@@ -165,7 +165,7 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test
   public void handleNotAllFieldsMappedButSpecificMappings() {
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, false, 1),
         new DbTableColumn("col3", false, false, 1));
@@ -194,7 +194,7 @@ public class PreparedStatementBuilderHelperTest {
 
   @Test(expected = ConfigException.class)
   public void throwAnExceptionIfSpecificMappingsAreSetButPKColumnIsMissed() {
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, false, 1),
         new DbTableColumn("col3", false, false, 1));

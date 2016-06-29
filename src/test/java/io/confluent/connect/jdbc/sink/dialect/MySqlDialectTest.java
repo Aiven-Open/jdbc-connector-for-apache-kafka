@@ -1,10 +1,9 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.collect.Lists;
-
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
@@ -16,7 +15,7 @@ public class MySqlDialectTest {
 
   @Test
   public void handleCreateTableMultiplePKColumns() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "userid", true),
         new SinkRecordField(Schema.Type.INT32, "userdataid", true),
         new SinkRecordField(Schema.Type.STRING, "info", false)
@@ -32,7 +31,7 @@ public class MySqlDialectTest {
 
   @Test
   public void handleCreateTableOnePKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -58,7 +57,7 @@ public class MySqlDialectTest {
 
   @Test
   public void handleCreateTableNoPKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", false),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -83,7 +82,7 @@ public class MySqlDialectTest {
 
   @Test
   public void handleAmendAddColumns() {
-    List<String> actual = dialect.getAlterTable("tableA", Lists.newArrayList(
+    List<String> actual = dialect.getAlterTable("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", false),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -115,8 +114,8 @@ public class MySqlDialectTest {
                       "`score`=values(`score`)";
 
     String upsert = dialect.getUpsertQuery("actor",
-                                           Lists.newArrayList("first_name", "last_name", "score"),
-                                           Lists.newArrayList("actor_id"));
+                                           Arrays.asList("first_name", "last_name", "score"),
+                                           Arrays.asList("actor_id"));
     assertEquals(expected, upsert);
   }
 }

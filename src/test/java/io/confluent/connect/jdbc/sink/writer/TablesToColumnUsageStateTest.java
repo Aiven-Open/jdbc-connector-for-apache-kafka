@@ -1,12 +1,13 @@
 package io.confluent.connect.jdbc.sink.writer;
 
 
-import com.google.common.collect.Lists;
-
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,12 +29,12 @@ import static org.junit.Assert.assertTrue;
 public class TablesToColumnUsageStateTest {
   @Test(expected = IllegalArgumentException.class)
   public void shouldRaiseAnExceptionIfTheTableNameIsNull() {
-    new TablesToColumnUsageState().trackUsage(null, Lists.<PreparedStatementBinder>newArrayList());
+    new TablesToColumnUsageState().trackUsage(null, Collections.<PreparedStatementBinder>emptyList());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void shouldRaiseAnExceptionIfTheTableNameIsWhitespace() {
-    new TablesToColumnUsageState().trackUsage(" ", Lists.<PreparedStatementBinder>newArrayList());
+    new TablesToColumnUsageState().trackUsage(" ", Collections.<PreparedStatementBinder>emptyList());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -44,7 +45,7 @@ public class TablesToColumnUsageStateTest {
   @Test
   public void shouldHandlesEmptyBinders() {
     TablesToColumnUsageState state = new TablesToColumnUsageState();
-    state.trackUsage("table", Lists.<PreparedStatementBinder>newArrayList());
+    state.trackUsage("table", Collections.<PreparedStatementBinder>emptyList());
 
     assertEquals(state.getState().size(), 0);
   }
@@ -53,7 +54,7 @@ public class TablesToColumnUsageStateTest {
   public void shouldHandleNewTable() {
     TablesToColumnUsageState state = new TablesToColumnUsageState();
 
-    List<PreparedStatementBinder> cols = Lists.newArrayList();
+    List<PreparedStatementBinder> cols = new ArrayList<>();
     cols.add(new ShortPreparedStatementBinder("npk1", (short) 0));
     cols.add(new StringPreparedStatementBinder("npk2", "bibble"));
     cols.add(new BooleanPreparedStatementBinder("npk3", true));
@@ -114,7 +115,7 @@ public class TablesToColumnUsageStateTest {
 
     TablesToColumnUsageState state = new TablesToColumnUsageState();
 
-    List<PreparedStatementBinder> cols = Lists.newArrayList();
+    List<PreparedStatementBinder> cols = new ArrayList<>();
     cols.add(new ShortPreparedStatementBinder("npk1", (short) 0));
     cols.add(new StringPreparedStatementBinder("npk2", "bibble"));
     cols.add(new BooleanPreparedStatementBinder("npk3", true));

@@ -1,8 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
 
-import com.google.common.collect.Maps;
-
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -125,7 +123,7 @@ public class RecordDataExtractorTest {
         .put("age", 30)
         .put("threshold", threshold);
 
-    Map<String, FieldAlias> mappings = Maps.newHashMap();
+    Map<String, FieldAlias> mappings = new HashMap<>();
     mappings.put("lastName", new FieldAlias("Name"));
     mappings.put("age", new FieldAlias("a"));
 
@@ -173,7 +171,7 @@ public class RecordDataExtractorTest {
         .put("lastName", "Smith")
         .put("age", 28);
 
-    Map<String, FieldAlias> mappings = Maps.newHashMap();
+    Map<String, FieldAlias> mappings = new HashMap<>();
     mappings.put("lastName", new FieldAlias("Name"));
     mappings.put("age", new FieldAlias("age"));
 

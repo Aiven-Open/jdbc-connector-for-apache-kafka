@@ -1,16 +1,9 @@
 package io.confluent.connect.jdbc.sink;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
-import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
 
 //name=jdbc-datamountaineer-1
@@ -73,19 +66,7 @@ public class TestBase {
     return topic2;
   }
 
-
-  public List<FieldsMappings> getFieldMappingsAll() {
-    List<FieldsMappings> list = Lists.newArrayList();
-
-    Map<String, FieldAlias> mappings = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName1, topic1, true, InsertModeEnum.INSERT, mappings, false, false, false));
-    Map<String, FieldAlias> mappings2 = Maps.newHashMap();
-    list.add(new FieldsMappings(tableName2, topic2, true, InsertModeEnum.INSERT, mappings2, false, false, false));
-    return list;
-  }
-
   public Map<String, String> getPropsAllFields(String errorPolicy, String mode, Boolean autoCreate) {
-
     Map<String, String> props = new HashMap<>();
 
     props.put("topic", topics);
