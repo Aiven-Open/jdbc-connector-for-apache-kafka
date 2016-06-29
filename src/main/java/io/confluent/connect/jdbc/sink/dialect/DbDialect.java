@@ -4,6 +4,7 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -60,11 +61,7 @@ public abstract class DbDialect {
     builder.append("(");
     joinToBuilder(builder, ",", nonKeyColumns, keyColumns, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES(");
-    builder.append("?");
-    final int count = nonKeyColumns.size() + keyColumns.size();
-    for (int i = 1; i < count; ++i) {
-      builder.append(",?");
-    }
+    joinToBuilder(builder, ",", Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"), stringIdentityTransform());
     builder.append(")");
     return builder.toString();
   }
@@ -135,45 +132,48 @@ public abstract class DbDialect {
     if (fields.isEmpty()) {
       throw new IllegalArgumentException("<fields> is not valid.Not accepting empty collection of fields.");
     }
+
     final StringBuilder builder = new StringBuilder();
     builder.append("CREATE TABLE ");
     builder.append(handleTableName(tableName));
     builder.append(" (");
-    boolean first = true;
 
-    List<String> pks = new ArrayList<>();
-    for (final SinkRecordField f : fields) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
+    joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
+      @Override
+      public void apply(StringBuilder builder, SinkRecordField f) {
+        builder.append(lineSeparator);
+        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(" ");
+
+        if (f.isPrimaryKey() && f.getType().equals(Schema.Type.STRING)) {
+          builder.append("VARCHAR(50)");
+        } else {
+          builder.append(getSqlType(f.getType()));
+        }
+
+        if (f.isPrimaryKey()) {
+          builder.append(" NOT NULL");
+        } else {
+          builder.append(" NULL");
+        }
       }
-      builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart);
-      builder.append(f.getName());
-      builder.append(escapeColumnNamesEnd);
-      builder.append(" ");
+    });
 
-      if (f.isPrimaryKey() && f.getType().equals(Schema.Type.STRING)) {
-        builder.append("VARCHAR(50)");
-      } else {
-        builder.append(getSqlType(f.getType()));
-      }
-
+    final List<String> pks = new ArrayList<>();
+    for (SinkRecordField f: fields) {
       if (f.isPrimaryKey()) {
-        builder.append(" NOT NULL");
-        pks.add(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
-      } else {
-        builder.append(" NULL");
+        pks.add(f.getName());
       }
     }
-    if (pks.size() > 0) {
+
+    if (!pks.isEmpty()) {
       builder.append(",");
       builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
-      joinToBuilder(builder, ",", pks, stringIdentityTransform());
+      joinToBuilder(builder, ",", pks, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
       builder.append(")");
     }
+
     builder.append(")");
     return builder.toString();
   }
@@ -194,26 +194,22 @@ public abstract class DbDialect {
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
     builder.append(handleTableName(tableName));
     builder.append(" ");
-    boolean first = true;
-    for (final SinkRecordField f : fields) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
-      }
-      builder.append(lineSeparator);
-      builder.append("ADD COLUMN ");
-      builder.append(escapeColumnNamesStart);
-      builder.append(f.getName());
-      builder.append(escapeColumnNamesEnd);
-      builder.append(" ");
-      builder.append(getSqlType(f.getType()));
-      builder.append(" NULL");
-    }
 
-    final List<String> query = new ArrayList<>(1);
-    query.add(builder.toString());
-    return query;
+    joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
+      @Override
+      public void apply(StringBuilder builder, SinkRecordField f) {
+        builder.append(lineSeparator);
+        builder.append("ADD COLUMN ");
+        builder.append(escapeColumnNamesStart);
+        builder.append(f.getName());
+        builder.append(escapeColumnNamesEnd);
+        builder.append(" ");
+        builder.append(getSqlType(f.getType()));
+        builder.append(" NULL");
+      }
+    });
+
+    return Collections.singletonList(builder.toString());
   }
 
   /**

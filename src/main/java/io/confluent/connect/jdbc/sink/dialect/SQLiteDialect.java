@@ -48,33 +48,38 @@ public class SQLiteDialect extends DbDialect {
     }
     final StringBuilder builder = new StringBuilder();
     builder.append(String.format("CREATE TABLE %s (", handleTableName(tableName)));
-    boolean first = true;
-    List<String> primaryKeys = new ArrayList<>();
-    for (final SinkRecordField f : fields) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
-      }
-      builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
-      builder.append(" ");
-      builder.append(getSqlType(f.getType()));
 
+    joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
+      @Override
+      public void apply(StringBuilder builder, SinkRecordField f) {
+        builder.append(lineSeparator);
+        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(" ");
+        builder.append(getSqlType(f.getType()));
+
+        if (f.isPrimaryKey()) {
+          builder.append(" NOT NULL ");
+        } else {
+          builder.append(" NULL");
+        }
+      }
+    });
+
+    final List<String> pks = new ArrayList<>();
+    for (SinkRecordField f: fields) {
       if (f.isPrimaryKey()) {
-        builder.append(" NOT NULL ");
-        primaryKeys.add(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
-      } else {
-        builder.append(" NULL");
+        pks.add(f.getName());
       }
     }
-    if (primaryKeys.size() > 0) {
+
+    if (!pks.isEmpty()) {
       builder.append(",");
       builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
-      joinToBuilder(builder, ",", primaryKeys, stringIdentityTransform());
+      joinToBuilder(builder, ",", pks, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
       builder.append(")");
     }
+
     builder.append(");");
     return builder.toString();
   }

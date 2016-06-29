@@ -4,6 +4,7 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,24 +46,17 @@ public class SqlServerDialect extends DbDialect {
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
     builder.append(handleTableName(tableName));
     builder.append(" ADD");
-
-    boolean first = true;
-    for (final SinkRecordField f : fields) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
+    joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
+      @Override
+      public void apply(StringBuilder builder, SinkRecordField f) {
+        builder.append(lineSeparator);
+        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(" ");
+        builder.append(getSqlType(f.getType()));
+        builder.append(" NULL");
       }
-      builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
-      builder.append(" ");
-      builder.append(getSqlType(f.getType()));
-      builder.append(" NULL");
-    }
-    //builder.append(";");
-    final List<String> query = new ArrayList<String>(1);
-    query.add(builder.toString());
-    return query;
+    });
+    return Collections.singletonList(builder.toString());
   }
 
   @Override
