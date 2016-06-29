@@ -123,8 +123,6 @@ public abstract class DbDialect {
         return new SqlServerDialect();
 
       case "mariadb":
-        return new MariaDialect();
-
       case "mysql":
         return new MySqlDialect();
 
