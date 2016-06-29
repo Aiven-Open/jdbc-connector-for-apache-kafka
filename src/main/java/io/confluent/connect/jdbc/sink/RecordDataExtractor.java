@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -71,24 +68,13 @@ public class RecordDataExtractor {
     if (fieldsMappings.areAllFieldsIncluded()) {
       fields = schema.fields();
     } else {
-
       final Map<String, FieldAlias> mappings = fieldsMappings.getMappings();
-      fields = Collections2.filter(schema.fields(), new Predicate<Field>() {
-        @Override
-        public boolean apply(Field input) {
-          return fieldsMappings.areAllFieldsIncluded() ||
-                 mappings.containsKey(input.name());
+      fields = new ArrayList<>(schema.fields().size());
+      for (Field input : schema.fields()) {
+        if (mappings.containsKey(input.name())) {
+          fields.add(input);
         }
-
-        @Override
-        public boolean equals(Object object) {
-          return false;
-        }
-
-        public int hashCode() {
-          return 0;
-        }
-      });
+      }
     }
 
     final List<PreparedStatementBinder> binders = new ArrayList<>(fields.size() + 1);

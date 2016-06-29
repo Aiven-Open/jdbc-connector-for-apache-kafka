@@ -1,9 +1,8 @@
 package io.confluent.connect.jdbc.sink.avro;
 
-import com.google.common.collect.Lists;
-
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,7 @@ public class AvroToDbConverter {
   public Collection<SinkRecordField> convert(String inputSchema, Map<String, FieldAlias> mappings) {
     org.apache.avro.Schema schema = new org.apache.avro.Schema.Parser().parse(inputSchema);
     List<org.apache.avro.Schema.Field> fields = schema.getFields();
-    List<SinkRecordField> converted = Lists.newArrayList();
+    List<SinkRecordField> converted = new ArrayList<>();
 
     for (org.apache.avro.Schema.Field avro : fields) {
       String fieldName = avro.name();

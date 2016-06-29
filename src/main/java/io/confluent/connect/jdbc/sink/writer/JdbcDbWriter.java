@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.collect.Iterators;
-
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -145,8 +143,7 @@ public final class JdbcDbWriter {
           logger.warn("No records have been written. Given the configuration no data has been used from the SinkRecords.");
         }
       } catch (SQLException sqlException) {
-        final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
-        assert firstRecord != null;
+        final SinkRecord firstRecord = records.iterator().next();
         logger.error("Error occurred inserting data starting at topic:{} offset:{} partition:{}",
                      firstRecord.topic(),
                      firstRecord.kafkaOffset(),

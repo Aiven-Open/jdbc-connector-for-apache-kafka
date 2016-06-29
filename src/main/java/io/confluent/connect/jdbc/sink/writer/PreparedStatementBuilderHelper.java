@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,17 +31,17 @@ public final class PreparedStatementBuilderHelper {
   public static PreparedStatementContextIterable from(final JdbcSinkSettings settings,
                                                       final DatabaseMetadata databaseMetadata) {
 
-    final Map<String, DataExtractorWithQueryBuilder> map = Maps.newHashMap();
+    final Map<String, DataExtractorWithQueryBuilder> map = new HashMap<>();
     for (final FieldsMappings tm : settings.getMappings()) {
       FieldsMappings tableMappings = tm;
       //if the table is not set with autocreate we try to find it
       if (!tm.autoCreateTable()) {
         if (!databaseMetadata.containsTable(tm.getTableName())) {
-          final String tables = Joiner.on(",").join(databaseMetadata.getTableNames());
-          throw new ConfigException(String.format("%s table is not found in the database available tables:%s. Make sure you" +
-                                                  " set the table to be autocreated or manually add it to the database.",
-                                                  tm.getTableName(),
-                                                  tables));
+          throw new ConfigException(
+              String.format("%s table is not found in the database available tables: %s. "
+                            + "Make sure you set the table to be autocreated or manually add it to the database.",
+                            tm.getTableName(), databaseMetadata.getTableNames())
+          );
         }
         //get the columns merged
         tableMappings = validateAndMerge(tm, databaseMetadata.getTable(tm.getTableName()));
@@ -91,7 +88,7 @@ public final class PreparedStatementBuilderHelper {
               String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
                             tm.getTableName(),
                             colName,
-                            Joiner.on(",").join(map.keySet()));
+                            map.keySet());
           throw new ConfigException(error);
         }
 
@@ -109,7 +106,7 @@ public final class PreparedStatementBuilderHelper {
               String.format("Invalid field mapping. For table %s the following column is not found %s in available columns:%s",
                             tm.getTableName(),
                             colName,
-                            Joiner.on(",").join(dbCols.keySet()));
+                            dbCols.keySet());
           throw new ConfigException(error);
         }
         map.put(alias.getKey(), new FieldAlias(colName, pkColumns.contains(colName.toLowerCase()) || pkColumns.contains(colName.toUpperCase())));
@@ -120,15 +117,11 @@ public final class PreparedStatementBuilderHelper {
 
       if (pkColumns.size() > 0) {
         if (!specifiedPKs.containsAll(pkColumns)) {
-          logger.warn("Invalid mappings. Not all PK columns have been specified. PK specified {} out of existing {}",
-                      Joiner.on(",").join(specifiedPKs),
-                      Joiner.on(",").join(pkColumns));
+          logger.warn("Invalid mappings. Not all PK columns have been specified. PK specified {} out of existing {}", specifiedPKs, pkColumns);
         }
         if (tm.getInsertMode().equals(InsertModeEnum.UPSERT)) {
           throw new ConfigException(
-              String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s  out of existing %s",
-                            Joiner.on(",").join(specifiedPKs),
-                            Joiner.on(",").join(pkColumns)));
+              String.format("Invalid mappings. Not all PK columns have been specified. PK specified %s out of existing %s", specifiedPKs, pkColumns));
         }
       }
     }

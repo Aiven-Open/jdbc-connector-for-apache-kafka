@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.collect.Iterators;
-
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -21,8 +19,7 @@ public final class RetryErrorHandlingPolicy implements ErrorHandlingPolicy {
       throw new RuntimeException(error);
     } else {
       if (!records.isEmpty()) {
-        final SinkRecord firstRecord = Iterators.getNext(records.iterator(), null);
-        assert firstRecord != null;
+        final SinkRecord firstRecord = records.iterator().next();
         logger.warn("Going to retry inserting data starting at topic: {} offset: {} partition: {}. Remaining attempts {}",
                     firstRecord.topic(),
                     firstRecord.kafkaOffset(),

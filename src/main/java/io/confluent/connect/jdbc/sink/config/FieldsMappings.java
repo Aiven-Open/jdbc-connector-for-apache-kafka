@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink.config;
 
-import com.google.common.base.Joiner;
-
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
@@ -121,15 +119,16 @@ public final class FieldsMappings {
 
   @Override
   public String toString() {
-    Joiner.MapJoiner mapJoiner = Joiner.on(",\n").withKeyValueSeparator("=");
-    return "{\n" +
-           "topic:" + incomingTopic + "\n" +
-           "table:" + tableName + "\n" +
-           "auto-create:" + autoCreateTable + "\n" +
-           "evolve-schema:" + evolveTableSchema + "\n" +
-           "include-all-fields:" + allFieldsIncluded + "\n" +
-           "mappings:" + mapJoiner.join(mappings) + "\n" +
-           "}";
+    return "FieldsMappings{" +
+           "tableName='" + tableName + '\'' +
+           ", incomingTopic='" + incomingTopic + '\'' +
+           ", allFieldsIncluded=" + allFieldsIncluded +
+           ", mappings=" + mappings +
+           ", autoCreateTable=" + autoCreateTable +
+           ", evolveTableSchema=" + evolveTableSchema +
+           ", capitalizeColumnNamesAndTables=" + capitalizeColumnNamesAndTables +
+           ", insertMode=" + insertMode +
+           '}';
   }
 
   public boolean isCapitalizeColumnNamesAndTables() {

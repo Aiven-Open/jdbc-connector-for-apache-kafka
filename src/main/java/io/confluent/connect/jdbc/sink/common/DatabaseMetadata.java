@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink.common;
 
-import com.google.common.collect.Lists;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,7 +157,7 @@ public class DatabaseMetadata {
 
       final DatabaseMetaData dbMetadata = connection.getMetaData();
 
-      final List<DbTable> dbTables = Lists.newArrayList();
+      final List<DbTable> dbTables = new ArrayList<>();
       for (final String table : tables) {
         if (tableExists(connection, catalog, table)) {
           final List<DbTableColumn> columns = getTableColumns(catalog, table, dbMetadata);

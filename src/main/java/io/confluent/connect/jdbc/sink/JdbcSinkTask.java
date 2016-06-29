@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink;
 
-import com.google.common.base.Joiner;
-
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -39,7 +37,7 @@ public class JdbcSinkTask extends SinkTask {
     DatabaseMetadataProvider provider = new DatabaseMetadataProvider() {
       @Override
       public DatabaseMetadata get(ConnectionProvider connectionProvider) throws SQLException {
-        logger.info("Getting tables metadata for " + Joiner.on(",").join(settings.getTableNames()));
+        logger.info("Getting metadata for tables: {}", settings.getTableNames());
         return DatabaseMetadata.getDatabaseMetadata(connectionProvider, settings.getTableNames());
       }
     };

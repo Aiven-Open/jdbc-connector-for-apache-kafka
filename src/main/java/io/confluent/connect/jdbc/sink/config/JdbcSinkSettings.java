@@ -1,10 +1,5 @@
 package io.confluent.connect.jdbc.sink.config;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-
 import com.datamountaineer.connector.config.Config;
 import com.datamountaineer.connector.config.WriteModeEnum;
 
@@ -105,25 +100,15 @@ public final class JdbcSinkSettings {
   }
 
   public Set<String> getTableNames() {
-    return Sets.newHashSet(Iterables.transform(mappings, new Function<FieldsMappings, String>() {
-      @Override
-      public String apply(FieldsMappings fieldsMappings) {
-        return fieldsMappings.getTableName();
-      }
-    }));
+    HashSet<String> tableNames = new HashSet<>();
+    for (FieldsMappings mapping : mappings) {
+      tableNames.add(mapping.getTableName());
+    }
+    return tableNames;
   }
 
   public String getSchemaRegistryUrl() {
     return schemaRegistryUrl;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("JdbcSinkSettings(\n" +
-                         "connection=%s\n" +
-                         "table columns=%s\n" +
-                         "error policy=%s\n" +
-                         ")", connection, Joiner.on(";").join(mappings), errorPolicy.toString());
   }
 
   /**
@@ -224,5 +209,20 @@ public final class JdbcSinkSettings {
 
   public int getRetryDelay() {
     return retryDelay;
+  }
+
+  @Override
+  public String toString() {
+    return "JdbcSinkSettings{" +
+           "batchSize=" + batchSize +
+           ", maxRetries=" + maxRetries +
+           ", retryDelay=" + retryDelay +
+           ", connection='" + connection + '\'' +
+           ", user='" + user + '\'' +
+           ", password='" + password + '\'' +
+           ", schemaRegistryUrl='" + schemaRegistryUrl + '\'' +
+           ", mappings=" + mappings +
+           ", errorPolicy=" + errorPolicy +
+           '}';
   }
 }

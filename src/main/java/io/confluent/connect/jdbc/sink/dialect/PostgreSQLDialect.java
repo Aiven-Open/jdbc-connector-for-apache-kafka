@@ -82,6 +82,5 @@ public class PostgreSQLDialect extends DbDialect {
     return "INSERT INTO " + handleTableName(table) + " (" + queryColumns + ") " +
            "VALUES (" + bindingValues + ") " +
            "ON CONFLICT (" + Joiner.on(",").join(keyColumns) + ") DO UPDATE SET " + updateSet;
-
   }
 }

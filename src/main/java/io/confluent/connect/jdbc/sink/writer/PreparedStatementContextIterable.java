@@ -2,7 +2,6 @@ package io.confluent.connect.jdbc.sink.writer;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -143,7 +142,7 @@ public final class PreparedStatementContextIterable {
               final String query = extractorWithQueryBuilder
                   .getQueryBuilder()
                   .build(tableName, nonKeyColumnsName, keyColumnsName);
-              mapStatements.put(statementKey, new PreparedStatementData(query, Lists.<Iterable<PreparedStatementBinder>>newLinkedList()));
+              mapStatements.put(statementKey, new PreparedStatementData(query, new LinkedList<Iterable<PreparedStatementBinder>>()));
             }
             final PreparedStatementData statementData = mapStatements.get(statementKey);
             statementData.addEntryBinders(binders);

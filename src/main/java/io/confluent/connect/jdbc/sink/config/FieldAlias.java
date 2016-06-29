@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink.config;
 
-import com.google.common.base.Objects;
-
 /**
  * Holds the information for a field alias.
  */
@@ -50,30 +48,29 @@ public final class FieldAlias {
     return name;
   }
 
-  /**
-   * Checks the two objects for equality by delegating to their respective
-   * {@link Object#equals(Object)} methods.
-   *
-   * @param o the {@link FieldAlias} to which this one is to be checked for equality
-   * equal
-   */
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof FieldAlias)) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final FieldAlias fa = (FieldAlias) o;
-    return Objects.equal(name, fa.name) && isPrimaryKey == fa.isPrimaryKey;
+
+    FieldAlias that = (FieldAlias) o;
+
+    if (isPrimaryKey != that.isPrimaryKey) {
+      return false;
+    }
+    return name != null ? name.equals(that.name) : that.name == null;
+
   }
 
-  /**
-   * Compute a hash code using the hash codes of the underlying objects
-   *
-   * @return a hashcode of the FieldAlias
-   */
   @Override
   public int hashCode() {
-    return name.hashCode();
+    int result = (isPrimaryKey ? 1 : 0);
+    result = 31 * result + (name != null ? name.hashCode() : 0);
+    return result;
   }
 
   @Override
