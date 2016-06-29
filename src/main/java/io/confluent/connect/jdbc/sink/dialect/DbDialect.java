@@ -1,18 +1,16 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.*;
 
 /**
  * Describes which SQL dialect to use. Different databases support different syntax for upserts.
@@ -60,17 +58,7 @@ public abstract class DbDialect {
     StringBuilder builder = new StringBuilder("INSERT INTO ");
     builder.append(handleTableName(tableName));
     builder.append("(");
-    Iterator<String> iter = Iterables.concat(nonKeyColumns, keyColumns).iterator();
-    iter.hasNext();
-    builder.append(escapeColumnNamesStart)
-        .append(iter.next())
-        .append(escapeColumnNamesEnd);
-    while (iter.hasNext()) {
-      builder.append(",");
-      builder.append(escapeColumnNamesStart)
-          .append(iter.next())
-          .append(escapeColumnNamesEnd);
-    }
+    joinToBuilder(builder, ",", nonKeyColumns, keyColumns, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES(");
     builder.append("?");
     final int count = nonKeyColumns.size() + keyColumns.size();
@@ -183,7 +171,7 @@ public abstract class DbDialect {
       builder.append(",");
       builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
-      builder.append(Joiner.on(",").join(pks));
+      joinToBuilder(builder, ",", pks, stringIdentityTransform());
       builder.append(")");
     }
     builder.append(")");

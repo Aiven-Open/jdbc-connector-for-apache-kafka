@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -14,10 +11,12 @@ import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
 
-/**
- * Provides SQL insert support for SQLite
- */
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringIdentityTransform;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+
 public class SQLiteDialect extends DbDialect {
   public SQLiteDialect() {
     super(getSqlTypeMap(), "`", "`");
@@ -73,7 +72,7 @@ public class SQLiteDialect extends DbDialect {
       builder.append(",");
       builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
-      builder.append(Joiner.on(",").join(primaryKeys));
+      joinToBuilder(builder, ",", primaryKeys, stringIdentityTransform());
       builder.append(")");
     }
     builder.append(");");
@@ -109,39 +108,13 @@ public class SQLiteDialect extends DbDialect {
                         table)
       );
     }
-
-    List<String> nonKeyColumns = new ArrayList<>(cols.size());
-    for (String c : cols) {
-      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    List<String> keyColumns = new ArrayList<>(keyCols.size());
-    for (String c : keyCols) {
-      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
-    final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
-
-    // FIXME this is not actually used
-    final StringBuilder builder = new StringBuilder();
-    builder.append(nonKeyColumns.get(0));
-    builder.append("=?");
-    for (int i = 1; i < nonKeyColumns.size(); ++i) {
-      builder.append(",");
-      builder.append(nonKeyColumns.get(i));
-      builder.append("=?");
-    }
-
-    // FIXME this is not actually used
-    final StringBuilder whereBuilder = new StringBuilder();
-    whereBuilder.append(keyColumns.get(0));
-    whereBuilder.append("=?");
-    for (int i = 1; i < keyColumns.size(); ++i) {
-      whereBuilder.append(" and ")
-          .append(keyCols.get(i)).append("=?");
-    }
-
-    return String.format("insert or ignore into %s(%s) values(%s)", handleTableName(table), queryColumns, bindingValues);
+    StringBuilder builder = new StringBuilder();
+    builder.append("insert or ignore into ");
+    builder.append(handleTableName(table)).append("(");
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(") values(");
+    joinToBuilder(builder, ",", Collections.nCopies(cols.size() + keyCols.size(), "?"), stringIdentityTransform());
+    builder.append(")");
+    return builder.toString();
   }
 }

@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -13,6 +10,10 @@ import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
 
 public class SqlServerDialect extends DbDialect {
 
@@ -74,49 +75,43 @@ public class SqlServerDialect extends DbDialect {
       throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
     }
 
-    List<String> columns = null;
-    if (cols != null) {
-      columns = new ArrayList<>(cols.size());
-      for (String c : cols) {
-        columns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-      }
-    }
-    List<String> keyColumns = new ArrayList<>(keyCols.size());
-    for (String c : keyCols) {
-      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    final Iterable<String> iter = Iterables.concat(columns, keyColumns);
-    final String select = Joiner.on(", ? AS ").join(iter);
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
     String tableName = handleTableName(table);
     builder.append(tableName);
-    builder.append(" with (HOLDLOCK) AS target using (select ? AS ");
-    builder.append(select);
-    builder.append(") AS incoming on (");
-    builder.append(String.format("target.%s=incoming.%s", keyColumns.get(0), keyColumns.get(0)));
-    for (int i = 1; i < keyColumns.size(); ++i) {
-      builder.append(String.format(" and target.%s=incoming.%s", keyColumns.get(i), keyColumns.get(i)));
-    }
-    builder.append(")");
-    if (columns != null && columns.size() > 0) {
-      builder.append(" when matched then update set ");
-      builder.append(String.format("%s=incoming.%s", columns.get(0), columns.get(0)));
-      for (int i = 1; i < columns.size(); ++i) {
-        builder.append(String.format(",%s=incoming.%s", columns.get(i), columns.get(i)));
+    builder.append(" with (HOLDLOCK) AS target using (select ");
+    joinToBuilder(builder, ", ", cols, keyCols, new StringBuilderUtil.Transform<String>() {
+      @Override
+      public void apply(StringBuilder builder, String col) {
+        builder.append("? AS ").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
       }
+    });
+    builder.append(") AS incoming on (");
+    joinToBuilder(builder, " and ", keyCols, new StringBuilderUtil.Transform<String>() {
+      @Override
+      public void apply(StringBuilder builder, String col) {
+        builder.append("target.")
+            .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
+            .append("=incoming.").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+      }
+    });
+    builder.append(")");
+    if (cols != null && cols.size() > 0) {
+      builder.append(" when matched then update set ");
+      joinToBuilder(builder, ",", cols, new StringBuilderUtil.Transform<String>() {
+        @Override
+        public void apply(StringBuilder builder, String col) {
+          builder.append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
+              .append("=incoming.")
+              .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+        }
+      });
     }
-
-    final String insertColumns = Joiner.on(", ").join(iter);
-    final String insertValues = Joiner.on(",incoming.").join(iter);
-
     builder.append(" when not matched then insert (");
-    builder.append(insertColumns);
-    builder.append(") values (incoming.");
-    builder.append(insertValues);
+    joinToBuilder(builder, ", ", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(") values (");
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform("incoming." + escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(");");
     return builder.toString();
-
   }
 }
