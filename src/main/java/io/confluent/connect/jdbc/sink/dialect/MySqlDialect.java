@@ -2,7 +2,6 @@ package io.confluent.connect.jdbc.sink.dialect;
 
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class MySqlDialect extends DbDialect {
     builder.append("(");
     joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") values(");
-    joinToBuilder(builder, ",", Collections.nCopies(cols.size() + keyCols.size(), "?"), stringIdentityTransform());
+    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") on duplicate key update ");
     joinToBuilder(
         builder,

@@ -61,7 +61,7 @@ public abstract class DbDialect {
     builder.append("(");
     joinToBuilder(builder, ",", nonKeyColumns, keyColumns, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES(");
-    joinToBuilder(builder, ",", Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"), stringIdentityTransform());
+    nCopiesToBuilder(builder, ",", "?", nonKeyColumns.size() + keyColumns.size());
     builder.append(")");
     return builder.toString();
   }

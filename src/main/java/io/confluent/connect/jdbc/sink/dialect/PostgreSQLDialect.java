@@ -2,7 +2,6 @@ package io.confluent.connect.jdbc.sink.dialect;
 
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,7 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
 
 import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringIdentityTransform;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.nCopiesToBuilder;
 import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
 
 public class PostgreSQLDialect extends DbDialect {
@@ -54,7 +53,7 @@ public class PostgreSQLDialect extends DbDialect {
     builder.append(" (");
     joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES (");
-    joinToBuilder(builder, ",", Collections.nCopies(cols.size() + keyCols.size(), "?"), stringIdentityTransform());
+    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") ON CONFLICT (");
     joinToBuilder(builder, ",", keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") DO UPDATE SET ");

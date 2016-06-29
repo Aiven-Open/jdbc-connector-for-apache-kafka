@@ -4,7 +4,6 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,7 @@ import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
 
 import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringIdentityTransform;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.nCopiesToBuilder;
 import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
 
 public class SQLiteDialect extends DbDialect {
@@ -118,7 +117,7 @@ public class SQLiteDialect extends DbDialect {
     builder.append(handleTableName(table)).append("(");
     joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") values(");
-    joinToBuilder(builder, ",", Collections.nCopies(cols.size() + keyCols.size(), "?"), stringIdentityTransform());
+    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(")");
     return builder.toString();
   }

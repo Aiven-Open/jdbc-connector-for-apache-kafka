@@ -17,13 +17,13 @@ public class StringBuilderUtil {
     };
   }
 
-  public static Transform<String> stringIdentityTransform() {
-    return new Transform<String>() {
-      @Override
-      public void apply(StringBuilder builder, String input) {
-        builder.append(input);
+  public static void nCopiesToBuilder(StringBuilder builder, String delim, String item, int n) {
+    for (int i = 0; i < n; i++) {
+      if (i > 0) {
+        builder.append(delim);
       }
-    };
+      builder.append(item);
+    }
   }
 
   public static <T> void joinToBuilder(StringBuilder builder, String delim, Iterable<T> iter, Transform<T> transform) {
