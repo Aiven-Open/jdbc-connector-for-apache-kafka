@@ -104,12 +104,6 @@
             <version>${kafka.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-connect-avro-converter</artifactId>
-            <version>${confluent.version}</version>
-        </dependency>
-
         <!-- JDBC drivers, only included in runtime so they get packaged -->
         <dependency>
             <groupId>org.xerial</groupId>

@@ -1,5 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
 import io.confluent.connect.jdbc.sink.common.DbTable;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;

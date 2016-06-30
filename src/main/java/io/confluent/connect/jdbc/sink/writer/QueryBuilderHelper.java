@@ -1,6 +1,7 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import io.confluent.common.config.ConfigException;
+import org.apache.kafka.common.config.ConfigException;
+
 import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 
