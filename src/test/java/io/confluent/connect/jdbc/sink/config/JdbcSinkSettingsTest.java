@@ -355,7 +355,6 @@ public class JdbcSinkSettingsTest {
                        "]}";
     client.registerSchema(rawSchema, base.getTopic1());
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(JdbcSinkConfig.SCHEMA_REGISTRY_URL, "http://localhost:" + port);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);

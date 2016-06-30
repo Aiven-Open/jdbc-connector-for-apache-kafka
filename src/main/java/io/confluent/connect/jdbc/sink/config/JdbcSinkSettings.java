@@ -17,9 +17,6 @@ import java.util.Set;
 
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
 
-/**
- * Holds the Jdbc Sink settings
- */
 public final class JdbcSinkSettings {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkSettings.class);
 
@@ -29,7 +26,6 @@ public final class JdbcSinkSettings {
   private final String connection;
   private final String user;
   private final String password;
-  private final String schemaRegistryUrl;
   private final List<FieldsMappings> mappings;
   private final ErrorPolicyEnum errorPolicy;
 
@@ -39,7 +35,6 @@ public final class JdbcSinkSettings {
    * @param connection - The database connection string
    * @param mappings - A list of payload field mappings
    * @param errorPolicy - Specifies how an error is handled
-   * @param schemaRegistryUrl - The end point for the Connect Schema registry
    * @param batchSize - how big the batch size should be
    * @param retryDelay -The time to wait before the operation is retried
    */
@@ -49,7 +44,6 @@ public final class JdbcSinkSettings {
                           List<FieldsMappings> mappings,
                           ErrorPolicyEnum errorPolicy,
                           int maxRetries,
-                          String schemaRegistryUrl,
                           int batchSize,
                           int retryDelay) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
@@ -66,7 +60,6 @@ public final class JdbcSinkSettings {
     this.mappings = mappings;
     this.errorPolicy = errorPolicy;
     this.maxRetries = maxRetries;
-    this.schemaRegistryUrl = schemaRegistryUrl;
     this.batchSize = batchSize;
     this.retryDelay = retryDelay;
   }
@@ -107,10 +100,6 @@ public final class JdbcSinkSettings {
     return tableNames;
   }
 
-  public String getSchemaRegistryUrl() {
-    return schemaRegistryUrl;
-  }
-
   /**
    * Creates an instance of JdbcSinkSettings from a JdbcSinkConfig
    *
@@ -130,7 +119,6 @@ public final class JdbcSinkSettings {
         fieldsMappings,
         policy,
         config.getInt(JdbcSinkConfig.MAX_RETRIES),
-        config.getString(JdbcSinkConfig.SCHEMA_REGISTRY_URL),
         config.getInt(JdbcSinkConfig.BATCH_SIZE),
         config.getInt(JdbcSinkConfig.RETRY_INTERVAL)
     );
@@ -220,7 +208,6 @@ public final class JdbcSinkSettings {
            ", connection='" + connection + '\'' +
            ", user='" + user + '\'' +
            ", password='" + password + '\'' +
-           ", schemaRegistryUrl='" + schemaRegistryUrl + '\'' +
            ", mappings=" + mappings +
            ", errorPolicy=" + errorPolicy +
            '}';

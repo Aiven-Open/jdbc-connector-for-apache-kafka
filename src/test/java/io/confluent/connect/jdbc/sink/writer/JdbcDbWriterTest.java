@@ -75,7 +75,6 @@ public class JdbcDbWriterTest {
                                                      fieldsMappingsList,
                                                      ErrorPolicyEnum.NOOP,
                                                      10,
-                                                     "",
                                                      1000,
                                                      1000);
 
@@ -105,7 +104,6 @@ public class JdbcDbWriterTest {
                                                      fieldsMappingsList,
                                                      ErrorPolicyEnum.NOOP,
                                                      10,
-                                                     "",
                                                      1000,
                                                      1000
     );
@@ -135,7 +133,6 @@ public class JdbcDbWriterTest {
                                                      fieldsMappingsList,
                                                      ErrorPolicyEnum.THROW,
                                                      10,
-                                                     "",
                                                      1000,
                                                      1000);
 

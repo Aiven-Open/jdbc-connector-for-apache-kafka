@@ -5,11 +5,6 @@ import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Map;
 
-/**
- * <h1>JdbcSinkConfig</h1>
- * <p>
- * Holds config, extends AbstractConfig.
- **/
 public class JdbcSinkConfig extends AbstractConfig {
 
 
@@ -88,11 +83,6 @@ public class JdbcSinkConfig extends AbstractConfig {
   private final static String DEFAULT_ERROR_POLICY = "THROW";
   private final static String DEFAULT_INSERT_MODE = "INSERT";
 
-  public final static String SCHEMA_REGISTRY_URL = "connect.jdbc.sink.schema.registry.url";
-  private final static String SCHEMA_REGISTRY_URL_DOC = "Url of the Schema registry";
-  private final static String SCHEMA_REGISTRY_URL_DEFAULT = "http://localhost:8081";
-
-
   public static ConfigDef getConfigDef() {
     return new ConfigDef()
         .define(DATABASE_CONNECTION_URI, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, DATABASE_CONNECTION_URI_DOC)
@@ -102,7 +92,6 @@ public class JdbcSinkConfig extends AbstractConfig {
         .define(BATCH_SIZE, ConfigDef.Type.INT, DEFAULT_BATCH_SIZE, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
         .define(EXPORT_MAPPINGS, ConfigDef.Type.STRING, "", ConfigDef.Importance.HIGH, EXPORT_MAPPING_DOC)
         .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
-        .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC)
-        .define(SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING, SCHEMA_REGISTRY_URL_DEFAULT, ConfigDef.Importance.HIGH, SCHEMA_REGISTRY_URL_DOC);
+        .define(RETRY_INTERVAL, ConfigDef.Type.INT, RETRY_INTERVAL_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_INTERVAL_DOC);
   }
 }

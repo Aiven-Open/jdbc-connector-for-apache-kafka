@@ -91,7 +91,6 @@ public class SinkTaskTest {
               "INSERT INTO " + base.getTableName1() + " SELECT * FROM " + base.getTopic1() + " AUTOCREATE;" +
               "INSERT INTO " + base.getTableName2() + " SELECT * FROM " + base.getTopic2());
     props.put(JdbcSinkConfig.ERROR_POLICY, "RETRY");
-    props.put(JdbcSinkConfig.SCHEMA_REGISTRY_URL, "http://localhost:" + port);
 
     JdbcSinkTask task = new JdbcSinkTask();
     task.initialize(context);
