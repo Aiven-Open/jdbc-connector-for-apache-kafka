@@ -201,7 +201,16 @@ public final class JdbcDbWriter {
     final Set<String> tablesAllowingAutoCreate = new HashSet<>();
     final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
 
-    validateSettings(settings, tablesAllowingAutoCreate, tablesAllowingSchemaEvolution);
+    for (FieldsMappings fm : settings.getMappings()) {
+      if (fm.autoCreateTable()) {
+        logger.info("Allowing auto-create for table {}", fm.getTableName());
+        tablesAllowingAutoCreate.add(fm.getTableName());
+      }
+      if (fm.evolveTableSchema()) {
+        logger.info("Allowing schema evolution for table {}", fm.getTableName());
+        tablesAllowingSchemaEvolution.add(fm.getTableName());
+      }
+    }
 
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
@@ -219,22 +228,6 @@ public final class JdbcDbWriter {
                             settings.getRetries());
   }
 
-
-  private static void validateSettings(JdbcSinkSettings settings,
-                                       Set<String> tablesAllowingAutoCreate,
-                                       Set<String> tablesAllowingSchemaEvolution) {
-    final List<FieldsMappings> mappingsList = settings.getMappings();
-    for (FieldsMappings fm : mappingsList) {
-      if (fm.autoCreateTable()) {
-        logger.info("Allowing auto-create for table {}", fm.getTableName());
-        tablesAllowingAutoCreate.add(fm.getTableName());
-      }
-      if (fm.evolveTableSchema()) {
-        logger.info("Allowing schema evolution for table {}", fm.getTableName());
-        tablesAllowingSchemaEvolution.add(fm.getTableName());
-      }
-    }
-  }
 
   /**
    * Get the prepared statement builder
