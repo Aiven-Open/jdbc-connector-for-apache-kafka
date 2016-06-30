@@ -1,40 +1,30 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
 import io.confluent.connect.jdbc.sink.ConnectionProvider;
 import io.confluent.connect.jdbc.sink.Database;
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.avro.AvroToDbConverter;
 import io.confluent.connect.jdbc.sink.binders.PreparedStatementBinder;
 import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
 import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.config.FieldAlias;
 import io.confluent.connect.jdbc.sink.config.FieldsMappings;
 import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.kafka.schemaregistry.client.rest.RestService;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 
 /**
  * Responsible for taking a sequence of SinkRecord and writing them to the database
@@ -210,9 +200,8 @@ public final class JdbcDbWriter {
 
     final Set<String> tablesAllowingAutoCreate = new HashSet<>();
     final Set<String> tablesAllowingSchemaEvolution = new HashSet<>();
-    final Map<String, Collection<SinkRecordField>> createTablesMap = new HashMap<>();
 
-    validateSettings(settings, tablesAllowingAutoCreate, tablesAllowingSchemaEvolution, createTablesMap);
+    validateSettings(settings, tablesAllowingAutoCreate, tablesAllowingSchemaEvolution);
 
     final DbDialect dbDialect = DbDialect.fromConnectionString(settings.getConnection());
 
@@ -222,11 +211,6 @@ public final class JdbcDbWriter {
         databaseMetadata,
         dbDialect,
         settings.getRetries());
-
-    //create an required tables
-    if (!createTablesMap.isEmpty()) {
-      database.createTables(createTablesMap, connectionProvider.getConnection());
-    }
 
     return new JdbcDbWriter(connectionProvider,
                             statementBuilder,
@@ -238,64 +222,13 @@ public final class JdbcDbWriter {
 
   private static void validateSettings(JdbcSinkSettings settings,
                                        Set<String> tablesAllowingAutoCreate,
-                                       Set<String> tablesAllowingSchemaEvolution,
-                                       Map<String, Collection<SinkRecordField>> createTablesMap) {
-
+                                       Set<String> tablesAllowingSchemaEvolution) {
     final List<FieldsMappings> mappingsList = settings.getMappings();
-    //for the mappings get the schema from the schema registry and add the default pk col.
     for (FieldsMappings fm : mappingsList) {
       if (fm.autoCreateTable()) {
+        logger.info("Allowing auto-create for table {}", fm.getTableName());
         tablesAllowingAutoCreate.add(fm.getTableName());
-        RestService registry = new RestService(settings.getSchemaRegistryUrl());
-        List<String> all = new ArrayList<>();
-
-        try {
-          all = registry.getAllSubjects();
-        } catch (RestClientException e) {
-          logger.info("No schemas found in Registry! Waiting for first record to create table for topic {}", fm.getIncomingTopic());
-        } catch (IOException e) {
-          logger.error("Unable to connect to the Schema Registry at {}", settings.getSchemaRegistryUrl(), e);
-        }
-
-        String lkTopic = fm.getIncomingTopic();
-        //do we have our topic
-        if (!all.contains(lkTopic)) {
-          //try topic name + value
-          if (all.contains(lkTopic + "-value")) {
-            lkTopic = lkTopic + "-value";
-          }
-        }
-
-        logger.info("Looking for schema " + lkTopic);
-        try {
-          final String latest = registry.getLatestVersion(lkTopic).getSchema();
-          logger.info("Found the following schema in the registry for topic {}{}{}", lkTopic, System.lineSeparator(), latest);
-          AvroToDbConverter converter = new AvroToDbConverter();
-          Collection<SinkRecordField> convertedFields = converter.convert(latest, fm.getMappings());
-
-          logger.info("Field mappings");
-          for (Map.Entry<String, FieldAlias> f : fm.getMappings().entrySet()) {
-            logger.info(f.getKey() + " " + f.getValue());
-          }
-
-          //do we have a default pk columns
-          FieldAlias pk = fm.getMappings().get(FieldsMappings.CONNECT_TOPIC_COLUMN);
-          if (pk != null) {
-            //add pk column if we have it to schema registry list of columns.
-            logger.info("Adding default primary key (" + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
-                        FieldsMappings.CONNECT_PARTITION_COLUMN + "," + FieldsMappings.CONNECT_OFFSET_COLUMN + ")");
-            convertedFields.add(new SinkRecordField(Schema.Type.STRING, FieldsMappings.CONNECT_TOPIC_COLUMN, true));
-            convertedFields.add(new SinkRecordField(Schema.Type.INT32, FieldsMappings.CONNECT_PARTITION_COLUMN, true));
-            convertedFields.add(new SinkRecordField(Schema.Type.INT64, FieldsMappings.CONNECT_OFFSET_COLUMN, true));
-            createTablesMap.put(fm.getTableName(), convertedFields);
-          }
-        } catch (RestClientException e) {
-          logger.info("No schema found in Registry! Waiting for first record to create table for topic %s", fm.getIncomingTopic());
-        } catch (IOException e) {
-          logger.error("Unable to connect to the Schema Registry at {}", settings.getSchemaRegistryUrl(), e);
-        }
       }
-
       if (fm.evolveTableSchema()) {
         logger.info("Allowing schema evolution for table {}", fm.getTableName());
         tablesAllowingSchemaEvolution.add(fm.getTableName());

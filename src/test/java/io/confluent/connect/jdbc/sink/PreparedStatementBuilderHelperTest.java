@@ -1,5 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -8,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.common.config.ConfigException;
 import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
 import io.confluent.connect.jdbc.sink.common.DbTable;
 import io.confluent.connect.jdbc.sink.common.DbTableColumn;
