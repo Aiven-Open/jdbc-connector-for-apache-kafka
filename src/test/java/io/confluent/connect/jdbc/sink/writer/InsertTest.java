@@ -1,8 +1,9 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.collect.Lists;
-
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 import io.confluent.connect.jdbc.sink.dialect.MySqlDialect;
 
@@ -11,19 +12,19 @@ import static org.junit.Assert.assertEquals;
 public class InsertTest {
   @Test(expected = IllegalArgumentException.class)
   public void throwAnErrorIfTheMapIsEmpty() {
-    new MySqlDialect().getInsert("sometable", Lists.<String>newArrayList(), Lists.<String>newArrayList());
+    new MySqlDialect().getInsert("sometable", Collections.<String>emptyList(), Collections.<String>emptyList());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableNameIsEmpty() {
-    new MySqlDialect().getInsert("  ", Lists.newArrayList("a"), Lists.<String>newArrayList());
+    new MySqlDialect().getInsert("  ", Collections.singletonList("a"), Collections.<String>emptyList());
   }
 
   @Test
   public void buildTheCorrectSql() {
     String query = new MySqlDialect().getInsert("customers",
-                                                Lists.newArrayList("age", "firstName", "lastName"),
-                                                Lists.<String>newArrayList());
+                                                Arrays.asList("age", "firstName", "lastName"),
+                                                Collections.<String>emptyList());
 
     assertEquals(query, "INSERT INTO `customers`(`age`,`firstName`,`lastName`) VALUES(?,?,?)");
   }

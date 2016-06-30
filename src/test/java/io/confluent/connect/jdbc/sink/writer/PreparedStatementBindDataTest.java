@@ -1,11 +1,10 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.collect.Lists;
-
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.binders.BooleanPreparedStatementBinder;
@@ -26,7 +25,7 @@ public class PreparedStatementBindDataTest {
   @Test
   public void bindAllGivenValuesToTheSqlStatement() throws SQLException {
     PreparedStatement statement = mock(PreparedStatement.class);
-    List<PreparedStatementBinder> values = Lists.<PreparedStatementBinder>newArrayList(
+    List<PreparedStatementBinder> values = Arrays.<PreparedStatementBinder>asList(
         new BooleanPreparedStatementBinder("", true),
         new BytePreparedStatementBinder("", (byte) 8),
         new ShortPreparedStatementBinder("", (byte) -24),

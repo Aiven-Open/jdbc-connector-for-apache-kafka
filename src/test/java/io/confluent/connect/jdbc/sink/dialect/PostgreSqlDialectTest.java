@@ -1,10 +1,10 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.collect.Lists;
-
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
@@ -17,36 +17,36 @@ public class PostgreSqlDialectTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Lists.newArrayList("value"), Lists.newArrayList("id"));
+    dialect.getUpsertQuery(null, Collections.singletonList("value"), Collections.singletonList("id"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Lists.newArrayList("value"), Lists.newArrayList("id"));
+    dialect.getUpsertQuery("  ", Collections.singletonList("value"), Collections.singletonList("id"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", Lists.newArrayList("value"), null);
+    dialect.getUpsertQuery("Person", Collections.singletonList("value"), null);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Lists.newArrayList("value"), Lists.<String>newArrayList());
+    dialect.getUpsertQuery("Customer", Collections.singletonList("value"), Collections.<String>emptyList());
   }
 
   @Test
   public void produceTheUpsertQuery() {
     String expected = "INSERT INTO \"Customer\" (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
                       "\"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"";
-    String insert = dialect.getUpsertQuery("Customer", Lists.newArrayList("name", "salary", "address"), Lists.newArrayList("id"));
+    String insert = dialect.getUpsertQuery("Customer", Arrays.asList("name", "salary", "address"), Collections.singletonList("id"));
     assertEquals(expected, insert);
   }
 
 
   @Test
   public void handleCreateTableMultiplePKColumns() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "userid", true),
         new SinkRecordField(Schema.Type.INT32, "userdataid", true),
         new SinkRecordField(Schema.Type.STRING, "info", false)
@@ -62,7 +62,7 @@ public class PostgreSqlDialectTest {
 
   @Test
   public void handleCreateTableOnePKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -88,7 +88,7 @@ public class PostgreSqlDialectTest {
 
   @Test
   public void handleCreateTableNoPKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", false),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -113,7 +113,7 @@ public class PostgreSqlDialectTest {
 
   @Test
   public void handleAmendAddColumns() {
-    List<String> actual = dialect.getAlterTable("tableA", Lists.newArrayList(
+    List<String> actual = dialect.getAlterTable("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", false),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),

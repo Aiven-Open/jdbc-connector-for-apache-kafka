@@ -1,21 +1,19 @@
 package io.confluent.connect.jdbc.sink.common;
 
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
@@ -41,14 +39,14 @@ public class DatabaseMetadataTest {
   @Test
   public void createAnInstance() {
     String database = "somedatabase";
-    List<DbTable> tables = Lists.newArrayList(
+    List<DbTable> tables = Arrays.asList(
         new DbTable("table1",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", true, false, 1),
                         new DbTableColumn("col2", false, false, 1)
                     )),
         new DbTable("table2",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", false, false, 1),
                         new DbTableColumn("col2", false, false, 1),
                         new DbTableColumn("col3", false, false, 1)
@@ -78,14 +76,14 @@ public class DatabaseMetadataTest {
   @Test
   public void returnsNoAmendmentsAndNoNewDataForEmptyMapInput() {
     String database = "somedatabase";
-    List<DbTable> tables = Lists.newArrayList(
+    List<DbTable> tables = Arrays.asList(
         new DbTable("table1",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", true, false, 1),
                         new DbTableColumn("col2", false, false, 1)
                     )),
         new DbTable("table2",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", false, false, 1),
                         new DbTableColumn("col2", false, false, 1),
                         new DbTableColumn("col3", false, false, 1)
@@ -100,14 +98,14 @@ public class DatabaseMetadataTest {
   @Test(expected = IllegalArgumentException.class)
   public void returnsNoAmendmentsAndNoNewDataForNullMapInput() {
     String database = "somedatabase";
-    List<DbTable> tables = Lists.newArrayList(
+    List<DbTable> tables = Arrays.asList(
         new DbTable("table1",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", true, false, 1),
                         new DbTableColumn("col2", false, false, 1)
                     )),
         new DbTable("table2",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", false, false, 1),
                         new DbTableColumn("col2", false, false, 1),
                         new DbTableColumn("col3", false, false, 1)
@@ -122,14 +120,14 @@ public class DatabaseMetadataTest {
   @Test
   public void handleAmendments() {
     String database = "somedatabase";
-    List<DbTable> tables = Lists.newArrayList(
+    List<DbTable> tables = Arrays.asList(
         new DbTable("table1",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", true, false, 1),
                         new DbTableColumn("col2", false, false, 1)
                     )),
         new DbTable("table2",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", false, false, 1),
                         new DbTableColumn("col2", false, false, 1),
                         new DbTableColumn("col3", false, false, 1)
@@ -138,7 +136,7 @@ public class DatabaseMetadataTest {
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put("table1",
-            Lists.newArrayList(
+            Arrays.asList(
                 new SinkRecordField(Schema.Type.INT32, "col1", true),
                 new SinkRecordField(Schema.Type.STRING, "col3", false),
                 new SinkRecordField(Schema.Type.STRING, "col2", false),
@@ -146,7 +144,7 @@ public class DatabaseMetadataTest {
             ));
 
     map.put("table2",
-            Lists.newArrayList(
+            Arrays.asList(
                 new SinkRecordField(Schema.Type.INT32, "col1", true),
                 new SinkRecordField(Schema.Type.STRING, "col2", false),
                 new SinkRecordField(Schema.Type.STRING, "col3", false)
@@ -158,14 +156,12 @@ public class DatabaseMetadataTest {
     assertTrue(amendmentsMap.containsKey("table1"));
     Collection<SinkRecordField> fields = amendmentsMap.get("table1");
     assertEquals(fields.size(), 2);
-    Set<String> fieldSet = Sets.newHashSet(
-        Iterables.transform(fields, new Function<SinkRecordField, String>() {
-          @Override
-          public String apply(SinkRecordField field) {
-            return field.getName();
-          }
-        }));
 
+
+    Set<String> fieldSet = new HashSet<>();
+    for (SinkRecordField field : fields) {
+      fieldSet.add(field.getName());
+    }
     assertEquals(fieldSet.size(), 2);
     assertTrue(fieldSet.contains("col3"));
     assertTrue(fieldSet.contains("col4"));
@@ -174,14 +170,14 @@ public class DatabaseMetadataTest {
   @Test
   public void handleNewTableAddition() {
     String database = "somedatabase";
-    List<DbTable> tables = Lists.newArrayList(
+    List<DbTable> tables = Arrays.asList(
         new DbTable("table1",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", true, false, 1),
                         new DbTableColumn("col2", false, false, 1)
                     )),
         new DbTable("table2",
-                    Lists.newArrayList(
+                    Arrays.asList(
                         new DbTableColumn("col1", false, false, 1),
                         new DbTableColumn("col2", false, false, 1),
                         new DbTableColumn("col3", false, false, 1)
@@ -190,14 +186,14 @@ public class DatabaseMetadataTest {
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put("table1a",
-            Lists.newArrayList(
+            Arrays.asList(
                 new SinkRecordField(Schema.Type.INT32, "col1", true),
                 new SinkRecordField(Schema.Type.STRING, "col3", true),
                 new SinkRecordField(Schema.Type.STRING, "col2", false)
             ));
 
     map.put("table2",
-            Lists.newArrayList(
+            Arrays.asList(
                 new SinkRecordField(Schema.Type.INT32, "col1", true),
                 new SinkRecordField(Schema.Type.STRING, "col2", false),
                 new SinkRecordField(Schema.Type.STRING, "col3", false)
@@ -209,14 +205,12 @@ public class DatabaseMetadataTest {
     assertTrue(createdMap.containsKey("table1a"));
     Collection<SinkRecordField> fields = createdMap.get("table1a");
     assertEquals(fields.size(), 3);
-    Set<String> fieldSet = Sets.newHashSet(
-        Iterables.transform(fields, new Function<SinkRecordField, String>() {
-          @Override
-          public String apply(SinkRecordField field) {
-            return field.getName();
-          }
-        }));
 
+
+    Set<String> fieldSet = new HashSet<>();
+    for (SinkRecordField field : fields) {
+      fieldSet.add(field.getName());
+    }
     assertEquals(fieldSet.size(), 3);
     assertTrue(fieldSet.contains("col1"));
     assertTrue(fieldSet.contains("col2"));

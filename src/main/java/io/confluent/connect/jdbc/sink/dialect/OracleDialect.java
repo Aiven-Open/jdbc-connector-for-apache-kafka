@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
@@ -13,10 +10,11 @@ import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
 
-/**
- * Provides support for Oracle database
- */
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+
 public class OracleDialect extends DbDialect {
   public OracleDialect() {
     super(getSqlTypeMap(), "\"", "\"");
@@ -47,21 +45,24 @@ public class OracleDialect extends DbDialect {
     builder.append(handleTableName(tableName)); //yes oracles needs it uppercase
     builder.append(" ADD(");
 
-    boolean first = true;
-    for (final SinkRecordField f : fields) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
-      }
-      builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart)
-          .append(f.getName())
-          .append(escapeColumnNamesEnd);
-      builder.append(" ");
-      builder.append(getSqlType(f.getType()));
-      builder.append(" NULL");
-    }
+    joinToBuilder(
+        builder,
+        ",",
+        fields,
+        new StringBuilderUtil.Transform<SinkRecordField>() {
+          @Override
+          public void apply(StringBuilder builder, SinkRecordField f) {
+            builder.append(lineSeparator);
+            builder.append(escapeColumnNamesStart)
+                .append(f.getName())
+                .append(escapeColumnNamesEnd);
+            builder.append(" ");
+            builder.append(getSqlType(f.getType()));
+            builder.append(" NULL");
+          }
+        }
+    );
+
     builder.append(")");
 
     final List<String> query = new ArrayList<String>(1);
@@ -70,7 +71,7 @@ public class OracleDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
+  public String getUpsertQuery(final String table, List<String> cols, List<String> keyCols) {
     if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table> is not valid");
     }
@@ -79,72 +80,41 @@ public class OracleDialect extends DbDialect {
       throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
     }
 
-    List<String> columns = null;
-    if (cols != null) {
-      columns = new ArrayList<>(cols.size());
-      for (String c : cols) {
-        columns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-      }
-    }
-    List<String> keyColumns = new ArrayList<>(keyCols.size());
-    for (String c : keyCols) {
-      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
+    // https://blogs.oracle.com/cmar/entry/using_merge_to_do_an
 
-    final Iterable<String> iter = Iterables.concat(columns, keyColumns);
-    final String select = Joiner.on(", ? ").join(iter);
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
-    String tableName = handleTableName(table);
+    final String tableName = handleTableName(table);
     builder.append(tableName);
-    builder.append(" using (select ? ");
-    builder.append(select);
+    builder.append(" using (select ");
+    joinToBuilder(builder, ", ", cols, keyCols, stringSurroundTransform("? " + escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(" FROM dual) incoming on(");
-    builder.append(tableName);
-    builder.append(".");
-    builder.append(keyColumns.get(0));
-    builder.append("=incoming.");
-    builder.append(keyColumns.get(0));
-    for (int i = 1; i < keyColumns.size(); ++i) {
-      builder.append(" and ");
-      builder.append(tableName);
-      builder.append(".");
-      builder.append(keyColumns.get(i));
-      builder.append("=incoming.");
-      builder.append(keyColumns.get(i));
-    }
-    builder.append(")");
-    if (columns != null && columns.size() > 0) {
-      builder.append(" when matched then update set ");
-      builder.append(tableName);
-      builder.append(".");
-      builder.append(columns.get(0));
-      builder.append("=incoming.");
-      builder.append(columns.get(0));
-      for (int i = 1; i < columns.size(); ++i) {
-        builder.append(",");
-        builder.append(tableName);
-        builder.append(".");
-        builder.append(columns.get(i));
-        builder.append("=incoming.");
-        builder.append(columns.get(i));
+    joinToBuilder(builder, " and ", keyCols, new StringBuilderUtil.Transform<String>() {
+      @Override
+      public void apply(StringBuilder builder, String col) {
+        builder.append(tableName).append(".")
+            .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
+            .append("=incoming.").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
       }
+    });
+    builder.append(")");
+    if (cols != null && cols.size() > 0) {
+      builder.append(" when matched then update set ");
+      joinToBuilder(builder, ",", cols, new StringBuilderUtil.Transform<String>() {
+        @Override
+        public void apply(StringBuilder builder, String col) {
+          builder.append(tableName).append(".")
+              .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
+              .append("=incoming.").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+        }
+      });
     }
-
-    final String insertColumns = Joiner.on(String.format(",%s.", tableName)).join(iter);
-    final String insertValues = Joiner.on(",incoming.").join(iter);
 
     builder.append(" when not matched then insert(");
-    builder.append(tableName);
-    builder.append(".");
-    builder.append(insertColumns);
-    builder.append(") values(incoming.");
-    builder.append(insertValues);
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(tableName + "." + escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(") values(");
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform("incoming." + escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(")");
-        /*
-        https://blogs.oracle.com/cmar/entry/using_merge_to_do_an"
-         */
     return builder.toString();
-
   }
 }

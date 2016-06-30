@@ -1,9 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.connect.data.Schema;
 import org.junit.After;
@@ -14,7 +11,9 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -84,14 +83,14 @@ public class DatabaseTest {
 
     String tableName1 = "tableA";
     String tableName2 = "tableB";
-    Database changesExecutor = new Database(Sets.newHashSet(tableName1, tableName2),
-                                            new HashSet<String>(),
+    Database changesExecutor = new Database(new HashSet<>(Arrays.asList(tableName1, tableName2)),
+                                            Collections.<String>emptySet(),
                                             new DatabaseMetadata(null, new ArrayList<DbTable>()),
                                             DbDialect.fromConnectionString(SQL_LITE_URI),
                                             2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
-    map.put(tableName1, Lists.newArrayList(
+    map.put(tableName1, Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", false),
         new SinkRecordField(Schema.Type.INT8, "col3", false),
@@ -99,7 +98,7 @@ public class DatabaseTest {
         new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    map.put(tableName2, Lists.newArrayList(
+    map.put(tableName2, Arrays.asList(
         new SinkRecordField(Schema.Type.STRING, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", true),
         new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
@@ -168,7 +167,7 @@ public class DatabaseTest {
 
     String tableName = "tableA";
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
-    map.put(tableName, Lists.newArrayList(
+    map.put(tableName, Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", false),
         new SinkRecordField(Schema.Type.INT8, "col3", false),
@@ -201,14 +200,14 @@ public class DatabaseTest {
                                             "col3 NUMERIC NULL," +
                                             "PRIMARY KEY(col1));");
 
-    Database changesExecutor = new Database(new HashSet<String>(),
-                                            Sets.newHashSet(tableName1, tableName2),
+    Database changesExecutor = new Database(Collections.<String>emptySet(),
+                                            new HashSet<>(Arrays.asList(tableName1, tableName2)),
                                             new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
                                             DbDialect.fromConnectionString(SQL_LITE_URI),
                                             2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
-    map.put(tableName1, Lists.newArrayList(
+    map.put(tableName1, Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", false),
         new SinkRecordField(Schema.Type.INT8, "col3", false),
@@ -216,7 +215,7 @@ public class DatabaseTest {
         new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    map.put(tableName2, Lists.newArrayList(
+    map.put(tableName2, Arrays.asList(
         new SinkRecordField(Schema.Type.STRING, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", true),
         new SinkRecordField(Schema.Type.FLOAT32, "col3", false),
@@ -278,14 +277,14 @@ public class DatabaseTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreated() throws SQLException {
 
     String tableName1 = "tableA1";
-    Database changesExecutor = new Database(Sets.newHashSet(tableName1),
+    Database changesExecutor = new Database(Collections.singleton(tableName1),
                                             new HashSet<String>(),
                                             new DatabaseMetadata(null, new ArrayList<DbTable>()),
                                             DbDialect.fromConnectionString(SQL_LITE_URI),
                                             2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
-    map.put(tableName1, Lists.newArrayList(
+    map.put(tableName1, Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", false),
         new SinkRecordField(Schema.Type.INT8, "col3", false),
@@ -338,14 +337,14 @@ public class DatabaseTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreatedButNotAllTheColumnsArePresent() throws SQLException {
 
     String tableName1 = "tableA11";
-    Database changesExecutor = new Database(Sets.newHashSet(tableName1),
+    Database changesExecutor = new Database(Collections.singleton(tableName1),
                                             new HashSet<String>(),
                                             new DatabaseMetadata(null, new ArrayList<DbTable>()),
                                             DbDialect.fromConnectionString(SQL_LITE_URI),
                                             2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
-    map.put(tableName1, Lists.newArrayList(
+    map.put(tableName1, Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", false),
         new SinkRecordField(Schema.Type.INT8, "col3", false),
@@ -404,14 +403,14 @@ public class DatabaseTest {
                                             "col3 NUMERIC NULL," +
                                             "PRIMARY KEY(col1));");
 
-    Database changesExecutor = new Database(new HashSet<String>(),
-                                            Sets.newHashSet(tableName1),
+    Database changesExecutor = new Database(Collections.<String>emptySet(),
+                                            Collections.singleton(tableName1),
                                             new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
                                             DbDialect.fromConnectionString(SQL_LITE_URI),
                                             2);
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
-    map.put(tableName1, Lists.newArrayList(
+    map.put(tableName1, Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.STRING, "col2", false),
         new SinkRecordField(Schema.Type.INT8, "col3", false),
@@ -419,7 +418,7 @@ public class DatabaseTest {
         new SinkRecordField(Schema.Type.FLOAT64, "col5", false)
     ));
 
-    List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Lists.newArrayList(
+    List<String> amendQuery = new SQLiteDialect().getAlterTable(tableName1, Collections.singletonList(
         new SinkRecordField(Schema.Type.INT64, "col4", false)
     ));
 

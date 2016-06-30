@@ -1,23 +1,21 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
 import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
 
-/**
- * Provides SQL insert support for SQLite
- */
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+
 public class SQLiteDialect extends DbDialect {
   public SQLiteDialect() {
     super(getSqlTypeMap(), "`", "`");
@@ -49,33 +47,38 @@ public class SQLiteDialect extends DbDialect {
     }
     final StringBuilder builder = new StringBuilder();
     builder.append(String.format("CREATE TABLE %s (", handleTableName(tableName)));
-    boolean first = true;
-    List<String> primaryKeys = new ArrayList<>();
-    for (final SinkRecordField f : fields) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
-      }
-      builder.append(lineSeparator);
-      builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
-      builder.append(" ");
-      builder.append(getSqlType(f.getType()));
 
+    joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
+      @Override
+      public void apply(StringBuilder builder, SinkRecordField f) {
+        builder.append(lineSeparator);
+        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(" ");
+        builder.append(getSqlType(f.getType()));
+
+        if (f.isPrimaryKey()) {
+          builder.append(" NOT NULL ");
+        } else {
+          builder.append(" NULL");
+        }
+      }
+    });
+
+    final List<String> pks = new ArrayList<>();
+    for (SinkRecordField f: fields) {
       if (f.isPrimaryKey()) {
-        builder.append(" NOT NULL ");
-        primaryKeys.add(escapeColumnNamesStart + f.getName() + escapeColumnNamesEnd);
-      } else {
-        builder.append(" NULL");
+        pks.add(f.getName());
       }
     }
-    if (primaryKeys.size() > 0) {
+
+    if (!pks.isEmpty()) {
       builder.append(",");
       builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
-      builder.append(Joiner.on(",").join(primaryKeys));
+      joinToBuilder(builder, ",", pks, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
       builder.append(")");
     }
+
     builder.append(");");
     return builder.toString();
   }
@@ -109,39 +112,13 @@ public class SQLiteDialect extends DbDialect {
                         table)
       );
     }
-
-    List<String> nonKeyColumns = new ArrayList<>(cols.size());
-    for (String c : cols) {
-      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    List<String> keyColumns = new ArrayList<>(keyCols.size());
-    for (String c : keyCols) {
-      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
-    final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
-
-    // FIXME this is not actually used
-    final StringBuilder builder = new StringBuilder();
-    builder.append(nonKeyColumns.get(0));
-    builder.append("=?");
-    for (int i = 1; i < nonKeyColumns.size(); ++i) {
-      builder.append(",");
-      builder.append(nonKeyColumns.get(i));
-      builder.append("=?");
-    }
-
-    // FIXME this is not actually used
-    final StringBuilder whereBuilder = new StringBuilder();
-    whereBuilder.append(keyColumns.get(0));
-    whereBuilder.append("=?");
-    for (int i = 1; i < keyColumns.size(); ++i) {
-      whereBuilder.append(" and ")
-          .append(keyCols.get(i)).append("=?");
-    }
-
-    return String.format("insert or ignore into %s(%s) values(%s)", handleTableName(table), queryColumns, bindingValues);
+    StringBuilder builder = new StringBuilder();
+    builder.append("insert or ignore into ");
+    builder.append(handleTableName(table)).append("(");
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(") values(");
+    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
+    builder.append(")");
+    return builder.toString();
   }
 }

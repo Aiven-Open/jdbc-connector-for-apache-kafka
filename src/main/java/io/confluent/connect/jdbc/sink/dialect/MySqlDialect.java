@@ -1,18 +1,15 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Provides support for MySql.
- */
+import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.*;
+
 public class MySqlDialect extends DbDialect {
 
   public MySqlDialect() {
@@ -44,42 +41,29 @@ public class MySqlDialect extends DbDialect {
           String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
                         table));
     }
-    List<String> nonKeyColumns = new ArrayList<>(cols.size());
-    for (String c : cols) {
-      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
 
-    List<String> keyColumns = new ArrayList<>(keyCols.size());
-    for (String c : keyCols) {
-      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
     //MySql doesn't support SQL 2003:merge so here how the upsert is handled
-    final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
 
     final StringBuilder builder = new StringBuilder();
     builder.append("insert into ");
     builder.append(handleTableName(table));
     builder.append("(");
-    builder.append(queryColumns);
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") values(");
-    int total = nonKeyColumns.size() + keyColumns.size() - 1;
-    builder.append("?");
-    while (total-- > 0) {
-      builder.append(",?");
-    }
+    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") on duplicate key update ");
-
-    builder.append(nonKeyColumns.get(0));
-    builder.append("=values(");
-    builder.append(nonKeyColumns.get(0));
-    builder.append(")");
-    for (int i = 1; i < nonKeyColumns.size(); ++i) {
-      builder.append(",");
-      builder.append(nonKeyColumns.get(i));
-      builder.append("=values(");
-      builder.append(nonKeyColumns.get(i));
-      builder.append(")");
-    }
+    joinToBuilder(
+        builder,
+        ",",
+        cols,
+        new StringBuilderUtil.Transform<String>() {
+          @Override
+          public void apply(StringBuilder builder, String col) {
+            builder.append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
+                .append("=values(").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd).append(")");
+          }
+        }
+    );
     return builder.toString();
   }
 }

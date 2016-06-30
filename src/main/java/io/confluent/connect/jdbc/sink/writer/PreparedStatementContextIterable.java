@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -52,21 +49,18 @@ public final class PreparedStatementContextIterable {
    * @return A sequence of PreparedStatementContext to be executed. It will batch the sql operation.
    */
   public Iterator<PreparedStatementContext> iterator(final Collection<SinkRecord> records) {
-
     return new Iterator<PreparedStatementContext>() {
       private final Iterator<SinkRecord> iterator = records.iterator();
-      private final Map<String, PreparedStatementData> mapStatements = new HashMap<>();
+      private final Map<PreparedStatementKey, PreparedStatementData> mapStatements = new HashMap<>();
       private final TablesToColumnUsageState state = new TablesToColumnUsageState();
-
-      private PreparedStatementData current = null;
 
       @Override
       public boolean hasNext() {
         return iterator.hasNext() || mapStatements.size() > 0;
       }
 
-      private String getBatchSizeMatch() {
-        for (Map.Entry<String, PreparedStatementData> entry : mapStatements.entrySet()) {
+      private PreparedStatementKey getBatchSizeMatch() {
+        for (Map.Entry<PreparedStatementKey, PreparedStatementData> entry : mapStatements.entrySet()) {
           if (entry.getValue().getBinders().size() == batchSize) {
             return entry.getKey();
           }
@@ -76,12 +70,11 @@ public final class PreparedStatementContextIterable {
 
       @Override
       public PreparedStatementContext next() {
-
         if (mapStatements.size() == 0 && !iterator.hasNext()) {
           throw new NoSuchElementException();
         }
 
-        final String keyToRemove = getBatchSizeMatch();
+        final PreparedStatementKey keyToRemove = getBatchSizeMatch();
         if (keyToRemove != null) {
           final PreparedStatementData data = mapStatements.remove(keyToRemove);
           return new PreparedStatementContext(data, state.getState());
@@ -90,7 +83,7 @@ public final class PreparedStatementContextIterable {
         //no more batch size
         if (!iterator.hasNext()) {
           //return each entries until we drain them
-          String firstKey = mapStatements.keySet().iterator().next();
+          PreparedStatementKey firstKey = mapStatements.keySet().iterator().next();
           final PreparedStatementData data = mapStatements.remove(firstKey);
           return new PreparedStatementContext(data, state.getState());
         }
@@ -136,7 +129,7 @@ public final class PreparedStatementContextIterable {
               }
             }
 
-            final String statementKey = tableName + Joiner.on("").join(Iterables.concat(nonKeyColumnsName, keyColumnsName));
+            final PreparedStatementKey statementKey = new PreparedStatementKey(tableName, nonKeyColumnsName, keyColumnsName);
 
             if (!mapStatements.containsKey(statementKey)) {
               final String query = extractorWithQueryBuilder
@@ -159,14 +152,14 @@ public final class PreparedStatementContextIterable {
           throw new NoSuchElementException();
         }
 
-        final String maxBatchKeyToRemove = getBatchSizeMatch();
+        final PreparedStatementKey maxBatchKeyToRemove = getBatchSizeMatch();
         if (maxBatchKeyToRemove != null) {
           final PreparedStatementData data = mapStatements.remove(maxBatchKeyToRemove);
           return new PreparedStatementContext(data, state.getState());
         }
 
         //return each entries until we drain them
-        String firstKey = mapStatements.keySet().iterator().next();
+        PreparedStatementKey firstKey = mapStatements.keySet().iterator().next();
         final PreparedStatementData data = mapStatements.remove(firstKey);
         return new PreparedStatementContext(data, state.getState());
       }
@@ -177,4 +170,45 @@ public final class PreparedStatementContextIterable {
       }
     };
   }
+
+  private static class PreparedStatementKey {
+    private final String tableName;
+    private final List<String> nonKeyColumnNames;
+    private final List<String> keyColumnNames;
+
+    private PreparedStatementKey(String tableName, List<String> nonKeyColumnNames, List<String> keyColumnNames) {
+      this.tableName = tableName;
+      this.nonKeyColumnNames = nonKeyColumnNames;
+      this.keyColumnNames = keyColumnNames;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      PreparedStatementKey preparedStatementKey = (PreparedStatementKey) o;
+
+      if (!tableName.equals(preparedStatementKey.tableName)) {
+        return false;
+      }
+      if (!nonKeyColumnNames.equals(preparedStatementKey.nonKeyColumnNames)) {
+        return false;
+      }
+      return keyColumnNames.equals(preparedStatementKey.keyColumnNames);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = tableName.hashCode();
+      result = 31 * result + nonKeyColumnNames.hashCode();
+      result = 31 * result + keyColumnNames.hashCode();
+      return result;
+    }
+  }
+
 }

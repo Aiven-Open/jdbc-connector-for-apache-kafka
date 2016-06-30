@@ -1,11 +1,10 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
 
-import com.google.common.collect.Lists;
-
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
@@ -15,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class SqliteDialectTest {
   @Test
   public void validateAlterTable() {
-    List<String> queries = new SQLiteDialect().getAlterTable("tableA", Lists.newArrayList(
+    List<String> queries = new SQLiteDialect().getAlterTable("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.BOOLEAN, "col1", false),
         new SinkRecordField(Schema.Type.FLOAT32, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false)
@@ -29,7 +28,7 @@ public class SqliteDialectTest {
 
   @Test
   public void produceTheRightSqlStatementWhithACompositePK() {
-    String insert = new SQLiteDialect().getUpsertQuery("Book", Lists.newArrayList("ISBN", "year", "pages"), Lists.newArrayList("author", "title"));
+    String insert = new SQLiteDialect().getUpsertQuery("Book", Arrays.asList("ISBN", "year", "pages"), Arrays.asList("author", "title"));
     assertEquals("insert or ignore into `Book`(`ISBN`,`year`,`pages`,`author`,`title`) values(?,?,?,?,?)", insert);
 
   }

@@ -1,11 +1,10 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-
-import com.google.common.collect.Lists;
-
 import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.SinkRecordField;
@@ -17,7 +16,7 @@ public class OracleDialectTest {
 
   @Test
   public void handleCreateTableMultiplePKColumns() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "userid", true),
         new SinkRecordField(Schema.Type.INT32, "userdataid", true),
         new SinkRecordField(Schema.Type.STRING, "info", false)
@@ -33,7 +32,7 @@ public class OracleDialectTest {
 
   @Test
   public void handleCreateTableOnePKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", true),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -59,7 +58,7 @@ public class OracleDialectTest {
 
   @Test
   public void handleCreateTableNoPKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Lists.newArrayList(
+    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", false),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -84,7 +83,7 @@ public class OracleDialectTest {
 
   @Test
   public void handleAmendAddColumns() {
-    List<String> actual = dialect.getAlterTable("tableA", Lists.newArrayList(
+    List<String> actual = dialect.getAlterTable("tableA", Arrays.asList(
         new SinkRecordField(Schema.Type.INT32, "col1", false),
         new SinkRecordField(Schema.Type.INT64, "col2", false),
         new SinkRecordField(Schema.Type.STRING, "col3", false),
@@ -119,8 +118,8 @@ public class OracleDialectTest {
                       "values(incoming.\"body\",incoming.\"title\",incoming.\"author\")";
 
     String upsert = dialect.getUpsertQuery("ARTICLE",
-                                           Lists.newArrayList("body"),
-                                           Lists.newArrayList("title", "author"));
+                                           Collections.singletonList("body"),
+                                           Arrays.asList("title", "author"));
 
     assertEquals(expected, upsert);
   }

@@ -52,7 +52,6 @@
     <properties>
         <confluent.version>3.1.0-SNAPSHOT</confluent.version>
         <kafka.version>0.10.1.0-SNAPSHOT</kafka.version>
-        <guava.version>19.0</guava.version>
         <!-- Test scope -->
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
@@ -97,12 +96,6 @@
             <artifactId>curator-test</artifactId>
             <version>2.9.0</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
         </dependency>
 
         <dependency>

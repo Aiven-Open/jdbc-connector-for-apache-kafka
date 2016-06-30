@@ -1,28 +1,24 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-
 import org.apache.kafka.connect.data.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * The user is responsible for escaping the columns otherwise create table A and create table "A" is not the same
- */
+import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+
 public class PostgreSQLDialect extends DbDialect {
-  private static final Logger logger = LoggerFactory.getLogger(PostgreSQLDialect.class);
+
+  // The user is responsible for escaping the columns otherwise create table A and create table "A" is not the same
 
   public PostgreSQLDialect() {
     super(getSqlTypeMap(), "\"", "\"");
   }
-
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
     Map<Schema.Type, String> map = new HashMap<>();
@@ -51,36 +47,33 @@ public class PostgreSQLDialect extends DbDialect {
       );
     }
 
-    List<String> nonKeyColumns = new ArrayList<>(cols.size());
-    for (String c : cols) {
-      nonKeyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    List<String> keyColumns = new ArrayList<>(keyCols.size());
-    for (String c : keyCols) {
-      keyColumns.add(escapeColumnNamesStart + c + escapeColumnNamesEnd);
-    }
-
-    final String queryColumns = Joiner.on(",").join(Iterables.concat(nonKeyColumns, keyColumns));
-    final String bindingValues = Joiner.on(",").join(Collections.nCopies(nonKeyColumns.size() + keyColumns.size(), "?"));
-
-    String updateSet = null;
-    if (nonKeyColumns.size() > 0) {
-      final StringBuilder updateSetBuilder = new StringBuilder();
-      updateSetBuilder.append(nonKeyColumns.get(0));
-      updateSetBuilder.append("=EXCLUDED.");
-      updateSetBuilder.append(nonKeyColumns.get(0));
-      for (int i = 1; i < nonKeyColumns.size(); ++i) {
-        updateSetBuilder.append(",");
-        updateSetBuilder.append(nonKeyColumns.get(i));
-        updateSetBuilder.append("=EXCLUDED.");
-        updateSetBuilder.append(nonKeyColumns.get(i));
-      }
-      updateSet = updateSetBuilder.toString();
-    }
-
-    return "INSERT INTO " + handleTableName(table) + " (" + queryColumns + ") " +
-           "VALUES (" + bindingValues + ") " +
-           "ON CONFLICT (" + Joiner.on(",").join(keyColumns) + ") DO UPDATE SET " + updateSet;
+    final StringBuilder builder = new StringBuilder();
+    builder.append("INSERT INTO ");
+    builder.append(handleTableName(table));
+    builder.append(" (");
+    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(") VALUES (");
+    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
+    builder.append(") ON CONFLICT (");
+    joinToBuilder(builder, ",", keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(") DO UPDATE SET ");
+    joinToBuilder(
+        builder,
+        ",",
+        cols,
+        new StringBuilderUtil.Transform<String>() {
+          @Override
+          public void apply(StringBuilder builder, String col) {
+            builder.append(escapeColumnNamesStart);
+            builder.append(col);
+            builder.append(escapeColumnNamesEnd);
+            builder.append("=EXCLUDED.");
+            builder.append(escapeColumnNamesStart);
+            builder.append(col);
+            builder.append(escapeColumnNamesEnd);
+          }
+        }
+    );
+    return builder.toString();
   }
 }

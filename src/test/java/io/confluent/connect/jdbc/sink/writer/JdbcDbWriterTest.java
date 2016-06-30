@@ -1,8 +1,5 @@
 package io.confluent.connect.jdbc.sink.writer;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -10,6 +7,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.testng.collections.Lists;
 
 import java.io.File;
 import java.sql.ResultSet;
@@ -68,7 +66,7 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseBatching() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
-        Lists.newArrayList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>(),
+        Collections.singletonList(new FieldsMappings("tableA", "topica", true, InsertModeEnum.INSERT, new HashMap<String, FieldAlias>(),
                                               false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
@@ -81,7 +79,7 @@ public class JdbcDbWriterTest {
                                                      1000,
                                                      1000);
 
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, true, 1)
     );
@@ -89,7 +87,7 @@ public class JdbcDbWriterTest {
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
     when(provider.get(any(ConnectionProvider.class)))
-        .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+        .thenReturn(new DatabaseMetadata(null, Collections.singletonList(tableA)));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getStatementBuilder().getClass(), PreparedStatementContextIterable.class);
@@ -98,8 +96,8 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseNoopForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
-        Lists.newArrayList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
-                                              new HashMap<String, FieldAlias>(), false, false, false));
+        Collections.singletonList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
+                                                     new HashMap<String, FieldAlias>(), false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
                                                      null,
@@ -112,14 +110,14 @@ public class JdbcDbWriterTest {
                                                      1000
     );
 
-    List<DbTableColumn> columns = Lists.newArrayList(
+    List<DbTableColumn> columns = Arrays.asList(
         new DbTableColumn("col1", true, false, 1),
         new DbTableColumn("col2", false, true, 1));
     final DbTable tableA = new DbTable("tableA", columns);
 
     DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
     when(provider.get(any(ConnectionProvider.class)))
-        .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
+        .thenReturn(new DatabaseMetadata(null, Collections.singletonList((tableA))));
     JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
 
     assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
@@ -128,8 +126,8 @@ public class JdbcDbWriterTest {
   @Test
   public void writerShouldUseThrowForErrorHandling() throws SQLException {
     List<FieldsMappings> fieldsMappingsList =
-        Lists.newArrayList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
-                                              new HashMap<String, FieldAlias>(), false, false, false));
+        Collections.singletonList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
+                                                     new HashMap<String, FieldAlias>(), false, false, false));
 
     JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
                                                      null,
@@ -165,8 +163,8 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.<String>newHashSet(),
-        Sets.<String>newHashSet(),
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
         dbMetadata,
         new OracleDialect(),
         1);
@@ -258,8 +256,8 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.<String>newHashSet(),
-        Sets.<String>newHashSet(),
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
         dbMetadata,
         new SQLiteDialect(),
         1);
@@ -405,8 +403,8 @@ public class JdbcDbWriterTest {
 
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.<String>newHashSet(),
-        Sets.<String>newHashSet(),
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
         dbMetadata,
         dbDialect,
         1);
@@ -603,8 +601,8 @@ public class JdbcDbWriterTest {
 
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.<String>newHashSet(),
-        Sets.<String>newHashSet(),
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
         dbMetadata,
         dbDialect,
         1);
@@ -749,8 +747,8 @@ public class JdbcDbWriterTest {
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
     ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
     Database executor = new Database(
-        Sets.<String>newHashSet(),
-        Sets.<String>newHashSet(),
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
         dbMetadata,
         dbDialect,
         1);
