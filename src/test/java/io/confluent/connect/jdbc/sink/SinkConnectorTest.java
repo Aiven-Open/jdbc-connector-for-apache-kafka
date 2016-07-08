@@ -18,7 +18,7 @@ public class SinkConnectorTest {
   public void SinkConnectorTestStart() {
 
     TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
+    Map<String, String> props = base.getPropsAllFields("insert", false);
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, SQL_LITE_URI);
 
     JdbcSinkConnector connector = new JdbcSinkConnector();

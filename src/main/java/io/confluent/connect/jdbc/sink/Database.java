@@ -24,7 +24,6 @@ import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 public class Database {
   private final static Logger logger = LoggerFactory.getLogger(Database.class);
 
-  private final int executionRetries;
   private final Set<String> tablesAllowingAutoCreate;
   private final Set<String> tablesAllowingSchemaEvolution;
   private final DatabaseMetadata databaseMetadata;
@@ -33,9 +32,7 @@ public class Database {
   public Database(final Set<String> tablesAllowingAutoCreate,
                   final Set<String> tablesAllowingSchemaEvolution,
                   final DatabaseMetadata databaseMetadata,
-                  final DbDialect dbDialect,
-                  final int executionRetries) {
-    this.executionRetries = executionRetries;
+                  final DbDialect dbDialect) {
     ParameterValidator.notNull(databaseMetadata, "databaseMetadata");
     ParameterValidator.notNull(tablesAllowingAutoCreate, "tablesAllowingAutoCreate");
     ParameterValidator.notNull(tablesAllowingSchemaEvolution, "tablesAllowingSchemaEvolution");
@@ -52,15 +49,14 @@ public class Database {
    *
    * @param tablesToColumnsMap A map of table and sinkRecords for that table.
    */
-  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap, final Connection connection) {
+  public void update(final Map<String, Collection<SinkRecordField>> tablesToColumnsMap, final Connection connection) throws SQLException {
     DatabaseMetadata.Changes changes = databaseMetadata.getChanges(tablesToColumnsMap);
     final Map<String, Collection<SinkRecordField>> amendmentsMap = changes.getAmendmentMap();
     final Map<String, Collection<SinkRecordField>> createMap = changes.getCreatedMap();
-    //short-circuit if there is nothing to change
     if ((createMap == null || createMap.isEmpty()) && (amendmentsMap == null || amendmentsMap.isEmpty())) {
+      //short-circuit if there is nothing to change
       return;
     }
-
     createTables(createMap, connection);
     evolveTables(amendmentsMap, connection);
   }
@@ -71,41 +67,24 @@ public class Database {
    * @param tableMap A map of table and sinkRecords for that table.
    * @param connection The database connection to use.
    */
-  public void createTables(final Map<String, Collection<SinkRecordField>> tableMap,
-                           final Connection connection) {
+  public void createTables(final Map<String, Collection<SinkRecordField>> tableMap, final Connection connection) throws SQLException {
     if (tableMap == null || tableMap.size() == 0) {
       return;
     }
 
     for (final Map.Entry<String, Collection<SinkRecordField>> entry : tableMap.entrySet()) {
       final String tableName = entry.getKey();
+
       if (databaseMetadata.containsTable(tableName)) {
         continue;
       }
+
       if (!tablesAllowingAutoCreate.contains(tableName)) {
         throw new ConfigException(String.format("Table %s is not configured with auto-create", entry.getKey()));
       }
 
-      boolean retry = true;
-      int retryAttempts = executionRetries;
-      while (retry) {
-        try {
-          final DbTable table = createTable(tableName, entry.getValue(), connection);
-          databaseMetadata.update(table);
-          retry = false;
-        } catch (RuntimeException ex) {
-          if (--retryAttempts <= 0) {
-            //we want to stop the execution
-            throw ex;
-          }
-          try {
-            //should we exponentially wait?
-            Thread.sleep(1000);
-          } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-          }
-        }
-      }
+      final DbTable table = createTable(tableName, entry.getValue(), connection);
+      databaseMetadata.update(table);
     }
   }
 
@@ -116,64 +95,37 @@ public class Database {
    * @param fields The sinkRecord fields to use to create the columns
    * @param connection The database connection to use.
    */
-  private DbTable createTable(final String tableName,
-                              final Collection<SinkRecordField> fields,
-                              final Connection connection) {
+  private DbTable createTable(final String tableName, final Collection<SinkRecordField> fields, final Connection connection) throws SQLException {
     final String sql = dbDialect.getCreateQuery(tableName, fields);
-    logger.info("Changing database structure for database {}{}{}",
-                databaseMetadata.getDatabaseName(), System.lineSeparator(), sql);
 
-    Statement statement = null;
-    try {
-      statement = connection.createStatement();
+    logger.info("Changing database structure for database {}{}{}", databaseMetadata.getDatabaseName(), System.lineSeparator(), sql);
+
+    try (Statement statement = connection.createStatement()) {
       statement.execute(sql);
-      logger.info("Database structure changed database {}{}{}",
-                  databaseMetadata.getDatabaseName(), System.lineSeparator(), sql);
+      logger.info("Database structure changed database {}{}{}", databaseMetadata.getDatabaseName(), System.lineSeparator(), sql);
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
-      logger.error("Creating table failed." + e.getMessage(), e);
-      SQLException inner = e.getNextException();
-      while (inner != null) {
-        logger.error(inner.getMessage(), inner);
-        inner = e.getNextException();
-      }
+      logger.error("Creating table={} failed", tableName, e);
+
       //tricky part work out if the table already exists
-      try {
-        if (DatabaseMetadata.tableExists(connection, tableName)) {
-          final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
-          //check for all fields from above where they are not present
-          List<SinkRecordField> notPresentFields = null;
-          for (final SinkRecordField f : fields) {
-            if (!table.containsColumn(f.getName())) {
-              if (notPresentFields == null) {
-                notPresentFields = new ArrayList<>();
-              }
-              notPresentFields.add(f);
-            }
+      if (DatabaseMetadata.tableExists(connection, tableName)) {
+        final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
+        //check for all fields from above where they are not present
+        final List<SinkRecordField> notPresentFields = new ArrayList<>();
+        for (final SinkRecordField f : fields) {
+          if (!table.containsColumn(f.getName())) {
+            notPresentFields.add(f);
           }
-          //we have some difference; run amend table
-          if (notPresentFields != null) {
-            return amendTable(tableName, notPresentFields, connection);
-          }
-          return table;
-        } else {
-          //table doesn't exist throw; the above layer will pick up an retry
-          throw new RuntimeException(e.getMessage(), e);
         }
-      } catch (SQLException e1) {
-        logger.error("There was an error on creating the table " + tableName + e1.getMessage(), e1);
-        throw new RuntimeException(e1.getMessage(), e1);
-      }
-    } finally {
-      try {
-        if (statement != null) {
-          statement.close();
+        //we have some difference; run amend table
+        if (!notPresentFields.isEmpty()) {
+          return amendTable(tableName, notPresentFields, connection);
         }
-      } catch (SQLException e) {
-        logger.error(e.getMessage(), e);
+        return table;
+      } else {
+        throw e;
       }
     }
-
   }
 
   /**
@@ -182,105 +134,57 @@ public class Database {
    * @param tableMap A map of table and sinkRecords for that table.
    * @param connection The database connection to use.
    */
-  private void evolveTables(final Map<String, Collection<SinkRecordField>> tableMap,
-                            final Connection connection) {
-    if (tableMap == null || tableMap.size() == 0) {
+  private void evolveTables(final Map<String, Collection<SinkRecordField>> tableMap, final Connection connection) throws SQLException {
+    if (tableMap == null || tableMap.isEmpty()) {
       return;
     }
+
     for (final Map.Entry<String, Collection<SinkRecordField>> entry : tableMap.entrySet()) {
       final String tableName = entry.getKey();
 
       if (!databaseMetadata.containsTable(tableName)) {
         throw new RuntimeException(String.format("%s is set for amendments but hasn't been created yet", entry.getKey()));
       }
+
       if (!tablesAllowingSchemaEvolution.contains(entry.getKey())) {
         logger.warn("Table {} is not configured with schema evolution", entry.getKey());
         continue;
       }
 
-      boolean retry = true;
-      int retryAttempts = executionRetries;
-      while (retry) {
-        try {
-          final DbTable table = amendTable(tableName, entry.getValue(), connection);
-          databaseMetadata.update(table);
-          retry = false;
-        } catch (RuntimeException ex) {
-          if (--retryAttempts <= 0) {
-            //we want to stop the execution
-            logger.error(ex.getMessage());
-            throw ex;
-          }
-          try {
-            //should we exponentially wait?
-            Thread.sleep(1000);
-          } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
-          }
-        }
-      }
+      final DbTable table = amendTable(tableName, entry.getValue(), connection);
+      databaseMetadata.update(table);
     }
   }
 
-  private DbTable amendTable(final String tableName,
-                             final Collection<SinkRecordField> fields,
-                             final Connection connection) {
+  private DbTable amendTable(final String tableName, final Collection<SinkRecordField> fields, final Connection connection) throws SQLException {
     final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, fields);
-
-    Statement statement = null;
-    try {
-      connection.setAutoCommit(false);
-      statement = connection.createStatement();
-
+    connection.setAutoCommit(false);
+    try (Statement statement = connection.createStatement()) {
       for (String amendTableQuery : amendTableQueries) {
-        logger.info("Changing database structure for database {}{}{}",
-                    databaseMetadata.getDatabaseName(), System.lineSeparator(), amendTableQuery);
-
+        logger.info("Changing database structure for database {}{}{}", databaseMetadata.getDatabaseName(), System.lineSeparator(), amendTableQuery);
         statement.executeUpdate(amendTableQuery);
-        //commit the transaction
         connection.commit();
-
-        logger.info("Database structure changed for database {}{}{}",
-                    databaseMetadata.getDatabaseName(), System.lineSeparator(), amendTableQuery);
+        logger.info("Database structure changed for database {}{}{}", databaseMetadata.getDatabaseName(), System.lineSeparator(), amendTableQuery);
       }
-
       return DatabaseMetadata.getTableMetadata(connection, tableName);
     } catch (SQLException e) {
-      logger.error("Amending database structure failed." + e.getMessage(), e);
-      SQLException inner = e.getNextException();
-      while (inner != null) {
-        logger.error(inner.getMessage(), inner);
-        inner = e.getNextException();
-      }
+      logger.error("Amending table={} failed", tableName, e);
 
       //see if it there was a race with other tasks to add the colums
-      try {
-        final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
-        List<SinkRecordField> notPresentFields = null;
-        for (final SinkRecordField f : fields) {
-          if (!table.containsColumn(f.getName())) {
-            if (notPresentFields == null) {
-              notPresentFields = new ArrayList<>();
-            }
-            notPresentFields.add(f);
-          }
+      final DbTable table = DatabaseMetadata.getTableMetadata(connection, tableName);
+      final List<SinkRecordField> notPresentFields = new ArrayList<>();
+      for (final SinkRecordField f : fields) {
+        if (!table.containsColumn(f.getName())) {
+          notPresentFields.add(f);
         }
-        //we have some difference; run amend table
-        if (notPresentFields != null) {
-          return amendTable(tableName, notPresentFields, connection);
-        }
-        return table;
-      } catch (SQLException e1) {
-        throw new RuntimeException(e1.getMessage(), e);
       }
-    } finally {
-      try {
-        if (statement != null) {
-          statement.close();
-        }
-      } catch (SQLException e) {
-        logger.error(e.getMessage(), e);
+      //we have some difference; run amend table
+      if (!notPresentFields.isEmpty()) {
+        // FIXME there should probably be a bound on max times we can recurse here?
+        return amendTable(tableName, notPresentFields, connection);
       }
+      return table;
     }
   }
+
 }
