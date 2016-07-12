@@ -12,7 +12,6 @@ import org.testng.collections.Lists;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,13 +27,11 @@ import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
 import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
 import io.confluent.connect.jdbc.sink.common.DbTable;
 import io.confluent.connect.jdbc.sink.common.DbTableColumn;
-import io.confluent.connect.jdbc.sink.config.ErrorPolicyEnum;
 import io.confluent.connect.jdbc.sink.config.FieldAlias;
 import io.confluent.connect.jdbc.sink.config.FieldsMappings;
 import io.confluent.connect.jdbc.sink.config.InsertModeEnum;
 import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.dialect.OracleDialect;
 import io.confluent.connect.jdbc.sink.dialect.SQLiteDialect;
 
 import static org.junit.Assert.assertEquals;
@@ -73,9 +70,6 @@ public class JdbcDbWriterTest {
                                                      null,
                                                      null,
                                                      fieldsMappingsList,
-                                                     ErrorPolicyEnum.NOOP,
-                                                     10,
-                                                     1000,
                                                      1000);
 
     List<DbTableColumn> columns = Arrays.asList(
@@ -91,85 +85,6 @@ public class JdbcDbWriterTest {
 
     assertEquals(writer.getStatementBuilder().getClass(), PreparedStatementContextIterable.class);
   }
-
-  @Test
-  public void writerShouldUseNoopForErrorHandling() throws SQLException {
-    List<FieldsMappings> fieldsMappingsList =
-        Collections.singletonList(new FieldsMappings("tableA", "tableA", true, InsertModeEnum.INSERT,
-                                                     new HashMap<String, FieldAlias>(), false, false, false));
-
-    JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-                                                     null,
-                                                     null,
-                                                     fieldsMappingsList,
-                                                     ErrorPolicyEnum.NOOP,
-                                                     10,
-                                                     1000,
-                                                     1000
-    );
-
-    List<DbTableColumn> columns = Arrays.asList(
-        new DbTableColumn("col1", true, false, 1),
-        new DbTableColumn("col2", false, true, 1));
-    final DbTable tableA = new DbTable("tableA", columns);
-
-    DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
-    when(provider.get(any(ConnectionProvider.class)))
-        .thenReturn(new DatabaseMetadata(null, Collections.singletonList((tableA))));
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
-
-    assertEquals(writer.getErrorHandlingPolicy().getClass(), NoopErrorHandlingPolicy.class);
-  }
-
-  @Test
-  public void writerShouldUseThrowForErrorHandling() throws SQLException {
-    List<FieldsMappings> fieldsMappingsList =
-        Collections.singletonList(new FieldsMappings("tableA", "topicA", true, InsertModeEnum.INSERT,
-                                                     new HashMap<String, FieldAlias>(), false, false, false));
-
-    JdbcSinkSettings settings = new JdbcSinkSettings(SQL_LITE_URI,
-                                                     null,
-                                                     null,
-                                                     fieldsMappingsList,
-                                                     ErrorPolicyEnum.THROW,
-                                                     10,
-                                                     1000,
-                                                     1000);
-
-    List<DbTableColumn> columns = Lists.newArrayList(
-        new DbTableColumn("col1", true, false, 1),
-        new DbTableColumn("col2", false, true, 1));
-    final DbTable tableA = new DbTable("tableA", columns);
-
-    DatabaseMetadataProvider provider = mock(DatabaseMetadataProvider.class);
-    when(provider.get(any(ConnectionProvider.class)))
-        .thenReturn(new DatabaseMetadata(null, Lists.newArrayList(tableA)));
-    JdbcDbWriter writer = JdbcDbWriter.from(settings, provider);
-
-    assertEquals(writer.getErrorHandlingPolicy().getClass(), ThrowErrorHandlingPolicy.class);
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void errorPolicyShouldThrowTheException() {
-    PreparedStatementContextIterable builder = mock(PreparedStatementContextIterable.class);
-    Exception ex = new SQLException("some error description");
-    Collection<SinkRecord> records = new ArrayList<>();
-    records.add(new SinkRecord("topic", 1, Schema.STRING_SCHEMA, "test1", Schema.STRING_SCHEMA, "value", 0));
-
-    when(builder.iterator(any(records.getClass()))).thenThrow(ex);
-    DatabaseMetadata dbMetadata = new DatabaseMetadata(null, Lists.<DbTable>newArrayList());
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
-    Database executor = new Database(
-        Collections.<String>emptySet(),
-        Collections.<String>emptySet(),
-        dbMetadata,
-        new OracleDialect(),
-        1);
-
-    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider, builder, new ThrowErrorHandlingPolicy(), executor, 10);
-    writer.write(records);
-  }
-
   @Test
   public void handleBatchedStatementPerRecordInsertingSameRecord100Times() throws SQLException {
     String tableName = "batched_statement_test_100";
@@ -251,18 +166,17 @@ public class JdbcDbWriterTest {
             new DbTableColumn("BLOB", true, false, 1)
         )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.<String>emptySet(),
         Collections.<String>emptySet(),
         dbMetadata,
-        new SQLiteDialect(),
-        1);
+        new SQLiteDialect()
+    );
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
                                            new PreparedStatementContextIterable(map, 100),
-                                           new ThrowErrorHandlingPolicy(),
-                                           executor,
-                                           10);
+                                           executor
+    );
 
     writer.write(records);
 
@@ -398,18 +312,17 @@ public class JdbcDbWriterTest {
 
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
 
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.<String>emptySet(),
         Collections.<String>emptySet(),
         dbMetadata,
-        dbDialect,
-        1);
+        dbDialect
+    );
     JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
                                            new PreparedStatementContextIterable(map, 100),
-                                           new ThrowErrorHandlingPolicy(),
-                                           executor,
-                                           10);
+                                           executor
+    );
 
     writer.write(records);
 
@@ -596,18 +509,14 @@ public class JdbcDbWriterTest {
         )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
 
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.<String>emptySet(),
         Collections.<String>emptySet(),
         dbMetadata,
-        dbDialect,
-        1);
-    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-                                           new PreparedStatementContextIterable(map, 100),
-                                           new ThrowErrorHandlingPolicy(),
-                                           executor,
-                                           10);
+        dbDialect
+    );
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider, new PreparedStatementContextIterable(map, 100), executor);
 
     writer.write(records);
 
@@ -742,18 +651,14 @@ public class JdbcDbWriterTest {
             new DbTableColumn("byte", true, false, 1)
         )));
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.<String>emptySet(),
         Collections.<String>emptySet(),
         dbMetadata,
-        dbDialect,
-        1);
-    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider,
-                                           new PreparedStatementContextIterable(map, 100),
-                                           new ThrowErrorHandlingPolicy(),
-                                           executor,
-                                           10);
+        dbDialect
+    );
+    JdbcDbWriter writer = new JdbcDbWriter(connectionProvider, new PreparedStatementContextIterable(map, 100), executor);
 
     writer.write(records);
 

@@ -50,16 +50,14 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void InsertThrowBatchingAllFields() {
-    Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
+  public void InsertBatchingAllFields() {
+    Map<String, String> props = base.getPropsAllFields("insert", false);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     for (FieldsMappings fm : settings.getMappings()) {
       assertTrue(fm.getInsertMode().equals(InsertModeEnum.INSERT));
     }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
     assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
@@ -79,89 +77,15 @@ public class JdbcSinkSettingsTest {
     assertFalse(mappings.get(1).evolveTableSchema());
   }
 
-
   @Test
-  public void InsertThrowBatchingSelectedFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsSelectedFields("throw", "insert", false);
+  public void InsertBatchingSelectedFields() {
+    Map<String, String> props = base.getPropsSelectedFields("insert", false);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     for (FieldsMappings fm : settings.getMappings()) {
       assertTrue(fm.getInsertMode().equals(InsertModeEnum.INSERT));
     }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
-
-    List<FieldsMappings> mappings = settings.getMappings();
-    assertTrue(mappings.size() == 2);
-    assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
-    assertTrue(mappings.get(1).getTableName().equals(base.getTableName2()));
-    assertTrue(mappings.get(0).getIncomingTopic().equals(base.getTopic1()));
-    assertTrue(mappings.get(1).getIncomingTopic().equals(base.getTopic2()));
-
-    assertTrue(mappings.get(0).getMappings().size() == 2);
-    assertTrue(mappings.get(1).getMappings().size() == 2);
-
-    assertFalse(mappings.get(0).areAllFieldsIncluded());
-    assertFalse(mappings.get(1).areAllFieldsIncluded());
-    assertFalse(mappings.get(0).autoCreateTable());
-    assertFalse(mappings.get(1).autoCreateTable());
-
-    assertFalse(mappings.get(0).evolveTableSchema());
-    assertFalse(mappings.get(1).evolveTableSchema());
-
-    Map<String, FieldAlias> cols = mappings.get(0).getMappings();
-    assertTrue(cols.get("f1").getName().equals("col1"));
-    assertTrue(cols.get("f2").getName().equals("f2"));
-
-    cols = mappings.get(1).getMappings();
-    assertTrue(cols.get("f3").getName().equals("col3"));
-    assertTrue(cols.get("f4").getName().equals("col4"));
-  }
-
-  @Test
-  public void InsertNoopBatchingAllFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsAllFields("noop", "insert", false);
-
-    JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
-    for (FieldsMappings fm : settings.getMappings()) {
-      assertTrue(fm.getInsertMode().equals(InsertModeEnum.INSERT));
-    }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.NOOP));
-
-    List<FieldsMappings> mappings = settings.getMappings();
-    assertTrue(mappings.size() == 2);
-    assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
-    assertTrue(mappings.get(1).getTableName().equals(base.getTableName2()));
-    assertTrue(mappings.get(0).getIncomingTopic().equals(base.getTopic1()));
-    assertTrue(mappings.get(1).getIncomingTopic().equals(base.getTopic2()));
-
-    assertTrue(mappings.get(0).getMappings().isEmpty());
-    assertTrue(mappings.get(1).getMappings().isEmpty());
-
-    assertTrue(mappings.get(0).areAllFieldsIncluded());
-    assertTrue(mappings.get(1).areAllFieldsIncluded());
-    assertFalse(mappings.get(0).autoCreateTable());
-    assertFalse(mappings.get(1).autoCreateTable());
-
-    assertFalse(mappings.get(0).evolveTableSchema());
-    assertFalse(mappings.get(1).evolveTableSchema());
-  }
-
-
-  @Test
-  public void InsertNoopBatchingSelectedFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsSelectedFields("noop", "insert", false);
-
-    JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
-    for (FieldsMappings fm : settings.getMappings()) {
-      assertTrue(fm.getInsertMode().equals(InsertModeEnum.INSERT));
-    }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.NOOP));
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -192,90 +116,14 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void InsertRetryBatchingAllFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsAllFields("retry", "insert", false);
-
-    JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
-    for (FieldsMappings fm : settings.getMappings()) {
-      assertTrue(fm.getInsertMode().equals(InsertModeEnum.INSERT));
-    }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.RETRY));
-    assertTrue(settings.getRetries() == 10);
-
-    List<FieldsMappings> mappings = settings.getMappings();
-    assertTrue(mappings.size() == 2);
-    assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
-    assertTrue(mappings.get(1).getTableName().equals(base.getTableName2()));
-    assertTrue(mappings.get(0).getIncomingTopic().equals(base.getTopic1()));
-    assertTrue(mappings.get(1).getIncomingTopic().equals(base.getTopic2()));
-
-    assertTrue(mappings.get(0).getMappings().isEmpty());
-    assertTrue(mappings.get(1).getMappings().isEmpty());
-
-    assertTrue(mappings.get(0).areAllFieldsIncluded());
-    assertTrue(mappings.get(1).areAllFieldsIncluded());
-    assertFalse(mappings.get(0).autoCreateTable());
-    assertFalse(mappings.get(1).autoCreateTable());
-
-    assertFalse(mappings.get(0).evolveTableSchema());
-    assertFalse(mappings.get(1).evolveTableSchema());
-  }
-
-
-  @Test
-  public void InsertRetryBatchingSelectedFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsSelectedFields("retry", "insert", false);
-
-    JdbcSinkConfig config = new JdbcSinkConfig(props);
-    JdbcSinkSettings settings = JdbcSinkSettings.from(config);
-    for (FieldsMappings fm : settings.getMappings()) {
-      assertTrue(fm.getInsertMode().equals(InsertModeEnum.INSERT));
-    }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.RETRY));
-    assertTrue(settings.getRetries() == 10);
-
-    List<FieldsMappings> mappings = settings.getMappings();
-    assertTrue(mappings.size() == 2);
-    assertTrue(mappings.get(0).getTableName().equals(base.getTableName1()));
-    assertTrue(mappings.get(1).getTableName().equals(base.getTableName2()));
-    assertTrue(mappings.get(0).getIncomingTopic().equals(base.getTopic1()));
-    assertTrue(mappings.get(1).getIncomingTopic().equals(base.getTopic2()));
-
-    assertTrue(mappings.get(0).getMappings().size() == 2);
-    assertTrue(mappings.get(1).getMappings().size() == 2);
-
-    assertFalse(mappings.get(0).areAllFieldsIncluded());
-    assertFalse(mappings.get(1).areAllFieldsIncluded());
-    assertFalse(mappings.get(0).autoCreateTable());
-    assertFalse(mappings.get(1).autoCreateTable());
-
-    assertFalse(mappings.get(0).evolveTableSchema());
-    assertFalse(mappings.get(1).evolveTableSchema());
-
-    Map<String, FieldAlias> cols = mappings.get(0).getMappings();
-    assertTrue(cols.get("f1").getName().equals("col1"));
-    assertTrue(cols.get("f2").getName().equals("f2"));
-
-    cols = mappings.get(1).getMappings();
-    assertTrue(cols.get("f3").getName().equals("col3"));
-    assertTrue(cols.get("f4").getName().equals("col4"));
-  }
-
-
-  @Test
-  public void UpsertThrowBatchingAllFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsAllFields("throw", "upsert", false);
+  public void UpsertBatchingAllFields() {
+    Map<String, String> props = base.getPropsAllFields("upsert", false);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     for (FieldsMappings fm : settings.getMappings()) {
       assertTrue(fm.getInsertMode().equals(InsertModeEnum.UPSERT));
     }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -298,16 +146,14 @@ public class JdbcSinkSettingsTest {
 
 
   @Test
-  public void UpsertThrowBatchingSelectedFields() {
-    TestBase base = new TestBase();
-    Map<String, String> props = base.getPropsSelectedFields("throw", "upsert", false);
+  public void UpsertBatchingSelectedFields() {
+    Map<String, String> props = base.getPropsSelectedFields("upsert", false);
 
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     JdbcSinkSettings settings = JdbcSinkSettings.from(config);
     for (FieldsMappings fm : settings.getMappings()) {
       assertTrue(fm.getInsertMode().equals(InsertModeEnum.UPSERT));
     }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -337,8 +183,7 @@ public class JdbcSinkSettingsTest {
   }
 
   @Test
-  public void UpsertThrowBatchingAllFieldsAutoCreate() throws IOException, RestClientException {
-    TestBase base = new TestBase();
+  public void UpsertBatchingAllFieldsAutoCreate() throws IOException, RestClientException {
     Map<String, String> props = base.getPropsAllFieldsAutoCreatePK();
 
     String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
@@ -361,7 +206,6 @@ public class JdbcSinkSettingsTest {
     for (FieldsMappings fm : settings.getMappings()) {
       assertTrue(fm.getInsertMode().equals(InsertModeEnum.UPSERT));
     }
-    assertTrue(settings.getErrorPolicy().equals(ErrorPolicyEnum.THROW));
 
     List<FieldsMappings> mappings = settings.getMappings();
     assertTrue(mappings.size() == 2);
@@ -391,7 +235,6 @@ public class JdbcSinkSettingsTest {
 
   @Test(expected = ConfigException.class)
   public void throwTheExceptionMissingTable() {
-
     Map<String, String> props = new HashMap<>();
     //missing target
     String bad = "{topic1:;*}";
@@ -404,7 +247,6 @@ public class JdbcSinkSettingsTest {
 
   @Test(expected = ConfigException.class)
   public void throwTheExceptionMissingFields() {
-
     Map<String, String> props = new HashMap<>();
     //missing target
     String bad = "INSERT INTO table1 SELECT FROM topic1";

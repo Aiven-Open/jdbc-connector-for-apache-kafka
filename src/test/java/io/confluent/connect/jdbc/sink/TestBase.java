@@ -13,7 +13,6 @@ import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
 //    connect.jdbc.connection.uri=jdbc:sqlite:test.db
 //    connect.jdbc.connection.user=
 //    connect.jdbc.connection.password=
-//    connect.jdbc.sink.error.policy=RETRY
 //    connect.jdbc.sink.batching.enabled=true
 //    connect.jdbc.sink.export.mappings={orders:orders;qty->quantity,product->,price->}
 //    connect.jdbc.sink.mode=INSERT
@@ -66,14 +65,13 @@ public class TestBase {
     return topic2;
   }
 
-  public Map<String, String> getPropsAllFields(String errorPolicy, String mode, Boolean autoCreate) {
+  public Map<String, String> getPropsAllFields(String mode, Boolean autoCreate) {
     Map<String, String> props = new HashMap<>();
 
     props.put("topic", topics);
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_USER, "");
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD, "");
-    props.put(JdbcSinkConfig.ERROR_POLICY, errorPolicy);
     if (autoCreate) {
       if (Objects.equals(mode.toLowerCase(), "upsert")) {
         props.put(JdbcSinkConfig.EXPORT_MAPPINGS, upsertAll1 + " AUTOCREATE;" + upsertAll2);
@@ -91,25 +89,24 @@ public class TestBase {
   }
 
   public Map<String, String> getPropsAllFieldsAutoCreatePK() {
-    Map<String, String> map = getPropsAllFields("throw", "upsert", true);
+    Map<String, String> map = getPropsAllFields("upsert", true);
     map.put(JdbcSinkConfig.EXPORT_MAPPINGS, upsertAll1 + " AUTOCREATE PK f1,f2;" + upsertAll2 + " AUTOCREATE PK f3");
     return map;
   }
 
   public Map<String, String> getPropsSelectedFieldsAutoCreatePKBad() {
-    Map<String, String> map = getPropsSelectedFields("throw", "upsert", true);
+    Map<String, String> map = getPropsSelectedFields("upsert", true);
     map.put(JdbcSinkConfig.EXPORT_MAPPINGS, insert1 + " AUTOCREATE;" + insert2 + " AUTOCREATE PK f13");
     return map;
   }
 
-  public Map<String, String> getPropsSelectedFields(String errorPolicy, String mode, Boolean autoCreate) {
+  public Map<String, String> getPropsSelectedFields(String mode, Boolean autoCreate) {
     Map<String, String> props = new HashMap<>();
 
     props.put("topic", topics);
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, "jdbc://");
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_USER, "");
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD, "");
-    props.put(JdbcSinkConfig.ERROR_POLICY, errorPolicy);
 
     if (autoCreate) {
       if (Objects.equals(mode, "upsert")) {

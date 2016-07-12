@@ -92,19 +92,18 @@ public class JdbcDbWriterEvolveTest {
 
     List<DbTable> dbTables = Collections.emptyList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.singleton(tableName),
         Collections.<String>emptySet(),
         dbMetadata,
-        new SQLiteDialect(),
-        1);
+        new SQLiteDialect()
+    );
     JdbcDbWriter writer = new JdbcDbWriter(
         connectionProvider,
         new PreparedStatementContextIterable(map, 1000),
-        new ThrowErrorHandlingPolicy(),
-        executor,
-        10);
+        executor
+    );
 
     writer.write(Collections.singletonList(
         new SinkRecord(topic, partition, null, null, schema, struct1, 0)
@@ -204,19 +203,18 @@ public class JdbcDbWriterEvolveTest {
         ))
     );
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.<String>emptySet(),
         Collections.singleton(tableName),
         dbMetadata,
-        new SQLiteDialect(),
-        1);
+        new SQLiteDialect()
+    );
     JdbcDbWriter writer = new JdbcDbWriter(
         connectionProvider,
         new PreparedStatementContextIterable(map, 1000),
-        new ThrowErrorHandlingPolicy(),
-        executor,
-        10);
+        executor
+    );
 
     Schema schema2 = SchemaBuilder.struct().name("com.example.Person")
         .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
@@ -326,19 +324,18 @@ public class JdbcDbWriterEvolveTest {
 
     List<DbTable> dbTables = Collections.emptyList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
     Database executor = new Database(
         Collections.singleton(tableName),
         Collections.<String>emptySet(),
         dbMetadata,
-        new SQLiteDialect(),
-        1);
+        new SQLiteDialect()
+    );
     JdbcDbWriter writer = new JdbcDbWriter(
         connectionProvider,
         new PreparedStatementContextIterable(map, 1000),
-        new ThrowErrorHandlingPolicy(),
-        executor,
-        10);
+        executor
+    );
 
     writer.write(records);
 
@@ -414,21 +411,20 @@ public class JdbcDbWriterEvolveTest {
 
     List<DbTable> dbTables = Collections.emptyList();
     DatabaseMetadata dbMetadata = new DatabaseMetadata(null, dbTables);
-    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 5, 100);
+    ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
 
     Database executor = new Database(
         Collections.singleton(tableName),
         Collections.singleton(tableName), //allow auto evolution
         dbMetadata,
-        new SQLiteDialect(),
-        1);
+        new SQLiteDialect()
+    );
 
     JdbcDbWriter writer = new JdbcDbWriter(
         connectionProvider,
         new PreparedStatementContextIterable(map, 1000),
-        new ThrowErrorHandlingPolicy(),
-        executor,
-        10);
+        executor
+    );
 
     writer.write(Collections.singleton(
         new SinkRecord(topic, partition, null, null, schema, struct1, 0)

@@ -60,7 +60,7 @@ public class JdbcHelperTest {
 
     final Map<String, DbTable> tables = new HashMap<>();
 
-    for (DbTable table : DatabaseMetadata.getTableMetadata(new ConnectionProvider(SQL_LITE_URI, null, null, 1000, 100))) {
+    for (DbTable table : DatabaseMetadata.getTableMetadata(new ConnectionProvider(SQL_LITE_URI, null, null))) {
       tables.put(table.getName(), table);
     }
 

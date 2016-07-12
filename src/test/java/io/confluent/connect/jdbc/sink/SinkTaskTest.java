@@ -85,12 +85,11 @@ public class SinkTaskTest {
 
     //register the schema for topic1
     client.registerSchema(rawSchema, base.getTopic1());
-    Map<String, String> props = base.getPropsAllFields("throw", "insert", false);
+    Map<String, String> props = base.getPropsAllFields("insert", false);
     props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, SQL_LITE_URI);
     props.put(JdbcSinkConfig.EXPORT_MAPPINGS,
               "INSERT INTO " + base.getTableName1() + " SELECT * FROM " + base.getTopic1() + " AUTOCREATE;" +
               "INSERT INTO " + base.getTableName2() + " SELECT * FROM " + base.getTopic2());
-    props.put(JdbcSinkConfig.ERROR_POLICY, "RETRY");
 
     JdbcSinkTask task = new JdbcSinkTask();
     task.initialize(context);

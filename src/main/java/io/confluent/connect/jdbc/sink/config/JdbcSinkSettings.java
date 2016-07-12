@@ -21,35 +21,23 @@ public final class JdbcSinkSettings {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkSettings.class);
 
   private final int batchSize;
-  private final int maxRetries;
-  private final int retryDelay;
   private final String connection;
   private final String user;
   private final String password;
   private final List<FieldsMappings> mappings;
-  private final ErrorPolicyEnum errorPolicy;
 
   /**
    * Creates a new instance of JdbcSinkSettings
-   *
    * @param connection - The database connection string
    * @param mappings - A list of payload field mappings
-   * @param errorPolicy - Specifies how an error is handled
    * @param batchSize - how big the batch size should be
-   * @param retryDelay -The time to wait before the operation is retried
    */
   public JdbcSinkSettings(String connection,
                           String user,
                           String password,
                           List<FieldsMappings> mappings,
-                          ErrorPolicyEnum errorPolicy,
-                          int maxRetries,
-                          int batchSize,
-                          int retryDelay) {
+                          int batchSize) {
     ParameterValidator.notNullOrEmpty(connection, "connection");
-    if (retryDelay <= 0) {
-      throw new IllegalArgumentException("Invalid retryDelay value. Needs to be greater than zero");
-    }
     if (batchSize <= 0) {
       throw new IllegalArgumentException("Invalid batchSize value. Needs to be greater than zero");
     }
@@ -58,14 +46,7 @@ public final class JdbcSinkSettings {
     this.user = user;
     this.password = password;
     this.mappings = mappings;
-    this.errorPolicy = errorPolicy;
-    this.maxRetries = maxRetries;
     this.batchSize = batchSize;
-    this.retryDelay = retryDelay;
-  }
-
-  public int getRetries() {
-    return maxRetries;
   }
 
   public String getConnection() {
@@ -74,10 +55,6 @@ public final class JdbcSinkSettings {
 
   public List<FieldsMappings> getMappings() {
     return mappings;
-  }
-
-  public ErrorPolicyEnum getErrorPolicy() {
-    return errorPolicy;
   }
 
   public String getUser() {
@@ -107,20 +84,13 @@ public final class JdbcSinkSettings {
    * @return An instance of JdbcSinkSettings
    */
   public static JdbcSinkSettings from(final JdbcSinkConfig config) {
-
     final List<FieldsMappings> fieldsMappings = getTopicExportMappings(config);
-
-    ErrorPolicyEnum policy = ErrorPolicyEnum.valueOf(config.getString(JdbcSinkConfig.ERROR_POLICY).toUpperCase());
-
     return new JdbcSinkSettings(
         config.getString(JdbcSinkConfig.DATABASE_CONNECTION_URI),
         config.getString(JdbcSinkConfig.DATABASE_CONNECTION_USER),
         config.getPassword(JdbcSinkConfig.DATABASE_CONNECTION_PASSWORD).value(),
         fieldsMappings,
-        policy,
-        config.getInt(JdbcSinkConfig.MAX_RETRIES),
-        config.getInt(JdbcSinkConfig.BATCH_SIZE),
-        config.getInt(JdbcSinkConfig.RETRY_INTERVAL)
+        config.getInt(JdbcSinkConfig.BATCH_SIZE)
     );
   }
 
@@ -195,21 +165,14 @@ public final class JdbcSinkSettings {
     return fieldsMappingsList;
   }
 
-  public int getRetryDelay() {
-    return retryDelay;
-  }
-
   @Override
   public String toString() {
     return "JdbcSinkSettings{" +
            "batchSize=" + batchSize +
-           ", maxRetries=" + maxRetries +
-           ", retryDelay=" + retryDelay +
            ", connection='" + connection + '\'' +
            ", user='" + user + '\'' +
            ", password='" + password + '\'' +
            ", mappings=" + mappings +
-           ", errorPolicy=" + errorPolicy +
            '}';
   }
 }

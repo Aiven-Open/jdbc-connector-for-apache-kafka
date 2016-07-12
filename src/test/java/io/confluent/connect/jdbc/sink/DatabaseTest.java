@@ -34,7 +34,7 @@ public class DatabaseTest {
   private static final String DB_FILE = "test_database_changes_executor.sqllite.db";
   private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
 
-  private final ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null, 100, 100);
+  private final ConnectionProvider connectionProvider = new ConnectionProvider(SQL_LITE_URI, null, null);
 
   @Before
   public void setUp() {
@@ -52,29 +52,32 @@ public class DatabaseTest {
 
   @Test
   public void createAnInstance() {
-    new Database(new HashSet<String>(),
-                 new HashSet<String>(),
-                 new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                 DbDialect.fromConnectionString(SQL_LITE_URI),
-                 2);
+    new Database(
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
+        new DatabaseMetadata(null, new ArrayList<DbTable>()),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingAutoCreateIsNull() {
-    new Database(null,
-                 new HashSet<String>(),
-                 new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                 DbDialect.fromConnectionString(SQL_LITE_URI),
-                 2);
+    new Database(
+        null,
+        Collections.<String>emptySet(),
+        new DatabaseMetadata(null, new ArrayList<DbTable>()),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTablesAllowingSchemaEvolutionIsNull() {
-    new Database(new HashSet<String>(),
-                 null,
-                 new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                 DbDialect.fromConnectionString(SQL_LITE_URI),
-                 2);
+    new Database(
+        new HashSet<String>(),
+        null,
+        new DatabaseMetadata(null, new ArrayList<DbTable>()),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
   }
 
   @Test
@@ -82,11 +85,12 @@ public class DatabaseTest {
 
     String tableName1 = "tableA";
     String tableName2 = "tableB";
-    Database changesExecutor = new Database(new HashSet<>(Arrays.asList(tableName1, tableName2)),
-                                            Collections.<String>emptySet(),
-                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                                            DbDialect.fromConnectionString(SQL_LITE_URI),
-                                            2);
+    Database changesExecutor = new Database(
+        new HashSet<>(Arrays.asList(tableName1, tableName2)),
+        Collections.<String>emptySet(),
+        new DatabaseMetadata(null, new ArrayList<DbTable>()),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Arrays.asList(
@@ -158,11 +162,12 @@ public class DatabaseTest {
 
   @Test(expected = ConfigException.class)
   public void throwAnExceptionWhenForANewTableToCreateWhichDoesNotAllowAutoCreation() throws SQLException {
-    Database changesExecutor = new Database(new HashSet<String>(),
-                                            new HashSet<String>(),
-                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                                            DbDialect.fromConnectionString(SQL_LITE_URI),
-                                            2);
+    Database changesExecutor = new Database(
+        Collections.<String>emptySet(),
+        Collections.<String>emptySet(),
+        new DatabaseMetadata(null, new ArrayList<DbTable>()),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
 
     String tableName = "tableA";
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
@@ -199,11 +204,12 @@ public class DatabaseTest {
                                             "col3 NUMERIC NULL," +
                                             "PRIMARY KEY(col1));");
 
-    Database changesExecutor = new Database(Collections.<String>emptySet(),
-                                            new HashSet<>(Arrays.asList(tableName1, tableName2)),
-                                            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
-                                            DbDialect.fromConnectionString(SQL_LITE_URI),
-                                            2);
+    Database changesExecutor = new Database(
+        Collections.<String>emptySet(),
+        new HashSet<>(Arrays.asList(tableName1, tableName2)),
+        new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Arrays.asList(
@@ -279,8 +285,8 @@ public class DatabaseTest {
     Database changesExecutor = new Database(Collections.singleton(tableName1),
                                             new HashSet<String>(),
                                             new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                                            DbDialect.fromConnectionString(SQL_LITE_URI),
-                                            2);
+                                            DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Arrays.asList(
@@ -336,11 +342,12 @@ public class DatabaseTest {
   public void handleTheScenarioWhereTheTableHasBeenAlreadyCreatedButNotAllTheColumnsArePresent() throws SQLException {
 
     String tableName1 = "tableA11";
-    Database changesExecutor = new Database(Collections.singleton(tableName1),
-                                            new HashSet<String>(),
-                                            new DatabaseMetadata(null, new ArrayList<DbTable>()),
-                                            DbDialect.fromConnectionString(SQL_LITE_URI),
-                                            2);
+    Database changesExecutor = new Database(
+        Collections.singleton(tableName1),
+        new HashSet<String>(),
+        new DatabaseMetadata(null, new ArrayList<DbTable>()),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Arrays.asList(
@@ -392,7 +399,6 @@ public class DatabaseTest {
 
   @Test
   public void handleAmendmentsWhenTheTablesHaveBeenAmendedButSomeColumnsAreNotPresentYey() throws SQLException {
-
     String tableName1 = "tableAa1a";
 
     SqlLiteHelper.deleteTable(SQL_LITE_URI, tableName1);
@@ -402,11 +408,12 @@ public class DatabaseTest {
                                             "col3 NUMERIC NULL," +
                                             "PRIMARY KEY(col1));");
 
-    Database changesExecutor = new Database(Collections.<String>emptySet(),
-                                            Collections.singleton(tableName1),
-                                            new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
-                                            DbDialect.fromConnectionString(SQL_LITE_URI),
-                                            2);
+    Database changesExecutor = new Database(
+        Collections.<String>emptySet(),
+        Collections.singleton(tableName1),
+        new DatabaseMetadata(null, DatabaseMetadata.getTableMetadata(connectionProvider)),
+        DbDialect.fromConnectionString(SQL_LITE_URI)
+    );
 
     Map<String, Collection<SinkRecordField>> map = new HashMap<>();
     map.put(tableName1, Arrays.asList(
