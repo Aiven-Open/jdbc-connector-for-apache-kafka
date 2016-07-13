@@ -2,15 +2,15 @@ package io.confluent.connect.jdbc.sink.dialect;
 
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
 public class PostgreSQLDialect extends DbDialect {
 
@@ -35,7 +35,7 @@ public class PostgreSQLDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(final String table, final List<String> cols, final List<String> keyCols) {
+  public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols) {
     if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
     }
@@ -51,7 +51,7 @@ public class PostgreSQLDialect extends DbDialect {
     builder.append("INSERT INTO ");
     builder.append(handleTableName(table));
     builder.append(" (");
-    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES (");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") ON CONFLICT (");

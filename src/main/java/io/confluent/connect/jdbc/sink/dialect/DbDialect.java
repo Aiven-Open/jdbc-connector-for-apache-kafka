@@ -8,10 +8,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.sink.util.ParameterValidator;
 
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.*;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.Transform;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
 /**
  * Describes which SQL dialect to use. Different databases support different syntax for upserts.
@@ -34,34 +37,31 @@ public abstract class DbDialect {
    * Returns the create SQL statement
    *
    * @param tableName - The name of the table
-   * @param nonKeyColumns - The sequence of non primary key columns
    * @param keyColumns - The sequence of primary key columns
-   * @return SQL create statement
+   * @param nonKeyColumns - The sequence of non primary key columns
+   * @return SQL insert statement
    */
-  public final String getInsert(final String tableName,
-                                final List<String> nonKeyColumns,
-                                final List<String> keyColumns) {
+  public final String getInsert(final String tableName, final Collection<String> keyColumns, final Collection<String> nonKeyColumns) {
     if (tableName == null || tableName.trim().length() == 0) {
       throw new IllegalArgumentException("tableName parameter is not a valid table name.");
+    }
+    if (keyColumns == null) {
+      throw new IllegalArgumentException("keyColumns parameter is null");
     }
     if (nonKeyColumns == null) {
       throw new IllegalArgumentException("nonKeyColumns parameter is null.");
     }
 
-    if (keyColumns == null) {
-      throw new IllegalArgumentException("keyColumns parameter is null");
-    }
-
-    if (nonKeyColumns.isEmpty() && keyColumns.isEmpty()) {
-      throw new IllegalArgumentException("Illegal arguments. Both nonKeyColumns and keyColumns are empty");
+    if (keyColumns.isEmpty() && nonKeyColumns.isEmpty()) {
+      throw new IllegalArgumentException("Illegal arguments. Both keyColumns and nonKeyColumns are empty");
     }
 
     StringBuilder builder = new StringBuilder("INSERT INTO ");
     builder.append(handleTableName(tableName));
     builder.append("(");
-    joinToBuilder(builder, ",", nonKeyColumns, keyColumns, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyColumns, nonKeyColumns, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES(");
-    nCopiesToBuilder(builder, ",", "?", nonKeyColumns.size() + keyColumns.size());
+    nCopiesToBuilder(builder, ",", "?", keyColumns.size() + nonKeyColumns.size());
     builder.append(")");
     return builder.toString();
   }
@@ -70,14 +70,11 @@ public abstract class DbDialect {
    * Gets the query allowing to insert a new row into the RDBMS even if it does previously exists
    *
    * @param table - Contains the name of the target table
+   * @param keyColumns - Contains the table primary key columns
    * @param columns - Contains the table non primary key columns which will get data inserted in
-   * @param keyColumns- Contains the table primary key columns
    * @return The upsert query for the dialect
    */
-  public abstract String getUpsertQuery(final String table,
-                                        final List<String> columns,
-                                        final List<String> keyColumns);
-
+  public abstract String getUpsertQuery(final String table, final Collection<String> keyColumns, final Collection<String> columns);
 
   /**
    * Maps a JDBC  URI to an instance of a derived class of DbDialect
@@ -119,7 +116,6 @@ public abstract class DbDialect {
     }
   }
 
-
   /**
    * Returns the query for creating a new table in the database
    *
@@ -142,27 +138,27 @@ public abstract class DbDialect {
       @Override
       public void apply(StringBuilder builder, SinkRecordField f) {
         builder.append(lineSeparator);
-        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
         builder.append(" ");
 
-        if (f.isPrimaryKey() && f.getType().equals(Schema.Type.STRING)) {
+        if (f.isPrimaryKey && f.type.equals(Schema.Type.STRING)) {
           builder.append("VARCHAR(50)");
         } else {
-          builder.append(getSqlType(f.getType()));
+          builder.append(getSqlType(f.type));
         }
 
-        if (f.isPrimaryKey()) {
-          builder.append(" NOT NULL");
-        } else {
+        if (f.isOptional) {
           builder.append(" NULL");
+        } else {
+          builder.append(" NOT NULL");
         }
       }
     });
 
     final List<String> pks = new ArrayList<>();
-    for (SinkRecordField f: fields) {
-      if (f.isPrimaryKey()) {
-        pks.add(f.getName());
+    for (SinkRecordField f : fields) {
+      if (f.isPrimaryKey) {
+        pks.add(f.name);
       }
     }
 
@@ -201,11 +197,15 @@ public abstract class DbDialect {
         builder.append(lineSeparator);
         builder.append("ADD COLUMN ");
         builder.append(escapeColumnNamesStart);
-        builder.append(f.getName());
+        builder.append(f.name);
         builder.append(escapeColumnNamesEnd);
         builder.append(" ");
-        builder.append(getSqlType(f.getType()));
-        builder.append(" NULL");
+        builder.append(getSqlType(f.type));
+        if (f.isOptional) {
+          builder.append(" NULL");
+        } else {
+          builder.append(" NOT NULL");
+        }
       }
     });
 

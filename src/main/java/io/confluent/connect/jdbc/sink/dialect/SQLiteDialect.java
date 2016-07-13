@@ -8,13 +8,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.sink.util.ParameterValidator;
+import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
 public class SQLiteDialect extends DbDialect {
   public SQLiteDialect() {
@@ -52,22 +52,21 @@ public class SQLiteDialect extends DbDialect {
       @Override
       public void apply(StringBuilder builder, SinkRecordField f) {
         builder.append(lineSeparator);
-        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
         builder.append(" ");
-        builder.append(getSqlType(f.getType()));
-
-        if (f.isPrimaryKey()) {
-          builder.append(" NOT NULL ");
-        } else {
+        builder.append(getSqlType(f.type));
+        if (f.isOptional) {
           builder.append(" NULL");
+        } else {
+          builder.append(" NOT NULL ");
         }
       }
     });
 
     final List<String> pks = new ArrayList<>();
-    for (SinkRecordField f: fields) {
-      if (f.isPrimaryKey()) {
-        pks.add(f.getName());
+    for (SinkRecordField f : fields) {
+      if (f.isPrimaryKey) {
+        pks.add(f.name);
       }
     }
 
@@ -92,14 +91,19 @@ public class SQLiteDialect extends DbDialect {
     }
     final List<String> queries = new ArrayList<>(fields.size());
     for (final SinkRecordField f : fields) {
-      queries.add(String.format("ALTER TABLE %s ADD %s%s%s %s NULL;", handleTableName(tableName), escapeColumnNamesStart, f.getName(), escapeColumnNamesEnd,
-                                getSqlType(f.getType())));
+      queries.add(String.format(
+          "ALTER TABLE %s ADD %s%s%s %s %s",
+          handleTableName(tableName),
+          escapeColumnNamesStart, f.name, escapeColumnNamesEnd,
+          getSqlType(f.type),
+          f.isOptional ? "NULL" : "NOT NULL"
+      ));
     }
     return queries;
   }
 
   @Override
-  public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
+  public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
     if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table> is not a valid parameter");
     }
@@ -115,7 +119,7 @@ public class SQLiteDialect extends DbDialect {
     StringBuilder builder = new StringBuilder();
     builder.append("insert or ignore into ");
     builder.append(handleTableName(table)).append("(");
-    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") values(");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(")");

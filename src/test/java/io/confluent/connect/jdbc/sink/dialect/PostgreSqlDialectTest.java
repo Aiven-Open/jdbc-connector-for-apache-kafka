@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
@@ -17,29 +17,29 @@ public class PostgreSqlDialectTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Collections.singletonList("value"), Collections.singletonList("id"));
+    dialect.getUpsertQuery(null, Collections.singletonList("id"), Collections.singletonList("value"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Collections.singletonList("value"), Collections.singletonList("id"));
+    dialect.getUpsertQuery("  ", Collections.singletonList("id"), Collections.singletonList("value"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", Collections.singletonList("value"), null);
+    dialect.getUpsertQuery("Person", null, Collections.singletonList("value"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Collections.singletonList("value"), Collections.<String>emptyList());
+    dialect.getUpsertQuery("Customer", Collections.<String>emptyList(), Collections.singletonList("value"));
   }
 
   @Test
   public void produceTheUpsertQuery() {
-    String expected = "INSERT INTO \"Customer\" (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
+    String expected = "INSERT INTO \"Customer\" (\"id\",\"name\",\"salary\",\"address\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
                       "\"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"";
-    String insert = dialect.getUpsertQuery("Customer", Arrays.asList("name", "salary", "address"), Collections.singletonList("id"));
+    String insert = dialect.getUpsertQuery("Customer", Collections.singletonList("id"), Arrays.asList("name", "salary", "address"));
     assertEquals(expected, insert);
   }
 

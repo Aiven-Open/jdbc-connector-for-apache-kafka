@@ -2,19 +2,18 @@ package io.confluent.connect.jdbc.sink.dialect;
 
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.sink.util.ParameterValidator;
+import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
 public class SqlServerDialect extends DbDialect {
 
@@ -50,17 +49,21 @@ public class SqlServerDialect extends DbDialect {
       @Override
       public void apply(StringBuilder builder, SinkRecordField f) {
         builder.append(lineSeparator);
-        builder.append(escapeColumnNamesStart).append(f.getName()).append(escapeColumnNamesEnd);
+        builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
         builder.append(" ");
-        builder.append(getSqlType(f.getType()));
-        builder.append(" NULL");
+        builder.append(getSqlType(f.type));
+        if (f.isOptional) {
+          builder.append(" NULL");
+        } else {
+          builder.append(" NOT NULL");
+        }
       }
     });
     return Collections.singletonList(builder.toString());
   }
 
   @Override
-  public String getUpsertQuery(String table, List<String> cols, List<String> keyCols) {
+  public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
     if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table> is not valid");
     }

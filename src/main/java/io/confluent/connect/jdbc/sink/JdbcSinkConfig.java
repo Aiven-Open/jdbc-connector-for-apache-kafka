@@ -1,0 +1,136 @@
+package io.confluent.connect.jdbc.sink;
+
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigDef;
+
+import java.util.List;
+import java.util.Map;
+
+public class JdbcSinkConfig extends AbstractConfig {
+
+  public enum InsertMode {
+    INSERT,
+    UPSERT
+  }
+
+  public enum PrimaryKeyMode {
+    NONE,
+    KAFKA,
+    RECORD_KEY,
+    RECORD_VALUE
+  }
+
+  private static final String TABLE_OVERRIDABLE_DOC = "Overridable at the table-level by using a '$table.' prefix.";
+  private static final String TOPIC_OVERRIDABLE_DOC = "Overridable at the topic-level by using a '$topic.' prefix.";
+
+  public static final String CONNECTION_URL = "connection.url";
+  private static final String CONNECTION_URL_DOC = "JDBC connection URL. The protocol portion will be used for determining the SQL dialect to be used.";
+
+  public static final String CONNECTION_USER = "connection.user";
+  private static final String CONNECTION_USER_DOC = "JDBC connection user.";
+
+  public static final String CONNECTION_PASSWORD = "connection.password";
+  private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
+
+  public static final String TABLE_NAME_FORMAT = "table.name.format";
+  private static final String TABLE_NAME_FORMAT_DEFAULT = "%s";
+  private static final String TABLE_NAME_FORMAT_DOC =
+      "A Java format string, which may contain `%s` 0 or 1 times as a placeholder for the originating topic name. "
+      + "For example, \"kafka_%s\" for the topic 'orders' will map to the table name 'kafka_orders'. " + TOPIC_OVERRIDABLE_DOC;
+
+  public final static String MAX_RETRIES = "max.retries";
+  private final static String MAX_RETRIES_DEFAULT = "10";
+  private final static String MAX_RETRIES_DOC = "The maximum number of times to retry on errors before failing the task.";
+
+  public final static String RETRY_BACKOFF_MS = "retry.backoff.ms";
+  private final static int RETRY_BACKOFF_MS_DEFAULT = 3000;
+  private final static String RETRY_BACKOFF_MS_DOC = "The time in milliseconds to wait following an error before a retry attempt is made.";
+
+  public final static String BATCH_SIZE = "batch.size";
+  private final static int BATCH_SIZE_DEFAULT = 3000;
+  private final static String BATCH_SIZE_DOC =
+      "Specifies how many records to attempt to batch together for insertion, when possible. " + TABLE_OVERRIDABLE_DOC;
+
+  public static final String AUTO_CREATE = "auto.create";
+  private static final String AUTO_CREATE_DEFAULT = "false";
+  private static final String AUTO_CREATE_DOC =
+      "Whether to automatically create tables based on record schema if the sink table is found to be missing, by issuing a CREATE statement. "
+      + TABLE_OVERRIDABLE_DOC;
+
+  public static final String AUTO_EVOLVE = "auto.evolve";
+  private static final String AUTO_EVOLVE_DEFAULT = "false";
+  private static final String AUTO_EVOLVE_DOC =
+      "Whether to automatically evolve table schema when record schema and table schema is found to be incompatible, by issuing an ALTER statement. "
+      + TABLE_OVERRIDABLE_DOC;
+
+  public static final String INSERT_MODE = "insert.mode";
+  private static final String INSERT_MODE_DEFAULT = "insert";
+  private static final String INSERT_MODE_DOC =
+      "The insertion mode to use. Supported modes are 'insert' and 'upsert', with the latter translated to the appropriate upsert semantics for the target "
+      + "database if it is supported. " + TABLE_OVERRIDABLE_DOC;
+
+  public static final String PK_MODE = "pk.mode";
+  private static final String PK_MODE_DEFAULT = "none";
+  private static final String PK_MODE_DOC = ""; // TODO
+
+  public static final String PK_FIELDS = "pk.fields";
+  private static final String PK_FIELDS_DEFAULT = "";
+  private static final String PK_FIELDS_DOC = "";  // TODO
+
+  public final String connectionUrl;
+  public final String connectionUser;
+  public final String connectionPassword;
+  public final String tableNameFormat;
+  public final int batchSize;
+  public final int maxRetries;
+  public final int retryBackoffMs;
+  public final boolean autoCreate;
+  public final boolean autoEvolve;
+  public final InsertMode insertMode;
+  public final PrimaryKeyMode pkMode;
+  public final List<String> pkFields;
+
+  public JdbcSinkConfig(Map<?, ?> props) {
+    super(getConfigDef(), props);
+    connectionUrl = getString(CONNECTION_URL);
+    connectionUser = getString(CONNECTION_USER);
+    connectionPassword = getString(CONNECTION_PASSWORD);
+    tableNameFormat = getString(TABLE_NAME_FORMAT);
+    batchSize = getInt(BATCH_SIZE);
+    maxRetries = getInt(MAX_RETRIES);
+    retryBackoffMs = getInt(RETRY_BACKOFF_MS);
+    autoCreate = getBoolean(AUTO_CREATE);
+    autoEvolve = getBoolean(AUTO_EVOLVE);
+    insertMode = InsertMode.valueOf(getString(INSERT_MODE).toUpperCase());
+    pkMode = PrimaryKeyMode.valueOf(getString(PK_MODE).toUpperCase());
+    pkFields = getList(PK_FIELDS);
+  }
+
+  public static ConfigDef getConfigDef() {
+    return new ConfigDef()
+        .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
+        .define(CONNECTION_USER, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
+        .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
+        .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
+        // TODO validate >= 0
+        .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
+        // TODO validate >= 0
+        .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
+        // TODO validate >= 0
+        .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
+        .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
+        .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
+        // TODO validate is enum value
+        .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
+        // TODO validate is enum value
+        .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
+        .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
+  }
+
+  public JdbcSinkConfig contextualConfig(String context) {
+    final Map<String, Object> properties = originals();
+    properties.putAll(originalsWithPrefix(context + "."));
+    return new JdbcSinkConfig(properties);
+  }
+
+}

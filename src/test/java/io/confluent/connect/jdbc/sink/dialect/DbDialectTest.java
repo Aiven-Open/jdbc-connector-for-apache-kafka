@@ -17,8 +17,7 @@ public class DbDialectTest {
         "jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01"
     };
     for (String c : conns) {
-      assertEquals(SqlServerDialect.class,
-                   DbDialect.fromConnectionString(c).getClass());
+      assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString(c).getClass());
     }
   }
 
@@ -59,13 +58,11 @@ public class DbDialectTest {
 
   @Test
   public void getSqlServerDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass(),
-                 SqlServerDialect.class);
+    assertEquals(DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass(), SqlServerDialect.class);
   }
 
   @Test
   public void getPostgreDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(),
-                 PostgreSQLDialect.class);
+    assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(), PostgreSQLDialect.class);
   }
 }

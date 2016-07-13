@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
-import io.confluent.connect.jdbc.sink.common.ParameterValidator;
-import io.confluent.connect.jdbc.sink.common.StringBuilderUtil;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.sink.util.ParameterValidator;
+import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.common.StringBuilderUtil.stringSurroundTransform;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
 public class OracleDialect extends DbDialect {
   public OracleDialect() {
@@ -54,11 +54,15 @@ public class OracleDialect extends DbDialect {
           public void apply(StringBuilder builder, SinkRecordField f) {
             builder.append(lineSeparator);
             builder.append(escapeColumnNamesStart)
-                .append(f.getName())
+                .append(f.name)
                 .append(escapeColumnNamesEnd);
             builder.append(" ");
-            builder.append(getSqlType(f.getType()));
-            builder.append(" NULL");
+            builder.append(getSqlType(f.type));
+            if (f.isOptional) {
+              builder.append(" NULL");
+            } else {
+              builder.append(" NOT NULL");
+            }
           }
         }
     );
@@ -71,7 +75,7 @@ public class OracleDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(final String table, List<String> cols, List<String> keyCols) {
+  public String getUpsertQuery(final String table, Collection<String> keyCols, Collection<String> cols) {
     if (table == null || table.trim().length() == 0) {
       throw new IllegalArgumentException("<table> is not valid");
     }
@@ -87,7 +91,7 @@ public class OracleDialect extends DbDialect {
     final String tableName = handleTableName(table);
     builder.append(tableName);
     builder.append(" using (select ");
-    joinToBuilder(builder, ", ", cols, keyCols, stringSurroundTransform("? " + escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ", ", keyCols, cols, stringSurroundTransform("? " + escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(" FROM dual) incoming on(");
     joinToBuilder(builder, " and ", keyCols, new StringBuilderUtil.Transform<String>() {
       @Override

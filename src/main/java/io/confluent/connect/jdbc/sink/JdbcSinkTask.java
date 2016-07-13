@@ -13,82 +13,56 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadata;
-import io.confluent.connect.jdbc.sink.common.DatabaseMetadataProvider;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkSettings;
-import io.confluent.connect.jdbc.sink.writer.JdbcDbWriter;
-
 public class JdbcSinkTask extends SinkTask {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);
 
-  private JdbcDbWriter writer = null;
-
-  int maxRetries;
-  int retryBackoffMs;
-  int remainingRetries;
+  private JdbcSinkConfig config;
+  private JdbcDbWriter writer;
+  private int remainingRetries;
 
   @Override
   public void start(final Map<String, String> props) {
-    final JdbcSinkConfig sinkConfig = new JdbcSinkConfig(props);
-
-    maxRetries = sinkConfig.getInt(JdbcSinkConfig.MAX_RETRIES);
-    retryBackoffMs = sinkConfig.getInt(JdbcSinkConfig.RETRY_BACKOFF_MS);
-    remainingRetries = maxRetries;
-
-    final JdbcSinkSettings settings = JdbcSinkSettings.from(sinkConfig);
-    final DatabaseMetadataProvider provider = new DatabaseMetadataProvider() {
-      @Override
-      public DatabaseMetadata get(ConnectionProvider connectionProvider) throws SQLException {
-        logger.info("Getting metadata for tables: {}", settings.getTableNames());
-        return DatabaseMetadata.getDatabaseMetadata(connectionProvider, settings.getTableNames());
-      }
-    };
-
-    try {
-      writer = JdbcDbWriter.from(settings, provider);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    logger.info("Starting task");
+    config = new JdbcSinkConfig(props);
+    writer = new JdbcDbWriter(config);
+    remainingRetries = config.maxRetries;
   }
 
   @Override
   public void put(Collection<SinkRecord> records) {
     if (records.isEmpty()) {
-      logger.info("Empty list of records received.");
+      logger.debug("Empty collection of records received");
     } else {
-      assert (writer != null) : "Writer is not set!";
       final SinkRecord first = records.iterator().next();
-      int recordsCount = records.size();
-      logger.info("Received {} records. First entry topic:{}  partition:{} offset:{}. Writing them to the database...",
-                  recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset());
+      final int recordsCount = records.size();
+      logger.debug("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the database...",
+                   recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset());
       try {
         writer.write(records);
-        remainingRetries = maxRetries;
       } catch (SQLException sqle) {
-        logger.warn("put failed, remainingRetries={}", remainingRetries, sqle);
+        logger.warn("Write of {} records failed, remainingRetries={}", records.size(), remainingRetries, sqle);
         if (remainingRetries == 0) {
           throw new ConnectException(sqle);
         } else {
+          writer.closeQuietly();
+          writer = new JdbcDbWriter(config);
           remainingRetries--;
-          context.timeout(retryBackoffMs);
+          context.timeout(config.retryBackoffMs);
           throw new RetriableException(sqle);
         }
       }
-      logger.info("Finished writing %d records to the database.", recordsCount);
+      remainingRetries = config.maxRetries;
     }
   }
 
   @Override
-  public void stop() {
-    logger.info("Stopping Jdbc sink.");
-    writer.close();
+  public void flush(Map<TopicPartition, OffsetAndMetadata> map) {
+    // Not necessary
   }
 
-  @Override
-  public void flush(Map<TopicPartition, OffsetAndMetadata> map) {
-    //TODO
-    //have the writer expose a is busy; can expose an await using a countdownlatch internally
+  public void stop() {
+    logger.info("Stopping task");
+    writer.closeQuietly();
   }
 
   @Override

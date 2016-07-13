@@ -10,12 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
-
 public final class JdbcSinkConnector extends SinkConnector {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkConnector.class);
 
-  private Map<String, String> configProps = null;
+  private Map<String, String> configProps;
 
   public Class<? extends Task> taskClass() {
     return JdbcSinkTask.class;

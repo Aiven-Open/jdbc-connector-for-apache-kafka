@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
@@ -111,15 +111,15 @@ public class OracleDialectTest {
   @Test
   public void createTheUpsertStatement() {
     String expected = "merge into \"ARTICLE\" " +
-                      "using (select ? \"body\", ? \"title\", ? \"author\" FROM dual) incoming on" +
+                      "using (select ? \"title\", ? \"author\", ? \"body\" FROM dual) incoming on" +
                       "(\"ARTICLE\".\"title\"=incoming.\"title\" and \"ARTICLE\".\"author\"=incoming.\"author\") " +
                       "when matched then update set \"ARTICLE\".\"body\"=incoming.\"body\" " +
                       "when not matched then insert(\"ARTICLE\".\"body\",\"ARTICLE\".\"title\",\"ARTICLE\".\"author\") " +
                       "values(incoming.\"body\",incoming.\"title\",incoming.\"author\")";
 
     String upsert = dialect.getUpsertQuery("ARTICLE",
-                                           Collections.singletonList("body"),
-                                           Arrays.asList("title", "author"));
+                                           Arrays.asList("title", "author"), Collections.singletonList("body")
+    );
 
     assertEquals(expected, upsert);
   }

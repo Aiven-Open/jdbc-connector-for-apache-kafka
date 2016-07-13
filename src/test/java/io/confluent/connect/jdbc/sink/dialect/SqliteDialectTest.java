@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,8 +28,8 @@ public class SqliteDialectTest {
 
   @Test
   public void produceTheRightSqlStatementWhithACompositePK() {
-    String insert = new SQLiteDialect().getUpsertQuery("Book", Arrays.asList("ISBN", "year", "pages"), Arrays.asList("author", "title"));
-    assertEquals("insert or ignore into `Book`(`ISBN`,`year`,`pages`,`author`,`title`) values(?,?,?,?,?)", insert);
+    String insert = new SQLiteDialect().getUpsertQuery("Book", Arrays.asList("author", "title"), Arrays.asList("ISBN", "year", "pages"));
+    assertEquals("insert or ignore into `Book`(`author`,`title`,`ISBN`,`year`,`pages`) values(?,?,?,?,?)", insert);
 
   }
 }
