@@ -109,7 +109,7 @@ public class JdbcDbWriterTest {
   }
 
   @Test(expected = SQLException.class)
-  public void multiInsertWithRecordValiePkFailsDueToUniqueConstraint() throws SQLException {
+  public void multiInsertWithRecordValuePkFailsDueToUniqueConstraint() throws SQLException {
     writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title");
   }
 
