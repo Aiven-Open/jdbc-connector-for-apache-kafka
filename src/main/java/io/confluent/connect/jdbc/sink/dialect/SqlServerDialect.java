@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
-import io.confluent.connect.jdbc.sink.util.ParameterValidator;
 import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
@@ -37,13 +36,8 @@ public class SqlServerDialect extends DbDialect {
 
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNullOrEmpty(tableName, "table");
-    ParameterValidator.notNull(fields, "fields");
-    if (fields.isEmpty()) {
-      throw new IllegalArgumentException("<fields> is empty.");
-    }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(handleTableName(tableName));
+    builder.append(escapeTableName(tableName));
     builder.append(" ADD");
     joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
       @Override
@@ -64,17 +58,9 @@ public class SqlServerDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
-    if (table == null || table.trim().length() == 0) {
-      throw new IllegalArgumentException("<table> is not valid");
-    }
-
-    if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
-    }
-
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
-    String tableName = handleTableName(table);
+    String tableName = escapeTableName(table);
     builder.append(tableName);
     builder.append(" with (HOLDLOCK) AS target using (select ");
     joinToBuilder(builder, ", ", cols, keyCols, new StringBuilderUtil.Transform<String>() {

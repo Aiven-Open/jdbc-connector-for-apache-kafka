@@ -34,21 +34,11 @@ public class MySqlDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols) {
-    if (table == null || table.trim().length() == 0) {
-      throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
-    }
-
-    if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException(
-          String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
-                        table));
-    }
-
     //MySql doesn't support SQL 2003:merge so here how the upsert is handled
 
     final StringBuilder builder = new StringBuilder();
     builder.append("insert into ");
-    builder.append(handleTableName(table));
+    builder.append(escapeTableName(table));
     builder.append("(");
     joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") values(");

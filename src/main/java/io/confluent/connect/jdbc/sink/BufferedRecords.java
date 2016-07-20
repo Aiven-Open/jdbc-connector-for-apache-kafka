@@ -96,6 +96,11 @@ public class BufferedRecords {
       case INSERT:
         return dbDialect.getInsert(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames);
       case UPSERT:
+        if (fieldsMetadata.keyFieldNames.isEmpty()) {
+          throw new ConnectException(String.format(
+              "Write to table '%s' in UPSERT mode requires key field names to be known, check the primary key configuration", tableName
+          ));
+        }
         return dbDialect.getUpsertQuery(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames);
       default:
         throw new ConnectException("Invalid insert mode");

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
-import io.confluent.connect.jdbc.sink.util.ParameterValidator;
 import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
@@ -36,13 +35,8 @@ public class OracleDialect extends DbDialect {
 
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNullOrEmpty(tableName, "table");
-    ParameterValidator.notNull(fields, "fields");
-    if (fields.isEmpty()) {
-      throw new IllegalArgumentException("<fields> is empty.");
-    }
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(handleTableName(tableName)); //yes oracles needs it uppercase
+    builder.append(escapeTableName(tableName)); //yes oracles needs it uppercase
     builder.append(" ADD(");
 
     joinToBuilder(
@@ -76,19 +70,11 @@ public class OracleDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(final String table, Collection<String> keyCols, Collection<String> cols) {
-    if (table == null || table.trim().length() == 0) {
-      throw new IllegalArgumentException("<table> is not valid");
-    }
-
-    if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException("<keyColumns> is not valid. It has to be non null and non empty.");
-    }
-
     // https://blogs.oracle.com/cmar/entry/using_merge_to_do_an
 
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
-    final String tableName = handleTableName(table);
+    final String tableName = escapeTableName(table);
     builder.append(tableName);
     builder.append(" using (select ");
     joinToBuilder(builder, ", ", keyCols, cols, stringSurroundTransform("? " + escapeColumnNamesStart, escapeColumnNamesEnd));

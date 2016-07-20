@@ -12,11 +12,11 @@ import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilde
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
-public class PostgreSQLDialect extends DbDialect {
+public class PostgreSqlDialect extends DbDialect {
 
   // The user is responsible for escaping the columns otherwise create table A and create table "A" is not the same
 
-  public PostgreSQLDialect() {
+  public PostgreSqlDialect() {
     super(getSqlTypeMap(), "\"", "\"");
   }
 
@@ -36,20 +36,9 @@ public class PostgreSQLDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols) {
-    if (table == null || table.trim().length() == 0) {
-      throw new IllegalArgumentException("<table=> is not valid. A non null non empty string expected");
-    }
-
-    if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException(
-          String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
-                        table)
-      );
-    }
-
     final StringBuilder builder = new StringBuilder();
     builder.append("INSERT INTO ");
-    builder.append(handleTableName(table));
+    builder.append(escapeTableName(table));
     builder.append(" (");
     joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") VALUES (");

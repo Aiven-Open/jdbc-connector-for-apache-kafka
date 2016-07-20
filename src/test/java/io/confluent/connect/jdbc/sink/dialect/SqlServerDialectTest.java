@@ -14,26 +14,6 @@ import static org.junit.Assert.assertEquals;
 public class SqlServerDialectTest {
   private final DbDialect dialect = new SqlServerDialect();
 
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Collections.singletonList("id"), Collections.singletonList("value"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Collections.singletonList("id"), Collections.singletonList("value"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", null, Collections.singletonList("value"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Collections.<String>emptyList(), Collections.singletonList("value"));
-  }
-
   @Test
   public void produceTheRightSqlStatementWhithASinglePK() {
     String insert = dialect.getUpsertQuery("Customer", Collections.singletonList("id"), Arrays.asList("name", "salary", "address"));

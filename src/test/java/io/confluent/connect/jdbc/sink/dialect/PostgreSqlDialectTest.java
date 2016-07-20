@@ -13,27 +13,7 @@ import static org.junit.Assert.assertEquals;
 
 public class PostgreSqlDialectTest {
 
-  private final DbDialect dialect = new PostgreSQLDialect();
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Collections.singletonList("id"), Collections.singletonList("value"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Collections.singletonList("id"), Collections.singletonList("value"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", null, Collections.singletonList("value"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Collections.<String>emptyList(), Collections.singletonList("value"));
-  }
+  private final DbDialect dialect = new PostgreSqlDialect();
 
   @Test
   public void produceTheUpsertQuery() {
@@ -42,7 +22,6 @@ public class PostgreSqlDialectTest {
     String insert = dialect.getUpsertQuery("Customer", Collections.singletonList("id"), Arrays.asList("name", "salary", "address"));
     assertEquals(expected, insert);
   }
-
 
   @Test
   public void handleCreateTableMultiplePKColumns() {

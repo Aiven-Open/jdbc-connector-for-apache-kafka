@@ -9,15 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
-import io.confluent.connect.jdbc.sink.util.ParameterValidator;
 import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
 
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
 import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
 
-public class SQLiteDialect extends DbDialect {
-  public SQLiteDialect() {
+public class SqliteDialect extends DbDialect {
+  public SqliteDialect() {
     super(getSqlTypeMap(), "`", "`");
   }
 
@@ -41,12 +40,8 @@ public class SQLiteDialect extends DbDialect {
    * @return The create query for the dialect
    */
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNull(fields, "fields");
-    if (fields.isEmpty()) {
-      throw new IllegalArgumentException("<fields> is not valid.Not accepting empty collection of fields.");
-    }
     final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("CREATE TABLE %s (", handleTableName(tableName)));
+    builder.append(String.format("CREATE TABLE %s (", escapeTableName(tableName)));
 
     joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
       @Override
@@ -84,16 +79,11 @@ public class SQLiteDialect extends DbDialect {
 
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
-    ParameterValidator.notNullOrEmpty(tableName, "table");
-    ParameterValidator.notNull(fields, "fields");
-    if (fields.isEmpty()) {
-      throw new IllegalArgumentException("<fields> is empty.");
-    }
     final List<String> queries = new ArrayList<>(fields.size());
     for (final SinkRecordField f : fields) {
       queries.add(String.format(
           "ALTER TABLE %s ADD %s%s%s %s %s",
-          handleTableName(tableName),
+          escapeTableName(tableName),
           escapeColumnNamesStart, f.name, escapeColumnNamesEnd,
           getSqlType(f.type),
           f.isOptional ? "NULL" : "NOT NULL"
@@ -104,21 +94,9 @@ public class SQLiteDialect extends DbDialect {
 
   @Override
   public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
-    if (table == null || table.trim().length() == 0) {
-      throw new IllegalArgumentException("<table> is not a valid parameter");
-    }
-    if (cols == null || cols.size() == 0) {
-      throw new IllegalArgumentException("<columns> is invalid.Expecting non null and non empty collection");
-    }
-    if (keyCols == null || keyCols.size() == 0) {
-      throw new IllegalArgumentException(
-          String.format("Your SQL table %s does not have any primary key/s. You can only UPSERT when your SQL table has primary key/s defined",
-                        table)
-      );
-    }
     StringBuilder builder = new StringBuilder();
     builder.append("insert or ignore into ");
-    builder.append(handleTableName(table)).append("(");
+    builder.append(escapeTableName(table)).append("(");
     joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
     builder.append(") values(");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());

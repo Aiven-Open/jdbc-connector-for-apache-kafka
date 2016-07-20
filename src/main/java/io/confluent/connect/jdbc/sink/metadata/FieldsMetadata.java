@@ -169,6 +169,10 @@ public class FieldsMetadata {
       throw new ConnectException("No fields found using key and value schemas for table: " + tableName);
     }
 
+    if (allFields.isEmpty()) {
+      throw new ConnectException("No fields found");
+    }
+
     return new FieldsMetadata(keyFieldNames, nonKeyFieldNames, allFields);
   }
 
