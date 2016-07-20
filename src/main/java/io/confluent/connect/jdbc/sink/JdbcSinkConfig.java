@@ -71,11 +71,21 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public static final String PK_MODE = "pk.mode";
   private static final String PK_MODE_DEFAULT = "none";
-  private static final String PK_MODE_DOC = ""; // TODO
+  private static final String PK_MODE_DOC =
+      "The primary key mode, also refer to 'pk.fields' documentation for interplay. Supported modes are: "
+      + "'none' - no keys utilized; "
+      + "'kafka' - Kafka coordinates are used as the PK; "
+      + "'record_key' - field(s) from the record key are used, which may be a primitive or a struct; "
+      + "'record_value' - field(s) from the record value are used, which must be a struct";
 
   public static final String PK_FIELDS = "pk.fields";
   private static final String PK_FIELDS_DEFAULT = "";
-  private static final String PK_FIELDS_DOC = "";  // TODO
+  private static final String PK_FIELDS_DOC =
+      "List of comma-separated primary key field names. The interpretation of this config depends on the 'pk.mode': "
+      + "'none' - ignored; "
+      + "'kafka' - must be a trio representing the Kafka coordinates (topic: string, partition: int, offset: long); defaulting to (__connect_topic, __connect_partition, __connect_offset) if empty; "
+      + "'record_key' - if empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured; "
+      + "'record_value' - if empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.";
 
   public final String connectionUrl;
   public final String connectionUser;
