@@ -1,8 +1,8 @@
-package io.confluent.connect.jdbc.sink.util;
+package io.confluent.connect.jdbc.sink.dialect;
 
 import java.util.Iterator;
 
-public class StringBuilderUtil {
+class StringBuilderUtil {
 
   public interface Transform<T> {
     void apply(StringBuilder builder, T input);

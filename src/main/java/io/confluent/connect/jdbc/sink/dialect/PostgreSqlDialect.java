@@ -6,11 +6,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.util.StringBuilderUtil;
-
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public class PostgreSqlDialect extends DbDialect {
 

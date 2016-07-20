@@ -11,10 +11,10 @@ import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.Transform;
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.util.StringBuilderUtil.stringSurroundTransform;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.Transform;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public abstract class DbDialect {
 
