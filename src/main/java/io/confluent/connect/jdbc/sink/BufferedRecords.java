@@ -42,8 +42,6 @@ public class BufferedRecords {
   List<SinkRecord> add(SinkRecord record) throws SQLException {
     final SchemaPair schemaPair = new SchemaPair(record.keySchema(), record.valueSchema());
 
-    List<SinkRecord> flushed = Collections.emptyList();
-
     if (currentSchemaPair == null) {
       currentSchemaPair = schemaPair;
       // re-initialize everything that depends on the record schema
@@ -55,25 +53,27 @@ public class BufferedRecords {
       preparedStatementBinder = new PreparedStatementBinder(preparedStatement, config.pkMode, schemaPair, fieldsMetadata);
     }
 
+    final List<SinkRecord> flushed;
     if (currentSchemaPair.equals(schemaPair)) {
       // Continue with current batch state
       records.add(record);
       if (records.size() >= config.batchSize) {
         flushed = flush();
+      } else {
+        flushed = Collections.emptyList();
       }
     } else {
       // Each batch needs to have the same SchemaPair, so get the buffered records out, reset state and re-attempt the add
       flushed = flush();
       currentSchemaPair = null;
-      add(record);
+      flushed.addAll(add(record));
     }
-
     return flushed;
   }
 
   List<SinkRecord> flush() throws SQLException {
     if (records.isEmpty()) {
-      return Collections.emptyList();
+      return new LinkedList<>();
     }
     for (SinkRecord record : records) {
       preparedStatementBinder.bindRecord(record);
