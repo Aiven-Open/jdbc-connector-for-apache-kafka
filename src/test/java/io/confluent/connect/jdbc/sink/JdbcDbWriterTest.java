@@ -42,11 +42,11 @@ public class JdbcDbWriterTest {
     String topic = "books";
 
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSinkConfig.CONNECTION_URL, sqliteHelper.sqliteUri());
-    props.put(JdbcSinkConfig.AUTO_CREATE, "true");
-    props.put(JdbcSinkConfig.AUTO_EVOLVE, "true");
-    props.put(JdbcSinkConfig.PK_MODE, "record_key");
-    props.put(JdbcSinkConfig.PK_FIELDS, "id"); // assigned name for the primitive key
+    props.put("connection.url", sqliteHelper.sqliteUri());
+    props.put("auto.create", "true");
+    props.put("auto.evolve", "true");
+    props.put("pk.mode", "record_key");
+    props.put("pk.fields", "id"); // assigned name for the primitive key
 
     JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
 
@@ -128,11 +128,11 @@ public class JdbcDbWriterTest {
     long offset = 42;
 
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSinkConfig.CONNECTION_URL, sqliteHelper.sqliteUri());
-    props.put(JdbcSinkConfig.AUTO_CREATE, "true");
-    props.put(JdbcSinkConfig.PK_MODE, pkMode.toString());
-    props.put(JdbcSinkConfig.PK_FIELDS, pkFields);
-    props.put(JdbcSinkConfig.INSERT_MODE, insertMode.toString());
+    props.put("connection.url", sqliteHelper.sqliteUri());
+    props.put("auto.create", "true");
+    props.put("pk.mode", pkMode.toString());
+    props.put("pk.fields", pkFields);
+    props.put("insert.mode", insertMode.toString());
 
     JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
 
@@ -210,9 +210,9 @@ public class JdbcDbWriterTest {
     int numRecords = ThreadLocalRandom.current().nextInt(20, 80);
 
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSinkConfig.CONNECTION_URL, sqliteHelper.sqliteUri());
-    props.put(JdbcSinkConfig.TABLE_NAME_FORMAT, tableName);
-    props.put(JdbcSinkConfig.BATCH_SIZE, String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
+    props.put("connection.url", sqliteHelper.sqliteUri());
+    props.put("table.name.format", tableName);
+    props.put("batch.size", String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
 
     JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
     writer.write(Collections.nCopies(

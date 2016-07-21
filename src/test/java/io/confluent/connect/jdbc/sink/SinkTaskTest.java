@@ -39,12 +39,12 @@ public class SinkTaskTest {
     final String tableName2 = "table2";
 
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSinkConfig.CONNECTION_URL, sqliteHelper.sqliteUri());
-    props.put(JdbcSinkConfig.AUTO_CREATE, "true");
-    props.put(String.format("%s.%s", tableName1, JdbcSinkConfig.PK_MODE), "kafka");
-    props.put(String.format("%s.%s", tableName1, JdbcSinkConfig.PK_FIELDS), "kafka_topic,kafka_partition,kafka_offset");
-    props.put(String.format("%s.%s", tableName2, JdbcSinkConfig.PK_MODE), "record_value");
-    props.put(String.format("%s.%s", tableName2, JdbcSinkConfig.PK_FIELDS), "firstName,lastName");
+    props.put("connection.url", sqliteHelper.sqliteUri());
+    props.put("auto.create", "true");
+    props.put(String.format("%s.pk.mode", tableName1), "kafka");
+    props.put(String.format("%s.pk.fields", tableName1), "kafka_topic,kafka_partition,kafka_offset");
+    props.put(String.format("%s.pk.mode", tableName2), "record_value");
+    props.put(String.format("%s.pk.fields", tableName2), "firstName,lastName");
 
     JdbcSinkTask task = new JdbcSinkTask();
     task.initialize(mock(SinkTaskContext.class));
