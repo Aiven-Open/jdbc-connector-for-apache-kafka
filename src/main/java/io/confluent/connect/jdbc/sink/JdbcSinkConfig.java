@@ -2,6 +2,7 @@ package io.confluent.connect.jdbc.sink;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
 
 import java.util.List;
 import java.util.Map;
@@ -38,17 +39,17 @@ public class JdbcSinkConfig extends AbstractConfig {
       "A Java format string, which may contain `%s` 0 or 1 times as a placeholder for the originating topic name. "
       + "For example, \"kafka_%s\" for the topic 'orders' will map to the table name 'kafka_orders'. " + TOPIC_OVERRIDABLE_DOC;
 
-  public final static String MAX_RETRIES = "max.retries";
-  private final static String MAX_RETRIES_DEFAULT = "10";
-  private final static String MAX_RETRIES_DOC = "The maximum number of times to retry on errors before failing the task.";
+  public static final String MAX_RETRIES = "max.retries";
+  private static final int MAX_RETRIES_DEFAULT = 10;
+  private static final String MAX_RETRIES_DOC = "The maximum number of times to retry on errors before failing the task.";
 
-  public final static String RETRY_BACKOFF_MS = "retry.backoff.ms";
-  private final static int RETRY_BACKOFF_MS_DEFAULT = 3000;
-  private final static String RETRY_BACKOFF_MS_DOC = "The time in milliseconds to wait following an error before a retry attempt is made.";
+  public static final String RETRY_BACKOFF_MS = "retry.backoff.ms";
+  private static final int RETRY_BACKOFF_MS_DEFAULT = 3000;
+  private static final String RETRY_BACKOFF_MS_DOC = "The time in milliseconds to wait following an error before a retry attempt is made.";
 
-  public final static String BATCH_SIZE = "batch.size";
-  private final static int BATCH_SIZE_DEFAULT = 3000;
-  private final static String BATCH_SIZE_DOC =
+  public static final String BATCH_SIZE = "batch.size";
+  private static final int BATCH_SIZE_DEFAULT = 3000;
+  private static final String BATCH_SIZE_DOC =
       "Specifies how many records to attempt to batch together for insertion, when possible. " + TABLE_OVERRIDABLE_DOC;
 
   public static final String AUTO_CREATE = "auto.create";
@@ -87,6 +88,41 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "'record_key' - if empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured; "
       + "'record_value' - if empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.";
 
+  private static final ConfigDef.Validator VALIDATOR = new ConfigDef.Validator() {
+    @Override
+    public void ensureValid(String key, Object value) {
+      switch (key) {
+        case BATCH_SIZE:
+        case MAX_RETRIES:
+        case RETRY_BACKOFF_MS: {
+          if ((int) value < 0) {
+            throw new ConfigException(key, value, "Cannot be negative");
+          }
+          return;
+        }
+        case INSERT_MODE: {
+          final String enumerator = ((String) value).toUpperCase();
+          for (InsertMode insertMode : InsertMode.values()) {
+            if (insertMode.name().equalsIgnoreCase(enumerator)) {
+              return;
+            }
+          }
+          throw new ConfigException(key, value, "Invalid insertion mode");
+        }
+        case PK_MODE: {
+          final String enumerator = ((String) value).toUpperCase();
+          for (PrimaryKeyMode pkMode : PrimaryKeyMode.values()) {
+            if (pkMode.name().equalsIgnoreCase(enumerator)) {
+              return;
+            }
+          }
+          throw new ConfigException(key, value, "Invalid primary key mode");
+        }
+      }
+    }
+
+  };
+
   public final String connectionUrl;
   public final String connectionUser;
   public final String connectionPassword;
@@ -117,24 +153,20 @@ public class JdbcSinkConfig extends AbstractConfig {
   }
 
   public static ConfigDef getConfigDef() {
+    // TODO Recommender?
     return new ConfigDef()
-        .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
-        .define(CONNECTION_USER, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
-        .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
-        .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
-        // TODO validate >= 0
-        .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
-        // TODO validate >= 0
-        .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
-        // TODO validate >= 0
-        .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
-        .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
-        .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
-        // TODO validate is enum value
-        .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
-        // TODO validate is enum value
-        .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
-        .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
+        .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
+        .define(CONNECTION_USER, ConfigDef.Type.STRING, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
+        .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
+        .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
+        .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
+        .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
+        .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
+        .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
+        .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
+        .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
+        .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
+        .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
   }
 
   public JdbcSinkConfig contextualConfig(String context) {
