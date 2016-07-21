@@ -69,7 +69,7 @@ public class PreparedStatementBinderTest {
         fieldsMetadata
     );
 
-    binder.addBatch(new SinkRecord("topic", 0, null, null, valueSchema, valueStruct, 0));
+    binder.bindRecord(new SinkRecord("topic", 0, null, null, valueSchema, valueStruct, 0));
 
     int index = 1;
     // key field first
@@ -126,7 +126,7 @@ public class PreparedStatementBinderTest {
 
   @Test(expected = ConnectException.class)
   public void bindFieldStructUnsupported() throws SQLException {
-    Schema structSchema = SchemaBuilder.struct().field("test", SchemaBuilder.bool()).build();
+    Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
     PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, Schema.Type.STRUCT, new Struct(structSchema));
   }
 

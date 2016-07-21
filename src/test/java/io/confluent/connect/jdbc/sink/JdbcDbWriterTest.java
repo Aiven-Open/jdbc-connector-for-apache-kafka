@@ -50,11 +50,11 @@ public class JdbcDbWriterTest {
 
     JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
 
-    Schema keySchema = SchemaBuilder.int64();
+    Schema keySchema = Schema.INT64_SCHEMA;
 
     Schema valueSchema1 = SchemaBuilder.struct()
-        .field("author", SchemaBuilder.string())
-        .field("title", SchemaBuilder.string())
+        .field("author", Schema.STRING_SCHEMA)
+        .field("title", Schema.STRING_SCHEMA)
         .build();
 
     Struct valueStruct1 = new Struct(valueSchema1)
@@ -70,9 +70,9 @@ public class JdbcDbWriterTest {
     }
 
     Schema valueSchema2 = SchemaBuilder.struct()
-        .field("author", SchemaBuilder.string())
-        .field("title", SchemaBuilder.string())
-        .field("year", SchemaBuilder.int32().optional()); // new field
+        .field("author", Schema.STRING_SCHEMA)
+        .field("title", Schema.STRING_SCHEMA)
+        .field("year", Schema.OPTIONAL_INT32_SCHEMA); // new field
 
     Struct valueStruct2 = new Struct(valueSchema2)
         .put("author", "Tom Robbins")
@@ -137,13 +137,13 @@ public class JdbcDbWriterTest {
     JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
 
     Schema keySchema = SchemaBuilder.struct()
-        .field("id", SchemaBuilder.int64());
+        .field("id", SchemaBuilder.INT64_SCHEMA);
 
     Struct keyStruct = new Struct(keySchema).put("id", 0L);
 
     Schema valueSchema = SchemaBuilder.struct()
-        .field("author", SchemaBuilder.string())
-        .field("title", SchemaBuilder.string())
+        .field("author", Schema.STRING_SCHEMA)
+        .field("title", Schema.STRING_SCHEMA)
         .build();
 
     Struct valueStruct = new Struct(valueSchema)

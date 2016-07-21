@@ -18,9 +18,9 @@ import static org.junit.Assert.assertTrue;
 
 public class FieldsMetadataTest {
 
-  private static final Schema SIMPLE_PRIMITIVE_SCHEMA = SchemaBuilder.int64();
-  private static final Schema SIMPLE_STRUCT_SCHEMA = SchemaBuilder.struct().field("name", SchemaBuilder.string()).build();
-  private static final Schema SIMPLE_MAP_SCHEMA = SchemaBuilder.map(SchemaBuilder.int64(), SchemaBuilder.string()).build();
+  private static final Schema SIMPLE_PRIMITIVE_SCHEMA = Schema.INT64_SCHEMA;
+  private static final Schema SIMPLE_STRUCT_SCHEMA = SchemaBuilder.struct().field("name", Schema.STRING_SCHEMA).build();
+  private static final Schema SIMPLE_MAP_SCHEMA = SchemaBuilder.map(SchemaBuilder.INT64_SCHEMA, Schema.STRING_SCHEMA);
 
   @Test(expected = ConnectException.class)
   public void valueSchemaMustBePresent() {

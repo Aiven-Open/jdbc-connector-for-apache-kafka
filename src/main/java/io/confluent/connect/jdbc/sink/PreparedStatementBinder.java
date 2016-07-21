@@ -31,7 +31,7 @@ public class PreparedStatementBinder {
     this.fieldsMetadata = fieldsMetadata;
   }
 
-  public void addBatch(SinkRecord record) throws SQLException {
+  public void bindRecord(SinkRecord record) throws SQLException {
     final Struct valueStruct = (Struct) record.value();
 
     // Assumption: the relevant SQL has placeholders for keyFieldNames first followed by nonKeyFieldNames, in iteration order

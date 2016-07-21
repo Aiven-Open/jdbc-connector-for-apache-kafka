@@ -8,8 +8,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
@@ -24,8 +25,7 @@ public class BufferedRecords {
   private final DbStructure dbStructure;
   private final Connection connection;
 
-  private final Queue<SinkRecord> records = new LinkedList<>();
-
+  private List<SinkRecord> records = new LinkedList<>();
   private SchemaPair currentSchemaPair;
   private FieldsMetadata fieldsMetadata;
   private PreparedStatement preparedStatement;
@@ -39,8 +39,10 @@ public class BufferedRecords {
     this.connection = connection;
   }
 
-  void add(SinkRecord record) throws SQLException {
+  List<SinkRecord> add(SinkRecord record) throws SQLException {
     final SchemaPair schemaPair = new SchemaPair(record.keySchema(), record.valueSchema());
+
+    List<SinkRecord> flushed = Collections.emptyList();
 
     if (currentSchemaPair == null) {
       currentSchemaPair = schemaPair;
@@ -57,38 +59,43 @@ public class BufferedRecords {
       // Continue with current batch state
       records.add(record);
       if (records.size() >= config.batchSize) {
-        flush();
+        flushed = flush();
       }
     } else {
       // Each batch needs to have the same SchemaPair, so get the buffered records out, reset state and re-attempt the add
-      flush();
+      flushed = flush();
       currentSchemaPair = null;
       add(record);
     }
+
+    return flushed;
   }
 
-  void flush() throws SQLException {
+  List<SinkRecord> flush() throws SQLException {
     if (records.isEmpty()) {
-      return;
+      return Collections.emptyList();
     }
     for (SinkRecord record : records) {
-      preparedStatementBinder.addBatch(record);
+      preparedStatementBinder.bindRecord(record);
     }
-    int totalUpdatecount = 0;
+    int totalUpdateCount = 0;
     for (int updateCount : preparedStatement.executeBatch()) {
-      totalUpdatecount += updateCount;
+      totalUpdateCount += updateCount;
     }
-    if (totalUpdatecount != records.size()) {
+    if (totalUpdateCount != records.size()) {
       switch (config.insertMode) {
         case INSERT:
           throw new ConnectException(String.format("Update count (%d) did not sum up to total number of records inserted (%d)",
-                                                   totalUpdatecount, records.size()));
+                                                   totalUpdateCount, records.size()));
         case UPSERT:
-          logger.debug("Upserted records:{} resulting in in totalUpdatecount:{}", records.size(), totalUpdatecount);
+          logger.debug("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
       }
     }
     connection.commit();
-    records.clear();
+
+    final List<SinkRecord> flushedRecords = records;
+    records = new LinkedList<>();
+    return flushedRecords;
   }
 
   String getInsertSql() {
