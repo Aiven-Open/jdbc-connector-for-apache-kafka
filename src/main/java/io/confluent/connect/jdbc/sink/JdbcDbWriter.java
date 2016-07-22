@@ -53,7 +53,7 @@ public class JdbcDbWriter {
     if (connection == null) {
       connection = newConnection();
     } else if (!connection.isValid(3000)) {
-      logger.info("The dbStructure connection is invalid. Reconnecting...");
+      logger.info("The database connection is invalid. Reconnecting...");
       closeQuietly();
       connection = newConnection();
     }

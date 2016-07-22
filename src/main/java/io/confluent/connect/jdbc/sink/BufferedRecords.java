@@ -88,7 +88,7 @@ public class BufferedRecords {
           throw new ConnectException(String.format("Update count (%d) did not sum up to total number of records inserted (%d)",
                                                    totalUpdateCount, records.size()));
         case UPSERT:
-          logger.debug("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
+          logger.trace("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
       }
     }
     connection.commit();

@@ -31,28 +31,27 @@ public class JdbcSinkTask extends SinkTask {
   @Override
   public void put(Collection<SinkRecord> records) {
     if (records.isEmpty()) {
-      logger.debug("Empty collection of records received");
-    } else {
-      final SinkRecord first = records.iterator().next();
-      final int recordsCount = records.size();
-      logger.debug("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the database...",
-                   recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset());
-      try {
-        writer.write(records);
-      } catch (SQLException sqle) {
-        logger.warn("Write of {} records failed, remainingRetries={}", records.size(), remainingRetries, sqle);
-        if (remainingRetries == 0) {
-          throw new ConnectException(sqle);
-        } else {
-          writer.closeQuietly();
-          writer = new JdbcDbWriter(config);
-          remainingRetries--;
-          context.timeout(config.retryBackoffMs);
-          throw new RetriableException(sqle);
-        }
-      }
-      remainingRetries = config.maxRetries;
+      return;
     }
+    final SinkRecord first = records.iterator().next();
+    final int recordsCount = records.size();
+    logger.trace("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the database...",
+                 recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset());
+    try {
+      writer.write(records);
+    } catch (SQLException sqle) {
+      logger.warn("Write of {} records failed, remainingRetries={}", records.size(), remainingRetries, sqle);
+      if (remainingRetries == 0) {
+        throw new ConnectException(sqle);
+      } else {
+        writer.closeQuietly();
+        writer = new JdbcDbWriter(config);
+        remainingRetries--;
+        context.timeout(config.retryBackoffMs);
+        throw new RetriableException(sqle);
+      }
+    }
+    remainingRetries = config.maxRetries;
   }
 
   @Override
