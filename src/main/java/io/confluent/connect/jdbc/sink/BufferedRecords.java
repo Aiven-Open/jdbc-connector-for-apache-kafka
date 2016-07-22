@@ -31,7 +31,7 @@ public class BufferedRecords {
   private PreparedStatement preparedStatement;
   private PreparedStatementBinder preparedStatementBinder;
 
-  BufferedRecords(JdbcSinkConfig config, String tableName, DbDialect dbDialect, DbStructure dbStructure, Connection connection) {
+  public BufferedRecords(JdbcSinkConfig config, String tableName, DbDialect dbDialect, DbStructure dbStructure, Connection connection) {
     this.tableName = tableName;
     this.config = config;
     this.dbDialect = dbDialect;
@@ -39,7 +39,7 @@ public class BufferedRecords {
     this.connection = connection;
   }
 
-  List<SinkRecord> add(SinkRecord record) throws SQLException {
+  public List<SinkRecord> add(SinkRecord record) throws SQLException {
     final SchemaPair schemaPair = new SchemaPair(record.keySchema(), record.valueSchema());
 
     if (currentSchemaPair == null) {
@@ -71,7 +71,7 @@ public class BufferedRecords {
     return flushed;
   }
 
-  List<SinkRecord> flush() throws SQLException {
+  public List<SinkRecord> flush() throws SQLException {
     if (records.isEmpty()) {
       return new LinkedList<>();
     }
@@ -98,7 +98,7 @@ public class BufferedRecords {
     return flushedRecords;
   }
 
-  String getInsertSql() {
+  private String getInsertSql() {
     switch (config.insertMode) {
       case INSERT:
         return dbDialect.getInsert(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames);
