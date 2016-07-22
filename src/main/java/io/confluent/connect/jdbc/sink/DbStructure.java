@@ -83,7 +83,7 @@ public class DbStructure {
       final Connection connection,
       final String tableName,
       final FieldsMetadata fieldsMetadata,
-      final int maxAttempts
+      final int maxRetries
   ) throws SQLException {
     // NOTE:
     //   The table might have extra columns defined (hopefully with default values), which is not a case we check for here.
@@ -111,14 +111,14 @@ public class DbStructure {
     }
 
     final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, missingFields);
-    logger.info("Amending table to add missing fields:{} maxAttempts:{} with SQL: {}", missingFields, maxAttempts, amendTableQueries);
+    logger.info("Amending table to add missing fields:{} maxRetries:{} with SQL: {}", missingFields, maxRetries, amendTableQueries);
     try (Statement statement = connection.createStatement()) {
       for (String amendTableQuery : amendTableQueries) {
         statement.executeUpdate(amendTableQuery);
       }
       connection.commit();
     } catch (SQLException sqle) {
-      if (maxAttempts <= 0) {
+      if (maxRetries <= 0) {
         throw new ConnectException(
             String.format("Failed to amend table '%s' to add missing fields: %s", tableName, missingFields),
             sqle
@@ -132,7 +132,7 @@ public class DbStructure {
           connection,
           tableName,
           fieldsMetadata,
-          maxAttempts - 1
+          maxRetries - 1
       );
     }
 
