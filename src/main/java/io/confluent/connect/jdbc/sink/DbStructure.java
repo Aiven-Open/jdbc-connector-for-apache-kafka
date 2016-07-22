@@ -31,6 +31,10 @@ public class DbStructure {
     this.dbDialect = dbDialect;
   }
 
+  /**
+   * @return whether a DDL operation was performed
+   * @throws SQLException if a DDL operation was deemed necessary but failed
+   */
   public boolean createOrAmendIfNecessary(
       final JdbcSinkConfig config,
       final Connection connection,
@@ -38,13 +42,23 @@ public class DbStructure {
       final FieldsMetadata fieldsMetadata
   ) throws SQLException {
     if (tableMetadataLoadingCache.get(connection, tableName) == null) {
-      create(config, connection, tableName, fieldsMetadata);
-      return true;
-    } else {
-      return amendIfNecessary(config, connection, tableName, fieldsMetadata, config.maxRetries);
+      try {
+        create(config, connection, tableName, fieldsMetadata);
+      } catch (SQLException sqle) {
+        logger.warn("Create failed, will attempt amend if table already exists", sqle);
+        if (DbMetadataQueries.tableExists(connection, tableName)) {
+          tableMetadataLoadingCache.refresh(connection, tableName);
+        } else {
+          throw sqle;
+        }
+      }
     }
+    return amendIfNecessary(config, connection, tableName, fieldsMetadata, config.maxRetries);
   }
 
+  /**
+   * @throws SQLException if CREATE failed
+   */
   void create(
       final JdbcSinkConfig config,
       final Connection connection,
@@ -59,25 +73,14 @@ public class DbStructure {
     try (Statement statement = connection.createStatement()) {
       statement.executeUpdate(sql);
       connection.commit();
-    } catch (SQLException sqle) {
-      logger.warn("Create failed, will attempt amend if table already exists", sqle);
-      if (DbMetadataQueries.tableExists(connection, tableName)) {
-        tableMetadataLoadingCache.refresh(connection, tableName);
-        amendIfNecessary(
-            config,
-            connection,
-            tableName,
-            fieldsMetadata,
-            config.maxRetries
-        );
-        return;
-      } else {
-        throw sqle;
-      }
     }
     tableMetadataLoadingCache.refresh(connection, tableName);
   }
 
+  /**
+   * @return whether an ALTER was successfully performed
+   * @throws SQLException if ALTER was deemed necessary but failed
+   */
   boolean amendIfNecessary(
       final JdbcSinkConfig config,
       final Connection connection,
