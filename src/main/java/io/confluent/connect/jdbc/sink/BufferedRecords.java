@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
@@ -25,7 +25,7 @@ public class BufferedRecords {
   private final DbStructure dbStructure;
   private final Connection connection;
 
-  private List<SinkRecord> records = new LinkedList<>();
+  private List<SinkRecord> records = new ArrayList<>();
   private SchemaPair currentSchemaPair;
   private FieldsMetadata fieldsMetadata;
   private PreparedStatement preparedStatement;
@@ -73,7 +73,7 @@ public class BufferedRecords {
 
   public List<SinkRecord> flush() throws SQLException {
     if (records.isEmpty()) {
-      return new LinkedList<>();
+      return new ArrayList<>();
     }
     for (SinkRecord record : records) {
       preparedStatementBinder.bindRecord(record);
@@ -94,7 +94,7 @@ public class BufferedRecords {
     connection.commit();
 
     final List<SinkRecord> flushedRecords = records;
-    records = new LinkedList<>();
+    records = new ArrayList<>();
     return flushedRecords;
   }
 
