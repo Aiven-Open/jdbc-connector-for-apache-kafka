@@ -123,6 +123,20 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   };
 
+  public static final ConfigDef CONFIG_DEF = new ConfigDef()
+      .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
+      .define(CONNECTION_USER, ConfigDef.Type.STRING, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
+      .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
+      .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
+      .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
+      .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
+      .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
+      .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
+      .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
+      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
+      .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
+      .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
+
   public final String connectionUrl;
   public final String connectionUser;
   public final String connectionPassword;
@@ -137,7 +151,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final List<String> pkFields;
 
   public JdbcSinkConfig(Map<?, ?> props) {
-    super(getConfigDef(), props);
+    super(CONFIG_DEF, props);
     connectionUrl = getString(CONNECTION_URL);
     connectionUser = getString(CONNECTION_USER);
     connectionPassword = getString(CONNECTION_PASSWORD);
@@ -152,27 +166,14 @@ public class JdbcSinkConfig extends AbstractConfig {
     pkFields = getList(PK_FIELDS);
   }
 
-  public static ConfigDef getConfigDef() {
-    // TODO Recommender?
-    return new ConfigDef()
-        .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
-        .define(CONNECTION_USER, ConfigDef.Type.STRING, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
-        .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
-        .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
-        .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
-        .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
-        .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
-        .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
-        .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
-        .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
-        .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
-        .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
-  }
-
   public JdbcSinkConfig contextualConfig(String context) {
     final Map<String, Object> properties = originals();
     properties.putAll(originalsWithPrefix(context + "."));
     return new JdbcSinkConfig(properties);
+  }
+
+  public static void main(String... args) {
+    System.out.println(CONFIG_DEF.toRst());
   }
 
 }

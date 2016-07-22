@@ -40,7 +40,7 @@ public final class JdbcSinkConnector extends SinkConnector {
 
   @Override
   public ConfigDef config() {
-    return JdbcSinkConfig.getConfigDef();
+    return JdbcSinkConfig.CONFIG_DEF;
   }
 
   @Override
