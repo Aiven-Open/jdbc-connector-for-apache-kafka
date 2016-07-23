@@ -91,7 +91,6 @@ public class BufferedRecords {
           logger.trace("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
       }
     }
-    connection.commit();
 
     final List<SinkRecord> flushedRecords = records;
     records = new ArrayList<>();
