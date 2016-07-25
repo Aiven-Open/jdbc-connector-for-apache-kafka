@@ -39,11 +39,12 @@ public class JdbcSinkConfig extends AbstractConfig {
     RECORD_VALUE;
   }
 
-  private static final String TABLE_OVERRIDABLE_DOC = "Overridable at the table-level by using a '$table.' prefix.";
-  private static final String TOPIC_OVERRIDABLE_DOC = "Overridable at the topic-level by using a '$topic.' prefix.";
+  private static final String TABLE_OVERRIDABLE_DOC = "\nThis config is overridable at the table-level by using a '$table.' prefix.";
+  private static final String TOPIC_OVERRIDABLE_DOC = "\nThis config is overridable at the topic-level by using a '$topic.' prefix.";
 
   public static final String CONNECTION_URL = "connection.url";
-  private static final String CONNECTION_URL_DOC = "JDBC connection URL. The protocol portion will be used for determining the SQL dialect to be used.";
+  private static final String CONNECTION_URL_DOC = "JDBC connection URL."
+                                                   + "\nThe protocol portion will be used for determining the SQL dialect to be used.";
 
   public static final String CONNECTION_USER = "connection.user";
   private static final String CONNECTION_USER_DOC = "JDBC connection user.";
@@ -54,8 +55,8 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static final String TABLE_NAME_FORMAT = "table.name.format";
   private static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
   private static final String TABLE_NAME_FORMAT_DOC =
-      "A format string for the destination table name, which may contain '${topic}' as a placeholder for the originating topic name. "
-      + "For example, \"kafka_${topic}\" for the topic 'orders' will map to the table name 'kafka_orders'. " + TOPIC_OVERRIDABLE_DOC;
+      "A format string for the destination table name, which may contain '${topic}' as a placeholder for the originating topic name."
+      + "\nFor example, \"kafka_${topic}\" for the topic 'orders' will map to the table name 'kafka_orders'." + TOPIC_OVERRIDABLE_DOC;
 
   public static final String MAX_RETRIES = "max.retries";
   private static final int MAX_RETRIES_DEFAULT = 10;
@@ -68,43 +69,41 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static final String BATCH_SIZE = "batch.size";
   private static final int BATCH_SIZE_DEFAULT = 3000;
   private static final String BATCH_SIZE_DOC =
-      "Specifies how many records to attempt to batch together for insertion, when possible. " + TABLE_OVERRIDABLE_DOC;
+      "Specifies how many records to attempt to batch together for insertion, when possible." + TABLE_OVERRIDABLE_DOC;
 
   public static final String AUTO_CREATE = "auto.create";
   private static final String AUTO_CREATE_DEFAULT = "false";
   private static final String AUTO_CREATE_DOC =
-      "Whether to automatically create tables based on record schema if the sink table is found to be missing, by issuing a CREATE statement. "
-      + TABLE_OVERRIDABLE_DOC;
+      "Whether to automatically create tables based on record schema if the sink table is found to be missing, by issuing a CREATE statement." + TABLE_OVERRIDABLE_DOC;
 
   public static final String AUTO_EVOLVE = "auto.evolve";
   private static final String AUTO_EVOLVE_DEFAULT = "false";
   private static final String AUTO_EVOLVE_DOC =
-      "Whether to automatically evolve table schema when record schema and table schema is found to be incompatible, by issuing an ALTER statement. "
-      + TABLE_OVERRIDABLE_DOC;
+      "Whether to automatically evolve table schema when record schema and table schema is found to be incompatible, by issuing an ALTER statement." + TABLE_OVERRIDABLE_DOC;
 
   public static final String INSERT_MODE = "insert.mode";
   private static final String INSERT_MODE_DEFAULT = "insert";
   private static final String INSERT_MODE_DOC =
-      "The insertion mode to use. Supported modes are 'insert' and 'upsert', with the latter translated to the appropriate upsert semantics for the target "
-      + "database if it is supported. " + TABLE_OVERRIDABLE_DOC;
+      "The insertion mode to use. Supported modes are 'insert' and 'upsert', with the latter translated to the appropriate upsert semantics for the target database if it is supported."
+      + TABLE_OVERRIDABLE_DOC;
 
   public static final String PK_MODE = "pk.mode";
   private static final String PK_MODE_DEFAULT = "none";
   private static final String PK_MODE_DOC =
       "The primary key mode, also refer to 'pk.fields' documentation for interplay. Supported modes are: "
-      + "'none' - no keys utilized; "
-      + "'kafka' - Kafka coordinates are used as the PK; "
-      + "'record_key' - field(s) from the record key are used, which may be a primitive or a struct; "
-      + "'record_value' - field(s) from the record value are used, which must be a struct";
+      + "\n'none' - no keys utilized."
+      + "\n'kafka' - Kafka coordinates are used as the PK."
+      + "\n'record_key' - field(s) from the record key are used, which may be a primitive or a struct."
+      + "\n'record_value' - field(s) from the record value are used, which must be a struct.";
 
   public static final String PK_FIELDS = "pk.fields";
   private static final String PK_FIELDS_DEFAULT = "";
   private static final String PK_FIELDS_DOC =
-      "List of comma-separated primary key field names. The interpretation of this config depends on the 'pk.mode': "
-      + "'none' - ignored; "
-      + "'kafka' - must be a trio representing the Kafka coordinates (topic: string, partition: int, offset: long); defaulting to (__connect_topic, __connect_partition, __connect_offset) if empty; "
-      + "'record_key' - if empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured; "
-      + "'record_value' - if empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.";
+      "List of comma-separated primary key field names. The interpretation of this config depends on the 'pk.mode':"
+      + "\n'none' - ignored."
+      + "\n'kafka' - must be a trio representing the Kafka coordinates (topic: string, partition: int, offset: long); defaulting to (__connect_topic, __connect_partition, __connect_offset) if empty."
+      + "\n'record_key' - if empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured."
+      + "\n'record_value' - if empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.";
 
   private static final ConfigDef.Range NON_NEGATIVE_INT_VALIDATOR = ConfigDef.Range.atLeast(0);
 
@@ -166,7 +165,7 @@ public class JdbcSinkConfig extends AbstractConfig {
 
     public static <E> EnumValidator in(E[] enumerators) {
       final HashSet<String> values = new HashSet<>();
-      for (E e: enumerators) {
+      for (E e : enumerators) {
         values.add(e.toString().toUpperCase());
         values.add(e.toString().toLowerCase());
       }
