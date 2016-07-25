@@ -37,7 +37,7 @@ import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import io.confluent.connect.jdbc.sink.metadata.TableMetadataLoadingCache;
 
 public class DbStructure {
-  private final static Logger logger = LoggerFactory.getLogger(DbStructure.class);
+  private final static Logger log = LoggerFactory.getLogger(DbStructure.class);
 
   private final TableMetadataLoadingCache tableMetadataLoadingCache = new TableMetadataLoadingCache();
 
@@ -61,7 +61,7 @@ public class DbStructure {
       try {
         create(config, connection, tableName, fieldsMetadata);
       } catch (SQLException sqle) {
-        logger.warn("Create failed, will attempt amend if table already exists", sqle);
+        log.warn("Create failed, will attempt amend if table already exists", sqle);
         if (DbMetadataQueries.tableExists(connection, tableName)) {
           tableMetadataLoadingCache.refresh(connection, tableName);
         } else {
@@ -85,7 +85,7 @@ public class DbStructure {
       throw new ConnectException(String.format("Table %s is missing and auto-creation is disabled", tableName));
     }
     final String sql = dbDialect.getCreateQuery(tableName, fieldsMetadata.allFields.values());
-    logger.info("Creating table:{} with SQL: {}", tableName, sql);
+    log.info("Creating table:{} with SQL: {}", tableName, sql);
     try (Statement statement = connection.createStatement()) {
       statement.executeUpdate(sql);
       connection.commit();
@@ -130,7 +130,7 @@ public class DbStructure {
     }
 
     final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, missingFields);
-    logger.info("Amending table to add missing fields:{} maxRetries:{} with SQL: {}", missingFields, maxRetries, amendTableQueries);
+    log.info("Amending table to add missing fields:{} maxRetries:{} with SQL: {}", missingFields, maxRetries, amendTableQueries);
     try (Statement statement = connection.createStatement()) {
       for (String amendTableQuery : amendTableQueries) {
         statement.executeUpdate(amendTableQuery);
@@ -143,7 +143,7 @@ public class DbStructure {
             sqle
         );
       }
-      logger.warn("Amend failed, re-attempting", sqle);
+      log.warn("Amend failed, re-attempting", sqle);
       tableMetadataLoadingCache.refresh(connection, tableName);
       // Perhaps there was a race with other tasks to add the columns
       return amendIfNecessary(

@@ -36,7 +36,7 @@ import io.confluent.connect.jdbc.sink.metadata.DbTable;
 import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
 
 public abstract class DbMetadataQueries {
-  private static final Logger logger = LoggerFactory.getLogger(DbMetadataQueries.class);
+  private static final Logger log = LoggerFactory.getLogger(DbMetadataQueries.class);
 
   public static boolean tableExists(final Connection connection, final String tableName) throws SQLException {
     final String catalog = connection.getCatalog();
@@ -46,11 +46,11 @@ public abstract class DbMetadataQueries {
     final String product = meta.getDatabaseProductName();
     final String schema = getSchema(connection, product);
 
-    logger.info("Checking table:{} exists for product:{} schema:{} catalog:", tableName, product, schema, catalog);
+    log.info("Checking table:{} exists for product:{} schema:{} catalog:", tableName, product, schema, catalog);
 
     try (ResultSet rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"})) {
       final boolean exists = rs.next();
-      logger.info("product:{} schema:{} catalog:{} -- table:{} is {}", product, schema, catalog, tableName, exists ? "present" : "absent");
+      log.info("product:{} schema:{} catalog:{} -- table:{} is {}", product, schema, catalog, tableName, exists ? "present" : "absent");
       return exists;
     }
   }
@@ -80,7 +80,7 @@ public abstract class DbMetadataQueries {
     final String schema = getSchema(connection, product);
     final String tableNameForQuery = product.equalsIgnoreCase("oracle") ? tableName.toUpperCase() : tableName;
 
-    logger.info("Querying column metadata for product:{} schema:{} catalog:{} table:{}", product, schema, catalog, tableNameForQuery);
+    log.info("Querying column metadata for product:{} schema:{} catalog:{} table:{}", product, schema, catalog, tableNameForQuery);
 
     final Set<String> pkColumns = new HashSet<>();
     try (final ResultSet primaryKeysResultSet = dbMetaData.getPrimaryKeys(catalog, schema, tableNameForQuery)) {

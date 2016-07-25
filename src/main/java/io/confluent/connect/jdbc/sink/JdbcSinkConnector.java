@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class JdbcSinkConnector extends SinkConnector {
-  private static final Logger logger = LoggerFactory.getLogger(JdbcSinkConnector.class);
+  private static final Logger log = LoggerFactory.getLogger(JdbcSinkConnector.class);
 
   private Map<String, String> configProps;
 
@@ -38,7 +38,7 @@ public final class JdbcSinkConnector extends SinkConnector {
 
   @Override
   public List<Map<String, String>> taskConfigs(int maxTasks) {
-    logger.info("Setting task configurations for {} workers.", maxTasks);
+    log.info("Setting task configurations for {} workers.", maxTasks);
     final List<Map<String, String>> configs = new ArrayList<>(maxTasks);
     for (int i = 0; i < maxTasks; ++i) {
       configs.add(configProps);

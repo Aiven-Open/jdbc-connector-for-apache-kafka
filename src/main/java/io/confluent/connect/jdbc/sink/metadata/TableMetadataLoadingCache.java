@@ -27,7 +27,7 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.DbMetadataQueries;
 
 public class TableMetadataLoadingCache {
-  private static final Logger logger = LoggerFactory.getLogger(TableMetadataLoadingCache.class);
+  private static final Logger log = LoggerFactory.getLogger(TableMetadataLoadingCache.class);
 
   private final Map<String, DbTable> cache = new HashMap<>();
 
@@ -46,7 +46,7 @@ public class TableMetadataLoadingCache {
 
   public DbTable refresh(final Connection connection, final String tableName) throws SQLException {
     DbTable dbTable = DbMetadataQueries.table(connection, tableName);
-    logger.info("Updating cached metadata -- {}", dbTable);
+    log.info("Updating cached metadata -- {}", dbTable);
     cache.put(dbTable.name, dbTable);
     return dbTable;
   }

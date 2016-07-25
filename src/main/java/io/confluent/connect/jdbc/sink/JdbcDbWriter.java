@@ -31,7 +31,7 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 
 public class JdbcDbWriter {
-  private static final Logger logger = LoggerFactory.getLogger(JdbcDbWriter.class);
+  private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
   private final Map<String, JdbcSinkConfig> contextualConfigCache = new HashMap<>();
 
@@ -70,7 +70,7 @@ public class JdbcDbWriter {
     if (connection == null) {
       connection = newConnection();
     } else if (!connection.isValid(3000)) {
-      logger.info("The database connection is invalid. Reconnecting...");
+      log.info("The database connection is invalid. Reconnecting...");
       closeQuietly();
       connection = newConnection();
     }
@@ -85,7 +85,7 @@ public class JdbcDbWriter {
     try {
       connection.close();
     } catch (SQLException sqle) {
-      logger.warn("Ignoring error closing connection", sqle);
+      log.warn("Ignoring error closing connection", sqle);
     }
   }
 

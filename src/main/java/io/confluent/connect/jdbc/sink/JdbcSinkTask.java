@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public class JdbcSinkTask extends SinkTask {
-  private static final Logger logger = LoggerFactory.getLogger(JdbcSinkTask.class);
+  private static final Logger log = LoggerFactory.getLogger(JdbcSinkTask.class);
 
   private JdbcSinkConfig config;
   private JdbcDbWriter writer;
@@ -38,7 +38,7 @@ public class JdbcSinkTask extends SinkTask {
 
   @Override
   public void start(final Map<String, String> props) {
-    logger.info("Starting task");
+    log.info("Starting task");
     config = new JdbcSinkConfig(props);
     writer = new JdbcDbWriter(config);
     remainingRetries = config.maxRetries;
@@ -51,12 +51,12 @@ public class JdbcSinkTask extends SinkTask {
     }
     final SinkRecord first = records.iterator().next();
     final int recordsCount = records.size();
-    logger.trace("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the database...",
-                 recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset());
+    log.trace("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the database...",
+              recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset());
     try {
       writer.write(records);
     } catch (SQLException sqle) {
-      logger.warn("Write of {} records failed, remainingRetries={}", records.size(), remainingRetries, sqle);
+      log.warn("Write of {} records failed, remainingRetries={}", records.size(), remainingRetries, sqle);
       if (remainingRetries == 0) {
         throw new ConnectException(sqle);
       } else {
@@ -76,7 +76,7 @@ public class JdbcSinkTask extends SinkTask {
   }
 
   public void stop() {
-    logger.info("Stopping task");
+    log.info("Stopping task");
     writer.closeQuietly();
   }
 

@@ -33,7 +33,7 @@ import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
 
 public class BufferedRecords {
-  private static final Logger logger = LoggerFactory.getLogger(BufferedRecords.class);
+  private static final Logger log = LoggerFactory.getLogger(BufferedRecords.class);
 
   private final String tableName;
   private final JdbcSinkConfig config;
@@ -64,7 +64,7 @@ public class BufferedRecords {
       fieldsMetadata = FieldsMetadata.extract(tableName, config.pkMode, config.pkFields, currentSchemaPair);
       dbStructure.createOrAmendIfNecessary(config, connection, tableName, fieldsMetadata);
       final String insertSql = getInsertSql();
-      logger.debug("insertion sql:{}", config.insertMode, insertSql);
+      log.debug("insertion sql:{}", config.insertMode, insertSql);
       preparedStatement = connection.prepareStatement(insertSql);
       preparedStatementBinder = new PreparedStatementBinder(preparedStatement, config.pkMode, schemaPair, fieldsMetadata);
     }
@@ -104,7 +104,7 @@ public class BufferedRecords {
           throw new ConnectException(String.format("Update count (%d) did not sum up to total number of records inserted (%d)",
                                                    totalUpdateCount, records.size()));
         case UPSERT:
-          logger.trace("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
+          log.trace("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
       }
     }
 
