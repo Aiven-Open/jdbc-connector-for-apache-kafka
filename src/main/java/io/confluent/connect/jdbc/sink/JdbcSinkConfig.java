@@ -52,10 +52,10 @@ public class JdbcSinkConfig extends AbstractConfig {
   private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
 
   public static final String TABLE_NAME_FORMAT = "table.name.format";
-  private static final String TABLE_NAME_FORMAT_DEFAULT = "%s";
+  private static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
   private static final String TABLE_NAME_FORMAT_DOC =
-      "A Java format string, which may contain `%s` 0 or 1 times as a placeholder for the originating topic name. "
-      + "For example, \"kafka_%s\" for the topic 'orders' will map to the table name 'kafka_orders'. " + TOPIC_OVERRIDABLE_DOC;
+      "A format string for the destination table name, which may contain '${topic}' as a placeholder for the originating topic name. "
+      + "For example, \"kafka_${topic}\" for the topic 'orders' will map to the table name 'kafka_orders'. " + TOPIC_OVERRIDABLE_DOC;
 
   public static final String MAX_RETRIES = "max.retries";
   private static final int MAX_RETRIES_DEFAULT = 10;

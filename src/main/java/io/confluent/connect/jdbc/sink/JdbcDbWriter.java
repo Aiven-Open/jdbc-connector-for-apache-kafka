@@ -100,7 +100,7 @@ public class JdbcDbWriter {
 
   String destinationTable(String topic) {
     final String tableNameFormat = cachedContextualConfig(topic).tableNameFormat.trim();
-    final String tableName = String.format(tableNameFormat, topic);
+    final String tableName = tableNameFormat.replace("${topic}", topic);
     if (tableName.isEmpty()) {
       throw new ConnectException(String.format("Destination table name for topic '%s' is empty using the format string '%s'", topic, tableNameFormat));
     }
