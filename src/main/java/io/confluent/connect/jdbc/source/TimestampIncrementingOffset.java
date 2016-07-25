@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package io.confluent.connect.jdbc;
+package io.confluent.connect.jdbc.source;
 
 import java.sql.Timestamp;
 import java.util.HashMap;
