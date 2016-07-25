@@ -4,9 +4,10 @@ import org.apache.kafka.connect.data.Schema;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
@@ -109,13 +110,19 @@ public class MySqlDialectTest {
 
   @Test
   public void createTheUpsertQuery() {
-    String expected = "insert into `actor`(`first_name`,`last_name`,`score`,`actor_id`) " +
+    String expected = "insert into `actor`(`actor_id`,`first_name`,`last_name`,`score`) " +
                       "values(?,?,?,?) on duplicate key update `first_name`=values(`first_name`),`last_name`=values(`last_name`)," +
                       "`score`=values(`score`)";
 
     String upsert = dialect.getUpsertQuery("actor",
-                                           Arrays.asList("first_name", "last_name", "score"),
-                                           Arrays.asList("actor_id"));
+                                           Arrays.asList("actor_id"), Arrays.asList("first_name", "last_name", "score")
+    );
     assertEquals(expected, upsert);
+  }
+
+  @Test
+  public void anotherInsertQuery() {
+    String query = dialect.getInsert("customers", Collections.<String>emptyList(), Arrays.asList("age", "firstName", "lastName"));
+    assertEquals(query, "INSERT INTO `customers`(`age`,`firstName`,`lastName`) VALUES(?,?,?)");
   }
 }

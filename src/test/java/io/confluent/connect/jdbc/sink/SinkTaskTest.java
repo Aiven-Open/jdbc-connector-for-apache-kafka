@@ -1,7 +1,5 @@
 package io.confluent.connect.jdbc.sink;
 
-import org.apache.curator.test.InstanceSpec;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -10,194 +8,148 @@ import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import java.io.File;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
-
-import io.confluent.connect.jdbc.sink.config.FieldsMappings;
-import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
-import io.confluent.connect.jdbc.sink.services.EmbeddedSingleNodeKafkaCluster;
-import io.confluent.connect.jdbc.sink.services.RestApp;
-import io.confluent.kafka.schemaregistry.client.rest.RestService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 public class SinkTaskTest {
-  private static final String DB_FILE = "test_db_writer_sqllite.db";
-  private static final String SQL_LITE_URI = "jdbc:sqlite:" + DB_FILE;
+  private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
   @Before
-  public void setUp() {
-    deleteSqlLiteFile();
+  public void setUp() throws IOException, SQLException {
+    sqliteHelper.setUp();
   }
 
   @After
-  public void tearDown() {
-    deleteSqlLiteFile();
+  public void tearDown() throws IOException, SQLException {
+    sqliteHelper.tearDown();
   }
-
-  private void deleteSqlLiteFile() {
-    new File(DB_FILE).delete();
-  }
-
 
   @Test
-  public void TestSinkTaskStarts() throws Exception {
-    TestBase base = new TestBase();
-    TopicPartition tp1 = new TopicPartition(base.getTopic1(), 12);
-    TopicPartition tp2 = new TopicPartition(base.getTopic2(), 13);
-    HashSet<TopicPartition> assignment = new HashSet<>();
+  public void putPropagatesToDb() throws Exception {
+    final String tableName1 = "table1";
+    final String tableName2 = "table2";
 
-    //Set topic assignments, used by the sinkContext mock
-    assignment.add(tp1);
-    assignment.add(tp2);
-
-    //mock the context
-    SinkTaskContext context = Mockito.mock(SinkTaskContext.class);
-    when(context.assignment()).thenReturn(assignment);
-
-    int port = InstanceSpec.getRandomPort();
-    EmbeddedSingleNodeKafkaCluster cluster = new EmbeddedSingleNodeKafkaCluster();
-    RestApp registry = new RestApp(port, cluster.zookeeperConnect(), base.getTopic1());
-    registry.start();
-    RestService client = registry.restClient;
-
-    String rawSchema = "{\"type\":\"record\",\"name\":\"myrecord\",\n" +
-                       "\"fields\":[\n" +
-                       "{\"name\":\"firstName\",\"type\":[\"null\", \"string\"]},\n" +
-                       "{\"name\":\"lastName\", \"type\": \"string\"}, \n" +
-                       "{\"name\":\"age\", \"type\": \"int\"}, \n" +
-                       "{\"name\":\"bool\", \"type\": \"float\"},\n" +
-                       "{\"name\":\"byte\", \"type\": \"float\"},\n" +
-                       "{\"name\":\"short\", \"type\": [\"null\", \"int\"]},\n" +
-                       "{\"name\":\"long\", \"type\": \"long\"},\n" +
-                       "{\"name\":\"float\", \"type\": \"float\"},\n" +
-                       "{\"name\":\"double\", \"type\": \"double\"}\n" +
-                       "]}";
-
-    //register the schema for topic1
-    client.registerSchema(rawSchema, base.getTopic1());
-    Map<String, String> props = base.getPropsAllFields("insert", false);
-    props.put(JdbcSinkConfig.DATABASE_CONNECTION_URI, SQL_LITE_URI);
-    props.put(JdbcSinkConfig.EXPORT_MAPPINGS,
-              "INSERT INTO " + base.getTableName1() + " SELECT * FROM " + base.getTopic1() + " AUTOCREATE;" +
-              "INSERT INTO " + base.getTableName2() + " SELECT * FROM " + base.getTopic2());
+    Map<String, String> props = new HashMap<>();
+    props.put("connection.url", sqliteHelper.sqliteUri());
+    props.put("auto.create", "true");
+    props.put(String.format("%s.pk.mode", tableName1), "kafka");
+    props.put(String.format("%s.pk.fields", tableName1), "kafka_topic,kafka_partition,kafka_offset");
+    props.put(String.format("%s.pk.mode", tableName2), "record_value");
+    props.put(String.format("%s.pk.fields", tableName2), "firstName,lastName");
 
     JdbcSinkTask task = new JdbcSinkTask();
-    task.initialize(context);
+    task.initialize(mock(SinkTaskContext.class));
 
-    String createTable2 = "CREATE TABLE " + base.getTableName2() + "(" +
-                          "    firstName  TEXT PRIMARY_KEY," +
-                          "    lastName  TEXT PRIMARY_KEY," +
+    String createTable2 = "CREATE TABLE " + tableName2 + "(" +
+                          "    firstName  TEXT," +
+                          "    lastName  TEXT," +
                           "    age INTEGER," +
                           "    bool  NUMERIC," +
                           "    byte  INTEGER," +
-                          "    short INTEGER," +
+                          "    short INTEGER NULL," +
                           "    long INTEGER," +
                           "    float NUMERIC," +
                           "    double NUMERIC," +
-                          "    bytes BLOB);";
+                          "    bytes BLOB, " +
+                          "PRIMARY KEY (firstName, lastName));";
 
-    SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName1());
-    SqlLiteHelper.deleteTable(SQL_LITE_URI, base.getTableName2());
-    SqlLiteHelper.createTable(SQL_LITE_URI, createTable2);
+    sqliteHelper.deleteTable(tableName1);
+    sqliteHelper.deleteTable(tableName2);
+    sqliteHelper.createTable(createTable2);
 
     task.start(props);
 
     Schema schema = SchemaBuilder.struct().name("com.example.Person")
-        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
+        .field("firstName", Schema.STRING_SCHEMA)
+        .field("lastName", Schema.STRING_SCHEMA)
         .field("age", Schema.OPTIONAL_INT32_SCHEMA)
         .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
         .field("short", Schema.OPTIONAL_INT16_SCHEMA)
         .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
         .field("long", Schema.OPTIONAL_INT64_SCHEMA)
         .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA);
+        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .build();
 
-    final String fName1 = "Alex";
-    final String lName1 = "Smith";
-    final int age1 = 21;
-    final boolean bool1 = true;
-    final short s1 = 1234;
-    final byte b1 = -32;
-    final long l1 = 12425436;
-    final float f1 = (float) 2356.3;
-    final double d1 = -2436546.56457;
+    final Struct struct1 = new Struct(schema)
+        .put("firstName", "Alex")
+        .put("lastName", "Smith")
+        .put("bool", true)
+        .put("short", (short) 1234)
+        .put("byte", (byte) -32)
+        .put("long", 12425436L)
+        .put("float", (float) 2356.3)
+        .put("double", -2436546.56457)
+        .put("age", 21);
 
-    Struct struct1 = new Struct(schema)
-        .put("firstName", fName1)
-        .put("lastName", lName1)
-        .put("bool", bool1)
-        .put("short", s1)
-        .put("byte", b1)
-        .put("long", l1)
-        .put("float", f1)
-        .put("double", d1)
-        .put("age", age1);
-    final short s1a = s1 + 1;
-    Struct struct1a = struct1.put("short", s1a)
-        .put("float", f1 + 1)
-        .put("double", d1 + 1);
+    final Struct struct2 = new Struct(schema)
+        .put("firstName", "Christina")
+        .put("lastName", "Brams")
+        .put("bool", false)
+        .put("byte", (byte) -72)
+        .put("long", 8594L)
+        .put("double", 3256677.56457d)
+        .put("age", 28);
 
-    final String fName2 = "Christina";
-    final String lName2 = "Brams";
-    final int age2 = 28;
-    final boolean bool2 = false;
-    final byte b2 = -72;
-    final long l2 = 8594;
-    final double d2 = 3256677.56457;
-
-    Struct struct2 = new Struct(schema)
-        .put("firstName", fName2)
-        .put("lastName", lName2)
-        .put("bool", bool2)
-        .put("byte", b2)
-        .put("long", l2)
-        .put("double", d2)
-        .put("age", age2);
-
-    int partition = 1;
-    Collection<SinkRecord> records = Arrays.asList(
-        new SinkRecord(base.getTopic2(), partition, null, null, schema, struct2, 2),
-        new SinkRecord(base.getTopic1(), partition, null, null, schema, struct1a, 3));
-    task.put(records);
+    task.put(Arrays.asList(
+        new SinkRecord(tableName1, 1, null, null, schema, struct1, 42),
+        new SinkRecord(tableName2, 1, null, null, schema, struct2, 43)
+    ));
 
     Thread.sleep(300); //SQLite delay
-    String query = "SELECT * FROM " + base.getTableName2() + " WHERE firstName='" + fName1 + "' and lastName='" + lName1 + "'";
 
-    SqlLiteHelper.select(SQL_LITE_URI, query, new SqlLiteHelper.ResultSetReadCallback() {
-      @Override
-      public void read(ResultSet rs) throws SQLException {
+    assertEquals(
+        1,
+        sqliteHelper.select(
+            "SELECT * FROM " + tableName1,
+            new SqliteHelper.ResultSetReadCallback() {
+              @Override
+              public void read(ResultSet rs) throws SQLException {
+                assertEquals(tableName1, rs.getString("kafka_topic"));
+                assertEquals(1, rs.getInt("kafka_partition"));
+                assertEquals(42, rs.getLong("kafka_offset"));
+                assertEquals(struct1.getString("firstName"), rs.getString("firstName"));
+                assertEquals(struct1.getString("lastName"), rs.getString("lastName"));
+                assertEquals(struct1.getBoolean("bool"), rs.getBoolean("bool"));
+                assertEquals(struct1.getInt8("byte").byteValue(), rs.getByte("byte"));
+                assertEquals(struct1.getInt16("short").shortValue(), rs.getShort("short"));
+                assertEquals(struct1.getInt32("age").intValue(), rs.getInt("age"));
+                assertEquals(struct1.getInt64("long").longValue(), rs.getLong("long"));
+                assertEquals(struct1.getFloat32("float"), rs.getFloat("float"), 0.01);
+                assertEquals(struct1.getFloat64("double"), rs.getDouble("double"), 0.01);
+              }
+            }
+        )
+    );
 
-        assertEquals(rs.getBoolean("bool"), bool1);
-        assertEquals(rs.getShort("short"), s1a);
-        assertEquals(rs.getByte("byte"), b1);
-        assertEquals(rs.getLong("long"), l1);
-        assertTrue(Float.compare(rs.getFloat("float"), f1 + 1) == 0);
-        assertEquals(Double.compare(rs.getDouble("double"), d1 + 1), 0);
-        assertEquals(rs.getInt("age"), age1);
-      }
-    });
-
-    final String topic1 = base.getTopic1();
-    SqlLiteHelper.select(SQL_LITE_URI, "SELECT " + FieldsMappings.CONNECT_TOPIC_COLUMN + "," +
-                                       FieldsMappings.CONNECT_OFFSET_COLUMN + "," +
-                                       FieldsMappings.CONNECT_PARTITION_COLUMN + " FROM " + base.getTableName1(), new SqlLiteHelper.ResultSetReadCallback() {
-      @Override
-      public void read(ResultSet rs) throws SQLException {
-        assertEquals(rs.getInt(FieldsMappings.CONNECT_PARTITION_COLUMN), 1);
-        assertEquals(rs.getLong(FieldsMappings.CONNECT_OFFSET_COLUMN), 3);
-        assertEquals(rs.getString(FieldsMappings.CONNECT_TOPIC_COLUMN), topic1);
-      }
-    });
+    assertEquals(
+        1,
+        sqliteHelper.select(
+            "SELECT * FROM " + tableName2 + " WHERE firstName='" + struct2.getString("firstName") + "' and lastName='" + struct2.getString("lastName") + "'",
+            new SqliteHelper.ResultSetReadCallback() {
+              @Override
+              public void read(ResultSet rs) throws SQLException {
+                assertEquals(struct2.getBoolean("bool"), rs.getBoolean("bool"));
+                rs.getShort("short");
+                assertTrue(rs.wasNull());
+                assertEquals(struct2.getInt8("byte").byteValue(), rs.getByte("byte"));
+                assertEquals(struct2.getInt32("age").intValue(), rs.getInt("age"));
+                assertEquals(struct2.getInt64("long").longValue(), rs.getLong("long"));
+                rs.getShort("float");
+                assertTrue(rs.wasNull());
+                assertEquals(struct2.getFloat64("double"), rs.getDouble("double"), 0.01);
+              }
+            }
+        )
+    );
   }
 }

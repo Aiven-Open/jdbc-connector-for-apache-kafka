@@ -1,13 +1,14 @@
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 public class DbDialectTest {
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = ConnectException.class)
   public void shouldThrowAndExceptionIfTheUriDoesNotStartWithJdbcWhenExtractingTheProtocol() {
-    DbDialect.extractProtocol("mysql://Server:port");
+    DbDialect.extractProtocolFromUrl("mysql://Server:port");
   }
 
   @Test
@@ -17,34 +18,23 @@ public class DbDialectTest {
         "jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01"
     };
     for (String c : conns) {
-      assertEquals(SqlServerDialect.class,
-                   DbDialect.fromConnectionString(c).getClass());
+      assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString(c).getClass());
     }
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void shouldThrowAndExceptionIfTheUriIsNullWhenExtractingTheProtocol() {
-    DbDialect.extractProtocol(null);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void shouldThrowAndExceptionIfTheUriIsEmptyWhenExtractingTheProtocol() {
-    DbDialect.extractProtocol("   ");
-  }
-
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = ConnectException.class)
   public void shouldThrowAndExceptionIfTheUriDoesntHaveSemiColonAndForwardSlashWhenExtractingTheProtocol() {
-    DbDialect.extractProtocol("jdbc:protocol:somethingelse;field=value;");
+    DbDialect.extractProtocolFromUrl("jdbc:protocol:somethingelse;field=value;");
   }
 
   @Test
   public void shouldExtractTheProtocol() {
-    assertEquals(DbDialect.extractProtocol("jdbc:protocol_test://SERVER:21421;field=value"), "protocol_test");
+    assertEquals(DbDialect.extractProtocolFromUrl("jdbc:protocol_test://SERVER:21421;field=value"), "protocol_test");
   }
 
   @Test
   public void getTheSqLiteDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:sqlite:/folder/db.file").getClass(), SQLiteDialect.class);
+    assertEquals(DbDialect.fromConnectionString("jdbc:sqlite:/folder/db.file").getClass(), SqliteDialect.class);
   }
 
   @Test
@@ -59,13 +49,11 @@ public class DbDialectTest {
 
   @Test
   public void getSqlServerDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass(),
-                 SqlServerDialect.class);
+    assertEquals(DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass(), SqlServerDialect.class);
   }
 
   @Test
   public void getPostgreDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(),
-                 PostgreSQLDialect.class);
+    assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(), PostgreSqlDialect.class);
   }
 }

@@ -1,5 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -10,12 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.config.JdbcSinkConfig;
-
 public final class JdbcSinkConnector extends SinkConnector {
   private static final Logger logger = LoggerFactory.getLogger(JdbcSinkConnector.class);
 
-  private Map<String, String> configProps = null;
+  private Map<String, String> configProps;
 
   public Class<? extends Task> taskClass() {
     return JdbcSinkTask.class;
@@ -42,7 +41,13 @@ public final class JdbcSinkConnector extends SinkConnector {
 
   @Override
   public ConfigDef config() {
-    return JdbcSinkConfig.getConfigDef();
+    return JdbcSinkConfig.CONFIG_DEF;
+  }
+
+  @Override
+  public Config validate(Map<String, String> connectorConfigs) {
+    // TODO cross-fields validation here: pkFields against the pkMode
+    return super.validate(connectorConfigs);
   }
 
   @Override

@@ -7,42 +7,21 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
 public class PostgreSqlDialectTest {
 
-  private final DbDialect dialect = new PostgreSQLDialect();
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Collections.singletonList("value"), Collections.singletonList("id"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Collections.singletonList("value"), Collections.singletonList("id"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", Collections.singletonList("value"), null);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Collections.singletonList("value"), Collections.<String>emptyList());
-  }
+  private final DbDialect dialect = new PostgreSqlDialect();
 
   @Test
   public void produceTheUpsertQuery() {
-    String expected = "INSERT INTO \"Customer\" (\"name\",\"salary\",\"address\",\"id\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
+    String expected = "INSERT INTO \"Customer\" (\"id\",\"name\",\"salary\",\"address\") VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET " +
                       "\"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"";
-    String insert = dialect.getUpsertQuery("Customer", Arrays.asList("name", "salary", "address"), Collections.singletonList("id"));
+    String insert = dialect.getUpsertQuery("Customer", Collections.singletonList("id"), Arrays.asList("name", "salary", "address"));
     assertEquals(expected, insert);
   }
-
 
   @Test
   public void handleCreateTableMultiplePKColumns() {

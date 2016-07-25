@@ -1,5 +1,5 @@
-Kafka Connect JDBC Sink
-=======================
+Kafka Connect JDBC Sink (TODO out-of-date doc: updates to come)
+================================================================
 
 The JDBC sink allows for writing data from Kafka topics to an RDBMS. It has been tested against MYSQL, Oracle, Postgres
 and SQL Server.

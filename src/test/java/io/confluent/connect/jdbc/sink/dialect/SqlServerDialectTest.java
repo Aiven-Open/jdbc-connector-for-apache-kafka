@@ -7,36 +7,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import io.confluent.connect.jdbc.sink.SinkRecordField;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
 public class SqlServerDialectTest {
   private final DbDialect dialect = new SqlServerDialect();
 
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableIsNull() {
-    dialect.getUpsertQuery(null, Collections.singletonList("value"), Collections.singletonList("id"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfTableNameIsEmptyString() {
-    dialect.getUpsertQuery("  ", Collections.singletonList("value"), Collections.singletonList("id"));
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNull() {
-    dialect.getUpsertQuery("Person", Collections.singletonList("value"), null);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void throwAnExceptionIfKeyColsIsNullIsEmpty() {
-    dialect.getUpsertQuery("Customer", Collections.singletonList("value"), Collections.<String>emptyList());
-  }
-
   @Test
   public void produceTheRightSqlStatementWhithASinglePK() {
-    String insert = dialect.getUpsertQuery("Customer", Arrays.asList("name", "salary", "address"), Collections.singletonList("id"));
+    String insert = dialect.getUpsertQuery("Customer", Collections.singletonList("id"), Arrays.asList("name", "salary", "address"));
     assertEquals(insert, "merge into [Customer] with (HOLDLOCK) AS target using (select ? AS [name], ? AS [salary], ? AS " +
                          "[address], ? AS [id]) AS incoming on (target.[id]=incoming.[id]) when matched then update set " +
                          "[name]=incoming.[name],[salary]=incoming.[salary],[address]=incoming.[address] when not matched then insert " +
@@ -46,7 +26,7 @@ public class SqlServerDialectTest {
 
   @Test
   public void produceTheRightSqlStatementWhithACompositePK() {
-    String insert = dialect.getUpsertQuery("Book", Arrays.asList("ISBN", "year", "pages"), Arrays.asList("author", "title"));
+    String insert = dialect.getUpsertQuery("Book", Arrays.asList("author", "title"), Arrays.asList("ISBN", "year", "pages"));
     assertEquals(insert, "merge into [Book] with (HOLDLOCK) AS target using (select ? AS [ISBN], ? AS [year], ? AS [pages], " +
                          "? AS [author], ? AS [title]) AS incoming on (target.[author]=incoming.[author] and target.[title]=incoming.[title])" +
                          " when matched then update set [ISBN]=incoming.[ISBN],[year]=incoming.[year],[pages]=incoming.[pages] when not " +
