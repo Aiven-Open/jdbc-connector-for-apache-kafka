@@ -4,21 +4,23 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JdbcSinkConfig extends AbstractConfig {
 
   public enum InsertMode {
     INSERT,
-    UPSERT
+    UPSERT;
   }
 
   public enum PrimaryKeyMode {
     NONE,
     KAFKA,
     RECORD_KEY,
-    RECORD_VALUE
+    RECORD_VALUE;
   }
 
   private static final String TABLE_OVERRIDABLE_DOC = "Overridable at the table-level by using a '$table.' prefix.";
@@ -88,54 +90,21 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "'record_key' - if empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured; "
       + "'record_value' - if empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.";
 
-  private static final ConfigDef.Validator VALIDATOR = new ConfigDef.Validator() {
-    @Override
-    public void ensureValid(String key, Object value) {
-      switch (key) {
-        case BATCH_SIZE:
-        case MAX_RETRIES:
-        case RETRY_BACKOFF_MS: {
-          if ((int) value < 0) {
-            throw new ConfigException(key, value, "Cannot be negative");
-          }
-          return;
-        }
-        case INSERT_MODE: {
-          final String enumerator = ((String) value).toUpperCase();
-          for (InsertMode insertMode : InsertMode.values()) {
-            if (insertMode.name().equalsIgnoreCase(enumerator)) {
-              return;
-            }
-          }
-          throw new ConfigException(key, value, "Invalid insertion mode");
-        }
-        case PK_MODE: {
-          final String enumerator = ((String) value).toUpperCase();
-          for (PrimaryKeyMode pkMode : PrimaryKeyMode.values()) {
-            if (pkMode.name().equalsIgnoreCase(enumerator)) {
-              return;
-            }
-          }
-          throw new ConfigException(key, value, "Invalid primary key mode");
-        }
-      }
-    }
-
-  };
+  private static final ConfigDef.Range NON_NEGATIVE_INT_VALIDATOR = ConfigDef.Range.atLeast(0);
 
   public static final ConfigDef CONFIG_DEF = new ConfigDef()
-      .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
-      .define(CONNECTION_USER, ConfigDef.Type.STRING, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
-      .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, VALIDATOR, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
-      .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
-      .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, VALIDATOR, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
-      .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
-      .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
-      .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
-      .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
-      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
-      .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
-      .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, VALIDATOR, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
+      .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, ConfigDef.Importance.HIGH, CONNECTION_URL_DOC)
+      .define(CONNECTION_USER, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, CONNECTION_USER_DOC)
+      .define(CONNECTION_PASSWORD, ConfigDef.Type.PASSWORD, null, ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC)
+      .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT, ConfigDef.Importance.HIGH, TABLE_NAME_FORMAT_DOC)
+      .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, NON_NEGATIVE_INT_VALIDATOR, ConfigDef.Importance.HIGH, BATCH_SIZE_DOC)
+      .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, NON_NEGATIVE_INT_VALIDATOR, ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC)
+      .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, NON_NEGATIVE_INT_VALIDATOR, ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC)
+      .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT, ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC)
+      .define(AUTO_EVOLVE, ConfigDef.Type.BOOLEAN, AUTO_EVOLVE_DEFAULT, ConfigDef.Importance.MEDIUM, AUTO_EVOLVE_DOC)
+      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, EnumValidator.in(InsertMode.values()), ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC)
+      .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, EnumValidator.in(PrimaryKeyMode.values()), ConfigDef.Importance.MEDIUM, PK_MODE_DOC)
+      .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT, ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC);
 
   public final String connectionUrl;
   public final String connectionUser;
@@ -170,6 +139,30 @@ public class JdbcSinkConfig extends AbstractConfig {
     final Map<String, Object> properties = originals();
     properties.putAll(originalsWithPrefix(context + "."));
     return new JdbcSinkConfig(properties);
+  }
+
+  private static class EnumValidator implements ConfigDef.Validator {
+    private final Set<String> validValues;
+
+    private EnumValidator(Set<String> validValues) {
+      this.validValues = validValues;
+    }
+
+    public static <E> EnumValidator in(E[] enumerators) {
+      final HashSet<String> values = new HashSet<>();
+      for (E e: enumerators) {
+        values.add(e.toString().toUpperCase());
+        values.add(e.toString().toLowerCase());
+      }
+      return new EnumValidator(values);
+    }
+
+    @Override
+    public void ensureValid(String key, Object value) {
+      if (!validValues.contains(value)) {
+        throw new ConfigException(key, value, "Invalid enumerator");
+      }
+    }
   }
 
   public static void main(String... args) {

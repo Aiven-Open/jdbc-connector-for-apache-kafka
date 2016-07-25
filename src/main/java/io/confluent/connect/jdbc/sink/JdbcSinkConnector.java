@@ -1,5 +1,6 @@
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -41,6 +42,12 @@ public final class JdbcSinkConnector extends SinkConnector {
   @Override
   public ConfigDef config() {
     return JdbcSinkConfig.CONFIG_DEF;
+  }
+
+  @Override
+  public Config validate(Map<String, String> connectorConfigs) {
+    // TODO cross-fields validation here: pkFields against the pkMode
+    return super.validate(connectorConfigs);
   }
 
   @Override
