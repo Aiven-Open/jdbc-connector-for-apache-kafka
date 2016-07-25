@@ -52,13 +52,9 @@
     <properties>
         <confluent.version>3.1.0-SNAPSHOT</confluent.version>
         <kafka.version>0.10.1.0-SNAPSHOT</kafka.version>
-        <!-- Test scope -->
+        <sqllite.version>3.8.11.2</sqllite.version>
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
-        <!-- Runtime scope -->
-        <sqllite.version>3.8.11.2</sqllite.version>
-        <postgre.version>9.4-1206-jdbc41</postgre.version>
-        <!-- Properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
@@ -72,31 +68,16 @@
     </repositories>
 
     <dependencies>
-
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
             <version>${kafka.version}</version>
         </dependency>
 
-        <!-- JDBC drivers, only included in runtime so they get packaged -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>${sqllite.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${postgre.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.6</version>
             <scope>test</scope>
         </dependency>
 
