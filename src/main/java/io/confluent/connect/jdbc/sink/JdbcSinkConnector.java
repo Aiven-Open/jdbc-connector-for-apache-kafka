@@ -68,6 +68,7 @@ public final class JdbcSinkConnector extends SinkConnector {
 
   @Override
   public String version() {
+    // TODO switch away to whatever connector-jdbc is doing
     return getClass().getPackage().getImplementationVersion();
   }
 }
