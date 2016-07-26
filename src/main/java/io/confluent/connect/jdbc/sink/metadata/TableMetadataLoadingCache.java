@@ -34,8 +34,8 @@ public class TableMetadataLoadingCache {
   public DbTable get(final Connection connection, final String tableName) throws SQLException {
     DbTable dbTable = cache.get(tableName);
     if (dbTable == null) {
-      if (DbMetadataQueries.tableExists(connection, tableName)) {
-        dbTable = DbMetadataQueries.table(connection, tableName);
+      if (DbMetadataQueries.doesTableExist(connection, tableName)) {
+        dbTable = DbMetadataQueries.getTableMetadata(connection, tableName);
         cache.put(tableName, dbTable);
       } else {
         return null;
@@ -45,7 +45,7 @@ public class TableMetadataLoadingCache {
   }
 
   public DbTable refresh(final Connection connection, final String tableName) throws SQLException {
-    DbTable dbTable = DbMetadataQueries.table(connection, tableName);
+    DbTable dbTable = DbMetadataQueries.getTableMetadata(connection, tableName);
     log.info("Updating cached metadata -- {}", dbTable);
     cache.put(dbTable.name, dbTable);
     return dbTable;

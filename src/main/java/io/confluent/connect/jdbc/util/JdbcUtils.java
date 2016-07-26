@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package io.confluent.connect.jdbc.source;
+package io.confluent.connect.jdbc.util;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ import java.util.TimeZone;
  */
 public class JdbcUtils {
 
-  private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
+  private static final Logger log = LoggerFactory.getLogger(JdbcUtils.class);
 
   /**
    * The default table types to include when listing tables if none are specified. Valid values

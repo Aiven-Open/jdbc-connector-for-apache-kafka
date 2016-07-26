@@ -25,10 +25,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -38,7 +36,7 @@ import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
 public abstract class DbMetadataQueries {
   private static final Logger log = LoggerFactory.getLogger(DbMetadataQueries.class);
 
-  public static boolean tableExists(final Connection connection, final String tableName) throws SQLException {
+  public static boolean doesTableExist(final Connection connection, final String tableName) throws SQLException {
     final String catalog = connection.getCatalog();
 
     final DatabaseMetaData meta = connection.getMetaData();
@@ -55,24 +53,7 @@ public abstract class DbMetadataQueries {
     }
   }
 
-  public static Map<String, DbTable> allTables(final Connection connection) throws SQLException {
-    final Map<String, DbTable> tables = new HashMap<>();
-    final String catalog = connection.getCatalog();
-    final DatabaseMetaData dbMetadata = connection.getMetaData();
-    final ResultSet tablesRs = dbMetadata.getTables(catalog, null, null, new String[]{"TABLE"});
-    while (tablesRs.next()) {
-      final String tableName = tablesRs.getString("TABLE_NAME");
-      final List<DbTableColumn> columns = DbMetadataQueries.columns(connection, tableName);
-      tables.put(tableName, new DbTable(tableName, columns));
-    }
-    return tables;
-  }
-
-  public static DbTable table(final Connection connection, final String tableName) throws SQLException {
-    return new DbTable(tableName, columns(connection, tableName));
-  }
-
-  public static List<DbTableColumn> columns(final Connection connection, final String tableName) throws SQLException {
+  public static DbTable getTableMetadata(final Connection connection, final String tableName) throws SQLException {
     final DatabaseMetaData dbMetaData = connection.getMetaData();
     final String product = dbMetaData.getDatabaseProductName();
     final String catalog = connection.getCatalog();
@@ -101,7 +82,8 @@ public abstract class DbMetadataQueries {
         columns.add(new DbTableColumn(colName, isPk, isNullable, sqlType));
       }
     }
-    return columns;
+
+    return new DbTable(tableName, columns);
   }
 
   private static String getSchema(final Connection connection, final String product) throws SQLException {

@@ -34,6 +34,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.*;
 
+import io.confluent.connect.jdbc.util.JdbcUtils;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(PowerMockRunner.class)

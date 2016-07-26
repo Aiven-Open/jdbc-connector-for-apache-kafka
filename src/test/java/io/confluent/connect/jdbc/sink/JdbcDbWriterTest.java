@@ -79,7 +79,7 @@ public class JdbcDbWriterTest {
 
     writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 1L, valueSchema1, valueStruct1, 0)));
 
-    DbTable metadata = DbMetadataQueries.table(writer.connection, topic);
+    DbTable metadata = DbMetadataQueries.getTableMetadata(writer.connection, topic);
     assertTrue(metadata.columns.get("id").isPrimaryKey);
     for (Field field : valueSchema1.fields()) {
       assertTrue(metadata.columns.containsKey(field.name()));
@@ -97,7 +97,7 @@ public class JdbcDbWriterTest {
 
     writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 2L, valueSchema2, valueStruct2, 0)));
 
-    DbTable refreshedMetadata = DbMetadataQueries.table(sqliteHelper.connection, topic);
+    DbTable refreshedMetadata = DbMetadataQueries.getTableMetadata(sqliteHelper.connection, topic);
     assertTrue(metadata.columns.get("id").isPrimaryKey);
     for (Field field : valueSchema2.fields()) {
       assertTrue(refreshedMetadata.columns.containsKey(field.name()));

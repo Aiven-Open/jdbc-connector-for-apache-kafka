@@ -23,10 +23,12 @@ import org.junit.Test;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.HashMap;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.metadata.DbTable;
 import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
+import io.confluent.connect.jdbc.util.JdbcUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,9 +69,12 @@ public class SqliteHelperTest {
     sqliteHelper.createTable(createProducts);
     sqliteHelper.createTable(createNonPkTable);
 
-    final Map<String, DbTable> tables = DbMetadataQueries.allTables(sqliteHelper.connection);
+    final Map<String, DbTable> tables = new HashMap<>();
+    for (String tableName : JdbcUtils.getTables(sqliteHelper.connection)) {
+      tables.put(tableName, DbMetadataQueries.getTableMetadata(sqliteHelper.connection, tableName));
+    }
 
-    assertEquals(tables.size(), 4);  //sqlite_sequence is automatic
+    assertEquals(tables.size(), 3);
     assertTrue(tables.containsKey("employees"));
     assertTrue(tables.containsKey("products"));
     assertTrue(tables.containsKey("nonPk"));

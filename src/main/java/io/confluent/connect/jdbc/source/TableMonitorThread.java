@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.confluent.connect.jdbc.util.JdbcUtils;
+
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this
  * connector should load data from.

@@ -62,7 +62,7 @@ public class DbStructure {
         create(config, connection, tableName, fieldsMetadata);
       } catch (SQLException sqle) {
         log.warn("Create failed, will attempt amend if table already exists", sqle);
-        if (DbMetadataQueries.tableExists(connection, tableName)) {
+        if (DbMetadataQueries.doesTableExist(connection, tableName)) {
           tableMetadataLoadingCache.refresh(connection, tableName);
         } else {
           throw sqle;

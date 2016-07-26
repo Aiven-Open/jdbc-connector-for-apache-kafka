@@ -32,6 +32,8 @@ import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.TimeZone;
 
+import io.confluent.connect.jdbc.util.JdbcUtils;
+
 /**
  * <p>
  *   TimestampIncrementingTableQuerier performs incremental loading of data using two mechanisms: a

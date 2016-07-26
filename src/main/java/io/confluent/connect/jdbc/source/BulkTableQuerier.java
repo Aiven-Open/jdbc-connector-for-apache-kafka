@@ -28,6 +28,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import io.confluent.connect.jdbc.util.JdbcUtils;
+
 /**
  * BulkTableQuerier always returns the entire table.
  */
