@@ -29,6 +29,7 @@ import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.JdbcSinkConfig;
 import io.confluent.connect.jdbc.sink.JdbcSinkTask;
+import io.confluent.connect.jdbc.util.Version;
 
 public final class JdbcSinkConnector extends SinkConnector {
   private static final Logger log = LoggerFactory.getLogger(JdbcSinkConnector.class);
@@ -71,7 +72,6 @@ public final class JdbcSinkConnector extends SinkConnector {
 
   @Override
   public String version() {
-    // TODO switch away to whatever connector-jdbc is doing
-    return getClass().getPackage().getImplementationVersion();
+    return Version.getVersion();
   }
 }
