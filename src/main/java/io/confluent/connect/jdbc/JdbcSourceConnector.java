@@ -36,6 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
+import io.confluent.connect.jdbc.source.JdbcSourceTask;
+import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
+import io.confluent.connect.jdbc.source.TableMonitorThread;
 import io.confluent.connect.jdbc.util.StringUtils;
 import io.confluent.connect.jdbc.util.Version;
 
@@ -154,6 +158,6 @@ public class JdbcSourceConnector extends SourceConnector {
 
   @Override
   public ConfigDef config() {
-    return JdbcSourceConnectorConfig.config;
+    return JdbcSourceConnectorConfig.CONFIG_DEF;
   }
 }

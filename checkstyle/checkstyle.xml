@@ -24,7 +24,7 @@
 
   <!-- header -->
   <module name="RegexpHeader">
-    <property name="header" value="/\*\*\nCopyright .* Confluent Inc."/>
+    <property name="header" value="/\*\nCopyright .* Confluent Inc."/>
   </module>
 
   <module name="TreeWalker">

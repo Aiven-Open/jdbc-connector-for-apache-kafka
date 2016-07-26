@@ -57,6 +57,8 @@
         <powermock.version>1.6.2</powermock.version>
         <derby.version>10.11.1.1</derby.version>
         <commons-io.version>2.4</commons-io.version>
+        <mockito.version>1.10.19</mockito.version>
+        <licenses.version>3.1.0-SNAPSHOT</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
@@ -76,7 +78,7 @@
             <version>${kafka.version}</version>
         </dependency>
 
-        <!-- JDBC drivers, only included in runtime so they get packaged -->
+         <!-- JDBC drivers, only included in runtime so they get packaged -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
@@ -124,6 +126,11 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -164,6 +171,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.18.1</version>
                 <configuration>
+                    <!-- FIXME: because of impossible to reset PowerMock.mockStatic(DriverManager.class) -->
+                    <reuseForks>false</reuseForks>
                     <argLine>-Djava.awt.headless=true</argLine>
                 </configuration>
             </plugin>
@@ -211,6 +220,106 @@
                                 <descriptor>src/assembly/standalone.xml</descriptor>
                             </descriptors>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>licenses-package</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>create-licenses</id>
+                                <configuration>
+                                    <mainClass>io.confluent.licenses.LicenseFinder</mainClass>
+                                    <arguments>
+                                        <!-- Note use of development instead of package so we pick up all dependencies. -->
+                                        <argument>-i ${project.build.directory}/${project.build.finalName}-package/share/java/kafka-connect-jdbc</argument>
+                                        <argument>-o ${project.basedir}/licenses</argument>
+                                        <argument>-f</argument>
+                                        <argument>-h ${project.build.directory}/${project.build.finalName}-package/share/doc/kafka-connect-jdbc/licenses.html</argument>
+                                        <argument>-l ${project.build.directory}/${project.build.finalName}-package/share/doc/kafka-connect-jdbc/licenses</argument>
+                                        <argument>-n ${project.build.directory}/${project.build.finalName}-package/share/doc/kafka-connect-jdbc/notices</argument>
+                                        <argument>-t ${project.name}</argument>
+                                        <argument>-x licenses-${licenses.version}.jar</argument>
+                                    </arguments>
+                                </configuration>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <executableDependency>
+                                <groupId>io.confluent</groupId>
+                                <artifactId>licenses</artifactId>
+                            </executableDependency>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>io.confluent</groupId>
+                                <artifactId>licenses</artifactId>
+                                <version>${licenses.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>licenses-source</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>create-licenses</id>
+                                <configuration>
+                                    <mainClass>io.confluent.licenses.LicenseFinder</mainClass>
+                                    <arguments>
+                                        <!-- Note use of development instead of package so we pick up all dependencies. -->
+                                        <argument>-i ${project.build.directory}/${project.build.finalName}-development/share/java/kafka-connect-jdbc</argument>
+                                        <argument>-o ${project.basedir}/licenses</argument>
+                                        <argument>-f</argument>
+                                        <argument>-h ${project.basedir}/licenses.html</argument>
+                                        <argument>-l ${project.basedir}/licenses</argument>
+                                        <argument>-n ${project.basedir}/notices</argument>
+                                        <argument>-t ${project.name}</argument>
+                                        <argument>-x licenses-${licenses.version}.jar</argument>
+                                    </arguments>
+                                </configuration>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <includeProjectDependencies>true</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <executableDependency>
+                                <groupId>io.confluent</groupId>
+                                <artifactId>licenses</artifactId>
+                            </executableDependency>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>io.confluent</groupId>
+                                <artifactId>licenses</artifactId>
+                                <version>${licenses.version}</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
