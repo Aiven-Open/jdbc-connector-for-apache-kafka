@@ -57,7 +57,6 @@
         <powermock.version>1.6.2</powermock.version>
         <derby.version>10.11.1.1</derby.version>
         <commons-io.version>2.4</commons-io.version>
-        <sqlite.version>3.8.11.2</sqlite.version>
         <mockito.version>1.10.19</mockito.version>
         <licenses.version>3.1.0-SNAPSHOT</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -83,7 +82,7 @@
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>${sqlite.version}</version>
+            <version>3.8.11.2</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -93,12 +92,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>${sqlite.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
