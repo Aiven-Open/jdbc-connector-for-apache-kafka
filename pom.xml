@@ -58,6 +58,7 @@
         <derby.version>10.11.1.1</derby.version>
         <commons-io.version>2.4</commons-io.version>
         <mockito.version>1.10.19</mockito.version>
+        <slf4j.version>1.7.5</slf4j.version>
         <licenses.version>3.1.0-SNAPSHOT</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
@@ -131,6 +132,12 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
