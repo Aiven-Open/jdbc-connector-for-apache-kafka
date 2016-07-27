@@ -122,14 +122,14 @@ public class PostgreSqlDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE \"tableA\" " + System.lineSeparator() +
-                      "ADD COLUMN \"col1\" INT NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col2\" BIGINT NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col3\" TEXT NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col4\" FLOAT NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col6\" BOOLEAN NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col7\" SMALLINT NULL," + System.lineSeparator() +
-                      "ADD COLUMN \"col8\" SMALLINT NULL";
+                      "ADD \"col1\" INT NULL," + System.lineSeparator() +
+                      "ADD \"col2\" BIGINT NULL," + System.lineSeparator() +
+                      "ADD \"col3\" TEXT NULL," + System.lineSeparator() +
+                      "ADD \"col4\" FLOAT NULL," + System.lineSeparator() +
+                      "ADD \"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
+                      "ADD \"col6\" BOOLEAN NULL," + System.lineSeparator() +
+                      "ADD \"col7\" SMALLINT NULL," + System.lineSeparator() +
+                      "ADD \"col8\" SMALLINT NULL";
     assertEquals(expected, actual.get(0));
   }
 }

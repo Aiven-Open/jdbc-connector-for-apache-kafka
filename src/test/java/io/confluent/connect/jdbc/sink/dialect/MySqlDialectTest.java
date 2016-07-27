@@ -113,14 +113,14 @@ public class MySqlDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE `tableA` " + System.lineSeparator() +
-                      "ADD COLUMN `col1` INT NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col2` BIGINT NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col3` VARCHAR(256) NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col4` FLOAT NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col5` DOUBLE NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col6` TINYINT NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col7` TINYINT NULL," + System.lineSeparator() +
-                      "ADD COLUMN `col8` SMALLINT NULL";
+                      "ADD `col1` INT NULL," + System.lineSeparator() +
+                      "ADD `col2` BIGINT NULL," + System.lineSeparator() +
+                      "ADD `col3` VARCHAR(256) NULL," + System.lineSeparator() +
+                      "ADD `col4` FLOAT NULL," + System.lineSeparator() +
+                      "ADD `col5` DOUBLE NULL," + System.lineSeparator() +
+                      "ADD `col6` TINYINT NULL," + System.lineSeparator() +
+                      "ADD `col7` TINYINT NULL," + System.lineSeparator() +
+                      "ADD `col8` SMALLINT NULL";
     assertEquals(expected, actual.get(0));
   }
 
