@@ -44,7 +44,7 @@ public class SqliteDialectTest {
   @Test
   public void produceTheRightSqlStatementWhithACompositePK() {
     String insert = new SqliteDialect().getUpsertQuery("Book", Arrays.asList("author", "title"), Arrays.asList("ISBN", "year", "pages"));
-    assertEquals("insert or ignore into `Book`(`author`,`title`,`ISBN`,`year`,`pages`) values(?,?,?,?,?)", insert);
+    assertEquals("INSERT OR REPLACE INTO `Book`(`author`,`title`,`ISBN`,`year`,`pages`) VALUES(?,?,?,?,?)", insert);
 
   }
 }

@@ -110,10 +110,10 @@ public class SqliteDialect extends DbDialect {
   @Override
   public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
     StringBuilder builder = new StringBuilder();
-    builder.append("insert or ignore into ");
+    builder.append("INSERT OR REPLACE INTO ");
     builder.append(escapeTableName(table)).append("(");
     joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
-    builder.append(") values(");
+    builder.append(") VALUES(");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(")");
     return builder.toString();
