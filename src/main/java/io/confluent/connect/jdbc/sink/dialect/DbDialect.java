@@ -163,7 +163,7 @@ public abstract class DbDialect {
       case "postgresql":
         return new PostgreSqlDialect();
       default:
-        throw new ConnectException(String.format("%s JDBC is not supported", protocol));
+        return new GenericDialect();
     }
   }
 

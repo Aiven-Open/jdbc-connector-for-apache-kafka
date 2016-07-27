@@ -72,4 +72,9 @@ public class DbDialectTest {
   public void getPostgreDialect() {
     assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(), PostgreSqlDialect.class);
   }
+
+  @Test
+  public void getGenericDialect() {
+    assertEquals(DbDialect.fromConnectionString("jdbc:other://host:42").getClass(), GenericDialect.class);
+  }
 }
