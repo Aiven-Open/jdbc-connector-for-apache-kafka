@@ -37,12 +37,11 @@ public abstract class DbDialect {
   private final Map<Schema.Type, String> schemaTypeToSqlTypeMap;
   protected final String escapeColumnNamesStart;
   protected final String escapeColumnNamesEnd;
-  protected final String lineSeparator = System.lineSeparator();
 
   DbDialect(Map<Schema.Type, String> schemaTypeToSqlTypeMap, String escapeColumnNamesStart, String escapeColumnNamesEnd) {
+    this.schemaTypeToSqlTypeMap = schemaTypeToSqlTypeMap;
     this.escapeColumnNamesStart = escapeColumnNamesStart;
     this.escapeColumnNamesEnd = escapeColumnNamesEnd;
-    this.schemaTypeToSqlTypeMap = schemaTypeToSqlTypeMap;
   }
 
   public final String getInsert(final String tableName, final Collection<String> keyColumns, final Collection<String> nonKeyColumns) {
@@ -67,7 +66,7 @@ public abstract class DbDialect {
     writeColumnsSpec(builder, fields);
     if (!pkFieldNames.isEmpty()) {
       builder.append(",");
-      builder.append(lineSeparator);
+      builder.append(System.lineSeparator());
       builder.append("PRIMARY KEY(");
       joinToBuilder(builder, ",", pkFieldNames, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
       builder.append(")");
@@ -86,7 +85,7 @@ public abstract class DbDialect {
       @Override
       public void apply(StringBuilder builder, SinkRecordField f) {
         if (newlines) {
-          builder.append(lineSeparator);
+          builder.append(System.lineSeparator());
         }
         builder.append("ADD ");
         writeColumnSpec(builder, f);
@@ -99,7 +98,7 @@ public abstract class DbDialect {
     joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
       @Override
       public void apply(StringBuilder builder, SinkRecordField f) {
-        builder.append(lineSeparator);
+        builder.append(System.lineSeparator());
         writeColumnSpec(builder, f);
       }
     });
