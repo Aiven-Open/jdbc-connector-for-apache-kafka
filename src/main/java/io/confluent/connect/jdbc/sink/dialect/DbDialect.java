@@ -59,22 +59,17 @@ public abstract class DbDialect {
   public abstract String getUpsertQuery(final String table, final Collection<String> keyColumns, final Collection<String> columns);
 
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
-    final List<String> pks = new ArrayList<>();
-    for (SinkRecordField f : fields) {
-      if (f.isPrimaryKey) {
-        pks.add(f.name);
-      }
-    }
+    final List<String> pkFieldNames = extractPrimaryKeyFieldNames(fields);
     final StringBuilder builder = new StringBuilder();
     builder.append("CREATE TABLE ");
     builder.append(escapeTableName(tableName));
     builder.append(" (");
     writeColumnsSpec(builder, fields);
-    if (!pks.isEmpty()) {
+    if (!pkFieldNames.isEmpty()) {
       builder.append(",");
       builder.append(lineSeparator);
       builder.append("PRIMARY KEY(");
-      joinToBuilder(builder, ",", pks, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+      joinToBuilder(builder, ",", pkFieldNames, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
       builder.append(")");
     }
     builder.append(")");
@@ -131,6 +126,16 @@ public abstract class DbDialect {
 
   protected String escapeTableName(String tableName) {
     return escapeColumnNamesStart + tableName + escapeColumnNamesEnd;
+  }
+
+  static List<String> extractPrimaryKeyFieldNames(Collection<SinkRecordField> fields) {
+    final List<String> pks = new ArrayList<>();
+    for (SinkRecordField f : fields) {
+      if (f.isPrimaryKey) {
+        pks.add(f.name);
+      }
+    }
+    return pks;
   }
 
   public static DbDialect fromConnectionString(final String url) {
