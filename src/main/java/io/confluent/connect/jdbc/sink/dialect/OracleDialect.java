@@ -20,6 +20,7 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,36 +52,11 @@ public class OracleDialect extends DbDialect {
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(escapeTableName(tableName)); //yes oracles needs it uppercase
+    builder.append(escapeTableName(tableName));
     builder.append(" ADD(");
-
-    joinToBuilder(
-        builder,
-        ",",
-        fields,
-        new StringBuilderUtil.Transform<SinkRecordField>() {
-          @Override
-          public void apply(StringBuilder builder, SinkRecordField f) {
-            builder.append(lineSeparator);
-            builder.append(escapeColumnNamesStart)
-                .append(f.name)
-                .append(escapeColumnNamesEnd);
-            builder.append(" ");
-            builder.append(getSqlType(f.type));
-            if (f.isOptional) {
-              builder.append(" NULL");
-            } else {
-              builder.append(" NOT NULL");
-            }
-          }
-        }
-    );
-
+    writeColumnsSpec(builder, fields);
     builder.append(")");
-
-    final List<String> query = new ArrayList<String>(1);
-    query.add(builder.toString());
-    return query;
+    return Collections.singletonList(builder.toString());
   }
 
   @Override

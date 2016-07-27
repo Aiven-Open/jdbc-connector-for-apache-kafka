@@ -54,20 +54,7 @@ public class SqlServerDialect extends DbDialect {
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
     builder.append(escapeTableName(tableName));
     builder.append(" ADD");
-    joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
-      @Override
-      public void apply(StringBuilder builder, SinkRecordField f) {
-        builder.append(lineSeparator);
-        builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
-        builder.append(" ");
-        builder.append(getSqlType(f.type));
-        if (f.isOptional) {
-          builder.append(" NULL");
-        } else {
-          builder.append(" NOT NULL");
-        }
-      }
-    });
+    writeColumnsSpec(builder, fields);
     return Collections.singletonList(builder.toString());
   }
 

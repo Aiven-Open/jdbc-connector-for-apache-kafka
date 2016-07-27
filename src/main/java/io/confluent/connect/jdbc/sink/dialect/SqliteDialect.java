@@ -20,6 +20,7 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,60 +50,11 @@ public class SqliteDialect extends DbDialect {
     return map;
   }
 
-  /**
-   * Returns the query for creating a new table in the database
-   *
-   * @return The create query for the dialect
-   */
-  public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
-    final StringBuilder builder = new StringBuilder();
-    builder.append(String.format("CREATE TABLE %s (", escapeTableName(tableName)));
-
-    joinToBuilder(builder, ",", fields, new StringBuilderUtil.Transform<SinkRecordField>() {
-      @Override
-      public void apply(StringBuilder builder, SinkRecordField f) {
-        builder.append(lineSeparator);
-        builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
-        builder.append(" ");
-        builder.append(getSqlType(f.type));
-        if (f.isOptional) {
-          builder.append(" NULL");
-        } else {
-          builder.append(" NOT NULL ");
-        }
-      }
-    });
-
-    final List<String> pks = new ArrayList<>();
-    for (SinkRecordField f : fields) {
-      if (f.isPrimaryKey) {
-        pks.add(f.name);
-      }
-    }
-
-    if (!pks.isEmpty()) {
-      builder.append(",");
-      builder.append(lineSeparator);
-      builder.append("PRIMARY KEY(");
-      joinToBuilder(builder, ",", pks, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
-      builder.append(")");
-    }
-
-    builder.append(");");
-    return builder.toString();
-  }
-
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
     final List<String> queries = new ArrayList<>(fields.size());
-    for (final SinkRecordField f : fields) {
-      queries.add(String.format(
-          "ALTER TABLE %s ADD %s%s%s %s %s",
-          escapeTableName(tableName),
-          escapeColumnNamesStart, f.name, escapeColumnNamesEnd,
-          getSqlType(f.type),
-          f.isOptional ? "NULL" : "NOT NULL"
-      ));
+    for (SinkRecordField field: fields) {
+      queries.addAll(super.getAlterTable(tableName, Collections.singleton(field)));
     }
     return queries;
   }

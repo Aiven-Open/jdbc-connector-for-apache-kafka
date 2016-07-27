@@ -59,39 +59,17 @@ public abstract class DbDialect {
   public abstract String getUpsertQuery(final String table, final Collection<String> keyColumns, final Collection<String> columns);
 
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
-    final StringBuilder builder = new StringBuilder();
-    builder.append("CREATE TABLE ");
-    builder.append(escapeTableName(tableName));
-    builder.append(" (");
-
-    joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
-      @Override
-      public void apply(StringBuilder builder, SinkRecordField f) {
-        builder.append(lineSeparator);
-        builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
-        builder.append(" ");
-
-        if (f.isPrimaryKey && f.type.equals(Schema.Type.STRING)) {
-          builder.append("VARCHAR(50)");
-        } else {
-          builder.append(getSqlType(f.type));
-        }
-
-        if (f.isOptional) {
-          builder.append(" NULL");
-        } else {
-          builder.append(" NOT NULL");
-        }
-      }
-    });
-
     final List<String> pks = new ArrayList<>();
     for (SinkRecordField f : fields) {
       if (f.isPrimaryKey) {
         pks.add(f.name);
       }
     }
-
+    final StringBuilder builder = new StringBuilder();
+    builder.append("CREATE TABLE ");
+    builder.append(escapeTableName(tableName));
+    builder.append(" (");
+    writeColumnsSpec(builder, fields);
     if (!pks.isEmpty()) {
       builder.append(",");
       builder.append(lineSeparator);
@@ -99,38 +77,51 @@ public abstract class DbDialect {
       joinToBuilder(builder, ",", pks, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
       builder.append(")");
     }
-
     builder.append(")");
     return builder.toString();
   }
 
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
+    final boolean newlines = fields.size() > 1;
+
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
     builder.append(escapeTableName(tableName));
     builder.append(" ");
+    joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
+      @Override
+      public void apply(StringBuilder builder, SinkRecordField f) {
+        if (newlines) {
+          builder.append(lineSeparator);
+        }
+        builder.append("ADD ");
+        writeColumnSpec(builder, f);
+      }
+    });
+    return Collections.singletonList(builder.toString());
+  }
 
+  protected void writeColumnsSpec(StringBuilder builder, Collection<SinkRecordField> fields) {
     joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
       @Override
       public void apply(StringBuilder builder, SinkRecordField f) {
         builder.append(lineSeparator);
-        builder.append("ADD COLUMN ");
-        builder.append(escapeColumnNamesStart);
-        builder.append(f.name);
-        builder.append(escapeColumnNamesEnd);
-        builder.append(" ");
-        builder.append(getSqlType(f.type));
-        if (f.isOptional) {
-          builder.append(" NULL");
-        } else {
-          builder.append(" NOT NULL");
-        }
+        writeColumnSpec(builder, f);
       }
     });
-
-    return Collections.singletonList(builder.toString());
   }
 
-  String getSqlType(Schema.Type type) {
+  protected void writeColumnSpec(StringBuilder builder, SinkRecordField f) {
+    builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
+    builder.append(" ");
+    builder.append(getSqlType(f.type));
+    if (f.isOptional) {
+      builder.append(" NULL");
+    } else {
+      builder.append(" NOT NULL");
+    }
+  }
+
+  protected String getSqlType(Schema.Type type) {
     final String sqlType = schemaTypeToSqlTypeMap.get(type);
     if (sqlType == null) {
       throw new ConnectException(String.format("%s type doesn't have a mapping to the SQL database column type", type));
