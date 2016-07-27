@@ -18,7 +18,6 @@ package io.confluent.connect.jdbc.sink.dialect;
 
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
