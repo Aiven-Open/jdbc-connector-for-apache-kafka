@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import io.confluent.connect.jdbc.sink.dialect.SqliteDialect;
 import io.confluent.connect.jdbc.sink.metadata.DbTable;
 
 import static junit.framework.TestCase.assertTrue;
@@ -53,6 +55,13 @@ public class JdbcDbWriterTest {
     sqliteHelper.tearDown();
   }
 
+  private JdbcDbWriter newWriter(Map<String, String> props) {
+    final JdbcSinkConfig config = new JdbcSinkConfig(props);
+    final DbDialect dbDialect = new SqliteDialect();
+    final DbStructure dbStructure = new DbStructure(dbDialect);
+    return new JdbcDbWriter(config, dbDialect, dbStructure);
+  }
+
   @Test
   public void autoCreateWithAutoEvolve() throws SQLException {
     String topic = "books";
@@ -64,7 +73,7 @@ public class JdbcDbWriterTest {
     props.put("pk.mode", "record_key");
     props.put("pk.fields", "id"); // assigned name for the primitive key
 
-    JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
+    JdbcDbWriter writer = newWriter(props);
 
     Schema keySchema = Schema.INT64_SCHEMA;
 
@@ -151,7 +160,7 @@ public class JdbcDbWriterTest {
     props.put("pk.fields", pkFields);
     props.put("insert.mode", insertMode.toString());
 
-    JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
+    JdbcDbWriter writer = newWriter(props);
 
     Schema keySchema = SchemaBuilder.struct()
         .field("id", SchemaBuilder.INT64_SCHEMA);
@@ -231,7 +240,8 @@ public class JdbcDbWriterTest {
     props.put("table.name.format", tableName);
     props.put("batch.size", String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
 
-    JdbcDbWriter writer = new JdbcDbWriter(new JdbcSinkConfig(props));
+    JdbcDbWriter writer = newWriter(props);
+
     writer.write(Collections.nCopies(
         numRecords,
         new SinkRecord("topic", 0, null, null, schema, struct, 0)

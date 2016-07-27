@@ -29,6 +29,8 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
+import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+
 public class JdbcSinkTask extends SinkTask {
   private static final Logger log = LoggerFactory.getLogger(JdbcSinkTask.class);
 
@@ -40,8 +42,15 @@ public class JdbcSinkTask extends SinkTask {
   public void start(final Map<String, String> props) {
     log.info("Starting task");
     config = new JdbcSinkConfig(props);
-    writer = new JdbcDbWriter(config);
+    initWriter();
     remainingRetries = config.maxRetries;
+  }
+
+  private void initWriter() {
+    final DbDialect dbDialect = DbDialect.fromConnectionString(config.connectionUrl);
+    final DbStructure dbStructure = new DbStructure(dbDialect);
+    log.info("Initializing writer using SQL dialect: {}", dbDialect.getClass().getSimpleName());
+    writer = new JdbcDbWriter(config, dbDialect, dbStructure);
   }
 
   @Override
@@ -61,7 +70,7 @@ public class JdbcSinkTask extends SinkTask {
         throw new ConnectException(sqle);
       } else {
         writer.closeQuietly();
-        writer = new JdbcDbWriter(config);
+        initWriter();
         remainingRetries--;
         context.timeout(config.retryBackoffMs);
         throw new RetriableException(sqle);

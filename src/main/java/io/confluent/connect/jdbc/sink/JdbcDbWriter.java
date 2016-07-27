@@ -41,10 +41,10 @@ public class JdbcDbWriter {
 
   Connection connection;
 
-  JdbcDbWriter(final JdbcSinkConfig config) {
+  JdbcDbWriter(final JdbcSinkConfig config, DbDialect dbDialect, DbStructure dbStructure) {
     this.config = config;
-    dbDialect = DbDialect.fromConnectionString(config.connectionUrl);
-    dbStructure = new DbStructure(dbDialect);
+    this.dbDialect = dbDialect;
+    this.dbStructure = dbStructure;
   }
 
   void write(final Collection<SinkRecord> records) throws SQLException {
