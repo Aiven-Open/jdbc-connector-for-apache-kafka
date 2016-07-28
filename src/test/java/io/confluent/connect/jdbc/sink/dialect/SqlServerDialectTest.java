@@ -63,7 +63,7 @@ public class SqlServerDialectTest {
     String expected = "CREATE TABLE [tableA] (" + System.lineSeparator() +
                       "[userid] int NOT NULL," + System.lineSeparator() +
                       "[userdataid] int NOT NULL," + System.lineSeparator() +
-                      "[info] varchar(256) NULL," + System.lineSeparator() +
+                      "[info] varchar(max) NULL," + System.lineSeparator() +
                       "PRIMARY KEY([userid],[userdataid]))";
     assertEquals(expected, actual);
   }
@@ -84,7 +84,7 @@ public class SqlServerDialectTest {
     String expected = "CREATE TABLE [tableA] (" + System.lineSeparator() +
                       "[col1] int NOT NULL," + System.lineSeparator() +
                       "[col2] bigint NULL," + System.lineSeparator() +
-                      "[col3] varchar(256) NULL," + System.lineSeparator() +
+                      "[col3] varchar(max) NULL," + System.lineSeparator() +
                       "[col4] real NULL," + System.lineSeparator() +
                       "[col5] float NULL," + System.lineSeparator() +
                       "[col6] bit NULL," + System.lineSeparator() +
@@ -110,7 +110,7 @@ public class SqlServerDialectTest {
     String expected = "CREATE TABLE [tableA] (" + System.lineSeparator() +
                       "[col1] int NULL," + System.lineSeparator() +
                       "[col2] bigint NULL," + System.lineSeparator() +
-                      "[col3] varchar(256) NULL," + System.lineSeparator() +
+                      "[col3] varchar(max) NULL," + System.lineSeparator() +
                       "[col4] real NULL," + System.lineSeparator() +
                       "[col5] float NULL," + System.lineSeparator() +
                       "[col6] bit NULL," + System.lineSeparator() +
@@ -137,7 +137,7 @@ public class SqlServerDialectTest {
     String expected = "ALTER TABLE [tableA] ADD" + System.lineSeparator() +
                       "[col1] int NULL," + System.lineSeparator() +
                       "[col2] bigint NULL," + System.lineSeparator() +
-                      "[col3] varchar(256) NULL," + System.lineSeparator() +
+                      "[col3] varchar(max) NULL," + System.lineSeparator() +
                       "[col4] real NULL," + System.lineSeparator() +
                       "[col5] float NULL," + System.lineSeparator() +
                       "[col6] bit NULL," + System.lineSeparator() +

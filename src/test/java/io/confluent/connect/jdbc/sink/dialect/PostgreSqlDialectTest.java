@@ -72,7 +72,7 @@ public class PostgreSqlDialectTest {
                       "\"col1\" INT NOT NULL," + System.lineSeparator() +
                       "\"col2\" BIGINT NULL," + System.lineSeparator() +
                       "\"col3\" TEXT NULL," + System.lineSeparator() +
-                      "\"col4\" FLOAT NULL," + System.lineSeparator() +
+                      "\"col4\" REAL NULL," + System.lineSeparator() +
                       "\"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
                       "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
                       "\"col7\" SMALLINT NULL," + System.lineSeparator() +
@@ -98,7 +98,7 @@ public class PostgreSqlDialectTest {
                       "\"col1\" INT NULL," + System.lineSeparator() +
                       "\"col2\" BIGINT NULL," + System.lineSeparator() +
                       "\"col3\" TEXT NULL," + System.lineSeparator() +
-                      "\"col4\" FLOAT NULL," + System.lineSeparator() +
+                      "\"col4\" REAL NULL," + System.lineSeparator() +
                       "\"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
                       "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
                       "\"col7\" SMALLINT NULL," + System.lineSeparator() +
@@ -125,7 +125,7 @@ public class PostgreSqlDialectTest {
                       "ADD \"col1\" INT NULL," + System.lineSeparator() +
                       "ADD \"col2\" BIGINT NULL," + System.lineSeparator() +
                       "ADD \"col3\" TEXT NULL," + System.lineSeparator() +
-                      "ADD \"col4\" FLOAT NULL," + System.lineSeparator() +
+                      "ADD \"col4\" REAL NULL," + System.lineSeparator() +
                       "ADD \"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
                       "ADD \"col6\" BOOLEAN NULL," + System.lineSeparator() +
                       "ADD \"col7\" SMALLINT NULL," + System.lineSeparator() +
