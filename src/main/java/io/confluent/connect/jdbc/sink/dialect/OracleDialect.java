@@ -36,14 +36,14 @@ public class OracleDialect extends DbDialect {
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
     Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "TINYINT");
-    map.put(Schema.Type.INT16, "SMALLINT");
-    map.put(Schema.Type.INT32, "INTEGER");
-    map.put(Schema.Type.INT64, "NUMBER(19)");
-    map.put(Schema.Type.FLOAT32, "REAL");
+    map.put(Schema.Type.INT8, "NUMBER");
+    map.put(Schema.Type.INT16, "NUMBER");
+    map.put(Schema.Type.INT32, "NUMBER");
+    map.put(Schema.Type.INT64, "NUMBER");
+    map.put(Schema.Type.FLOAT32, "BINARY_FLOAT");
     map.put(Schema.Type.FLOAT64, "BINARY_DOUBLE");
-    map.put(Schema.Type.BOOLEAN, "NUMBER(1,0)");
-    map.put(Schema.Type.STRING, "VARCHAR(256)");
+    map.put(Schema.Type.BOOLEAN, "NUMBER");
+    map.put(Schema.Type.STRING, "NVARCHAR2(4000)");
     map.put(Schema.Type.BYTES, "BLOB");
     return map;
   }

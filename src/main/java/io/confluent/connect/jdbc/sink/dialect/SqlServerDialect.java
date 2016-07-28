@@ -44,8 +44,8 @@ public class SqlServerDialect extends DbDialect {
     map.put(Schema.Type.FLOAT32, "real");
     map.put(Schema.Type.FLOAT64, "float");
     map.put(Schema.Type.BOOLEAN, "bit");
-    map.put(Schema.Type.STRING, "varchar(256)");
-    map.put(Schema.Type.BYTES, "varbinary(1024)");
+    map.put(Schema.Type.STRING, "varchar(max)");
+    map.put(Schema.Type.BYTES, "varbinary(max)");
     return map;
   }
 

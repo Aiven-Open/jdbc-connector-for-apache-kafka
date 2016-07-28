@@ -40,7 +40,7 @@ public class PostgreSqlDialect extends DbDialect {
     map.put(Schema.Type.INT16, "SMALLINT");
     map.put(Schema.Type.INT32, "INT");
     map.put(Schema.Type.INT64, "BIGINT");
-    map.put(Schema.Type.FLOAT32, "FLOAT");
+    map.put(Schema.Type.FLOAT32, "REAL");
     map.put(Schema.Type.FLOAT64, "DOUBLE PRECISION");
     map.put(Schema.Type.BOOLEAN, "BOOLEAN");
     map.put(Schema.Type.STRING, "TEXT");
