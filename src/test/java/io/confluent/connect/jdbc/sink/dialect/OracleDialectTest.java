@@ -39,8 +39,8 @@ public class OracleDialectTest {
     ));
 
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
-                      "\"userid\" NUMBER NOT NULL," + System.lineSeparator() +
-                      "\"userdataid\" NUMBER NOT NULL," + System.lineSeparator() +
+                      "\"userid\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
+                      "\"userdataid\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
                       "\"info\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
                       "PRIMARY KEY(\"userid\",\"userdataid\"))";
     assertEquals(expected, actual);
@@ -60,14 +60,14 @@ public class OracleDialectTest {
     ));
 
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
-                      "\"col1\" NUMBER NOT NULL," + System.lineSeparator() +
-                      "\"col2\" NUMBER NULL," + System.lineSeparator() +
+                      "\"col1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
+                      "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
                       "\"col3\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
                       "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
                       "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
-                      "\"col6\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col7\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col8\" NUMBER NULL," + System.lineSeparator() +
+                      "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
+                      "\"col7\" NUMBER(3,0) NULL," + System.lineSeparator() +
+                      "\"col8\" NUMBER(5,0) NULL," + System.lineSeparator() +
                       "PRIMARY KEY(\"col1\"))";
     assertEquals(expected, actual);
   }
@@ -86,14 +86,14 @@ public class OracleDialectTest {
     ));
 
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
-                      "\"col1\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col2\" NUMBER NULL," + System.lineSeparator() +
+                      "\"col1\" NUMBER(10,0) NULL," + System.lineSeparator() +
+                      "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
                       "\"col3\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
                       "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
                       "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
-                      "\"col6\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col7\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col8\" NUMBER NULL)";
+                      "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
+                      "\"col7\" NUMBER(3,0) NULL," + System.lineSeparator() +
+                      "\"col8\" NUMBER(5,0) NULL)";
     assertEquals(expected, actual);
   }
 
@@ -113,14 +113,14 @@ public class OracleDialectTest {
     assertEquals(1, actual.size());
 
     String expected = "ALTER TABLE \"tableA\" ADD(" + System.lineSeparator() +
-                      "\"col1\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col2\" NUMBER NULL," + System.lineSeparator() +
+                      "\"col1\" NUMBER(10,0) NULL," + System.lineSeparator() +
+                      "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
                       "\"col3\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
                       "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
                       "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
-                      "\"col6\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col7\" NUMBER NULL," + System.lineSeparator() +
-                      "\"col8\" NUMBER NULL)";
+                      "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
+                      "\"col7\" NUMBER(3,0) NULL," + System.lineSeparator() +
+                      "\"col8\" NUMBER(5,0) NULL)";
     assertEquals(expected, actual.get(0));
   }
 
