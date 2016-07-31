@@ -33,8 +33,6 @@ import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 public class JdbcDbWriter {
   private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
-  private final Map<String, JdbcSinkConfig> contextualConfigCache = new HashMap<>();
-
   private final JdbcSinkConfig config;
   private final DbDialect dbDialect;
   private final DbStructure dbStructure;
@@ -55,7 +53,7 @@ public class JdbcDbWriter {
       final String table = destinationTable(record.topic());
       BufferedRecords buffer = bufferByTable.get(table);
       if (buffer == null) {
-        buffer = new BufferedRecords(cachedContextualConfig(table), table, dbDialect, dbStructure, connection);
+        buffer = new BufferedRecords(config, table, dbDialect, dbStructure, connection);
         bufferByTable.put(table, buffer);
       }
       buffer.add(record);
@@ -89,20 +87,10 @@ public class JdbcDbWriter {
     }
   }
 
-  JdbcSinkConfig cachedContextualConfig(String context) {
-    JdbcSinkConfig contextualConfig = contextualConfigCache.get(context);
-    if (contextualConfig == null) {
-      contextualConfig = config.contextualConfig(context);
-      contextualConfigCache.put(context, contextualConfig);
-    }
-    return contextualConfig;
-  }
-
   String destinationTable(String topic) {
-    final String tableNameFormat = cachedContextualConfig(topic).tableNameFormat.trim();
-    final String tableName = tableNameFormat.replace("${topic}", topic);
+    final String tableName = config.tableNameFormat.replace("${topic}", topic);
     if (tableName.isEmpty()) {
-      throw new ConnectException(String.format("Destination table name for topic '%s' is empty using the format string '%s'", topic, tableNameFormat));
+      throw new ConnectException(String.format("Destination table name for topic '%s' is empty using the format string '%s'", topic, config.tableNameFormat));
     }
     return tableName;
   }
