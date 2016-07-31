@@ -1,7 +1,7 @@
 # Kafka Connect JDBC Connector
 
 kafka-connect-jdbc is a [Kafka Connector](http://kafka.apache.org/documentation.html#connect)
-for loading data from any JDBC-compatible database.
+for loading data to and from any JDBC-compatible database.
 
 # Development
 

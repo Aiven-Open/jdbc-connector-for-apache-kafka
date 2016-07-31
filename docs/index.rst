@@ -8,6 +8,8 @@ Contents:
 .. toctree::
    :maxdepth: 3
 
-   jdbc_connector
-   configuration_options
+   source_connector
+   source_config_options
+   sink_connector
+   sink_config_options
    changelog

@@ -1,5 +1,5 @@
-Configuration Options
----------------------
+JDBC Source Configuration Options
+---------------------------------
 
 ``connection.url``
   JDBC connection URL for the database to load.
