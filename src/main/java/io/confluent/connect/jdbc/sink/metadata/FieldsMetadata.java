@@ -98,7 +98,7 @@ public class FieldsMetadata {
         }
         final Iterator<String> it = keyFieldNames.iterator();
         final String topicFieldName = it.next();
-        allFields.put(topicFieldName, new SinkRecordField(Schema.Type.STRING, topicFieldName, true, false));
+        allFields.put(topicFieldName, new SinkRecordField(Schema.Type.STRING, topicFieldName, true));
         final String partitionFieldName = it.next();
         allFields.put(partitionFieldName, new SinkRecordField(Schema.Type.INT32, partitionFieldName, true));
         final String offsetFieldName = it.next();
@@ -123,7 +123,7 @@ public class FieldsMetadata {
           }
           final String fieldName = configuredPkFields.get(0);
           keyFieldNames.add(fieldName);
-          allFields.put(fieldName, new SinkRecordField(keySchemaType, fieldName, true, false));
+          allFields.put(fieldName, new SinkRecordField(keySchemaType, fieldName, true, false, keySchema.defaultValue()));
         } else if (keySchemaType == Schema.Type.STRUCT) {
           if (configuredPkFields.isEmpty()) {
             for (Field keyField : keySchema.fields()) {
@@ -143,7 +143,8 @@ public class FieldsMetadata {
           }
           for (String fieldName : keyFieldNames) {
             final Field keyField = keySchema.field(fieldName);
-            allFields.put(fieldName, new SinkRecordField(keyField.schema().type(), fieldName, true, false));
+            final Schema keyFieldSchema = keyField.schema();
+            allFields.put(fieldName, new SinkRecordField(keyFieldSchema.type(), fieldName, true, false, keyFieldSchema.defaultValue()));
           }
         } else {
           throw new ConnectException("Key schema must be primitive type or Struct, but is of type: " + keySchemaType);
@@ -178,7 +179,7 @@ public class FieldsMetadata {
         nonKeyFieldNames.add(field.name());
       }
       final Schema fieldSchema = field.schema();
-      allFields.put(field.name(), new SinkRecordField(fieldSchema.type(), field.name(), isKeyField, !isKeyField && fieldSchema.isOptional()));
+      allFields.put(field.name(), new SinkRecordField(fieldSchema.type(), field.name(), isKeyField, !isKeyField && fieldSchema.isOptional(), fieldSchema.defaultValue()));
     }
 
     if (allFields.isEmpty()) {

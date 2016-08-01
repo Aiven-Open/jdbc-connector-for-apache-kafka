@@ -98,7 +98,7 @@ public class JdbcDbWriterTest {
         .field("author", Schema.STRING_SCHEMA)
         .field("title", Schema.STRING_SCHEMA)
         .field("year", Schema.OPTIONAL_INT32_SCHEMA) // new field
-        .field("review", Schema.OPTIONAL_STRING_SCHEMA); // new field
+        .field("review", SchemaBuilder.string().defaultValue("").build()); // new field
 
     Struct valueStruct2 = new Struct(valueSchema2)
         .put("author", "Tom Robbins")
