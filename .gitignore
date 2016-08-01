@@ -16,3 +16,4 @@ derby.log
 # Test databases
 __test_database_*
 test.sqlite
+*.db-journal
