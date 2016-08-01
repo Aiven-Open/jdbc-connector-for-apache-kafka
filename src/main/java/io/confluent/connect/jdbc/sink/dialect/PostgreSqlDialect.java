@@ -24,7 +24,6 @@ import java.util.Map;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public class PostgreSqlDialect extends DbDialect {
 
@@ -52,13 +51,13 @@ public class PostgreSqlDialect extends DbDialect {
   public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols) {
     final StringBuilder builder = new StringBuilder();
     builder.append("INSERT INTO ");
-    builder.append(escapeTableName(table));
+    builder.append(escaped(table));
     builder.append(" (");
-    joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyCols, cols, escaper());
     builder.append(") VALUES (");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") ON CONFLICT (");
-    joinToBuilder(builder, ",", keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyCols, escaper());
     builder.append(") DO UPDATE SET ");
     joinToBuilder(
         builder,
@@ -67,13 +66,7 @@ public class PostgreSqlDialect extends DbDialect {
         new StringBuilderUtil.Transform<String>() {
           @Override
           public void apply(StringBuilder builder, String col) {
-            builder.append(escapeColumnNamesStart);
-            builder.append(col);
-            builder.append(escapeColumnNamesEnd);
-            builder.append("=EXCLUDED.");
-            builder.append(escapeColumnNamesStart);
-            builder.append(col);
-            builder.append(escapeColumnNamesEnd);
+            builder.append(escaped(col)).append("=EXCLUDED.").append(escaped(col));
           }
         }
     );

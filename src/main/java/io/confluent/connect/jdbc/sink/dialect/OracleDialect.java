@@ -27,7 +27,6 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public class OracleDialect extends DbDialect {
   public OracleDialect() {
@@ -51,7 +50,7 @@ public class OracleDialect extends DbDialect {
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(escapeTableName(tableName));
+    builder.append(escaped(tableName));
     builder.append(" ADD(");
     writeColumnsSpec(builder, fields);
     builder.append(")");
@@ -64,17 +63,15 @@ public class OracleDialect extends DbDialect {
 
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
-    final String tableName = escapeTableName(table);
+    final String tableName = escaped(table);
     builder.append(tableName);
     builder.append(" using (select ");
-    joinToBuilder(builder, ", ", keyCols, cols, stringSurroundTransform("? " + escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ", ", keyCols, cols, prefixedEscaper("? "));
     builder.append(" FROM dual) incoming on(");
     joinToBuilder(builder, " and ", keyCols, new StringBuilderUtil.Transform<String>() {
       @Override
       public void apply(StringBuilder builder, String col) {
-        builder.append(tableName).append(".")
-            .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
-            .append("=incoming.").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+        builder.append(tableName).append(".").append(escaped(col)).append("=incoming.").append(escaped(col));
       }
     });
     builder.append(")");
@@ -83,17 +80,15 @@ public class OracleDialect extends DbDialect {
       joinToBuilder(builder, ",", cols, new StringBuilderUtil.Transform<String>() {
         @Override
         public void apply(StringBuilder builder, String col) {
-          builder.append(tableName).append(".")
-              .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
-              .append("=incoming.").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+          builder.append(tableName).append(".").append(escaped(col)).append("=incoming.").append(escaped(col));
         }
       });
     }
 
     builder.append(" when not matched then insert(");
-    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform(tableName + "." + escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", cols, keyCols, prefixedEscaper(tableName + "."));
     builder.append(") values(");
-    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform("incoming." + escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", cols, keyCols, prefixedEscaper("incoming."));
     builder.append(")");
     return builder.toString();
   }

@@ -24,7 +24,6 @@ import java.util.Map;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public class MySqlDialect extends DbDialect {
 
@@ -52,9 +51,9 @@ public class MySqlDialect extends DbDialect {
 
     final StringBuilder builder = new StringBuilder();
     builder.append("insert into ");
-    builder.append(escapeTableName(table));
+    builder.append(escaped(table));
     builder.append("(");
-    joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyCols, cols, escaper());
     builder.append(") values(");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") on duplicate key update ");
@@ -65,8 +64,7 @@ public class MySqlDialect extends DbDialect {
         new StringBuilderUtil.Transform<String>() {
           @Override
           public void apply(StringBuilder builder, String col) {
-            builder.append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
-                .append("=values(").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd).append(")");
+            builder.append(escaped(col)).append("=values(").append(escaped(col)).append(")");
           }
         }
     );

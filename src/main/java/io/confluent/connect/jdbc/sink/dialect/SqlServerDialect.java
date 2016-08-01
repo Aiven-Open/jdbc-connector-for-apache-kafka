@@ -27,7 +27,6 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public class SqlServerDialect extends DbDialect {
 
@@ -52,7 +51,7 @@ public class SqlServerDialect extends DbDialect {
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(escapeTableName(tableName));
+    builder.append(escaped(tableName));
     builder.append(" ADD");
     writeColumnsSpec(builder, fields);
     return Collections.singletonList(builder.toString());
@@ -62,22 +61,15 @@ public class SqlServerDialect extends DbDialect {
   public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
     final StringBuilder builder = new StringBuilder();
     builder.append("merge into ");
-    String tableName = escapeTableName(table);
+    String tableName = escaped(table);
     builder.append(tableName);
     builder.append(" with (HOLDLOCK) AS target using (select ");
-    joinToBuilder(builder, ", ", cols, keyCols, new StringBuilderUtil.Transform<String>() {
-      @Override
-      public void apply(StringBuilder builder, String col) {
-        builder.append("? AS ").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
-      }
-    });
+    joinToBuilder(builder, ", ", cols, keyCols, prefixedEscaper("? AS "));
     builder.append(") AS incoming on (");
     joinToBuilder(builder, " and ", keyCols, new StringBuilderUtil.Transform<String>() {
       @Override
       public void apply(StringBuilder builder, String col) {
-        builder.append("target.")
-            .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
-            .append("=incoming.").append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+        builder.append("target.").append(escaped(col)).append("=incoming.").append(escaped(col));
       }
     });
     builder.append(")");
@@ -86,16 +78,14 @@ public class SqlServerDialect extends DbDialect {
       joinToBuilder(builder, ",", cols, new StringBuilderUtil.Transform<String>() {
         @Override
         public void apply(StringBuilder builder, String col) {
-          builder.append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd)
-              .append("=incoming.")
-              .append(escapeColumnNamesStart).append(col).append(escapeColumnNamesEnd);
+          builder.append(escaped(col)).append("=incoming.").append(escaped(col));
         }
       });
     }
     builder.append(" when not matched then insert (");
-    joinToBuilder(builder, ", ", cols, keyCols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ", ", cols, keyCols, escaper());
     builder.append(") values (");
-    joinToBuilder(builder, ",", cols, keyCols, stringSurroundTransform("incoming." + escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", cols, keyCols, prefixedEscaper("incoming."));
     builder.append(");");
     return builder.toString();
   }

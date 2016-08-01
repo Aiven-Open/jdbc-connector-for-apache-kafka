@@ -24,15 +24,6 @@ class StringBuilderUtil {
     void apply(StringBuilder builder, T input);
   }
 
-  public static Transform<String> stringSurroundTransform(final String start, final String end) {
-    return new Transform<String>() {
-      @Override
-      public void apply(StringBuilder builder, String input) {
-        builder.append(start).append(input).append(end);
-      }
-    };
-  }
-
   public static void nCopiesToBuilder(StringBuilder builder, String delim, String item, int n) {
     for (int i = 0; i < n; i++) {
       if (i > 0) {

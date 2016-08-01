@@ -29,7 +29,6 @@ import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public class SqliteDialect extends DbDialect {
   public SqliteDialect() {
@@ -53,7 +52,7 @@ public class SqliteDialect extends DbDialect {
   @Override
   public List<String> getAlterTable(String tableName, Collection<SinkRecordField> fields) {
     final List<String> queries = new ArrayList<>(fields.size());
-    for (SinkRecordField field: fields) {
+    for (SinkRecordField field : fields) {
       queries.addAll(super.getAlterTable(tableName, Collections.singleton(field)));
     }
     return queries;
@@ -63,8 +62,8 @@ public class SqliteDialect extends DbDialect {
   public String getUpsertQuery(String table, Collection<String> keyCols, Collection<String> cols) {
     StringBuilder builder = new StringBuilder();
     builder.append("INSERT OR REPLACE INTO ");
-    builder.append(escapeTableName(table)).append("(");
-    joinToBuilder(builder, ",", keyCols, cols, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    builder.append(escaped(table)).append("(");
+    joinToBuilder(builder, ",", keyCols, cols, escaper());
     builder.append(") VALUES(");
     nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(")");

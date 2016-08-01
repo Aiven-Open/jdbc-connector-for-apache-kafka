@@ -30,25 +30,24 @@ import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.Transform;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.stringSurroundTransform;
 
 public abstract class DbDialect {
 
   private final Map<Schema.Type, String> schemaTypeToSqlTypeMap;
-  protected final String escapeColumnNamesStart;
-  protected final String escapeColumnNamesEnd;
+  private final String escapeStart;
+  private final String escapeEnd;
 
-  DbDialect(Map<Schema.Type, String> schemaTypeToSqlTypeMap, String escapeColumnNamesStart, String escapeColumnNamesEnd) {
+  DbDialect(Map<Schema.Type, String> schemaTypeToSqlTypeMap, String escapeStart, String escapeEnd) {
     this.schemaTypeToSqlTypeMap = schemaTypeToSqlTypeMap;
-    this.escapeColumnNamesStart = escapeColumnNamesStart;
-    this.escapeColumnNamesEnd = escapeColumnNamesEnd;
+    this.escapeStart = escapeStart;
+    this.escapeEnd = escapeEnd;
   }
 
   public final String getInsert(final String tableName, final Collection<String> keyColumns, final Collection<String> nonKeyColumns) {
     StringBuilder builder = new StringBuilder("INSERT INTO ");
-    builder.append(escapeTableName(tableName));
+    builder.append(escaped(tableName));
     builder.append("(");
-    joinToBuilder(builder, ",", keyColumns, nonKeyColumns, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+    joinToBuilder(builder, ",", keyColumns, nonKeyColumns, escaper());
     builder.append(") VALUES(");
     nCopiesToBuilder(builder, ",", "?", keyColumns.size() + nonKeyColumns.size());
     builder.append(")");
@@ -61,14 +60,14 @@ public abstract class DbDialect {
     final List<String> pkFieldNames = extractPrimaryKeyFieldNames(fields);
     final StringBuilder builder = new StringBuilder();
     builder.append("CREATE TABLE ");
-    builder.append(escapeTableName(tableName));
+    builder.append(escaped(tableName));
     builder.append(" (");
     writeColumnsSpec(builder, fields);
     if (!pkFieldNames.isEmpty()) {
       builder.append(",");
       builder.append(System.lineSeparator());
       builder.append("PRIMARY KEY(");
-      joinToBuilder(builder, ",", pkFieldNames, stringSurroundTransform(escapeColumnNamesStart, escapeColumnNamesEnd));
+      joinToBuilder(builder, ",", pkFieldNames, escaper());
       builder.append(")");
     }
     builder.append(")");
@@ -79,7 +78,7 @@ public abstract class DbDialect {
     final boolean newlines = fields.size() > 1;
 
     final StringBuilder builder = new StringBuilder("ALTER TABLE ");
-    builder.append(escapeTableName(tableName));
+    builder.append(escaped(tableName));
     builder.append(" ");
     joinToBuilder(builder, ",", fields, new Transform<SinkRecordField>() {
       @Override
@@ -105,7 +104,7 @@ public abstract class DbDialect {
   }
 
   protected void writeColumnSpec(StringBuilder builder, SinkRecordField f) {
-    builder.append(escapeColumnNamesStart).append(f.name).append(escapeColumnNamesEnd);
+    builder.append(escaped(f.name));
     builder.append(" ");
     builder.append(getSqlType(f.type));
     if (f.isOptional) {
@@ -123,8 +122,26 @@ public abstract class DbDialect {
     return sqlType;
   }
 
-  protected String escapeTableName(String tableName) {
-    return escapeColumnNamesStart + tableName + escapeColumnNamesEnd;
+  protected String escaped(String identifier) {
+    return escapeStart + identifier + escapeEnd;
+  }
+
+  protected Transform<String> escaper() {
+    return new Transform<String>() {
+      @Override
+      public void apply(StringBuilder builder, String identifier) {
+        builder.append(escapeStart).append(identifier).append(escapeEnd);
+      }
+    };
+  }
+
+  protected Transform<String> prefixedEscaper(final String prefix) {
+    return new Transform<String>() {
+      @Override
+      public void apply(StringBuilder builder, String identifier) {
+        builder.append(prefix).append(escapeStart).append(identifier).append(escapeEnd);
+      }
+    };
   }
 
   static List<String> extractPrimaryKeyFieldNames(Collection<SinkRecordField> fields) {
