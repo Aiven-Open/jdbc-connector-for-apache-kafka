@@ -1,7 +1,7 @@
-JDBC Connector
-==============
+JDBC Source Connector
+=====================
 
-The JDBC connector allows you to import data from any relational database with a
+The JDBC source connector allows you to import data from any relational database with a
 JDBC driver into Kafka topics. By using JDBC, this connector can support a wide variety of
 databases without requiring custom code for each one.
 
@@ -38,7 +38,7 @@ Next in the SQLite command prompt, create a table and seed it with some data::
    sqlite> INSERT INTO accounts(name) VALUES('bob');
 
 Now we create a configuration file that will load data from this database. This file is included
-with the connector in ``./etc/kafka-connect-jdbc/quickstart-sqlite.properties`` and contains the
+with the connector in ``./etc/kafka-connect-jdbc/source-quickstart-sqlite.properties`` and contains the
 following settings::
 
    name=test-sqlite-jdbc-autoincrement
@@ -61,7 +61,7 @@ table, the only output topic in this example will be ``test-sqlite-jdbc-accounts
 Now, run the connector in a standalone Kafka Connect worker in another terminal (this assumes
 Avro settings and that Kafka and the Schema Registry are running locally on the default ports)::
 
-   $ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties ./etc/kafka-connect-jdbc/quickstart-sqlite.properties
+   $ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties ./etc/kafka-connect-jdbc/source-quickstart-sqlite.properties
 
 You should see the process start up and log some messages, and then it will begin executing
 queries and sending the results to Kafka. In order to check that it has copied the data that was
@@ -95,19 +95,19 @@ used to deliver updates more quickly.
 
 Of course, :ref:`all the features of Kafka Connect<connect_userguide>`, including offset
 management and fault
-tolerance, work with the JDBC connector. You can restart and kill the processes and they will
+tolerance, work with the source connector. You can restart and kill the processes and they will
 pick up where they left off, copying only new data (as defined by the ``mode`` setting).
 
 Features
 --------
 
-The JDBC connector supports copying tables with a variety of JDBC data types, adding and removing
+The source connector supports copying tables with a variety of JDBC data types, adding and removing
 tables from the database dynamically, whitelists and blacklists, varying polling intervals, and
 other settings. However, the most important features for most users are the settings controlling
 how data is incrementally copied from the database.
 
 Kafka Connect tracks the latest record it retrieved from each table, so it can start in the correct
-location on the next iteration (or in case of a crash). The JDBC connector uses this
+location on the next iteration (or in case of a crash). The source connector uses this
 functionality to only get updated rows from a table (or from the output of a custom query) on each
 iteration. Several modes are supported, each of which differs in how modified rows are detected.
 
@@ -137,7 +137,7 @@ controls this behavior and supports the following options:
   if an update fails after partially completing, unprocessed updates will are still correctly
   detected and delivered when the system recovers.
 
-* **Custom Query**: The JDBC connector supports using custom queries instead of copying whole
+* **Custom Query**: The source connector supports using custom queries instead of copying whole
   tables. With a custom query, one of the other update automatic update modes can be used as long
   as the necessary ``WHERE`` clause can be correctly appended to the query. Alternatively, the
   specified query may handle filtering to new updates itself;
@@ -152,7 +152,7 @@ controls this behavior and supports the following options:
 Note that all incremental query modes that use certain columns to detect changes will require
 indexes on those columns to efficiently perform the queries.
 
-For incremental query modes that use timestamps, the JDBC connector uses a configuration
+For incremental query modes that use timestamps, the source connector uses a configuration
 ``timestamp.delay.interval.ms`` to control the waiting period after a row with certain timestamp appears
 before we include it in the result. The additional wait allows transactions with earlier timestamps
 to complete and the related changes to be included in the result.
@@ -160,7 +160,7 @@ to complete and the related changes to be included in the result.
 Configuration
 -------------
 
-The JDBC connector gives you quite a bit of flexibility in the databases you can import data from
+The source connector gives you quite a bit of flexibility in the databases you can import data from
 and how that data is imported. This section first describes how to access databases whose drivers
 are not included with Confluent Platform, then gives a few example configuration files that cover
 common scenarios, then provides an exhaustive description of the available configuration options.
@@ -168,7 +168,7 @@ common scenarios, then provides an exhaustive description of the available confi
 JDBC Drivers
 ~~~~~~~~~~~~
 
-The JDBC connector implements the data copying functionality on the generic JDBC APIs, but relies
+The source connector implements the data copying functionality on the generic JDBC APIs, but relies
 on JDBC drivers to handle the database-specific implementation of those APIs. Confluent Platform
 ships with a few JDBC drivers, but if the driver for your database is not included you will need
 to make it available via the ``CLASSPATH``.
