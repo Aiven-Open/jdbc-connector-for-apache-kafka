@@ -23,21 +23,24 @@ public class SinkRecordField {
   public final String name;
   public final boolean isPrimaryKey;
   public final boolean isOptional;
+  public final Object defaultValue;
 
   public SinkRecordField(final Schema.Type type, final String name, final boolean isPrimaryKey) {
-    this(type, name, isPrimaryKey, !isPrimaryKey);
+    this(type, name, isPrimaryKey, !isPrimaryKey, null);
   }
 
   public SinkRecordField(
       final Schema.Type type,
       final String name,
       final boolean isPrimaryKey,
-      final boolean isOptional
+      final boolean isOptional,
+      final Object defaultValue
   ) {
     this.type = type;
     this.name = name;
     this.isPrimaryKey = isPrimaryKey;
     this.isOptional = isOptional;
+    this.defaultValue = defaultValue;
   }
 
   @Override

@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
 
@@ -36,6 +37,26 @@ public class DbDialectTest {
     for (String c : conns) {
       assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString(c).getClass());
     }
+  }
+
+  @Test
+  public void formatColumnValue() {
+    verifyColumnValueConversion("42", Schema.Type.INT8, (byte) 42);
+    verifyColumnValueConversion("42", Schema.Type.INT16, (short) 42);
+    verifyColumnValueConversion("42", Schema.Type.INT32, 42);
+    verifyColumnValueConversion("42", Schema.Type.INT64, 42L);
+    verifyColumnValueConversion("42.5", Schema.Type.FLOAT32, 42.5f);
+    verifyColumnValueConversion("42.5", Schema.Type.FLOAT64, 42.5d);
+    verifyColumnValueConversion("0", Schema.Type.BOOLEAN, false);
+    verifyColumnValueConversion("1", Schema.Type.BOOLEAN, true);
+    verifyColumnValueConversion("'quoteit'", Schema.Type.STRING, "quoteit");
+    verifyColumnValueConversion("x'2A'", Schema.Type.BYTES, new byte[]{42});
+  }
+
+  private void verifyColumnValueConversion(String expected, Schema.Type type, Object value) {
+    final StringBuilder builder = new StringBuilder();
+    DbDialect.formatColumnValue(builder, type, value);
+    assertEquals(expected, builder.toString());
   }
 
   @Test(expected = ConnectException.class)

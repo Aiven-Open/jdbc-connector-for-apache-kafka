@@ -19,11 +19,14 @@ package io.confluent.connect.jdbc.sink.dialect;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
@@ -107,10 +110,47 @@ public abstract class DbDialect {
     builder.append(escaped(f.name));
     builder.append(" ");
     builder.append(getSqlType(f.type));
-    if (f.isOptional) {
+    if (f.defaultValue != null) {
+      builder.append(" DEFAULT ");
+      formatColumnValue(builder, f.type, f.defaultValue);
+    } else if (f.isOptional) {
       builder.append(" NULL");
     } else {
       builder.append(" NOT NULL");
+    }
+  }
+
+  static void formatColumnValue(StringBuilder builder, Schema.Type type, Object value) {
+    switch (type) {
+      case INT8:
+      case INT16:
+      case INT32:
+      case INT64:
+      case FLOAT32:
+      case FLOAT64:
+        // no escaping required
+        builder.append(value);
+        break;
+      case BOOLEAN:
+        // 1 & 0 for boolean is more portable rather than TRUE/FALSE
+        builder.append((Boolean) value ? '1' : '0');
+        break;
+      case STRING:
+        builder.append("'").append(value).append("'");
+        break;
+      case BYTES:
+        final byte[] bytes;
+        if (value instanceof ByteBuffer) {
+          final ByteBuffer buffer = ((ByteBuffer) value).slice();
+          bytes = new byte[buffer.remaining()];
+          buffer.get(bytes);
+        } else {
+          bytes = (byte[]) value;
+        }
+        builder.append("x'").append(DatatypeConverter.printHexBinary(bytes)).append("'");
+        break;
+      default:
+        throw new ConnectException("Unsupported type for column value: " + type);
     }
   }
 
