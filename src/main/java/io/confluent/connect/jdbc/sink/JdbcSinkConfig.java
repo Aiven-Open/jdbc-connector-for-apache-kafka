@@ -20,12 +20,12 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.util.StringUtils;
 
 public class JdbcSinkConfig extends AbstractConfig {
@@ -41,6 +41,12 @@ public class JdbcSinkConfig extends AbstractConfig {
     RECORD_KEY,
     RECORD_VALUE;
   }
+
+  public static final List<String> DEFAULT_KAFKA_PK_NAMES = Arrays.asList(
+      "__connect_topic",
+      "__connect_partition",
+      "__connect_offset"
+  );
 
   public static final String CONNECTION_URL = "connection.url";
   private static final String CONNECTION_URL_DOC = "JDBC connection URL.";
@@ -122,7 +128,7 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "`none`\n"
       + "    Ignored as no fields are used as primary key in this mode.\n"
       + "`kafka`\n"
-      + "    Must be a trio representing the Kafka coordinates, defaults to ``" + StringUtils.join(FieldsMetadata.DEFAULT_KAFKA_PK_NAMES, ",") + "`` if empty.\n"
+      + "    Must be a trio representing the Kafka coordinates, defaults to ``" + StringUtils.join(DEFAULT_KAFKA_PK_NAMES, ",") + "`` if empty.\n"
       + "`record_key`\n"
       + "    If empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured.\n"
       + "`record_value`\n"

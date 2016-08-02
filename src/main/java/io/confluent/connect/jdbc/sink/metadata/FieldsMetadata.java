@@ -20,7 +20,6 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -31,12 +30,6 @@ import java.util.Set;
 import io.confluent.connect.jdbc.sink.JdbcSinkConfig;
 
 public class FieldsMetadata {
-
-  public static final List<String> DEFAULT_KAFKA_PK_NAMES = Arrays.asList(
-      "__connect_topic",
-      "__connect_partition",
-      "__connect_offset"
-  );
 
   public final Set<String> keyFieldNames;
   public final Set<String> nonKeyFieldNames;
@@ -86,14 +79,14 @@ public class FieldsMetadata {
 
       case KAFKA: {
         if (configuredPkFields.isEmpty()) {
-          keyFieldNames.addAll(DEFAULT_KAFKA_PK_NAMES);
+          keyFieldNames.addAll(JdbcSinkConfig.DEFAULT_KAFKA_PK_NAMES);
         } else if (configuredPkFields.size() == 3) {
           keyFieldNames.addAll(configuredPkFields);
         } else {
           throw new ConnectException(String.format(
               "PK mode for table '%s' is %s so there should either be no field names defined for defaults %s to be applicable, "
               + "or exactly 3, defined fields are: %s",
-              tableName, pkMode, DEFAULT_KAFKA_PK_NAMES, configuredPkFields
+              tableName, pkMode, JdbcSinkConfig.DEFAULT_KAFKA_PK_NAMES, configuredPkFields
           ));
         }
         final Iterator<String> it = keyFieldNames.iterator();

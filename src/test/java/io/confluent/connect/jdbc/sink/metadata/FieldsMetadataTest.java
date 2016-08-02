@@ -66,7 +66,7 @@ public class FieldsMetadataTest {
         null,
         SIMPLE_STRUCT_SCHEMA
     );
-    assertEquals(new HashSet<>(FieldsMetadata.DEFAULT_KAFKA_PK_NAMES), metadata.keyFieldNames);
+    assertEquals(new HashSet<>(Arrays.asList("__connect_topic", "__connect_partition", "__connect_offset")), metadata.keyFieldNames);
     assertEquals(Collections.singleton("name"), metadata.nonKeyFieldNames);
 
     SinkRecordField topicField = metadata.allFields.get("__connect_topic");
