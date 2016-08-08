@@ -64,7 +64,7 @@ public class BufferedRecords {
       fieldsMetadata = FieldsMetadata.extract(tableName, config.pkMode, config.pkFields, currentSchemaPair);
       dbStructure.createOrAmendIfNecessary(config, connection, tableName, fieldsMetadata);
       final String insertSql = getInsertSql();
-      log.debug("insertion sql:{}", config.insertMode, insertSql);
+      log.debug("{} sql: {}", config.insertMode, insertSql);
       preparedStatement = connection.prepareStatement(insertSql);
       preparedStatementBinder = new PreparedStatementBinder(preparedStatement, config.pkMode, schemaPair, fieldsMetadata);
     }
