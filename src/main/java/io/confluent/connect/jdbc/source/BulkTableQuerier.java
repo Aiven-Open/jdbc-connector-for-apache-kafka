@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -28,16 +29,14 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.util.JdbcUtils;
-
 /**
  * BulkTableQuerier always returns the entire table.
  */
 public class BulkTableQuerier extends TableQuerier {
   private static final Logger log = LoggerFactory.getLogger(BulkTableQuerier.class);
 
-  public BulkTableQuerier(QueryMode mode, String name, String topicPrefix) {
-    super(mode, name, topicPrefix);
+  public BulkTableQuerier(QueryMode mode, String name, String schemaPattern, String topicPrefix) {
+    super(mode, name, topicPrefix, schemaPattern);
   }
 
   @Override

@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
@@ -30,8 +31,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.confluent.connect.jdbc.util.JdbcUtils;
-
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this
  * connector should load data from.
@@ -40,6 +39,7 @@ public class TableMonitorThread extends Thread {
   private static final Logger log = LoggerFactory.getLogger(TableMonitorThread.class);
 
   private final Connection db;
+  private final String schemaPattern;
   private final ConnectorContext context;
   private final CountDownLatch shutdownLatch;
   private final long pollMs;
@@ -48,9 +48,10 @@ public class TableMonitorThread extends Thread {
   private List<String> tables;
   private Set<String> tableTypes;
 
-  public TableMonitorThread(Connection db, ConnectorContext context, long pollMs,
+  public TableMonitorThread(Connection db, String schemaPattern, ConnectorContext context, long pollMs,
                             Set<String> whitelist, Set<String> blacklist, Set<String> tableTypes) {
     this.db = db;
+    this.schemaPattern = schemaPattern;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
     this.pollMs = pollMs;
@@ -108,7 +109,7 @@ public class TableMonitorThread extends Thread {
     synchronized (db) {
       final List<String> tables;
       try {
-        tables = JdbcUtils.getTables(db, tableTypes);
+        tables = JdbcUtils.getTables(db, schemaPattern, tableTypes);
         log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
       } catch (SQLException e) {
         log.error("Error while trying to get updated table list, ignoring and waiting for next "

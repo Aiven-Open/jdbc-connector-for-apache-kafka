@@ -16,6 +16,9 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import io.confluent.connect.jdbc.sink.metadata.DbTable;
+import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
+import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,10 +28,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.confluent.connect.jdbc.sink.metadata.DbTable;
-import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
-import io.confluent.connect.jdbc.util.JdbcUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -70,7 +69,7 @@ public class SqliteHelperTest {
     sqliteHelper.createTable(createNonPkTable);
 
     final Map<String, DbTable> tables = new HashMap<>();
-    for (String tableName : JdbcUtils.getTables(sqliteHelper.connection)) {
+    for (String tableName : JdbcUtils.getTables(sqliteHelper.connection, null)) {
       tables.put(tableName, DbMetadataQueries.getTableMetadata(sqliteHelper.connection, tableName));
     }
 

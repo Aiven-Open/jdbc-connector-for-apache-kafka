@@ -36,6 +36,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   }
 
   protected final QueryMode mode;
+  protected String schemaPattern;
   protected final String name;
   protected final String query;
   protected final String topicPrefix;
@@ -44,8 +45,9 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   protected ResultSet resultSet;
   protected Schema schema;
 
-  public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix) {
+  public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix, String schemaPattern) {
     this.mode = mode;
+    this.schemaPattern = schemaPattern;
     this.name = mode.equals(QueryMode.TABLE) ? nameOrQuery : null;
     this.query = mode.equals(QueryMode.QUERY) ? nameOrQuery : null;
     this.topicPrefix = topicPrefix;
