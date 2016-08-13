@@ -145,7 +145,7 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public static final ConfigDef CONFIG_DEF = new ConfigDef()
       // Connection
-      .define(CONNECTION_URL, ConfigDef.Type.STRING, "",
+      .define(CONNECTION_URL, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE,
               ConfigDef.Importance.HIGH, CONNECTION_URL_DOC,
               CONNECTION_GROUP, 1, ConfigDef.Width.LONG, CONNECTION_URL_DISPLAY)
       .define(CONNECTION_USER, ConfigDef.Type.STRING, null,
