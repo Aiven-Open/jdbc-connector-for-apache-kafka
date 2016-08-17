@@ -3,7 +3,7 @@
 kafka-connect-jdbc is a [Kafka Connector](http://kafka.apache.org/documentation.html#connect)
 for loading data to and from any JDBC-compatible database.
 
-Documentation for this connector can be found [here](http://docs.confluent.io/3.0.0/connect/connect-jdbc/docs/index.html).
+Documentation for this connector can be found [here](http://docs.confluent.io/current/connect/connect-jdbc/docs/index.html).
 
 # Development
 
