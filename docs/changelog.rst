@@ -3,6 +3,15 @@
 Changelog
 =========
 
+Version 3.0.1
+-------------
+
+JDBC Connector
+~~~~~~~~~~~~~~
+
+* `PR-88 <https://github.com/confluentinc/kafka-connect-jdbc/pull/88>`_ - Close all ResultSets in JdbcUtils
+* `PR-94 <https://github.com/confluentinc/kafka-connect-jdbc/pull/94>`_ - add version.txt to share/doc
+
 Version 3.0.0
 -------------
 
@@ -18,4 +27,3 @@ JDBC Connector
 * `PR-50 <https://github.com/confluentinc/kafka-connect-jdbc/pull/50>`_ - Bump version to 3.0.0-SNAPSHOT and Kafka dependency to 0.10.0.0-SNAPSHOT.
 * `PR-48 <https://github.com/confluentinc/kafka-connect-jdbc/pull/48>`_ - Delayed copy.
 * `PR-45 <https://github.com/confluentinc/kafka-connect-jdbc/pull/45>`_ - Added some logging.
-
