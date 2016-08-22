@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Confluent Inc.
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,6 @@
 
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -32,6 +31,8 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.TimeZone;
+
+import io.confluent.connect.jdbc.util.JdbcUtils;
 
 /**
  * <p>
@@ -62,7 +63,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, String incrementingColumn,
-                                           Map<String, Object> offsetMap, Long timestampDelay, String schemaPattern) {
+                                           Map<String, Object> offsetMap, Long timestampDelay,
+                                           String schemaPattern) {
     super(mode, name, topicPrefix, schemaPattern);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
@@ -144,6 +146,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   }
 
 
+
   @Override
   protected ResultSet executeQuery() throws SQLException {
     if (incrementingColumn != null && timestampColumn != null) {
@@ -155,9 +158,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       stmt.setLong(3, incOffset);
       stmt.setTimestamp(4, tsOffset, UTC_CALENDAR);
       log.debug("Executing prepared statement with start time value = {} end time = {} and incrementing value = {}",
-          JdbcUtils.formatUTC(tsOffset),
-          JdbcUtils.formatUTC(endTime),
-          incOffset);
+              JdbcUtils.formatUTC(tsOffset),
+              JdbcUtils.formatUTC(endTime),
+              incOffset);
     } else if (incrementingColumn != null) {
       Long incOffset = offset.getIncrementingOffset();
       stmt.setLong(1, incOffset);
@@ -168,8 +171,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       stmt.setTimestamp(1, tsOffset, UTC_CALENDAR);
       stmt.setTimestamp(2, endTime, UTC_CALENDAR);
       log.debug("Executing prepared statement with timestamp value = {} end time = {}",
-          JdbcUtils.formatUTC(tsOffset),
-          JdbcUtils.formatUTC(endTime));
+              JdbcUtils.formatUTC(tsOffset),
+              JdbcUtils.formatUTC(endTime));
     }
     return stmt.executeQuery();
   }
@@ -189,7 +192,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
           break;
         default:
           throw new ConnectException("Invalid type for incrementing column: "
-            + schema.field(incrementingColumn).schema().type());
+                                            + schema.field(incrementingColumn).schema().type());
       }
 
       // If we are only using an incrementing column, then this must be incrementing. If we are also
@@ -214,7 +217,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
         break;
       case QUERY:
         partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
-          JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+                                             JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
         topic = topicPrefix;
         break;
       default:
@@ -226,11 +229,11 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   @Override
   public String toString() {
     return "TimestampIncrementingTableQuerier{" +
-      "name='" + name + '\'' +
-      ", query='" + query + '\'' +
-      ", topicPrefix='" + topicPrefix + '\'' +
-      ", timestampColumn='" + timestampColumn + '\'' +
-      ", incrementingColumn='" + incrementingColumn + '\'' +
-      '}';
+           "name='" + name + '\'' +
+           ", query='" + query + '\'' +
+           ", topicPrefix='" + topicPrefix + '\'' +
+           ", timestampColumn='" + timestampColumn + '\'' +
+           ", incrementingColumn='" + incrementingColumn + '\'' +
+           '}';
   }
 }

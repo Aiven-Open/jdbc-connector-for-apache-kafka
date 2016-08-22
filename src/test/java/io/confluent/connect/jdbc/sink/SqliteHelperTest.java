@@ -16,9 +16,6 @@
 
 package io.confluent.connect.jdbc.sink;
 
-import io.confluent.connect.jdbc.sink.metadata.DbTable;
-import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
-import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +25,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.metadata.DbTable;
+import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
+import io.confluent.connect.jdbc.util.JdbcUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

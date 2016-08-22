@@ -16,12 +16,6 @@
 
 package io.confluent.connect.jdbc;
 
-import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
-import io.confluent.connect.jdbc.source.JdbcSourceTask;
-import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
-import io.confluent.connect.jdbc.source.TableMonitorThread;
-import io.confluent.connect.jdbc.util.StringUtils;
-import io.confluent.connect.jdbc.util.Version;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Task;
@@ -41,6 +35,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
+import io.confluent.connect.jdbc.source.JdbcSourceTask;
+import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
+import io.confluent.connect.jdbc.source.TableMonitorThread;
+import io.confluent.connect.jdbc.util.StringUtils;
+import io.confluent.connect.jdbc.util.Version;
 
 /**
  * JdbcConnector is a Kafka Connect Connector implementation that watches a JDBC database and
@@ -104,8 +105,8 @@ public class JdbcSourceConnector extends SourceConnector {
       // query.
       whitelistSet = Collections.emptySet();
     }
-    tableMonitorThread = new TableMonitorThread(db, schemaPattern, context, tablePollMs, whitelistSet,
-                                                blacklistSet, tableTypesSet);
+    tableMonitorThread = new TableMonitorThread(db, schemaPattern, context, tablePollMs,
+                                                whitelistSet, blacklistSet, tableTypesSet);
     tableMonitorThread.start();
   }
 

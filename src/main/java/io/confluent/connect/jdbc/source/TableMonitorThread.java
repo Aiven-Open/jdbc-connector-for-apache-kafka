@@ -16,7 +16,6 @@
 
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
@@ -30,6 +29,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import io.confluent.connect.jdbc.util.JdbcUtils;
 
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this

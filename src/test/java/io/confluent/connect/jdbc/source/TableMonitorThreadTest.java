@@ -16,7 +16,6 @@
 
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -33,11 +32,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
+import io.confluent.connect.jdbc.util.JdbcUtils;
 
 import static org.junit.Assert.assertEquals;
 
