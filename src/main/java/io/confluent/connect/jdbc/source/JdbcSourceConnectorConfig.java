@@ -143,7 +143,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
   private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
 
-  public static final String SCHEMA_PATTERN_CONFIG = "schemaPattern";
+  public static final String SCHEMA_PATTERN_CONFIG = "schema.pattern";
   private static final String SCHEMA_PATTERN_DOC = "Schema pattern to fetch tables metadata";
 
   public static final String DATABASE_GROUP = "Database";
