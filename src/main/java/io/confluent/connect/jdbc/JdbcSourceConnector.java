@@ -105,7 +105,7 @@ public class JdbcSourceConnector extends SourceConnector {
       // query.
       whitelistSet = Collections.emptySet();
     }
-    tableMonitorThread = new TableMonitorThread(db, schemaPattern, context, tablePollMs,
+    tableMonitorThread = new TableMonitorThread(db, context, schemaPattern, tablePollMs,
                                                 whitelistSet, blacklistSet, tableTypesSet);
     tableMonitorThread.start();
   }

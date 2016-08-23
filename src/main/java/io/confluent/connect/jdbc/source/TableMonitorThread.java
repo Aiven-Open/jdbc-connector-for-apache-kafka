@@ -49,7 +49,7 @@ public class TableMonitorThread extends Thread {
   private List<String> tables;
   private Set<String> tableTypes;
 
-  public TableMonitorThread(Connection db, String schemaPattern, ConnectorContext context, long pollMs,
+  public TableMonitorThread(Connection db, ConnectorContext context, String schemaPattern, long pollMs,
                             Set<String> whitelist, Set<String> blacklist, Set<String> tableTypes) {
     this.db = db;
     this.schemaPattern = schemaPattern;
