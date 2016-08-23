@@ -49,7 +49,6 @@ public class JdbcSourceTask extends SourceTask {
   private Time time;
   private JdbcSourceTaskConfig config;
   private Connection db;
-  private String schemaPattern;
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
   private AtomicBoolean stop;
 
@@ -74,7 +73,6 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
 
-    this.schemaPattern = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
     if ((tables.isEmpty() && query.isEmpty()) || (!tables.isEmpty() && !query.isEmpty())) {
@@ -135,7 +133,7 @@ public class JdbcSourceTask extends SourceTask {
       switch (queryMode) {
         case TABLE:
           if (validateNonNulls) {
-            validateNonNullable(mode, tableOrQuery, incrementingColumn, timestampColumn);
+            validateNonNullable(mode, schemaPattern, tableOrQuery, incrementingColumn, timestampColumn);
           }
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
@@ -251,7 +249,7 @@ public class JdbcSourceTask extends SourceTask {
     return null;
   }
 
-  private void validateNonNullable(String incrementalMode, String table, String incrementingColumn,
+  private void validateNonNullable(String incrementalMode, String schemaPattern, String table, String incrementingColumn,
                                    String timestampColumn) {
     try {
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
