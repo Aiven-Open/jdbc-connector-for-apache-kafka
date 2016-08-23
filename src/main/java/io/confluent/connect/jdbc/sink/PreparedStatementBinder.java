@@ -161,11 +161,11 @@ public class PreparedStatementBinder {
     } else {
       if (schema.name() != null) {
         LogicalTypeConverter logicalConverter = LOGICAL_CONVERTERS.get(schema.name());
-        if (logicalConverter != null)
+        if (logicalConverter != null) {
           value = logicalConverter.convert(schema, value);
+        }
       }
-      Schema.Type type = schema.type();
-      switch (type) {
+      switch (schema.type()) {
         case INT8:
           statement.setByte(index, (Byte) value);
           break;
@@ -202,7 +202,7 @@ public class PreparedStatementBinder {
           statement.setBytes(index, bytes);
           break;
         default:
-          throw new ConnectException("Unsupported source data type: " + type);
+          throw new ConnectException("Unsupported source data type: " + schema.type());
       }
     }
   }

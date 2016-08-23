@@ -40,6 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
+import org.mockito.internal.verification.Times;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -60,11 +61,11 @@ public class PreparedStatementBinderTest {
         .field("float", Schema.FLOAT32_SCHEMA)
         .field("double", Schema.FLOAT64_SCHEMA)
         .field("bytes", Schema.BYTES_SCHEMA)
-        .field("threshold", Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .field("decimal", Decimal.schema(0))
         .field("date", Date.SCHEMA)
         .field("time", Time.SCHEMA)
         .field("timestamp", Timestamp.SCHEMA)
-        .field("decimal", Decimal.schema(0))
+        .field("threshold", Schema.OPTIONAL_FLOAT64_SCHEMA)
         .build();
 
     Struct valueStruct = new Struct(valueSchema)
@@ -78,17 +79,10 @@ public class PreparedStatementBinderTest {
         .put("double", -2436546.56457)
         .put("bytes", new byte[]{-32, 124})
         .put("age", 30)
-        .put("decimal", new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN));
-
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTimeInMillis(0);
-    calendar.set(2000, 1, 1);
-    valueStruct.put("date", calendar.getTime());
-
-    calendar.setTimeInMillis(1000);
-    valueStruct.put("time", calendar.getTime());
-
-    valueStruct.put("timestamp", calendar.getTime());
+        .put("decimal", new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN))
+        .put("date", new java.util.Date(0))
+        .put("time", new java.util.Date(1000))
+        .put("timestamp", new java.util.Date(100));
 
     SchemaPair schemaPair = new SchemaPair(null, valueSchema);
 
@@ -122,6 +116,10 @@ public class PreparedStatementBinderTest {
     verify(statement, times(1)).setFloat(index++, valueStruct.getFloat32("float"));
     verify(statement, times(1)).setDouble(index++, valueStruct.getFloat64("double"));
     verify(statement, times(1)).setBytes(index++, valueStruct.getBytes("bytes"));
+    verify(statement, times(1)).setBytes(index++, Decimal.fromLogical(Decimal.schema(0), (BigDecimal) valueStruct.get("decimal")));
+    verify(statement, times(1)).setInt(index++, Date.fromLogical(Date.SCHEMA, (java.util.Date) valueStruct.get("date")));
+    verify(statement, times(1)).setInt(index++, Time.fromLogical(Time.SCHEMA, (java.util.Date) valueStruct.get("time")));
+    verify(statement, times(1)).setLong(index++, Timestamp.fromLogical(Timestamp.SCHEMA, (java.util.Date) valueStruct.get("timestamp")));
     // last field is optional and is null-valued in struct
     verify(statement, times(1)).setObject(index++, null);
   }
@@ -141,6 +139,10 @@ public class PreparedStatementBinderTest {
     verifyBindField(++index, Schema.BYTES_SCHEMA, new byte[]{42}).setBytes(index, new byte[]{42});
     verifyBindField(++index, Schema.BYTES_SCHEMA, ByteBuffer.wrap(new byte[]{42})).setBytes(index, new byte[]{42});
     verifyBindField(++index, Schema.STRING_SCHEMA, "yep").setString(index, "yep");
+    verifyBindField(++index, Decimal.schema(0), new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)).setBytes(index, new byte[]{2});
+    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0)).setInt(index, 0);
+    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setInt(index, 1000);
+    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setLong(index, 100);
   }
 
   @Test
@@ -154,7 +156,11 @@ public class PreparedStatementBinderTest {
         Schema.FLOAT64_SCHEMA,
         Schema.BOOLEAN_SCHEMA,
         Schema.BYTES_SCHEMA,
-        Schema.STRING_SCHEMA
+        Schema.STRING_SCHEMA,
+        Decimal.schema(0),
+        Date.SCHEMA,
+        Time.SCHEMA,
+        Timestamp.SCHEMA
     );
     int index = 0;
     for (Schema schema : nullableTypes) {
