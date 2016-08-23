@@ -16,20 +16,72 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
 
 public class PreparedStatementBinder {
+
+  // Convert values in Connect form from their logical types. These logical converters are discovered by logical type
+  // names specified in the field
+  private static final HashMap<String, LogicalTypeConverter> LOGICAL_CONVERTERS = new HashMap<>();
+  static {
+    LOGICAL_CONVERTERS.put(Decimal.LOGICAL_NAME, new LogicalTypeConverter() {
+      @Override
+      public Object convert(Schema schema, Object value) {
+        if (!(value instanceof BigDecimal)) {
+          throw new DataException("Invalid type for Decimal, underlying representation should be BigDecimal but was " + value.getClass());
+        }
+        return Decimal.fromLogical(schema, (BigDecimal) value);
+      }
+    });
+
+    LOGICAL_CONVERTERS.put(Date.LOGICAL_NAME, new LogicalTypeConverter() {
+      @Override
+      public Object convert(Schema schema, Object value) {
+        if (!(value instanceof java.util.Date)) {
+          throw new DataException("Invalid type for Date, underlying representation should be java.util.Date but was " + value.getClass());
+        }
+        return Date.fromLogical(schema, (java.util.Date) value);
+      }
+    });
+
+    LOGICAL_CONVERTERS.put(Time.LOGICAL_NAME, new LogicalTypeConverter() {
+      @Override
+      public Object convert(Schema schema, Object value) {
+        if (!(value instanceof java.util.Date)) {
+          throw new DataException("Invalid type for Date, underlying representation should be java.util.Date but was " + value.getClass());
+        }
+        return Time.fromLogical(schema, (java.util.Date) value);
+      }
+    });
+
+    LOGICAL_CONVERTERS.put(Timestamp.LOGICAL_NAME, new LogicalTypeConverter() {
+      @Override
+      public Object convert(Schema schema, Object value) {
+        if (!(value instanceof java.util.Date)) {
+          throw new DataException("Invalid type for Date, underlying representation should be java.util.Date but was " + value.getClass());
+        }
+        return Timestamp.fromLogical(schema, (java.util.Date) value);
+      }
+    });
+  }
   private final JdbcSinkConfig.PrimaryKeyMode pkMode;
   private final PreparedStatement statement;
   private final SchemaPair schemaPair;
@@ -63,20 +115,20 @@ public class PreparedStatementBinder {
 
       case KAFKA: {
         assert fieldsMetadata.keyFieldNames.size() == 3;
-        bindField(index++, Schema.Type.STRING, record.topic());
-        bindField(index++, Schema.Type.INT32, record.kafkaPartition());
-        bindField(index++, Schema.Type.INT64, record.kafkaOffset());
+        bindField(index++, Schema.STRING_SCHEMA, record.topic());
+        bindField(index++, Schema.INT32_SCHEMA, record.kafkaPartition());
+        bindField(index++, Schema.INT64_SCHEMA, record.kafkaOffset());
       }
       break;
 
       case RECORD_KEY: {
         if (schemaPair.keySchema.type().isPrimitive()) {
           assert fieldsMetadata.keyFieldNames.size() == 1;
-          bindField(index++, schemaPair.keySchema.type(), record.key());
+          bindField(index++, schemaPair.keySchema, record.key());
         } else {
           for (String fieldName : fieldsMetadata.keyFieldNames) {
             final Field field = schemaPair.keySchema.field(fieldName);
-            bindField(index++, field.schema().type(), ((Struct) record.key()).get(field));
+            bindField(index++, field.schema(), ((Struct) record.key()).get(field));
           }
         }
       }
@@ -85,7 +137,7 @@ public class PreparedStatementBinder {
       case RECORD_VALUE: {
         for (String fieldName : fieldsMetadata.keyFieldNames) {
           final Field field = schemaPair.valueSchema.field(fieldName);
-          bindField(index++, field.schema().type(), ((Struct) record.value()).get(field));
+          bindField(index++, field.schema(), ((Struct) record.value()).get(field));
         }
       }
       break;
@@ -93,21 +145,27 @@ public class PreparedStatementBinder {
 
     for (final String fieldName : fieldsMetadata.nonKeyFieldNames) {
       final Field field = record.valueSchema().field(fieldName);
-      bindField(index++, field.schema().type(), valueStruct.get(field));
+      bindField(index++, field.schema(), valueStruct.get(field));
     }
 
     statement.addBatch();
   }
 
-  void bindField(int index, Schema.Type type, Object value) throws SQLException {
-    bindField(statement, index, type, value);
+  void bindField(int index, Schema schema, Object value) throws SQLException {
+    bindField(statement, index, schema, value);
   }
 
-  static void bindField(PreparedStatement statement, int index, Schema.Type type, Object value) throws SQLException {
+  static void bindField(PreparedStatement statement, int index, Schema schema, Object value) throws SQLException {
     if (value == null) {
       statement.setObject(index, null);
     } else {
-      switch (type) {
+      if (schema.name() != null) {
+        LogicalTypeConverter logicalConverter = LOGICAL_CONVERTERS.get(schema.name());
+        if (logicalConverter != null) {
+          value = logicalConverter.convert(schema, value);
+        }
+      }
+      switch (schema.type()) {
         case INT8:
           statement.setByte(index, (Byte) value);
           break;
@@ -144,8 +202,12 @@ public class PreparedStatementBinder {
           statement.setBytes(index, bytes);
           break;
         default:
-          throw new ConnectException("Unsupported source data type: " + type);
+          throw new ConnectException("Unsupported source data type: " + schema.type());
       }
     }
+  }
+
+  private interface LogicalTypeConverter {
+    Object convert(Schema schema, Object value);
   }
 }

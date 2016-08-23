@@ -16,23 +16,31 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
+import org.mockito.internal.verification.Times;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -41,7 +49,7 @@ import static org.mockito.Mockito.verify;
 public class PreparedStatementBinderTest {
 
   @Test
-  public void bindRecord() throws SQLException {
+  public void bindRecord() throws SQLException, ParseException {
     Schema valueSchema = SchemaBuilder.struct().name("com.example.Person")
         .field("firstName", Schema.STRING_SCHEMA)
         .field("lastName", Schema.STRING_SCHEMA)
@@ -53,6 +61,10 @@ public class PreparedStatementBinderTest {
         .field("float", Schema.FLOAT32_SCHEMA)
         .field("double", Schema.FLOAT64_SCHEMA)
         .field("bytes", Schema.BYTES_SCHEMA)
+        .field("decimal", Decimal.schema(0))
+        .field("date", Date.SCHEMA)
+        .field("time", Time.SCHEMA)
+        .field("timestamp", Timestamp.SCHEMA)
         .field("threshold", Schema.OPTIONAL_FLOAT64_SCHEMA)
         .build();
 
@@ -66,7 +78,11 @@ public class PreparedStatementBinderTest {
         .put("float", (float) 2356.3)
         .put("double", -2436546.56457)
         .put("bytes", new byte[]{-32, 124})
-        .put("age", 30);
+        .put("age", 30)
+        .put("decimal", new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN))
+        .put("date", new java.util.Date(0))
+        .put("time", new java.util.Date(1000))
+        .put("timestamp", new java.util.Date(100));
 
     SchemaPair schemaPair = new SchemaPair(null, valueSchema);
 
@@ -100,6 +116,10 @@ public class PreparedStatementBinderTest {
     verify(statement, times(1)).setFloat(index++, valueStruct.getFloat32("float"));
     verify(statement, times(1)).setDouble(index++, valueStruct.getFloat64("double"));
     verify(statement, times(1)).setBytes(index++, valueStruct.getBytes("bytes"));
+    verify(statement, times(1)).setBytes(index++, Decimal.fromLogical(Decimal.schema(0), (BigDecimal) valueStruct.get("decimal")));
+    verify(statement, times(1)).setInt(index++, Date.fromLogical(Date.SCHEMA, (java.util.Date) valueStruct.get("date")));
+    verify(statement, times(1)).setInt(index++, Time.fromLogical(Time.SCHEMA, (java.util.Date) valueStruct.get("time")));
+    verify(statement, times(1)).setLong(index++, Timestamp.fromLogical(Timestamp.SCHEMA, (java.util.Date) valueStruct.get("timestamp")));
     // last field is optional and is null-valued in struct
     verify(statement, times(1)).setObject(index++, null);
   }
@@ -108,57 +128,67 @@ public class PreparedStatementBinderTest {
   @Test
   public void bindFieldPrimitiveValues() throws SQLException {
     int index = ThreadLocalRandom.current().nextInt();
-    verifyBindField(++index, Schema.Type.INT8, (byte) 42).setByte(index, (byte) 42);
-    verifyBindField(++index, Schema.Type.INT16, (short) 42).setShort(index, (short) 42);
-    verifyBindField(++index, Schema.Type.INT32, 42).setInt(index, 42);
-    verifyBindField(++index, Schema.Type.INT64, 42L).setLong(index, 42L);
-    verifyBindField(++index, Schema.Type.BOOLEAN, false).setBoolean(index, false);
-    verifyBindField(++index, Schema.Type.BOOLEAN, true).setBoolean(index, true);
-    verifyBindField(++index, Schema.Type.FLOAT32, -42f).setFloat(index, -42f);
-    verifyBindField(++index, Schema.Type.FLOAT64, 42d).setDouble(index, 42d);
-    verifyBindField(++index, Schema.Type.BYTES, new byte[]{42}).setBytes(index, new byte[]{42});
-    verifyBindField(++index, Schema.Type.BYTES, ByteBuffer.wrap(new byte[]{42})).setBytes(index, new byte[]{42});
-    verifyBindField(++index, Schema.Type.STRING, "yep").setString(index, "yep");
+    verifyBindField(++index, Schema.INT8_SCHEMA, (byte) 42).setByte(index, (byte) 42);
+    verifyBindField(++index, Schema.INT16_SCHEMA, (short) 42).setShort(index, (short) 42);
+    verifyBindField(++index, Schema.INT32_SCHEMA, 42).setInt(index, 42);
+    verifyBindField(++index, Schema.INT64_SCHEMA, 42L).setLong(index, 42L);
+    verifyBindField(++index, Schema.BOOLEAN_SCHEMA, false).setBoolean(index, false);
+    verifyBindField(++index, Schema.BOOLEAN_SCHEMA, true).setBoolean(index, true);
+    verifyBindField(++index, Schema.FLOAT32_SCHEMA, -42f).setFloat(index, -42f);
+    verifyBindField(++index, Schema.FLOAT64_SCHEMA, 42d).setDouble(index, 42d);
+    verifyBindField(++index, Schema.BYTES_SCHEMA, new byte[]{42}).setBytes(index, new byte[]{42});
+    verifyBindField(++index, Schema.BYTES_SCHEMA, ByteBuffer.wrap(new byte[]{42})).setBytes(index, new byte[]{42});
+    verifyBindField(++index, Schema.STRING_SCHEMA, "yep").setString(index, "yep");
+    verifyBindField(++index, Decimal.schema(0), new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)).setBytes(index, new byte[]{2});
+    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0)).setInt(index, 0);
+    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setInt(index, 1000);
+    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setLong(index, 100);
   }
 
   @Test
   public void bindFieldNull() throws SQLException {
-    final List<Schema.Type> nullableTypes = Arrays.asList(
-        Schema.Type.INT8,
-        Schema.Type.INT16,
-        Schema.Type.INT32,
-        Schema.Type.INT64,
-        Schema.Type.FLOAT32,
-        Schema.Type.FLOAT64,
-        Schema.Type.BOOLEAN,
-        Schema.Type.BYTES,
-        Schema.Type.STRING
+    final List<Schema> nullableTypes = Arrays.asList(
+        Schema.INT8_SCHEMA,
+        Schema.INT16_SCHEMA,
+        Schema.INT32_SCHEMA,
+        Schema.INT64_SCHEMA,
+        Schema.FLOAT32_SCHEMA,
+        Schema.FLOAT64_SCHEMA,
+        Schema.BOOLEAN_SCHEMA,
+        Schema.BYTES_SCHEMA,
+        Schema.STRING_SCHEMA,
+        Decimal.schema(0),
+        Date.SCHEMA,
+        Time.SCHEMA,
+        Timestamp.SCHEMA
     );
     int index = 0;
-    for (Schema.Type type : nullableTypes) {
-      verifyBindField(++index, type, null).setObject(index, null);
+    for (Schema schema : nullableTypes) {
+      verifyBindField(++index, schema, null).setObject(index, null);
     }
   }
 
   @Test(expected = ConnectException.class)
   public void bindFieldStructUnsupported() throws SQLException {
     Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
-    PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, Schema.Type.STRUCT, new Struct(structSchema));
+    PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, structSchema, new Struct(structSchema));
   }
 
   @Test(expected = ConnectException.class)
   public void bindFieldArrayUnsupported() throws SQLException {
-    PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, Schema.Type.ARRAY, Collections.emptyList());
+    Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
+    PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList());
   }
 
   @Test(expected = ConnectException.class)
   public void bindFieldMapUnsupported() throws SQLException {
-    PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, Schema.Type.MAP, Collections.emptyMap());
+    Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
+    PreparedStatementBinder.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
   }
 
-  private PreparedStatement verifyBindField(int index, Schema.Type schemaType, Object value) throws SQLException {
+  private PreparedStatement verifyBindField(int index, Schema schema, Object value) throws SQLException {
     PreparedStatement statement = mock(PreparedStatement.class);
-    PreparedStatementBinder.bindField(statement, index, schemaType, value);
+    PreparedStatementBinder.bindField(statement, index, schema, value);
     return verify(statement, times(1));
   }
 
