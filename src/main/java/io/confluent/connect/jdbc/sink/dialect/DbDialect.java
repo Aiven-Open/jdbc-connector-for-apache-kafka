@@ -208,6 +208,11 @@ public abstract class DbDialect {
       return new OracleDialect();
     }
 
+    if (url.startsWith("jdbc:sap")) {
+      // HANA url's are in the format : jdbc:sap://$host:3(instance)(port)/
+      return new HANADialect();
+    }
+
     final String protocol = extractProtocolFromUrl(url).toLowerCase();
     switch (protocol) {
       case "microsoft:sqlserver":
