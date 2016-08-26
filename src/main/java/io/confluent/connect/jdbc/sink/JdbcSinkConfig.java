@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.confluent.connect.jdbc.util.StringUtils;
+import org.apache.kafka.common.config.types.Password;
 
 public class JdbcSinkConfig extends AbstractConfig {
 
@@ -203,7 +204,7 @@ public class JdbcSinkConfig extends AbstractConfig {
     super(CONFIG_DEF, props);
     connectionUrl = getString(CONNECTION_URL);
     connectionUser = getString(CONNECTION_USER);
-    connectionPassword = getString(CONNECTION_PASSWORD);
+    connectionPassword = getPasswordValue(CONNECTION_PASSWORD);
     tableNameFormat = getString(TABLE_NAME_FORMAT).trim();
     batchSize = getInt(BATCH_SIZE);
     maxRetries = getInt(MAX_RETRIES);
@@ -213,6 +214,14 @@ public class JdbcSinkConfig extends AbstractConfig {
     insertMode = InsertMode.valueOf(getString(INSERT_MODE).toUpperCase());
     pkMode = PrimaryKeyMode.valueOf(getString(PK_MODE).toUpperCase());
     pkFields = getList(PK_FIELDS);
+  }
+
+  private String getPasswordValue(String key) {
+    Password password = getPassword(key);
+    if (password != null) {
+      return password.value();
+    }
+    return null;
   }
 
   private static class EnumValidator implements ConfigDef.Validator {
