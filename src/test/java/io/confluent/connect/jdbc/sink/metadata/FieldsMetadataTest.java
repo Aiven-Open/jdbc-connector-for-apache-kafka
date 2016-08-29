@@ -39,9 +39,9 @@ public class FieldsMetadataTest {
   private static final Schema SIMPLE_MAP_SCHEMA = SchemaBuilder.map(SchemaBuilder.INT64_SCHEMA, Schema.STRING_SCHEMA);
 
   @Test(expected = ConnectException.class)
-  public void valueSchemaMustBePresent() {
+  public void valueSchemaMustBePresentForPkModeRecordValue() {
     extract(
-        JdbcSinkConfig.PrimaryKeyMode.KAFKA,
+        JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
         Collections.<String>emptyList(),
         SIMPLE_PRIMITIVE_SCHEMA,
         null
@@ -49,12 +49,46 @@ public class FieldsMetadataTest {
   }
 
   @Test(expected = ConnectException.class)
-  public void valueSchemaMustBeStruct() {
+  public void valueSchemaMustBeStructIfPresent() {
     extract(
         JdbcSinkConfig.PrimaryKeyMode.KAFKA,
         Collections.<String>emptyList(),
         SIMPLE_PRIMITIVE_SCHEMA,
         SIMPLE_PRIMITIVE_SCHEMA
+    );
+  }
+
+  @Test
+  public void missingValueSchemaCanBeOk() {
+    assertEquals(
+        new HashSet<>(Collections.singletonList("name")),
+        extract(
+            JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
+            Collections.<String>emptyList(),
+            SIMPLE_STRUCT_SCHEMA,
+            null
+        ).allFields.keySet()
+    );
+
+    // this one is a bit weird, only columns being inserted would be kafka coords... but not sure should explicitly disallow!
+    assertEquals(
+        new HashSet<>(Arrays.asList("__connect_topic", "__connect_partition", "__connect_offset")),
+        extract(
+            JdbcSinkConfig.PrimaryKeyMode.KAFKA,
+            Collections.<String>emptyList(),
+            null,
+            null
+        ).allFields.keySet()
+    );
+  }
+
+  @Test(expected = ConnectException.class)
+  public void metadataMayNotBeEmpty() {
+    extract(
+        JdbcSinkConfig.PrimaryKeyMode.NONE,
+        Collections.<String>emptyList(),
+        null,
+        null
     );
   }
 
