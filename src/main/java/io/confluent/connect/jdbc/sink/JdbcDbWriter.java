@@ -80,10 +80,13 @@ public class JdbcDbWriter {
   }
 
   void closeQuietly() {
-    try {
-      connection.close();
-    } catch (SQLException sqle) {
-      log.warn("Ignoring error closing connection", sqle);
+    if (connection != null) {
+      try {
+        connection.close();
+        connection = null;
+      } catch (SQLException sqle) {
+        log.warn("Ignoring error closing connection", sqle);
+      }
     }
   }
 
