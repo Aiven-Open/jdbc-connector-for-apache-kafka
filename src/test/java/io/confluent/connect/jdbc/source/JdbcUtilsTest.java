@@ -68,6 +68,30 @@ public class JdbcUtilsTest {
   }
 
   @Test
+  public void testGetTablesNarrowedToSchemas() throws Exception {
+    db.createTable("some_table", "id", "INT");
+
+    db.execute("CREATE SCHEMA PUBLIC_SCHEMA");
+    db.execute("SET SCHEMA PUBLIC_SCHEMA");
+    db.createTable("public_table", "id", "INT");
+
+    db.execute("CREATE SCHEMA PRIVATE_SCHEMA");
+    db.execute("SET SCHEMA PRIVATE_SCHEMA");
+    db.createTable("private_table", "id", "INT");
+    db.createTable("another_private_table", "id", "INT");
+
+    assertEquals(
+      new HashSet<String>(Arrays.asList("public_table")),
+      new HashSet<String>(JdbcUtils.getTables(db.getConnection(), "PUBLIC_SCHEMA")));
+    assertEquals(
+      new HashSet<String>(Arrays.asList("private_table", "another_private_table")),
+      new HashSet<String>(JdbcUtils.getTables(db.getConnection(), "PRIVATE_SCHEMA")));
+    assertEquals(
+      new HashSet<String>(Arrays.asList("some_table", "public_table", "private_table", "another_private_table")),
+      new HashSet<String>(JdbcUtils.getTables(db.getConnection(), null)));
+  }
+
+  @Test
   public void testGetAutoincrement() throws Exception {
     // Normal case
     db.createTable("test", "id", "INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY", "bar", "INTEGER");
