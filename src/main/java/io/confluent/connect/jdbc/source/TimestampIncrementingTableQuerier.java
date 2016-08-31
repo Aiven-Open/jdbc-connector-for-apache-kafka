@@ -183,6 +183,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
     Timestamp latest = null;
     if (incrementingColumn != null) {
       switch (schema.field(incrementingColumn).schema().type()) {
+        case INT8:
+          id = (long) (Byte) record.get(incrementingColumn);
+          break;
         case INT32:
           id = (long) (Integer) record.get(incrementingColumn);
           break;
