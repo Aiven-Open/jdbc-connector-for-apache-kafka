@@ -110,10 +110,10 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String SCHEMA_PATTERN_CONFIG = "schema.pattern";
   private static final String SCHEMA_PATTERN_DOC =
-      "Schema pattern to fetch tables metadata from:\n"
+      "Schema pattern to fetch tables metadata from the database:\n"
       + "  * \"\" retrieves those without a schema,"
       + "  * null (default) means that the schema name should not be used to narrow the search, all tables "
-      + "metadata would be fetched, regardless there schema.";
+      + "metadata would be fetched, regardless their schema.";
   private static final String SCHEMA_PATTERN_DISPLAY = "Schema pattern";
 
   public static final String QUERY_CONFIG = "query";
