@@ -40,6 +40,7 @@ public class TableMonitorThread extends Thread {
   private static final Logger log = LoggerFactory.getLogger(TableMonitorThread.class);
 
   private final Connection db;
+  private final String schemaPattern;
   private final ConnectorContext context;
   private final CountDownLatch shutdownLatch;
   private final long pollMs;
@@ -48,9 +49,10 @@ public class TableMonitorThread extends Thread {
   private List<String> tables;
   private Set<String> tableTypes;
 
-  public TableMonitorThread(Connection db, ConnectorContext context, long pollMs,
+  public TableMonitorThread(Connection db, ConnectorContext context, String schemaPattern, long pollMs,
                             Set<String> whitelist, Set<String> blacklist, Set<String> tableTypes) {
     this.db = db;
+    this.schemaPattern = schemaPattern;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
     this.pollMs = pollMs;
@@ -108,7 +110,7 @@ public class TableMonitorThread extends Thread {
     synchronized (db) {
       final List<String> tables;
       try {
-        tables = JdbcUtils.getTables(db, tableTypes);
+        tables = JdbcUtils.getTables(db, schemaPattern, tableTypes);
         log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
       } catch (SQLException e) {
         log.error("Error while trying to get updated table list, ignoring and waiting for next "

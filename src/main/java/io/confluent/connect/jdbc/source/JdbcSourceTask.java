@@ -117,6 +117,8 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException(e);
     }
 
+    String schemaPattern
+        = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
     String incrementingColumn
         = config.getString(JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
     String timestampColumn
@@ -131,7 +133,7 @@ public class JdbcSourceTask extends SourceTask {
       switch (queryMode) {
         case TABLE:
           if (validateNonNulls) {
-            validateNonNullable(mode, tableOrQuery, incrementingColumn, timestampColumn);
+            validateNonNullable(mode, schemaPattern, tableOrQuery, incrementingColumn, timestampColumn);
           }
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
@@ -148,16 +150,16 @@ public class JdbcSourceTask extends SourceTask {
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
 
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
-        tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, topicPrefix));
+        tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, schemaPattern, topicPrefix));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, null, incrementingColumn, offset, timestampDelayInterval));
+            queryMode, tableOrQuery, topicPrefix, null, incrementingColumn, offset, timestampDelayInterval, schemaPattern));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, timestampColumn, null, offset, timestampDelayInterval));
+            queryMode, tableOrQuery, topicPrefix, timestampColumn, null, offset, timestampDelayInterval, schemaPattern));
       } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, timestampColumn, incrementingColumn, offset, timestampDelayInterval));
+            queryMode, tableOrQuery, topicPrefix, timestampColumn, incrementingColumn, offset, timestampDelayInterval, schemaPattern));
       }
     }
 
@@ -247,7 +249,7 @@ public class JdbcSourceTask extends SourceTask {
     return null;
   }
 
-  private void validateNonNullable(String incrementalMode, String table, String incrementingColumn,
+  private void validateNonNullable(String incrementalMode, String schemaPattern, String table, String incrementingColumn,
                                    String timestampColumn) {
     try {
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
@@ -255,14 +257,14 @@ public class JdbcSourceTask extends SourceTask {
       // without a query or parsing the query since we don't have a table name.
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING) ||
            incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
-          JdbcUtils.isColumnNullable(db, table, incrementingColumn)) {
+          JdbcUtils.isColumnNullable(db, schemaPattern, table, incrementingColumn)) {
         throw new ConnectException("Cannot make incremental queries using incrementing column " +
                                    incrementingColumn + " on " + table + " because this column is "
                                    + "nullable.");
       }
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
            incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
-          JdbcUtils.isColumnNullable(db, table, timestampColumn)) {
+          JdbcUtils.isColumnNullable(db, schemaPattern, table, timestampColumn)) {
         throw new ConnectException("Cannot make incremental queries using timestamp column " +
                                    timestampColumn + " on " + table + " because this column is "
                                    + "nullable.");

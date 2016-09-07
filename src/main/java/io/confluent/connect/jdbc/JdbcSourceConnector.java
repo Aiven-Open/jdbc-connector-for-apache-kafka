@@ -96,6 +96,7 @@ public class JdbcSourceConnector extends SourceConnector {
                                  + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + " are "
                                  + "exclusive.");
     String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
+    String schemaPattern = config.getString(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG);
     if (!query.isEmpty()) {
       if (whitelistSet != null || blacklistSet != null)
         throw new ConnectException(JdbcSourceConnectorConfig.QUERY_CONFIG + " may not be combined"
@@ -104,8 +105,8 @@ public class JdbcSourceConnector extends SourceConnector {
       // query.
       whitelistSet = Collections.emptySet();
     }
-    tableMonitorThread = new TableMonitorThread(db, context, tablePollMs, whitelistSet,
-                                                blacklistSet, tableTypesSet);
+    tableMonitorThread = new TableMonitorThread(db, context, schemaPattern, tablePollMs,
+                                                whitelistSet, blacklistSet, tableTypesSet);
     tableMonitorThread.start();
   }
 

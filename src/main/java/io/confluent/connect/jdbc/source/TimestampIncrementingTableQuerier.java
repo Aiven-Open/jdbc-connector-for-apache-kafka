@@ -63,8 +63,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, String incrementingColumn,
-                                           Map<String, Object> offsetMap, Long timestampDelay) {
-    super(mode, name, topicPrefix);
+                                           Map<String, Object> offsetMap, Long timestampDelay,
+                                           String schemaPattern) {
+    super(mode, name, topicPrefix, schemaPattern);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
     this.timestampDelay = timestampDelay;
@@ -75,7 +76,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   protected void createPreparedStatement(Connection db) throws SQLException {
     // Default when unspecified uses an autoincrementing column
     if (incrementingColumn != null && incrementingColumn.isEmpty()) {
-      incrementingColumn = JdbcUtils.getAutoincrementColumn(db, name);
+      incrementingColumn = JdbcUtils.getAutoincrementColumn(db, schemaPattern, name);
     }
 
     String quoteString = JdbcUtils.getIdentifierQuoteString(db);

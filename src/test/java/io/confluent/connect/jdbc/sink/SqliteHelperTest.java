@@ -70,7 +70,7 @@ public class SqliteHelperTest {
     sqliteHelper.createTable(createNonPkTable);
 
     final Map<String, DbTable> tables = new HashMap<>();
-    for (String tableName : JdbcUtils.getTables(sqliteHelper.connection)) {
+    for (String tableName : JdbcUtils.getTables(sqliteHelper.connection, null)) {
       tables.put(tableName, DbMetadataQueries.getTableMetadata(sqliteHelper.connection, tableName));
     }
 

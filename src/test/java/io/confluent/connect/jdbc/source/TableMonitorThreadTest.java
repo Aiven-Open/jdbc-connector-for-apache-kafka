@@ -75,9 +75,9 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testSingleLookup() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null,DEFAULT_TABLE_TYPES);
+    tableMonitorThread = new TableMonitorThread(dbConn, context, null, POLL_INTERVAL, null, null, DEFAULT_TABLE_TYPES);
 
-    EasyMock.expect(JdbcUtils.getTables(dbConn,DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
         tableMonitorThread.shutdown();
@@ -96,10 +96,10 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testWhitelist() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL,
-                                                new HashSet<>(Arrays.asList("foo", "bar")), null,DEFAULT_TABLE_TYPES);
+    tableMonitorThread = new TableMonitorThread(dbConn, context, null, POLL_INTERVAL,
+                                                new HashSet<>(Arrays.asList("foo", "bar")), null, DEFAULT_TABLE_TYPES);
 
-    EasyMock.expect(JdbcUtils.getTables(dbConn,DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
         tableMonitorThread.shutdown();
@@ -118,10 +118,10 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testBlacklist() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL,
+    tableMonitorThread = new TableMonitorThread(dbConn, context, null, POLL_INTERVAL,
                                                 null, new HashSet<>(Arrays.asList("bar", "baz")),DEFAULT_TABLE_TYPES);
 
-    EasyMock.expect(JdbcUtils.getTables(dbConn,DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
         tableMonitorThread.shutdown();
@@ -140,11 +140,11 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testReconfigOnUpdate() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null,DEFAULT_TABLE_TYPES);
+    tableMonitorThread = new TableMonitorThread(dbConn, context, null, POLL_INTERVAL, null, null,DEFAULT_TABLE_TYPES);
 
-    EasyMock.expect(JdbcUtils.getTables(dbConn, DEFAULT_TABLE_TYPES)).andReturn(FIRST_TOPIC_LIST);
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andReturn(FIRST_TOPIC_LIST);
     // Returning same list should not change results
-    EasyMock.expect(JdbcUtils.getTables(dbConn, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
         assertEquals(FIRST_TOPIC_LIST, tableMonitorThread.tables());
@@ -152,11 +152,11 @@ public class TableMonitorThreadTest {
       }
     });
     // Changing the result should trigger a task reconfiguration
-    EasyMock.expect(JdbcUtils.getTables(dbConn, DEFAULT_TABLE_TYPES)).andReturn(SECOND_TOPIC_LIST);
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andReturn(SECOND_TOPIC_LIST);
     context.requestTaskReconfiguration();
     PowerMock.expectLastCall();
     // Changing again should result in another update
-    EasyMock.expect(JdbcUtils.getTables(dbConn, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, DEFAULT_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
         assertEquals(SECOND_TOPIC_LIST, tableMonitorThread.tables());
@@ -178,9 +178,9 @@ public class TableMonitorThreadTest {
 
   @Test
   public void testTableType() throws Exception {
-    tableMonitorThread = new TableMonitorThread(dbConn, context, POLL_INTERVAL, null, null,VIEW_TABLE_TYPES);
+    tableMonitorThread = new TableMonitorThread(dbConn, context, null, POLL_INTERVAL, null, null,VIEW_TABLE_TYPES);
 
-    EasyMock.expect(JdbcUtils.getTables(dbConn,VIEW_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
+    EasyMock.expect(JdbcUtils.getTables(dbConn, null, VIEW_TABLE_TYPES)).andAnswer(new IAnswer<List<String>>() {
       @Override
       public List<String> answer() throws Throwable {
         tableMonitorThread.shutdown();

@@ -78,8 +78,8 @@ public class JdbcUtils {
    * @return a list of tables
    * @throws SQLException
    */
-  public static List<String> getTables(Connection conn) throws SQLException {
-    return getTables(conn, DEFAULT_TABLE_TYPES);
+  public static List<String> getTables(Connection conn, String schemaPattern) throws SQLException {
+    return getTables(conn, schemaPattern, DEFAULT_TABLE_TYPES);
   }
 
   /**
@@ -88,9 +88,9 @@ public class JdbcUtils {
    * @param types a set of table types that should be included in the results
    * @throws SQLException
    */
-  public static List<String> getTables(Connection conn, Set<String> types) throws SQLException {
+  public static List<String> getTables(Connection conn, String schemaPattern, Set<String> types) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
-    try (ResultSet rs = metadata.getTables(null, null, "%", null)) {
+    try (ResultSet rs = metadata.getTables(null, schemaPattern, "%", null)) {
       List<String> tableNames = new ArrayList<>();
       while (rs.next()) {
         if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
@@ -115,11 +115,11 @@ public class JdbcUtils {
    *         autoincrement column or more than one exists
    * @throws SQLException
    */
-  public static String getAutoincrementColumn(Connection conn, String table) throws SQLException {
+  public static String getAutoincrementColumn(Connection conn, String schemaPattern, String table) throws SQLException {
     String result = null;
     int matches = 0;
 
-    try (ResultSet rs = conn.getMetaData().getColumns(null, null, table, "%")) {
+    try (ResultSet rs = conn.getMetaData().getColumns(null, schemaPattern, table, "%")) {
       // Some database drivers (SQLite) don't include all the columns
       if (rs.getMetaData().getColumnCount() >= GET_COLUMNS_IS_AUTOINCREMENT) {
         while (rs.next()) {
@@ -149,9 +149,9 @@ public class JdbcUtils {
     return (matches == 1 ? result : null);
   }
 
-  public static boolean isColumnNullable(Connection conn, String table, String column)
+  public static boolean isColumnNullable(Connection conn, String schemaPattern, String table, String column)
       throws SQLException {
-    try (ResultSet rs = conn.getMetaData().getColumns(null, null, table, column)) {
+    try (ResultSet rs = conn.getMetaData().getColumns(null, schemaPattern, table, column)) {
       if (rs.getMetaData().getColumnCount() > GET_COLUMNS_IS_NULLABLE) {
         // Should only be one match
         if (!rs.next()) {
