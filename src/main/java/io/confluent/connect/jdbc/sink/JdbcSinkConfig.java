@@ -119,7 +119,7 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "`record_key`\n"
       + "    Field(s) from the record key are used, which may be a primitive or a struct.\n"
       + "`record_value`\n"
-      + "    Field(s) from the record value are used, which must be a struct.\n";
+      + "    Field(s) from the record value are used, which must be a struct.";
   private static final String PK_MODE_DISPLAY = "Primary Key Mode";
 
   public static final String PK_FIELDS = "pk.fields";
@@ -133,7 +133,7 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "`record_key`\n"
       + "    If empty, all fields from the key struct will be used, otherwise used to extract the desired fields - for primitive key only a single field name must be configured.\n"
       + "`record_value`\n"
-      + "    If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.\n";
+      + "    If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.";
   private static final String PK_FIELDS_DISPLAY = "Primary Key Fields";
 
   public static final String FIELDS_WHITELIST = "fields.whitelist";
@@ -164,25 +164,25 @@ public class JdbcSinkConfig extends AbstractConfig {
               ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC,
               CONNECTION_GROUP, 3, ConfigDef.Width.MEDIUM, CONNECTION_PASSWORD_DISPLAY)
       // Writes
+      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, EnumValidator.in(InsertMode.values()),
+              ConfigDef.Importance.HIGH, INSERT_MODE_DOC,
+              WRITES_GROUP, 1, ConfigDef.Width.MEDIUM, INSERT_MODE_DISPLAY)
+      .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, NON_NEGATIVE_INT_VALIDATOR,
+              ConfigDef.Importance.MEDIUM, BATCH_SIZE_DOC,
+              WRITES_GROUP, 2, ConfigDef.Width.SHORT, BATCH_SIZE_DISPLAY)
+      // Data Mapping
       .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT,
               ConfigDef.Importance.MEDIUM, TABLE_NAME_FORMAT_DOC,
-              WRITES_GROUP, 1, ConfigDef.Width.LONG, TABLE_NAME_FORMAT_DISPLAY)
-      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, EnumValidator.in(InsertMode.values()),
-              ConfigDef.Importance.MEDIUM, INSERT_MODE_DOC,
-              WRITES_GROUP, 2, ConfigDef.Width.MEDIUM, INSERT_MODE_DISPLAY)
-      .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, NON_NEGATIVE_INT_VALIDATOR,
-              ConfigDef.Importance.HIGH, BATCH_SIZE_DOC,
-              WRITES_GROUP, 3, ConfigDef.Width.SHORT, BATCH_SIZE_DISPLAY)
-      // Primary Keys
+              DATAMAPPING_GROUP, 1, ConfigDef.Width.LONG, TABLE_NAME_FORMAT_DISPLAY)
       .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, EnumValidator.in(PrimaryKeyMode.values()),
               ConfigDef.Importance.HIGH, PK_MODE_DOC,
-              DATAMAPPING_GROUP, 1, ConfigDef.Width.MEDIUM, PK_MODE_DISPLAY)
+              DATAMAPPING_GROUP, 2, ConfigDef.Width.MEDIUM, PK_MODE_DISPLAY)
       .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT,
               ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC,
-              DATAMAPPING_GROUP, 2, ConfigDef.Width.LONG, PK_FIELDS_DISPLAY)
+              DATAMAPPING_GROUP, 3, ConfigDef.Width.LONG, PK_FIELDS_DISPLAY)
       .define(FIELDS_WHITELIST, ConfigDef.Type.LIST, FIELDS_WHITELIST_DEFAULT,
               ConfigDef.Importance.MEDIUM, FIELDS_WHITELIST_DOC,
-              DATAMAPPING_GROUP, 3, ConfigDef.Width.LONG, FIELDS_WHITELIST_DISPLAY)
+              DATAMAPPING_GROUP, 4, ConfigDef.Width.LONG, FIELDS_WHITELIST_DISPLAY)
       // DDL
       .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT,
               ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC,
