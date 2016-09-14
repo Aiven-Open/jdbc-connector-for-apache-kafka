@@ -52,15 +52,17 @@ public class FieldsMetadata {
       final String tableName,
       final JdbcSinkConfig.PrimaryKeyMode pkMode,
       final List<String> configuredPkFields,
+      final Set<String> fieldsWhitelist,
       final SchemaPair schemaPair
   ) {
-    return extract(tableName, pkMode, configuredPkFields, schemaPair.keySchema, schemaPair.valueSchema);
+    return extract(tableName, pkMode, configuredPkFields, fieldsWhitelist, schemaPair.keySchema, schemaPair.valueSchema);
   }
 
   public static FieldsMetadata extract(
       final String tableName,
       final JdbcSinkConfig.PrimaryKeyMode pkMode,
       final List<String> configuredPkFields,
+      final Set<String> fieldsWhitelist,
       final Schema keySchema,
       final Schema valueSchema
   ) {
@@ -68,10 +70,9 @@ public class FieldsMetadata {
       throw new ConnectException("Value schema must be of type Struct");
     }
 
-    final Set<String> keyFieldNames = new LinkedHashSet<>();
-    final Set<String> nonKeyFieldNames = new LinkedHashSet<>();
     final Map<String, SinkRecordField> allFields = new HashMap<>();
 
+    final Set<String> keyFieldNames = new LinkedHashSet<>();
     switch (pkMode) {
 
       case KAFKA: {
@@ -97,7 +98,6 @@ public class FieldsMetadata {
       break;
 
       case RECORD_KEY: {
-
         if (keySchema == null) {
           throw new ConnectException(String.format(
               "PK mode for table '%s' is %s, but record key schema is missing", tableName, pkMode
@@ -132,9 +132,8 @@ public class FieldsMetadata {
             keyFieldNames.addAll(configuredPkFields);
           }
           for (String fieldName : keyFieldNames) {
-            final Field keyField = keySchema.field(fieldName);
-            final Schema keyFieldSchema = keyField.schema();
-            allFields.put(fieldName, new SinkRecordField(keyFieldSchema.type(), fieldName, true, false, keyFieldSchema.defaultValue()));
+            final Schema fieldSchema = keySchema.field(fieldName).schema();
+            allFields.put(fieldName, new SinkRecordField(fieldSchema.type(), fieldName, true, false, fieldSchema.defaultValue()));
           }
         } else {
           throw new ConnectException("Key schema must be primitive type or Struct, but is of type: " + keySchemaType);
@@ -161,19 +160,29 @@ public class FieldsMetadata {
           }
           keyFieldNames.addAll(configuredPkFields);
         }
+        for (String fieldName : keyFieldNames) {
+          final Schema fieldSchema = valueSchema.field(fieldName).schema();
+          allFields.put(fieldName, new SinkRecordField(fieldSchema.type(), fieldName, true, false, fieldSchema.defaultValue()));
+        }
       }
       break;
 
     }
 
+    final Set<String> nonKeyFieldNames = new LinkedHashSet<>();
     if (valueSchema != null) {
-      for (Field field : valueSchema.fields()) {
-        final boolean isKeyField = keyFieldNames.contains(field.name());
-        if (!isKeyField) {
-          nonKeyFieldNames.add(field.name());
+      for (Field field: valueSchema.fields()) {
+        if (keyFieldNames.contains(field.name())) {
+          continue;
         }
+        if (!fieldsWhitelist.isEmpty() && !fieldsWhitelist.contains(field.name())) {
+          continue;
+        }
+
+        nonKeyFieldNames.add(field.name());
+
         final Schema fieldSchema = field.schema();
-        allFields.put(field.name(), new SinkRecordField(fieldSchema.type(), field.name(), isKeyField, !isKeyField && fieldSchema.isOptional(), fieldSchema.defaultValue()));
+        allFields.put(field.name(), new SinkRecordField(fieldSchema.type(), field.name(), false, fieldSchema.isOptional(), fieldSchema.defaultValue()));
       }
     }
 

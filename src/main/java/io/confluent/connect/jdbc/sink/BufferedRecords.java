@@ -61,7 +61,7 @@ public class BufferedRecords {
     if (currentSchemaPair == null) {
       currentSchemaPair = schemaPair;
       // re-initialize everything that depends on the record schema
-      fieldsMetadata = FieldsMetadata.extract(tableName, config.pkMode, config.pkFields, currentSchemaPair);
+      fieldsMetadata = FieldsMetadata.extract(tableName, config.pkMode, config.pkFields, config.fieldsWhitelist, currentSchemaPair);
       dbStructure.createOrAmendIfNecessary(config, connection, tableName, fieldsMetadata);
       final String insertSql = getInsertSql();
       log.debug("{} sql: {}", config.insertMode, insertSql);

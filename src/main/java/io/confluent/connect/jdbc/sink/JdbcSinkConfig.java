@@ -131,16 +131,24 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "`kafka`\n"
       + "    Must be a trio representing the Kafka coordinates, defaults to ``" + StringUtils.join(DEFAULT_KAFKA_PK_NAMES, ",") + "`` if empty.\n"
       + "`record_key`\n"
-      + "    If empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured.\n"
+      + "    If empty, all fields from the key struct will be used, otherwise used to extract the desired fields - for primitive key only a single field name must be configured.\n"
       + "`record_value`\n"
-      + "    If empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.\n";
+      + "    If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.\n";
   private static final String PK_FIELDS_DISPLAY = "Primary Key Fields";
+
+  public static final String FIELDS_WHITELIST = "fields.whitelist";
+  private static final String FIELDS_WHITELIST_DEFAULT = "";
+  private static final String FIELDS_WHITELIST_DOC =
+      "List of comma-separated record value field names. If empty, all fields from the record value are utilized, otherwise used to filter to the desired fields.\n"
+      + "Note that ``pk.fields`` is applied independently in the context of which field(s) form the primary key columns in the destination database,"
+      + " while this configuration is applicable for the other columns.";
+  private static final String FIELDS_WHITELIST_DISPLAY = "Fields Whitelist";
 
   private static final ConfigDef.Range NON_NEGATIVE_INT_VALIDATOR = ConfigDef.Range.atLeast(0);
 
   private static final String CONNECTION_GROUP = "Connection";
   private static final String WRITES_GROUP = "Writes";
-  private static final String PK_GROUP = "Primary Keys";
+  private static final String DATAMAPPING_GROUP = "Data Mapping";
   private static final String DDL_GROUP = "DDL Support";
   private static final String RETRIES_GROUP = "Retries";
 
@@ -168,10 +176,13 @@ public class JdbcSinkConfig extends AbstractConfig {
       // Primary Keys
       .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, EnumValidator.in(PrimaryKeyMode.values()),
               ConfigDef.Importance.HIGH, PK_MODE_DOC,
-              PK_GROUP, 1, ConfigDef.Width.MEDIUM, PK_MODE_DISPLAY)
+              DATAMAPPING_GROUP, 1, ConfigDef.Width.MEDIUM, PK_MODE_DISPLAY)
       .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT,
               ConfigDef.Importance.MEDIUM, PK_FIELDS_DOC,
-              PK_GROUP, 2, ConfigDef.Width.LONG, PK_FIELDS_DISPLAY)
+              DATAMAPPING_GROUP, 2, ConfigDef.Width.LONG, PK_FIELDS_DISPLAY)
+      .define(FIELDS_WHITELIST, ConfigDef.Type.LIST, FIELDS_WHITELIST_DEFAULT,
+              ConfigDef.Importance.MEDIUM, FIELDS_WHITELIST_DOC,
+              DATAMAPPING_GROUP, 3, ConfigDef.Width.LONG, FIELDS_WHITELIST_DISPLAY)
       // DDL
       .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT,
               ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC,
@@ -199,6 +210,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final InsertMode insertMode;
   public final PrimaryKeyMode pkMode;
   public final List<String> pkFields;
+  public final Set<String> fieldsWhitelist;
 
   public JdbcSinkConfig(Map<?, ?> props) {
     super(CONFIG_DEF, props);
@@ -214,6 +226,7 @@ public class JdbcSinkConfig extends AbstractConfig {
     insertMode = InsertMode.valueOf(getString(INSERT_MODE).toUpperCase());
     pkMode = PrimaryKeyMode.valueOf(getString(PK_MODE).toUpperCase());
     pkFields = getList(PK_FIELDS);
+    fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
   }
 
   private String getPasswordValue(String key) {
