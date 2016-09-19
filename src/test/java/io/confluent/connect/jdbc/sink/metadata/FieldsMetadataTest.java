@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.confluent.connect.jdbc.sink.JdbcSinkConfig;
 
@@ -221,15 +222,48 @@ public class FieldsMetadataTest {
 
   @Test
   public void recordValuePkModeWithValidPkFields() {
-    extract(
+    final FieldsMetadata metadata = extract(
         JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
         Collections.singletonList("name"),
         SIMPLE_PRIMITIVE_SCHEMA,
         SIMPLE_STRUCT_SCHEMA
     );
+
+    assertEquals(Collections.singleton("name"), metadata.keyFieldNames);
+    assertEquals(Collections.emptySet(), metadata.nonKeyFieldNames);
+
+    assertEquals(Schema.Type.STRING, metadata.allFields.get("name").type);
+    assertTrue(metadata.allFields.get("name").isPrimaryKey);
+    assertFalse(metadata.allFields.get("name").isOptional);
+  }
+
+  @Test
+  public void recordValuePkModeWithPkFieldsAndWhitelistFiltering() {
+    final Schema valueSchema =
+        SchemaBuilder.struct()
+            .field("field1", Schema.INT64_SCHEMA)
+            .field("field2", Schema.INT64_SCHEMA)
+            .field("field3", Schema.INT64_SCHEMA)
+            .field("field4", Schema.INT64_SCHEMA)
+            .build();
+
+    final FieldsMetadata metadata = extract(
+        JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
+        Collections.singletonList("field1"),
+        new HashSet<>(Arrays.asList("field2", "field4")),
+        null,
+        valueSchema
+    );
+
+    assertEquals(Collections.singleton("field1"), metadata.keyFieldNames);
+    assertEquals(new HashSet<>(Arrays.asList("field2", "field4")), metadata.nonKeyFieldNames);
   }
 
   private static FieldsMetadata extract(JdbcSinkConfig.PrimaryKeyMode pkMode, List<String> pkFields, Schema keySchema, Schema valueSchema) {
-    return FieldsMetadata.extract("table", pkMode, pkFields, keySchema, valueSchema);
+    return extract(pkMode, pkFields, Collections.<String>emptySet(), keySchema, valueSchema);
+  }
+
+  private static FieldsMetadata extract(JdbcSinkConfig.PrimaryKeyMode pkMode, List<String> pkFields, Set<String> whitelist, Schema keySchema, Schema valueSchema) {
+    return FieldsMetadata.extract("table", pkMode, pkFields, whitelist, keySchema, valueSchema);
   }
 }

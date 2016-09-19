@@ -25,8 +25,25 @@ Connection
   * Type: password
   * Importance: high
 
-Writes
-^^^^^^
+DDL Support
+^^^^^^^^^^^
+
+``auto.create``
+  Whether to automatically create the destination table based on record schema if it is found to be missing by issuing ``CREATE``.
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
+``auto.evolve``
+  Whether to automatically dd columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
+Data Mapping
+^^^^^^^^^^^^
 
 ``table.name.format``
   A format string for the destination table name, which may contain '${topic}' as a placeholder for the originating topic name.
@@ -37,33 +54,7 @@ Writes
   * Default: "${topic}"
   * Importance: medium
 
-``batch.size``
-  Specifies how many records to attempt to batch together for insertion, when possible.
-
-  * Type: int
-  * Default: 3000
-  * Importance: high
-
-
-``insert.mode``
-  The insertion mode to use. Supported modes are:
-
-  `insert`
-
-      Use standard SQL ``INSERT`` statements.
-
-  `upsert`
-
-      Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
-
-  * Type: string
-  * Default: "insert"
-  * Importance: medium
-
 .. _sink-pk-config-options:
-
-Primary Keys
-^^^^^^^^^^^^
 
 ``pk.mode``
   The primary key mode, also refer to ``pk.fields`` documentation for interplay. Supported modes are:
@@ -101,31 +92,23 @@ Primary Keys
 
   `record_key`
 
-      If empty, all fields from the key struct will be used, otherwise used to whitelist the desired fields - for primitive key only a single field name must be configured.
+      If empty, all fields from the key struct will be used, otherwise used to extract the desired fields - for primitive key only a single field name must be configured.
 
   `record_value`
 
-      If empty, all fields from the value struct will be used, otherwise used to whitelist the desired fields.
+      If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.
 
   * Type: list
   * Default: []
   * Importance: medium
 
-DDL Support
-^^^^^^^^^^^
+``fields.whitelist``
+  List of comma-separated record value field names. If empty, all fields from the record value are utilized, otherwise used to filter to the desired fields.
 
-``auto.create``
-  Whether to automatically create the destination table based on record schema if it is found to be missing by issuing ``CREATE``.
+  Note that ``pk.fields`` is applied independently in the context of which field(s) form the primary key columns in the destination database, while this configuration is applicable for the other columns.
 
-  * Type: boolean
-  * Default: false
-  * Importance: medium
-
-``auto.evolve``
-  Whether to automatically dd columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.
-
-  * Type: boolean
-  * Default: false
+  * Type: list
+  * Default: []
   * Importance: medium
 
 Retries
@@ -144,3 +127,29 @@ Retries
   * Type: int
   * Default: 3000
   * Importance: medium
+
+Writes
+^^^^^^
+
+``insert.mode``
+  The insertion mode to use. Supported modes are:
+
+  `insert`
+
+      Use standard SQL ``INSERT`` statements.
+
+  `upsert`
+
+      Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
+
+  * Type: string
+  * Default: "insert"
+  * Importance: high
+
+``batch.size``
+  Specifies how many records to attempt to batch together for insertion into the destination table, when possible.
+
+  * Type: int
+  * Default: 3000
+  * Importance: medium
+
