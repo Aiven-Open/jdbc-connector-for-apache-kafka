@@ -45,6 +45,8 @@ public class JdbcDbWriterTest {
 
   private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
+  private JdbcDbWriter writer = null;
+
   @Before
   public void setUp() throws IOException, SQLException {
     sqliteHelper.setUp();
@@ -52,6 +54,8 @@ public class JdbcDbWriterTest {
 
   @After
   public void tearDown() throws IOException, SQLException {
+    if (writer != null)
+      writer.closeQuietly();
     sqliteHelper.tearDown();
   }
 
@@ -73,7 +77,7 @@ public class JdbcDbWriterTest {
     props.put("pk.mode", "record_key");
     props.put("pk.fields", "id"); // assigned name for the primitive key
 
-    JdbcDbWriter writer = newWriter(props);
+    writer = newWriter(props);
 
     Schema keySchema = Schema.INT64_SCHEMA;
 
@@ -160,7 +164,7 @@ public class JdbcDbWriterTest {
     props.put("pk.fields", pkFields);
     props.put("insert.mode", insertMode.toString());
 
-    JdbcDbWriter writer = newWriter(props);
+    writer = newWriter(props);
 
     Schema keySchema = SchemaBuilder.struct()
         .field("id", SchemaBuilder.INT64_SCHEMA);
@@ -240,7 +244,7 @@ public class JdbcDbWriterTest {
     props.put("table.name.format", tableName);
     props.put("batch.size", String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
 
-    JdbcDbWriter writer = newWriter(props);
+    writer = newWriter(props);
 
     writer.write(Collections.nCopies(
         numRecords,
