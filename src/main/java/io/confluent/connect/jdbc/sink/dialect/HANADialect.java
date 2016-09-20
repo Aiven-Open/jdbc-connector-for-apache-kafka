@@ -33,7 +33,7 @@ public class HANADialect extends DbDialect {
 
 
   public HANADialect() {
-    super(getSqlTypeMap(), "\"", "\"");
+    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "\"", "\"");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -47,6 +47,11 @@ public class HANADialect extends DbDialect {
     map.put(Schema.Type.BOOLEAN, "BOOLEAN");
     map.put(Schema.Type.STRING, "VARCHAR(1000)");
     map.put(Schema.Type.BYTES, "BLOB");
+    return map;
+  }
+
+  private static Map<String, String> getLogicalToSqlTypeMap() {
+    Map<String, String> map = new HashMap<>();
     return map;
   }
 

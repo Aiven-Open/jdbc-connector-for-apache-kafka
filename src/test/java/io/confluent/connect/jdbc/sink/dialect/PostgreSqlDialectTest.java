@@ -16,7 +16,7 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
-import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.*;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -65,7 +65,11 @@ public class PostgreSqlDialectTest {
         new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
         new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
         new SinkRecordField(null, Schema.Type.INT8, "col7", false),
-        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
+        new SinkRecordField(null, Schema.Type.INT16, "col8", false),
+        new SinkRecordField(Timestamp.LOGICAL_NAME, Schema.Type.INT64, "col9", false),
+        new SinkRecordField(Date.LOGICAL_NAME, Schema.Type.INT64, "col10", false),
+        new SinkRecordField(Time.LOGICAL_NAME, Schema.Type.INT64, "col11", false),
+        new SinkRecordField(Decimal.LOGICAL_NAME, Schema.Type.INT64, "col12", false)
     ));
 
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
@@ -77,6 +81,10 @@ public class PostgreSqlDialectTest {
                       "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
                       "\"col7\" SMALLINT NULL," + System.lineSeparator() +
                       "\"col8\" SMALLINT NULL," + System.lineSeparator() +
+                      "\"col9\" TIMESTAMP NULL," + System.lineSeparator() +
+                      "\"col10\" DATE NULL," + System.lineSeparator() +
+                      "\"col11\" TIME NULL," + System.lineSeparator() +
+                      "\"col12\" DECIMAL NULL," + System.lineSeparator() +
                       "PRIMARY KEY(\"col1\"))";
     assertEquals(expected, actual);
   }

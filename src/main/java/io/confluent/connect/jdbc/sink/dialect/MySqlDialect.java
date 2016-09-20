@@ -28,7 +28,7 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 public class MySqlDialect extends DbDialect {
 
   public MySqlDialect() {
-    super(getSqlTypeMap(), "`", "`");
+    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "`", "`");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -42,6 +42,11 @@ public class MySqlDialect extends DbDialect {
     map.put(Schema.Type.BOOLEAN, "TINYINT");
     map.put(Schema.Type.STRING, "VARCHAR(256)");
     map.put(Schema.Type.BYTES, "VARBINARY(1024)");
+    return map;
+  }
+
+  private static Map<String, String> getLogicalToSqlTypeMap() {
+    Map<String, String> map = new HashMap<>();
     return map;
   }
 
@@ -70,4 +75,5 @@ public class MySqlDialect extends DbDialect {
     );
     return builder.toString();
   }
+
 }

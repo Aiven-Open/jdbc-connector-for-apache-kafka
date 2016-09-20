@@ -30,7 +30,7 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBui
 
 public class OracleDialect extends DbDialect {
   public OracleDialect() {
-    super(getSqlTypeMap(), "\"", "\"");
+    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "\"", "\"");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -44,6 +44,11 @@ public class OracleDialect extends DbDialect {
     map.put(Schema.Type.BOOLEAN, "NUMBER(1,0)");
     map.put(Schema.Type.STRING, "NVARCHAR2(4000)");
     map.put(Schema.Type.BYTES, "BLOB");
+    return map;
+  }
+
+  private static Map<String, String> getLogicalToSqlTypeMap() {
+    Map<String, String> map = new HashMap<>();
     return map;
   }
 
