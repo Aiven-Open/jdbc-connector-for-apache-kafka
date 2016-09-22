@@ -16,7 +16,11 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
-import org.apache.kafka.connect.data.*;
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -67,9 +71,9 @@ public class PostgreSqlDialectTest {
         new SinkRecordField(null, Schema.Type.INT8, "col7", false),
         new SinkRecordField(null, Schema.Type.INT16, "col8", false),
         new SinkRecordField(Timestamp.LOGICAL_NAME, Schema.Type.INT64, "col9", false),
-        new SinkRecordField(Date.LOGICAL_NAME, Schema.Type.INT64, "col10", false),
-        new SinkRecordField(Time.LOGICAL_NAME, Schema.Type.INT64, "col11", false),
-        new SinkRecordField(Decimal.LOGICAL_NAME, Schema.Type.INT64, "col12", false)
+        new SinkRecordField(Date.LOGICAL_NAME, Schema.Type.INT32, "col10", false),
+        new SinkRecordField(Time.LOGICAL_NAME, Schema.Type.INT32, "col11", false),
+        new SinkRecordField(Decimal.LOGICAL_NAME, Schema.Type.BYTES, "col12", false)
     ));
 
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
@@ -99,7 +103,11 @@ public class PostgreSqlDialectTest {
         new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
         new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
         new SinkRecordField(null, Schema.Type.INT8, "col7", false),
-        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
+        new SinkRecordField(null, Schema.Type.INT16, "col8", false),
+        new SinkRecordField(Timestamp.LOGICAL_NAME, Schema.Type.INT64, "col9", false),
+        new SinkRecordField(Date.LOGICAL_NAME, Schema.Type.INT32, "col10", false),
+        new SinkRecordField(Time.LOGICAL_NAME, Schema.Type.INT32, "col11", false),
+        new SinkRecordField(Decimal.LOGICAL_NAME, Schema.Type.BYTES, "col12", false)
     ));
 
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
@@ -110,7 +118,11 @@ public class PostgreSqlDialectTest {
                       "\"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
                       "\"col6\" BOOLEAN NULL," + System.lineSeparator() +
                       "\"col7\" SMALLINT NULL," + System.lineSeparator() +
-                      "\"col8\" SMALLINT NULL)";
+                      "\"col8\" SMALLINT NULL," + System.lineSeparator() +
+                      "\"col9\" TIMESTAMP NULL," + System.lineSeparator() +
+                      "\"col10\" DATE NULL," + System.lineSeparator() +
+                      "\"col11\" TIME NULL," + System.lineSeparator() +
+                      "\"col12\" DECIMAL NULL)";
     assertEquals(expected, actual);
   }
 
@@ -124,7 +136,11 @@ public class PostgreSqlDialectTest {
         new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
         new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
         new SinkRecordField(null, Schema.Type.INT8, "col7", false),
-        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
+        new SinkRecordField(null, Schema.Type.INT16, "col8", false),
+        new SinkRecordField(Timestamp.LOGICAL_NAME, Schema.Type.INT64, "col9", false),
+        new SinkRecordField(Date.LOGICAL_NAME, Schema.Type.INT32, "col10", false),
+        new SinkRecordField(Time.LOGICAL_NAME, Schema.Type.INT32, "col11", false),
+        new SinkRecordField(Decimal.LOGICAL_NAME, Schema.Type.BYTES, "col12", false)
     ));
 
     assertEquals(1, actual.size());
@@ -137,7 +153,11 @@ public class PostgreSqlDialectTest {
                       "ADD \"col5\" DOUBLE PRECISION NULL," + System.lineSeparator() +
                       "ADD \"col6\" BOOLEAN NULL," + System.lineSeparator() +
                       "ADD \"col7\" SMALLINT NULL," + System.lineSeparator() +
-                      "ADD \"col8\" SMALLINT NULL";
+                      "ADD \"col8\" SMALLINT NULL," + System.lineSeparator() +
+                      "ADD \"col9\" TIMESTAMP NULL," + System.lineSeparator() +
+                      "ADD \"col10\" DATE NULL," + System.lineSeparator() +
+                      "ADD \"col11\" TIME NULL," + System.lineSeparator() +
+                      "ADD \"col12\" DECIMAL NULL";
     assertEquals(expected, actual.get(0));
   }
 }

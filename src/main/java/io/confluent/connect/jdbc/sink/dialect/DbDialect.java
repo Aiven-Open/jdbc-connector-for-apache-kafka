@@ -157,9 +157,12 @@ public abstract class DbDialect {
   }
 
   protected String getSqlType(String schemaName, Schema.Type type) {
-    final String sqlType;
-    if (schemaName != null && logicalNameToSqlTypeMap.containsKey(schemaName)) {
+    String sqlType;
+    if (schemaName != null) {
       sqlType = logicalNameToSqlTypeMap.get(schemaName);
+      if (sqlType == null) {
+        sqlType = schemaTypeToSqlTypeMap.get(type);
+      }
     } else {
       sqlType = schemaTypeToSqlTypeMap.get(type);
     }
