@@ -16,7 +16,11 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,7 +34,7 @@ public class PostgreSqlDialect extends DbDialect {
   // The user is responsible for escaping the columns otherwise create table A and create table "A" is not the same
 
   public PostgreSqlDialect() {
-    super(getSqlTypeMap(), "\"", "\"");
+    super(getSqlTypeMap(), getSqlTypeFromLogicalMap(), "\"", "\"");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -44,6 +48,15 @@ public class PostgreSqlDialect extends DbDialect {
     map.put(Schema.Type.BOOLEAN, "BOOLEAN");
     map.put(Schema.Type.STRING, "TEXT");
     map.put(Schema.Type.BYTES, "BYTEA");
+    return map;
+  }
+
+  private static Map<String, String> getSqlTypeFromLogicalMap() {
+    Map<String, String> map = new HashMap<>();
+    map.put(Date.LOGICAL_NAME, "DATE");
+    map.put(Decimal.LOGICAL_NAME, "DECIMAL");
+    map.put(Time.LOGICAL_NAME, "TIME");
+    map.put(Timestamp.LOGICAL_NAME, "TIMESTAMP");
     return map;
   }
 
@@ -72,4 +85,5 @@ public class PostgreSqlDialect extends DbDialect {
     );
     return builder.toString();
   }
+
 }

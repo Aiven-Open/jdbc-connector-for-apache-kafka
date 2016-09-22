@@ -32,7 +32,7 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 
 public class SqliteDialect extends DbDialect {
   public SqliteDialect() {
-    super(getSqlTypeMap(), "`", "`");
+    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "`", "`");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -46,6 +46,11 @@ public class SqliteDialect extends DbDialect {
     map.put(Schema.Type.BOOLEAN, "NUMERIC");
     map.put(Schema.Type.STRING, "TEXT");
     map.put(Schema.Type.BYTES, "BLOB");
+    return map;
+  }
+
+  private static Map<String, String> getLogicalToSqlTypeMap() {
+    Map<String, String> map = new HashMap<>();
     return map;
   }
 

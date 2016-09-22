@@ -116,10 +116,10 @@ public class PreparedStatementBinderTest {
     verify(statement, times(1)).setFloat(index++, valueStruct.getFloat32("float"));
     verify(statement, times(1)).setDouble(index++, valueStruct.getFloat64("double"));
     verify(statement, times(1)).setBytes(index++, valueStruct.getBytes("bytes"));
-    verify(statement, times(1)).setBytes(index++, Decimal.fromLogical(Decimal.schema(0), (BigDecimal) valueStruct.get("decimal")));
-    verify(statement, times(1)).setInt(index++, Date.fromLogical(Date.SCHEMA, (java.util.Date) valueStruct.get("date")));
-    verify(statement, times(1)).setInt(index++, Time.fromLogical(Time.SCHEMA, (java.util.Date) valueStruct.get("time")));
-    verify(statement, times(1)).setLong(index++, Timestamp.fromLogical(Timestamp.SCHEMA, (java.util.Date) valueStruct.get("timestamp")));
+    verify(statement, times(1)).setBigDecimal(index++, (BigDecimal) valueStruct.get("decimal"));
+    verify(statement, times(1)).setDate(index++, new java.sql.Date(((java.util.Date) valueStruct.get("date")).getTime()));
+    verify(statement, times(1)).setTime(index++, new java.sql.Time(((java.util.Date) valueStruct.get("time")).getTime()));
+    verify(statement, times(1)).setTimestamp(index++, new java.sql.Timestamp(((java.util.Date) valueStruct.get("timestamp")).getTime()));
     // last field is optional and is null-valued in struct
     verify(statement, times(1)).setObject(index++, null);
   }
@@ -139,10 +139,10 @@ public class PreparedStatementBinderTest {
     verifyBindField(++index, Schema.BYTES_SCHEMA, new byte[]{42}).setBytes(index, new byte[]{42});
     verifyBindField(++index, Schema.BYTES_SCHEMA, ByteBuffer.wrap(new byte[]{42})).setBytes(index, new byte[]{42});
     verifyBindField(++index, Schema.STRING_SCHEMA, "yep").setString(index, "yep");
-    verifyBindField(++index, Decimal.schema(0), new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)).setBytes(index, new byte[]{2});
-    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0)).setInt(index, 0);
-    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setInt(index, 1000);
-    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setLong(index, 100);
+    verifyBindField(++index, Decimal.schema(0), new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)).setBigDecimal(index, new BigDecimal(2));
+    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0)).setDate(index, new java.sql.Date(0));
+    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setTime(index, new java.sql.Time(1000));
+    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setTimestamp(index, new java.sql.Timestamp(100));
   }
 
   @Test

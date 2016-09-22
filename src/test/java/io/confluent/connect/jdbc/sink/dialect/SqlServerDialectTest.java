@@ -55,9 +55,9 @@ public class SqlServerDialectTest {
   @Test
   public void handleCreateTableMultiplePKColumns() {
     String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(Schema.Type.INT32, "userid", true),
-        new SinkRecordField(Schema.Type.INT32, "userdataid", true),
-        new SinkRecordField(Schema.Type.STRING, "info", false)
+        new SinkRecordField(null, Schema.Type.INT32, "userid", true),
+        new SinkRecordField(null, Schema.Type.INT32, "userdataid", true),
+        new SinkRecordField(null, Schema.Type.STRING, "info", false)
     ));
 
     String expected = "CREATE TABLE [tableA] (" + System.lineSeparator() +
@@ -71,14 +71,14 @@ public class SqlServerDialectTest {
   @Test
   public void handleCreateTableOnePKColumn() {
     String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(Schema.Type.INT32, "col1", true),
-        new SinkRecordField(Schema.Type.INT64, "col2", false),
-        new SinkRecordField(Schema.Type.STRING, "col3", false),
-        new SinkRecordField(Schema.Type.FLOAT32, "col4", false),
-        new SinkRecordField(Schema.Type.FLOAT64, "col5", false),
-        new SinkRecordField(Schema.Type.BOOLEAN, "col6", false),
-        new SinkRecordField(Schema.Type.INT8, "col7", false),
-        new SinkRecordField(Schema.Type.INT16, "col8", false)
+        new SinkRecordField(null, Schema.Type.INT32, "col1", true),
+        new SinkRecordField(null, Schema.Type.INT64, "col2", false),
+        new SinkRecordField(null, Schema.Type.STRING, "col3", false),
+        new SinkRecordField(null, Schema.Type.FLOAT32, "col4", false),
+        new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
+        new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
+        new SinkRecordField(null, Schema.Type.INT8, "col7", false),
+        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
     ));
 
     String expected = "CREATE TABLE [tableA] (" + System.lineSeparator() +
@@ -97,14 +97,14 @@ public class SqlServerDialectTest {
   @Test
   public void handleCreateTableNoPKColumn() {
     String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(Schema.Type.INT32, "col1", false),
-        new SinkRecordField(Schema.Type.INT64, "col2", false),
-        new SinkRecordField(Schema.Type.STRING, "col3", false),
-        new SinkRecordField(Schema.Type.FLOAT32, "col4", false),
-        new SinkRecordField(Schema.Type.FLOAT64, "col5", false),
-        new SinkRecordField(Schema.Type.BOOLEAN, "col6", false),
-        new SinkRecordField(Schema.Type.INT8, "col7", false),
-        new SinkRecordField(Schema.Type.INT16, "col8", false)
+        new SinkRecordField(null, Schema.Type.INT32, "col1", false),
+        new SinkRecordField(null, Schema.Type.INT64, "col2", false),
+        new SinkRecordField(null, Schema.Type.STRING, "col3", false),
+        new SinkRecordField(null, Schema.Type.FLOAT32, "col4", false),
+        new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
+        new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
+        new SinkRecordField(null, Schema.Type.INT8, "col7", false),
+        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
     ));
 
     String expected = "CREATE TABLE [tableA] (" + System.lineSeparator() +
@@ -122,14 +122,14 @@ public class SqlServerDialectTest {
   @Test
   public void handleAmendAddColumns() {
     List<String> actual = dialect.getAlterTable("tableA", Arrays.asList(
-        new SinkRecordField(Schema.Type.INT32, "col1", false),
-        new SinkRecordField(Schema.Type.INT64, "col2", false),
-        new SinkRecordField(Schema.Type.STRING, "col3", false),
-        new SinkRecordField(Schema.Type.FLOAT32, "col4", false),
-        new SinkRecordField(Schema.Type.FLOAT64, "col5", false),
-        new SinkRecordField(Schema.Type.BOOLEAN, "col6", false),
-        new SinkRecordField(Schema.Type.INT8, "col7", false),
-        new SinkRecordField(Schema.Type.INT16, "col8", false)
+        new SinkRecordField(null, Schema.Type.INT32, "col1", false),
+        new SinkRecordField(null, Schema.Type.INT64, "col2", false),
+        new SinkRecordField(null, Schema.Type.STRING, "col3", false),
+        new SinkRecordField(null, Schema.Type.FLOAT32, "col4", false),
+        new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
+        new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
+        new SinkRecordField(null, Schema.Type.INT8, "col7", false),
+        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
     ));
 
     assertEquals(1, actual.size());

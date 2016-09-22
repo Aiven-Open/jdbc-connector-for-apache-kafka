@@ -26,7 +26,7 @@ import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 public class GenericDialect extends DbDialect {
   public GenericDialect() {
-    super(Collections.<Schema.Type, String>emptyMap(), "\"", "\"");
+    super(Collections.<Schema.Type, String>emptyMap(), Collections.<String, String>emptyMap(), "\"", "\"");
   }
 
   // Only INSERT supported for now. CREATE and ALTER may be possible if we can figure out a reasonable type map.

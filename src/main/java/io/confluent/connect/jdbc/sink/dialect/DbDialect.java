@@ -37,11 +37,13 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 public abstract class DbDialect {
 
   private final Map<Schema.Type, String> schemaTypeToSqlTypeMap;
+  private final Map<String, String> logicalNameToSqlTypeMap;
   private final String escapeStart;
   private final String escapeEnd;
 
-  DbDialect(Map<Schema.Type, String> schemaTypeToSqlTypeMap, String escapeStart, String escapeEnd) {
+  DbDialect(Map<Schema.Type, String> schemaTypeToSqlTypeMap, Map<String, String> logicalNameToSqlTypeMap, String escapeStart, String escapeEnd) {
     this.schemaTypeToSqlTypeMap = schemaTypeToSqlTypeMap;
+    this.logicalNameToSqlTypeMap = logicalNameToSqlTypeMap;
     this.escapeStart = escapeStart;
     this.escapeEnd = escapeEnd;
   }
@@ -109,7 +111,7 @@ public abstract class DbDialect {
   protected void writeColumnSpec(StringBuilder builder, SinkRecordField f) {
     builder.append(escaped(f.name));
     builder.append(" ");
-    builder.append(getSqlType(f.type));
+    builder.append(getSqlType(f.schemaName, f.type));
     if (f.defaultValue != null) {
       builder.append(" DEFAULT ");
       formatColumnValue(builder, f.type, f.defaultValue);
@@ -154,8 +156,14 @@ public abstract class DbDialect {
     }
   }
 
-  protected String getSqlType(Schema.Type type) {
-    final String sqlType = schemaTypeToSqlTypeMap.get(type);
+  protected String getSqlType(String schemaName, Schema.Type type) {
+    String sqlType = null;
+    if (schemaName != null) {
+      sqlType = logicalNameToSqlTypeMap.get(schemaName);
+    }
+    if (sqlType == null) {
+      sqlType = schemaTypeToSqlTypeMap.get(type);
+    }
     if (sqlType == null) {
       throw new ConnectException(String.format("%s type doesn't have a mapping to the SQL database column type", type));
     }

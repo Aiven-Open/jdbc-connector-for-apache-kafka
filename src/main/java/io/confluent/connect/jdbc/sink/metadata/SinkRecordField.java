@@ -19,23 +19,26 @@ package io.confluent.connect.jdbc.sink.metadata;
 import org.apache.kafka.connect.data.Schema;
 
 public class SinkRecordField {
+  public final String schemaName;
   public final Schema.Type type;
   public final String name;
   public final boolean isPrimaryKey;
   public final boolean isOptional;
   public final Object defaultValue;
 
-  public SinkRecordField(final Schema.Type type, final String name, final boolean isPrimaryKey) {
-    this(type, name, isPrimaryKey, !isPrimaryKey, null);
+  public SinkRecordField(final String schemaName, final Schema.Type type, final String name, final boolean isPrimaryKey) {
+    this(schemaName, type, name, isPrimaryKey, !isPrimaryKey, null);
   }
 
   public SinkRecordField(
+      final String schemaName,
       final Schema.Type type,
       final String name,
       final boolean isPrimaryKey,
       final boolean isOptional,
       final Object defaultValue
   ) {
+    this.schemaName = schemaName;
     this.type = type;
     this.name = name;
     this.isPrimaryKey = isPrimaryKey;
@@ -46,6 +49,7 @@ public class SinkRecordField {
   @Override
   public String toString() {
     return "SinkRecordField{" +
+           "schemaName=" + schemaName +
            "type=" + type +
            ", name='" + name + '\'' +
            ", isPrimaryKey=" + isPrimaryKey +
