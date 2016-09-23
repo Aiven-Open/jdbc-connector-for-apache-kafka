@@ -16,8 +16,8 @@
 
 package io.confluent.connect.jdbc.sink;
 
-import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -113,24 +113,8 @@ public class PreparedStatementBinder {
     if (value == null) {
       statement.setObject(index, null);
     } else {
-      if (schema.name() != null) {
-        switch (schema.name()) {
-          case Date.LOGICAL_NAME:
-            statement.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()));
-            break;
-          case Decimal.LOGICAL_NAME:
-            statement.setBigDecimal(index, (BigDecimal) value);
-            break;
-          case Time.LOGICAL_NAME:
-            statement.setTime(index, new java.sql.Time(((java.util.Date) value).getTime()));
-            break;
-          case Timestamp.LOGICAL_NAME:
-            statement.setTimestamp(index, new java.sql.Timestamp(((java.util.Date) value).getTime()));
-            break;
-          default:
-            throw new ConnectException("Unsupported source data type: " + schema.name());
-        }
-      } else {
+      final boolean bound = maybeBindLogical(statement, index, schema, value);
+      if (!bound) {
         switch (schema.type()) {
           case INT8:
             statement.setByte(index, (Byte) value);
@@ -173,4 +157,27 @@ public class PreparedStatementBinder {
       }
     }
   }
+
+  static boolean maybeBindLogical(PreparedStatement statement, int index, Schema schema, Object value) throws SQLException {
+    if (schema.name() != null) {
+      switch (schema.name()) {
+        case Date.LOGICAL_NAME:
+          statement.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()));
+          return true;
+        case Decimal.LOGICAL_NAME:
+          statement.setBigDecimal(index, (BigDecimal) value);
+          return true;
+        case Time.LOGICAL_NAME:
+          statement.setTime(index, new java.sql.Time(((java.util.Date) value).getTime()));
+          return true;
+        case Timestamp.LOGICAL_NAME:
+          statement.setTimestamp(index, new java.sql.Timestamp(((java.util.Date) value).getTime()));
+          return true;
+        default:
+          return false;
+      }
+    }
+    return false;
+  }
+
 }

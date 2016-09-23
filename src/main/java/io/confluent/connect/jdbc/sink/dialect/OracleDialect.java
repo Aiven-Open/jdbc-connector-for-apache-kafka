@@ -20,7 +20,6 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,26 +29,32 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBui
 
 public class OracleDialect extends DbDialect {
   public OracleDialect() {
-    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "\"", "\"");
+    super("\"", "\"");
   }
 
-  private static Map<Schema.Type, String> getSqlTypeMap() {
-    Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "NUMBER(3,0)");
-    map.put(Schema.Type.INT16, "NUMBER(5,0)");
-    map.put(Schema.Type.INT32, "NUMBER(10,0)");
-    map.put(Schema.Type.INT64, "NUMBER(19,0)");
-    map.put(Schema.Type.FLOAT32, "BINARY_FLOAT");
-    map.put(Schema.Type.FLOAT64, "BINARY_DOUBLE");
-    map.put(Schema.Type.BOOLEAN, "NUMBER(1,0)");
-    map.put(Schema.Type.STRING, "NVARCHAR2(4000)");
-    map.put(Schema.Type.BYTES, "BLOB");
-    return map;
-  }
-
-  private static Map<String, String> getLogicalToSqlTypeMap() {
-    Map<String, String> map = new HashMap<>();
-    return map;
+  @Override
+  protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    switch (type) {
+      case INT8:
+        return "NUMBER(3,0)";
+      case INT16:
+        return "NUMBER(5,0)";
+      case INT32:
+        return "NUMBER(10,0)";
+      case INT64:
+        return "NUMBER(19,0)";
+      case FLOAT32:
+        return "BINARY_FLOAT";
+      case FLOAT64:
+        return "BINARY_DOUBLE";
+      case BOOLEAN:
+        return "NUMBER(1,0)";
+      case STRING:
+        return "NVARCHAR2(4000)";
+      case BYTES:
+        return "BLOB";
+    }
+    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

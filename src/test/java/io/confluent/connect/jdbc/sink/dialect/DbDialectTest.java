@@ -23,6 +23,9 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class DbDialectTest {
+
+  private static final GenericDialect GENERIC_DIALECT = new GenericDialect();
+
   @Test(expected = ConnectException.class)
   public void shouldThrowAndExceptionIfTheUriDoesNotStartWithJdbcWhenExtractingTheProtocol() {
     DbDialect.extractProtocolFromUrl("mysql://Server:port");
@@ -55,7 +58,7 @@ public class DbDialectTest {
 
   private void verifyColumnValueConversion(String expected, Schema.Type type, Object value) {
     final StringBuilder builder = new StringBuilder();
-    DbDialect.formatColumnValue(builder, type, value);
+    GENERIC_DIALECT.formatColumnValue(builder, null, null, type, value);
     assertEquals(expected, builder.toString());
   }
 

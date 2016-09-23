@@ -105,19 +105,19 @@ public class FieldsMetadataTest {
     assertEquals(Collections.singleton("name"), metadata.nonKeyFieldNames);
 
     SinkRecordField topicField = metadata.allFields.get("__connect_topic");
-    assertEquals(Schema.Type.STRING, topicField.type);
-    assertTrue(topicField.isPrimaryKey);
-    assertFalse(topicField.isOptional);
+    assertEquals(Schema.Type.STRING, topicField.schemaType());
+    assertTrue(topicField.isPrimaryKey());
+    assertFalse(topicField.isOptional());
 
     SinkRecordField partitionField = metadata.allFields.get("__connect_partition");
-    assertEquals(Schema.Type.INT32, partitionField.type);
-    assertTrue(partitionField.isPrimaryKey);
-    assertFalse(partitionField.isOptional);
+    assertEquals(Schema.Type.INT32, partitionField.schemaType());
+    assertTrue(partitionField.isPrimaryKey());
+    assertFalse(partitionField.isOptional());
 
     SinkRecordField offsetField = metadata.allFields.get("__connect_offset");
-    assertEquals(Schema.Type.INT64, offsetField.type);
-    assertTrue(offsetField.isPrimaryKey);
-    assertFalse(offsetField.isOptional);
+    assertEquals(Schema.Type.INT64, offsetField.schemaType());
+    assertTrue(offsetField.isPrimaryKey());
+    assertFalse(offsetField.isOptional());
   }
 
   @Test
@@ -161,13 +161,13 @@ public class FieldsMetadataTest {
 
     assertEquals(Collections.singleton("name"), metadata.nonKeyFieldNames);
 
-    assertEquals(SIMPLE_PRIMITIVE_SCHEMA.type(), metadata.allFields.get("the_pk").type);
-    assertTrue(metadata.allFields.get("the_pk").isPrimaryKey);
-    assertFalse(metadata.allFields.get("the_pk").isOptional);
+    assertEquals(SIMPLE_PRIMITIVE_SCHEMA.type(), metadata.allFields.get("the_pk").schemaType());
+    assertTrue(metadata.allFields.get("the_pk").isPrimaryKey());
+    assertFalse(metadata.allFields.get("the_pk").isOptional());
 
-    assertEquals(Schema.Type.STRING, metadata.allFields.get("name").type);
-    assertFalse(metadata.allFields.get("name").isPrimaryKey);
-    assertFalse(metadata.allFields.get("name").isOptional);
+    assertEquals(Schema.Type.STRING, metadata.allFields.get("name").schemaType());
+    assertFalse(metadata.allFields.get("name").isPrimaryKey());
+    assertFalse(metadata.allFields.get("name").isOptional());
   }
 
   @Test(expected = ConnectException.class)
@@ -232,9 +232,9 @@ public class FieldsMetadataTest {
     assertEquals(Collections.singleton("name"), metadata.keyFieldNames);
     assertEquals(Collections.emptySet(), metadata.nonKeyFieldNames);
 
-    assertEquals(Schema.Type.STRING, metadata.allFields.get("name").type);
-    assertTrue(metadata.allFields.get("name").isPrimaryKey);
-    assertFalse(metadata.allFields.get("name").isOptional);
+    assertEquals(Schema.Type.STRING, metadata.allFields.get("name").schemaType());
+    assertTrue(metadata.allFields.get("name").isPrimaryKey());
+    assertFalse(metadata.allFields.get("name").isOptional());
   }
 
   @Test

@@ -31,7 +31,7 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBui
 public class SqlServerDialect extends DbDialect {
 
   public SqlServerDialect() {
-    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "[", "]");
+    super("[", "]");
   }
 
   private static Map<Schema.Type, String> getSqlTypeMap() {
@@ -48,9 +48,29 @@ public class SqlServerDialect extends DbDialect {
     return map;
   }
 
-  private static Map<String, String> getLogicalToSqlTypeMap() {
-    Map<String, String> map = new HashMap<>();
-    return map;
+  @Override
+  protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    switch (type) {
+      case INT8:
+        return "tinyint";
+      case INT16:
+        return "smallint";
+      case INT32:
+        return "int";
+      case INT64:
+        return "bigint";
+      case FLOAT32:
+        return "real";
+      case FLOAT64:
+        return "float";
+      case BOOLEAN:
+        return "bit";
+      case STRING:
+        return "varchar(max)";
+      case BYTES:
+        return "varbinary(max)";
+    }
+    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

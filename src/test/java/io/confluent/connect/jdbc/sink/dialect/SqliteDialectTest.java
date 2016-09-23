@@ -30,9 +30,9 @@ public class SqliteDialectTest {
   @Test
   public void validateAlterTable() {
     List<String> queries = new SqliteDialect().getAlterTable("tableA", Arrays.asList(
-        new SinkRecordField(null, Schema.Type.BOOLEAN, "col1", false),
-        new SinkRecordField(null, Schema.Type.FLOAT32, "col2", false),
-        new SinkRecordField(null, Schema.Type.STRING, "col3", false)
+        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col1", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col2", false),
+        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false)
     ));
 
     assertEquals(3, queries.size());
