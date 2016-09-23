@@ -120,7 +120,7 @@ public abstract class DbDialect {
     }
   }
 
-  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemParameters, Schema.Type type, Object value) {
+  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
     switch (type) {
       case INT8:
       case INT16:

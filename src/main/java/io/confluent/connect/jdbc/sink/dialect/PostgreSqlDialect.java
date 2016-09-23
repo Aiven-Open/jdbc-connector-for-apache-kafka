@@ -35,7 +35,7 @@ public class PostgreSqlDialect extends DbDialect {
   }
 
   @Override
-  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemParameters, Schema.Type type, Object value) {
+  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
     if (schemaName != null) {
       switch (schemaName) {
         case Date.LOGICAL_NAME:
@@ -52,7 +52,7 @@ public class PostgreSqlDialect extends DbDialect {
           return;
       }
     }
-    super.formatColumnValue(builder, schemaName, schemParameters, type, value);
+    super.formatColumnValue(builder, schemaName, schemaParameters, type, value);
   }
 
   private static StringBuilder formatTimestampFromJavaDate(StringBuilder builder, Object value) {

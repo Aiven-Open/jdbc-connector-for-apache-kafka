@@ -20,7 +20,6 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,20 +31,6 @@ public class SqlServerDialect extends DbDialect {
 
   public SqlServerDialect() {
     super("[", "]");
-  }
-
-  private static Map<Schema.Type, String> getSqlTypeMap() {
-    Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "tinyint");
-    map.put(Schema.Type.INT16, "smallint");
-    map.put(Schema.Type.INT32, "int");
-    map.put(Schema.Type.INT64, "bigint");
-    map.put(Schema.Type.FLOAT32, "real");
-    map.put(Schema.Type.FLOAT64, "float");
-    map.put(Schema.Type.BOOLEAN, "bit");
-    map.put(Schema.Type.STRING, "varchar(max)");
-    map.put(Schema.Type.BYTES, "varbinary(max)");
-    return map;
   }
 
   @Override
