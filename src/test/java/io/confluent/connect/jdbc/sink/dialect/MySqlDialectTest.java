@@ -33,9 +33,9 @@ public class MySqlDialectTest {
   @Test
   public void handleCreateTableMultiplePKColumns() {
     String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(null, Schema.Type.INT32, "userid", true),
-        new SinkRecordField(null, Schema.Type.INT32, "userdataid", true),
-        new SinkRecordField(null, Schema.Type.STRING, "info", false)
+        new SinkRecordField(Schema.INT32_SCHEMA, "userid", true),
+        new SinkRecordField(Schema.INT32_SCHEMA, "userdataid", true),
+        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "info", false)
     ));
 
     String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
@@ -49,14 +49,14 @@ public class MySqlDialectTest {
   @Test
   public void handleCreateTableOnePKColumn() {
     String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(null, Schema.Type.INT32, "col1", true),
-        new SinkRecordField(null, Schema.Type.INT64, "col2", false),
-        new SinkRecordField(null, Schema.Type.STRING, "col3", false),
-        new SinkRecordField(null, Schema.Type.FLOAT32, "col4", false),
-        new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
-        new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
-        new SinkRecordField(null, Schema.Type.INT8, "col7", false),
-        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
+        new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "col1", true),
+        new SinkRecordField(Schema.OPTIONAL_INT64_SCHEMA, "col2", false),
+        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col4", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT64_SCHEMA, "col5", false),
+        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col6", false),
+        new SinkRecordField(Schema.OPTIONAL_INT8_SCHEMA, "col7", false),
+        new SinkRecordField(Schema.OPTIONAL_INT16_SCHEMA, "col8", false)
     ));
 
     String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
@@ -75,14 +75,14 @@ public class MySqlDialectTest {
   @Test
   public void handleCreateTableNoPKColumn() {
     String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(null, Schema.Type.INT32, "col1", false),
-        new SinkRecordField(null, Schema.Type.INT64, "col2", false),
-        new SinkRecordField(null, Schema.Type.STRING, "col3", false),
-        new SinkRecordField(null, Schema.Type.FLOAT32, "col4", false),
-        new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
-        new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
-        new SinkRecordField(null, Schema.Type.INT8, "col7", false),
-        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
+        new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "col1", false),
+        new SinkRecordField(Schema.OPTIONAL_INT64_SCHEMA, "col2", false),
+        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col4", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT64_SCHEMA, "col5", false),
+        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col6", false),
+        new SinkRecordField(Schema.OPTIONAL_INT8_SCHEMA, "col7", false),
+        new SinkRecordField(Schema.OPTIONAL_INT16_SCHEMA, "col8", false)
     ));
 
     String expected = "CREATE TABLE `tableA` (" + System.lineSeparator() +
@@ -100,14 +100,14 @@ public class MySqlDialectTest {
   @Test
   public void handleAmendAddColumns() {
     List<String> actual = dialect.getAlterTable("tableA", Arrays.asList(
-        new SinkRecordField(null, Schema.Type.INT32, "col1", false),
-        new SinkRecordField(null, Schema.Type.INT64, "col2", false),
-        new SinkRecordField(null, Schema.Type.STRING, "col3", false),
-        new SinkRecordField(null, Schema.Type.FLOAT32, "col4", false),
-        new SinkRecordField(null, Schema.Type.FLOAT64, "col5", false),
-        new SinkRecordField(null, Schema.Type.BOOLEAN, "col6", false),
-        new SinkRecordField(null, Schema.Type.INT8, "col7", false),
-        new SinkRecordField(null, Schema.Type.INT16, "col8", false)
+        new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "col1", false),
+        new SinkRecordField(Schema.OPTIONAL_INT64_SCHEMA, "col2", false),
+        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col4", false),
+        new SinkRecordField(Schema.OPTIONAL_FLOAT64_SCHEMA, "col5", false),
+        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col6", false),
+        new SinkRecordField(Schema.OPTIONAL_INT8_SCHEMA, "col7", false),
+        new SinkRecordField(Schema.OPTIONAL_INT16_SCHEMA, "col8", false)
     ));
 
     assertEquals(1, actual.size());

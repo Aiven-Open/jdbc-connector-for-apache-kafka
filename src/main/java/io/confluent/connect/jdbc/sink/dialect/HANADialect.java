@@ -16,43 +16,47 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
-import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import org.apache.kafka.connect.data.Schema;
-
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
 
 public class HANADialect extends DbDialect {
 
-
   public HANADialect() {
-    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "\"", "\"");
+    super("\"", "\"");
   }
 
-  private static Map<Schema.Type, String> getSqlTypeMap() {
-    Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "TINYINT");
-    map.put(Schema.Type.INT16, "SMALLINT");
-    map.put(Schema.Type.INT32, "INTEGER");
-    map.put(Schema.Type.INT64, "BIGINT");
-    map.put(Schema.Type.FLOAT32, "REAL");
-    map.put(Schema.Type.FLOAT64, "DOUBLE");
-    map.put(Schema.Type.BOOLEAN, "BOOLEAN");
-    map.put(Schema.Type.STRING, "VARCHAR(1000)");
-    map.put(Schema.Type.BYTES, "BLOB");
-    return map;
-  }
-
-  private static Map<String, String> getLogicalToSqlTypeMap() {
-    Map<String, String> map = new HashMap<>();
-    return map;
+  @Override
+  protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    switch (type) {
+      case INT8:
+        return "TINYINT";
+      case INT16:
+        return "SMALLINT";
+      case INT32:
+        return "INTEGER";
+      case INT64:
+        return "BIGINT";
+      case FLOAT32:
+        return "REAL";
+      case FLOAT64:
+        return "DOUBLE";
+      case BOOLEAN:
+        return "BOOLEAN";
+      case STRING:
+        return "VARCHAR(1000)";
+      case BYTES:
+        return "BLOB";
+    }
+    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

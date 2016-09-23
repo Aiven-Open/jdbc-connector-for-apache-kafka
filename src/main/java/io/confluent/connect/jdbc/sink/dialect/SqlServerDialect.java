@@ -20,7 +20,6 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,26 +30,32 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBui
 public class SqlServerDialect extends DbDialect {
 
   public SqlServerDialect() {
-    super(getSqlTypeMap(), getLogicalToSqlTypeMap(), "[", "]");
+    super("[", "]");
   }
 
-  private static Map<Schema.Type, String> getSqlTypeMap() {
-    Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "tinyint");
-    map.put(Schema.Type.INT16, "smallint");
-    map.put(Schema.Type.INT32, "int");
-    map.put(Schema.Type.INT64, "bigint");
-    map.put(Schema.Type.FLOAT32, "real");
-    map.put(Schema.Type.FLOAT64, "float");
-    map.put(Schema.Type.BOOLEAN, "bit");
-    map.put(Schema.Type.STRING, "varchar(max)");
-    map.put(Schema.Type.BYTES, "varbinary(max)");
-    return map;
-  }
-
-  private static Map<String, String> getLogicalToSqlTypeMap() {
-    Map<String, String> map = new HashMap<>();
-    return map;
+  @Override
+  protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    switch (type) {
+      case INT8:
+        return "tinyint";
+      case INT16:
+        return "smallint";
+      case INT32:
+        return "int";
+      case INT64:
+        return "bigint";
+      case FLOAT32:
+        return "real";
+      case FLOAT64:
+        return "float";
+      case BOOLEAN:
+        return "bit";
+      case STRING:
+        return "varchar(max)";
+      case BYTES:
+        return "varbinary(max)";
+    }
+    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

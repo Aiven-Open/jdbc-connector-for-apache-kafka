@@ -16,17 +16,14 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
-import org.apache.kafka.connect.data.Schema;
-
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 public class GenericDialect extends DbDialect {
   public GenericDialect() {
-    super(Collections.<Schema.Type, String>emptyMap(), Collections.<String, String>emptyMap(), "\"", "\"");
+    super("\"", "\"");
   }
 
   // Only INSERT supported for now. CREATE and ALTER may be possible if we can figure out a reasonable type map.

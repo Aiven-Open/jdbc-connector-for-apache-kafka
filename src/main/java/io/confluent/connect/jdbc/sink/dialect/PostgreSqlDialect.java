@@ -23,7 +23,6 @@ import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
@@ -31,33 +30,70 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 
 public class PostgreSqlDialect extends DbDialect {
 
-  // The user is responsible for escaping the columns otherwise create table A and create table "A" is not the same
-
   public PostgreSqlDialect() {
-    super(getSqlTypeMap(), getSqlTypeFromLogicalMap(), "\"", "\"");
+    super("\"", "\"");
   }
 
-  private static Map<Schema.Type, String> getSqlTypeMap() {
-    Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "SMALLINT");
-    map.put(Schema.Type.INT16, "SMALLINT");
-    map.put(Schema.Type.INT32, "INT");
-    map.put(Schema.Type.INT64, "BIGINT");
-    map.put(Schema.Type.FLOAT32, "REAL");
-    map.put(Schema.Type.FLOAT64, "DOUBLE PRECISION");
-    map.put(Schema.Type.BOOLEAN, "BOOLEAN");
-    map.put(Schema.Type.STRING, "TEXT");
-    map.put(Schema.Type.BYTES, "BYTEA");
-    return map;
+  @Override
+  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Date.LOGICAL_NAME:
+          formatTimestampFromJavaDate(builder, value).append("::date");
+          return;
+        case Decimal.LOGICAL_NAME:
+          builder.append(value);
+          return;
+        case Time.LOGICAL_NAME:
+          formatTimestampFromJavaDate(builder, value).append("::time");
+          return;
+        case Timestamp.LOGICAL_NAME:
+          formatTimestampFromJavaDate(builder, value).append("::timestamp");
+          return;
+      }
+    }
+    super.formatColumnValue(builder, schemaName, schemaParameters, type, value);
   }
 
-  private static Map<String, String> getSqlTypeFromLogicalMap() {
-    Map<String, String> map = new HashMap<>();
-    map.put(Date.LOGICAL_NAME, "DATE");
-    map.put(Decimal.LOGICAL_NAME, "DECIMAL");
-    map.put(Time.LOGICAL_NAME, "TIME");
-    map.put(Timestamp.LOGICAL_NAME, "TIMESTAMP");
-    return map;
+  private static StringBuilder formatTimestampFromJavaDate(StringBuilder builder, Object value) {
+    return builder.append("to_timestamp(").append(((java.util.Date) value).getTime()).append("::double precision / 1000)");
+  }
+
+  @Override
+  protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Date.LOGICAL_NAME:
+          return "DATE";
+        case Decimal.LOGICAL_NAME:
+          return "DECIMAL";
+        case Time.LOGICAL_NAME:
+          return "TIME";
+        case Timestamp.LOGICAL_NAME:
+          return "TIMESTAMP";
+      }
+    }
+    switch (type) {
+      case INT8:
+        return "SMALLINT";
+      case INT16:
+        return "SMALLINT";
+      case INT32:
+        return "INT";
+      case INT64:
+        return "BIGINT";
+      case FLOAT32:
+        return "REAL";
+      case FLOAT64:
+        return "DOUBLE PRECISION";
+      case BOOLEAN:
+        return "BOOLEAN";
+      case STRING:
+        return "TEXT";
+      case BYTES:
+        return "BLOB";
+    }
+    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

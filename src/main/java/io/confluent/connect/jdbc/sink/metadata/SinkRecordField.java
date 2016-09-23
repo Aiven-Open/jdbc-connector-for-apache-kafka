@@ -18,42 +18,54 @@ package io.confluent.connect.jdbc.sink.metadata;
 
 import org.apache.kafka.connect.data.Schema;
 
+import java.util.Map;
+
 public class SinkRecordField {
-  public final String schemaName;
-  public final Schema.Type type;
-  public final String name;
-  public final boolean isPrimaryKey;
-  public final boolean isOptional;
-  public final Object defaultValue;
 
-  public SinkRecordField(final String schemaName, final Schema.Type type, final String name, final boolean isPrimaryKey) {
-    this(schemaName, type, name, isPrimaryKey, !isPrimaryKey, null);
-  }
+  private final Schema schema;
+  private final String name;
+  private final boolean isPrimaryKey;
 
-  public SinkRecordField(
-      final String schemaName,
-      final Schema.Type type,
-      final String name,
-      final boolean isPrimaryKey,
-      final boolean isOptional,
-      final Object defaultValue
-  ) {
-    this.schemaName = schemaName;
-    this.type = type;
+  public SinkRecordField(Schema schema, String name, boolean isPrimaryKey) {
+    this.schema = schema;
     this.name = name;
     this.isPrimaryKey = isPrimaryKey;
-    this.isOptional = isOptional;
-    this.defaultValue = defaultValue;
+  }
+
+  public String schemaName() {
+    return schema.name();
+  }
+
+  public Map<String, String> schemaParameters() {
+    return schema.parameters();
+  }
+
+  public Schema.Type schemaType() {
+    return schema.type();
+  }
+
+  public String name() {
+    return name;
+  }
+
+  public boolean isOptional() {
+    return !isPrimaryKey && schema.isOptional();
+  }
+
+  public Object defaultValue() {
+    return schema.defaultValue();
+  }
+
+  public boolean isPrimaryKey() {
+    return isPrimaryKey;
   }
 
   @Override
   public String toString() {
     return "SinkRecordField{" +
-           "schemaName=" + schemaName +
-           "type=" + type +
+           "schema=" + schema +
            ", name='" + name + '\'' +
            ", isPrimaryKey=" + isPrimaryKey +
-           ", isOptional=" + isOptional +
            '}';
   }
 }
