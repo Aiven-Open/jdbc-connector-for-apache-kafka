@@ -28,51 +28,51 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
-public class PostgreSqlDialectTest extends BaseDialectTest {
+public class HanaDialectTest extends BaseDialectTest {
 
-  public PostgreSqlDialectTest() {
-    super(new PostgreSqlDialect());
+  public HanaDialectTest() {
+    super(new HanaDialect());
   }
 
   @Test
   public void dataTypeMappings() {
-    verifyDataTypeMapping("SMALLINT", Schema.INT8_SCHEMA);
+    verifyDataTypeMapping("TINYINT", Schema.INT8_SCHEMA);
     verifyDataTypeMapping("SMALLINT", Schema.INT16_SCHEMA);
-    verifyDataTypeMapping("INT", Schema.INT32_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT32_SCHEMA);
     verifyDataTypeMapping("BIGINT", Schema.INT64_SCHEMA);
     verifyDataTypeMapping("REAL", Schema.FLOAT32_SCHEMA);
-    verifyDataTypeMapping("DOUBLE PRECISION", Schema.FLOAT64_SCHEMA);
+    verifyDataTypeMapping("DOUBLE", Schema.FLOAT64_SCHEMA);
     verifyDataTypeMapping("BOOLEAN", Schema.BOOLEAN_SCHEMA);
-    verifyDataTypeMapping("TEXT", Schema.STRING_SCHEMA);
+    verifyDataTypeMapping("VARCHAR(1000)", Schema.STRING_SCHEMA);
     verifyDataTypeMapping("BLOB", Schema.BYTES_SCHEMA);
     verifyDataTypeMapping("DECIMAL", Decimal.schema(0));
     verifyDataTypeMapping("DATE", Date.SCHEMA);
-    verifyDataTypeMapping("TIME", Time.SCHEMA);
+    verifyDataTypeMapping("DATE", Time.SCHEMA);
     verifyDataTypeMapping("TIMESTAMP", Timestamp.SCHEMA);
   }
 
   @Test
   public void createOneColNoPk() {
     verifyCreateOneColNoPk(
-        "CREATE TABLE \"test\" (" + System.lineSeparator() +
-        "\"col1\" INT NOT NULL)");
+        "CREATE COLUMN TABLE \"test\" (" + System.lineSeparator() +
+        "\"col1\" INTEGER NOT NULL)");
   }
 
   @Test
   public void createOneColOnePk() {
     verifyCreateOneColOnePk(
-        "CREATE TABLE \"test\" (" + System.lineSeparator() +
-        "\"pk1\" INT NOT NULL," + System.lineSeparator() +
+        "CREATE COLUMN TABLE \"test\" (" + System.lineSeparator() +
+        "\"pk1\" INTEGER NOT NULL," + System.lineSeparator() +
         "PRIMARY KEY(\"pk1\"))");
   }
 
   @Test
   public void createThreeColTwoPk() {
     verifyCreateThreeColTwoPk(
-        "CREATE TABLE \"test\" (" + System.lineSeparator() +
-        "\"pk1\" INT NOT NULL," + System.lineSeparator() +
-        "\"pk2\" INT NOT NULL," + System.lineSeparator() +
-        "\"col1\" INT NOT NULL," + System.lineSeparator() +
+        "CREATE COLUMN TABLE \"test\" (" + System.lineSeparator() +
+        "\"pk1\" INTEGER NOT NULL," + System.lineSeparator() +
+        "\"pk2\" INTEGER NOT NULL," + System.lineSeparator() +
+        "\"col1\" INTEGER NOT NULL," + System.lineSeparator() +
         "PRIMARY KEY(\"pk1\",\"pk2\"))"
     );
   }
@@ -80,25 +80,25 @@ public class PostgreSqlDialectTest extends BaseDialectTest {
   @Test
   public void alterAddOneCol() {
     verifyAlterAddOneCol(
-        "ALTER TABLE \"test\" ADD \"newcol1\" INT NULL"
+        "ALTER TABLE \"test\" ADD(" + System.lineSeparator()
+        + "\"newcol1\" INTEGER NULL)"
     );
   }
 
   @Test
   public void alterAddTwoCol() {
     verifyAlterAddTwoCols(
-        "ALTER TABLE \"test\" " + System.lineSeparator()
-        + "ADD \"newcol1\" INT NULL," + System.lineSeparator()
-        + "ADD \"newcol2\" INT DEFAULT 42"
+        "ALTER TABLE \"test\" ADD(" + System.lineSeparator()
+        + "\"newcol1\" INTEGER NULL," + System.lineSeparator()
+        + "\"newcol2\" INTEGER DEFAULT 42)"
     );
   }
 
   @Test
   public void upsert() {
     assertEquals(
-        "INSERT INTO \"Customer\" (\"id\",\"name\",\"salary\",\"address\") "
-        + "VALUES (?,?,?,?) ON CONFLICT (\"id\") DO UPDATE SET \"name\"=EXCLUDED.\"name\",\"salary\"=EXCLUDED.\"salary\",\"address\"=EXCLUDED.\"address\"",
-        dialect.getUpsertQuery("Customer", Collections.singletonList("id"), Arrays.asList("name", "salary", "address"))
+        "UPSERT \"tableA\"(\"col1\",\"col2\",\"col3\",\"col4\") VALUES(?,?,?,?) WITH PRIMARY KEY",
+        dialect.getUpsertQuery("tableA", Collections.singletonList("col1"), Arrays.asList("col2", "col3", "col4"))
     );
   }
 

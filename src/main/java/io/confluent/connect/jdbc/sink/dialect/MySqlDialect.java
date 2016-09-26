@@ -16,7 +16,11 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,6 +36,19 @@ public class MySqlDialect extends DbDialect {
 
   @Override
   protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Decimal.LOGICAL_NAME:
+          // Maximum precision supported by MySQL is 65
+          return "DECIMAL(65," + Integer.parseInt(parameters.get(Decimal.SCALE_FIELD)) + ")";
+        case Date.LOGICAL_NAME:
+          return "DATE";
+        case Time.LOGICAL_NAME:
+          return "TIME(3)";
+        case Timestamp.LOGICAL_NAME:
+          return "TIMESTAMP(3)";
+      }
+    }
     switch (type) {
       case INT8:
         return "TINYINT";
