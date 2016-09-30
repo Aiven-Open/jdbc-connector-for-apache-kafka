@@ -50,7 +50,7 @@ public class OracleDialect extends DbDialect {
       case BOOLEAN:
         return "NUMBER(1,0)";
       case STRING:
-        return "NVARCHAR2(4000)";
+        return "CLOB";
       case BYTES:
         return "BLOB";
     }

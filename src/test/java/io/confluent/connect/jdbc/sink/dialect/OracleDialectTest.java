@@ -41,7 +41,7 @@ public class OracleDialectTest {
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
                       "\"userid\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
                       "\"userdataid\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
-                      "\"info\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
+                      "\"info\" CLOB NULL," + System.lineSeparator() +
                       "PRIMARY KEY(\"userid\",\"userdataid\"))";
     assertEquals(expected, actual);
   }
@@ -62,7 +62,7 @@ public class OracleDialectTest {
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
                       "\"col1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
                       "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
-                      "\"col3\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
+                      "\"col3\" CLOB NULL," + System.lineSeparator() +
                       "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
                       "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
                       "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
@@ -88,7 +88,7 @@ public class OracleDialectTest {
     String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
                       "\"col1\" NUMBER(10,0) NULL," + System.lineSeparator() +
                       "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
-                      "\"col3\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
+                      "\"col3\" CLOB NULL," + System.lineSeparator() +
                       "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
                       "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
                       "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
@@ -115,7 +115,7 @@ public class OracleDialectTest {
     String expected = "ALTER TABLE \"tableA\" ADD(" + System.lineSeparator() +
                       "\"col1\" NUMBER(10,0) NULL," + System.lineSeparator() +
                       "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
-                      "\"col3\" NVARCHAR2(4000) NULL," + System.lineSeparator() +
+                      "\"col3\" CLOB NULL," + System.lineSeparator() +
                       "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
                       "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
                       "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +

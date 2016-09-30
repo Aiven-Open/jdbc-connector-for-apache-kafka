@@ -140,7 +140,7 @@ We use the following mapping from Connect schema types to database-specific type
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 | BOOLEAN     | TINYINT         | NUMBER(1,0)     | BOOLEAN          | NUMERIC | BIT            |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
-| STRING      | VARCHAR(256)    | NVARCHAR2(4000) | TEXT             | TEXT    | VARCHAR(MAX)   |
+| STRING      | VARCHAR(256)    | NCLOB           | TEXT             | TEXT    | VARCHAR(MAX)   |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 | BYTES       | VARBINARY(1024) | BLOB            | BYTEA            | BLOB    | VARBINARY(MAX) |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
