@@ -39,6 +39,20 @@ public class SqliteDialect extends DbDialect {
   }
 
   @Override
+  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Date.LOGICAL_NAME:
+        case Time.LOGICAL_NAME:
+        case Timestamp.LOGICAL_NAME:
+          builder.append(((java.util.Date) value).getTime());
+          return;
+      }
+    }
+    super.formatColumnValue(builder, schemaName, schemaParameters, type, value);
+  }
+
+  @Override
   protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
     if (schemaName != null) {
       switch (schemaName) {
@@ -55,7 +69,7 @@ public class SqliteDialect extends DbDialect {
       case INT16:
       case INT32:
       case INT64:
-        return "NUMERIC";
+        return "INTEGER";
       case FLOAT32:
       case FLOAT64:
         return "REAL";

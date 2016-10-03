@@ -35,13 +35,13 @@ public class SqliteDialectTest extends BaseDialectTest {
 
   @Test
   public void dataTypeMappings() {
-    verifyDataTypeMapping("NUMERIC", Schema.INT8_SCHEMA);
-    verifyDataTypeMapping("NUMERIC", Schema.INT16_SCHEMA);
-    verifyDataTypeMapping("NUMERIC", Schema.INT32_SCHEMA);
-    verifyDataTypeMapping("NUMERIC", Schema.INT64_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT8_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT16_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT32_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT64_SCHEMA);
     verifyDataTypeMapping("REAL", Schema.FLOAT32_SCHEMA);
     verifyDataTypeMapping("REAL", Schema.FLOAT64_SCHEMA);
-    verifyDataTypeMapping("NUMERIC", Schema.BOOLEAN_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.BOOLEAN_SCHEMA);
     verifyDataTypeMapping("TEXT", Schema.STRING_SCHEMA);
     verifyDataTypeMapping("BLOB", Schema.BYTES_SCHEMA);
     verifyDataTypeMapping("NUMERIC", Decimal.schema(0));
@@ -54,14 +54,14 @@ public class SqliteDialectTest extends BaseDialectTest {
   public void createOneColNoPk() {
     verifyCreateOneColNoPk(
         "CREATE TABLE `test` (" + System.lineSeparator() +
-        "`col1` NUMERIC NOT NULL)");
+        "`col1` INTEGER NOT NULL)");
   }
 
   @Test
   public void createOneColOnePk() {
     verifyCreateOneColOnePk(
         "CREATE TABLE `test` (" + System.lineSeparator() +
-        "`pk1` NUMERIC NOT NULL," + System.lineSeparator() +
+        "`pk1` INTEGER NOT NULL," + System.lineSeparator() +
         "PRIMARY KEY(`pk1`))");
   }
 
@@ -69,9 +69,9 @@ public class SqliteDialectTest extends BaseDialectTest {
   public void createThreeColTwoPk() {
     verifyCreateThreeColTwoPk(
         "CREATE TABLE `test` (" + System.lineSeparator() +
-        "`pk1` NUMERIC NOT NULL," + System.lineSeparator() +
-        "`pk2` NUMERIC NOT NULL," + System.lineSeparator() +
-        "`col1` NUMERIC NOT NULL," + System.lineSeparator() +
+        "`pk1` INTEGER NOT NULL," + System.lineSeparator() +
+        "`pk2` INTEGER NOT NULL," + System.lineSeparator() +
+        "`col1` INTEGER NOT NULL," + System.lineSeparator() +
         "PRIMARY KEY(`pk1`,`pk2`))"
     );
   }
@@ -79,15 +79,15 @@ public class SqliteDialectTest extends BaseDialectTest {
   @Test
   public void alterAddOneCol() {
     verifyAlterAddOneCol(
-        "ALTER TABLE `test` ADD `newcol1` NUMERIC NULL"
+        "ALTER TABLE `test` ADD `newcol1` INTEGER NULL"
     );
   }
 
   @Test
   public void alterAddTwoCol() {
     verifyAlterAddTwoCols(
-        "ALTER TABLE `test` ADD `newcol1` NUMERIC NULL",
-        "ALTER TABLE `test` ADD `newcol2` NUMERIC DEFAULT 42"
+        "ALTER TABLE `test` ADD `newcol1` INTEGER NULL",
+        "ALTER TABLE `test` ADD `newcol2` INTEGER DEFAULT 42"
     );
   }
 

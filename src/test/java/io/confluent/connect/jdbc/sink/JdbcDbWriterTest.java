@@ -16,16 +16,21 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -39,6 +44,7 @@ import io.confluent.connect.jdbc.sink.dialect.SqliteDialect;
 import io.confluent.connect.jdbc.sink.metadata.DbTable;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class JdbcDbWriterTest {
@@ -197,51 +203,63 @@ public class JdbcDbWriterTest {
 
   @Test
   public void sameRecordNTimes() throws SQLException {
-    String tableName = "batched_statement_test_100";
-    String createTable = "CREATE TABLE " + tableName + " (" +
-                         "    firstName  TEXT," +
-                         "    lastName  TEXT," +
-                         "    age INTEGER," +
-                         "    bool  NUMERIC," +
-                         "    byte  INTEGER," +
-                         "    short INTEGER," +
-                         "    long INTEGER," +
-                         "    float NUMERIC," +
-                         "    double NUMERIC," +
-                         "    bytes BLOB " +
+    String testId = "sameRecordNTimes";
+    String createTable = "CREATE TABLE " + testId + " (" +
+                         "    the_byte  INTEGER," +
+                         "    the_short INTEGER," +
+                         "    the_int INTEGER," +
+                         "    the_long INTEGER," +
+                         "    the_float REAL," +
+                         "    the_double REAL," +
+                         "    the_bool  INTEGER," +
+                         "    the_string TEXT," +
+                         "    the_bytes BLOB, " +
+                         "    the_decimal  NUMERIC," +
+                         "    the_date  NUMERIC," +
+                         "    the_time  NUMERIC," +
+                         "    the_timestamp  NUMERIC" +
                          ");";
 
-    sqliteHelper.deleteTable(tableName);
+    sqliteHelper.deleteTable(testId);
     sqliteHelper.createTable(createTable);
 
-    Schema schema = SchemaBuilder.struct().name("com.example.Person")
-        .field("firstName", Schema.OPTIONAL_STRING_SCHEMA)
-        .field("lastName", Schema.OPTIONAL_STRING_SCHEMA)
-        .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-        .field("bool", Schema.OPTIONAL_BOOLEAN_SCHEMA)
-        .field("short", Schema.OPTIONAL_INT16_SCHEMA)
-        .field("byte", Schema.OPTIONAL_INT8_SCHEMA)
-        .field("long", Schema.OPTIONAL_INT64_SCHEMA)
-        .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
-        .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
-        .field("bytes", Schema.OPTIONAL_BYTES_SCHEMA);
+    Schema schema = SchemaBuilder.struct().name(testId)
+        .field("the_byte", Schema.INT8_SCHEMA)
+        .field("the_short", Schema.INT16_SCHEMA)
+        .field("the_int", Schema.INT32_SCHEMA)
+        .field("the_long", Schema.INT64_SCHEMA)
+        .field("the_float", Schema.FLOAT32_SCHEMA)
+        .field("the_double", Schema.FLOAT64_SCHEMA)
+        .field("the_bool", Schema.BOOLEAN_SCHEMA)
+        .field("the_string", Schema.STRING_SCHEMA)
+        .field("the_bytes", Schema.BYTES_SCHEMA)
+        .field("the_decimal", Decimal.schema(2).schema())
+        .field("the_date", Date.SCHEMA)
+        .field("the_time", Time.SCHEMA)
+        .field("the_timestamp", Timestamp.SCHEMA);
+
+    final java.util.Date instant = new java.util.Date(1474661402123L);
 
     final Struct struct = new Struct(schema)
-        .put("firstName", "Alex")
-        .put("lastName", "Smith")
-        .put("bool", true)
-        .put("short", (short) 1234)
-        .put("byte", (byte) -32)
-        .put("long", 12425436L)
-        .put("float", 2356.3f)
-        .put("double", -2436546.56457d)
-        .put("bytes", new byte[]{-32, 124});
+        .put("the_byte", (byte) -32)
+        .put("the_short", (short) 1234)
+        .put("the_int", 42)
+        .put("the_long", 12425436L)
+        .put("the_float", 2356.3f)
+        .put("the_double", -2436546.56457d)
+        .put("the_bool", true)
+        .put("the_string", "foo")
+        .put("the_bytes", new byte[]{-32, 124})
+        .put("the_decimal", new BigDecimal("1234.567"))
+        .put("the_date", instant)
+        .put("the_time", instant)
+        .put("the_timestamp", instant);
 
     int numRecords = ThreadLocalRandom.current().nextInt(20, 80);
 
     Map<String, String> props = new HashMap<>();
     props.put("connection.url", sqliteHelper.sqliteUri());
-    props.put("table.name.format", tableName);
+    props.put("table.name.format", testId);
     props.put("batch.size", String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
 
     writer = newWriter(props);
@@ -254,21 +272,23 @@ public class JdbcDbWriterTest {
     assertEquals(
         numRecords,
         sqliteHelper.select(
-            "SELECT * FROM " + tableName + " ORDER BY firstName",
+            "SELECT * FROM " + testId,
             new SqliteHelper.ResultSetReadCallback() {
               @Override
               public void read(ResultSet rs) throws SQLException {
-                assertEquals(struct.getString("firstName"), rs.getString("firstName"));
-                assertEquals(struct.getString("lastName"), rs.getString("lastName"));
-                assertEquals(struct.getBoolean("bool"), rs.getBoolean("bool"));
-                assertEquals(struct.getInt8("byte").byteValue(), rs.getByte("byte"));
-                assertEquals(struct.getInt16("short").shortValue(), rs.getShort("short"));
-                rs.getInt("age");
-                assertTrue(rs.wasNull());
-                assertEquals(struct.getInt64("long").longValue(), rs.getLong("long"));
-                assertEquals(struct.getFloat32("float"), rs.getFloat("float"), 0.01);
-                assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
-                assertTrue(Arrays.equals(struct.getBytes("bytes"), rs.getBytes("bytes")));
+                assertEquals(struct.getInt8("the_byte").byteValue(), rs.getByte("the_byte"));
+                assertEquals(struct.getInt16("the_short").shortValue(), rs.getShort("the_short"));
+                assertEquals(struct.getInt32("the_int").intValue(), rs.getInt("the_int"));
+                assertEquals(struct.getInt64("the_long").longValue(), rs.getLong("the_long"));
+                assertEquals(struct.getFloat32("the_float"), rs.getFloat("the_float"), 0.01);
+                assertEquals(struct.getFloat64("the_double"), rs.getDouble("the_double"), 0.01);
+                assertEquals(struct.getBoolean("the_bool"), rs.getBoolean("the_bool"));
+                assertEquals(struct.getString("the_string"), rs.getString("the_string"));
+                assertArrayEquals(struct.getBytes("the_bytes"), rs.getBytes("the_bytes"));
+                assertEquals(struct.get("the_decimal"), rs.getBigDecimal("the_decimal"));
+                assertEquals(new java.sql.Date(((java.util.Date) struct.get("the_date")).getTime()), rs.getDate("the_date"));
+                assertEquals(new java.sql.Time(((java.util.Date) struct.get("the_time")).getTime()), rs.getTime("the_time"));
+                assertEquals(new java.sql.Timestamp(((java.util.Date) struct.get("the_time")).getTime()), rs.getTimestamp("the_timestamp"));
               }
             }
         )
