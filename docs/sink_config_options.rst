@@ -10,36 +10,47 @@ Connection
   JDBC connection URL.
 
   * Type: string
-  * Default: ""
   * Importance: high
 
 ``connection.user``
   JDBC connection user.
 
   * Type: string
+  * Default: null
   * Importance: high
 
 ``connection.password``
   JDBC connection password.
 
   * Type: password
+  * Default: null
   * Importance: high
 
-DDL Support
-^^^^^^^^^^^
+Writes
+^^^^^^
 
-``auto.create``
-  Whether to automatically create the destination table based on record schema if it is found to be missing by issuing ``CREATE``.
+``insert.mode``
+  The insertion mode to use. Supported modes are:
 
-  * Type: boolean
-  * Default: false
-  * Importance: medium
+  `insert`
 
-``auto.evolve``
-  Whether to automatically dd columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.
+      Use standard SQL ``INSERT`` statements.
 
-  * Type: boolean
-  * Default: false
+  `upsert`
+
+      Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
+
+  * Type: string
+  * Default: insert
+  * Valid Values: [insert, upsert]
+  * Importance: high
+
+``batch.size``
+  Specifies how many records to attempt to batch together for insertion into the destination table, when possible.
+
+  * Type: int
+  * Default: 3000
+  * Valid Values: [0,...]
   * Importance: medium
 
 Data Mapping
@@ -51,10 +62,8 @@ Data Mapping
   For example, ``kafka_${topic}`` for the topic 'orders' will map to the table name 'kafka_orders'.
 
   * Type: string
-  * Default: "${topic}"
+  * Default: ${topic}
   * Importance: medium
-
-.. _sink-pk-config-options:
 
 ``pk.mode``
   The primary key mode, also refer to ``pk.fields`` documentation for interplay. Supported modes are:
@@ -76,7 +85,8 @@ Data Mapping
       Field(s) from the record value are used, which must be a struct.
 
   * Type: string
-  * Default: "none"
+  * Default: none
+  * Valid Values: [none, kafka, record_key, record_value]
   * Importance: high
 
 ``pk.fields``
@@ -99,7 +109,7 @@ Data Mapping
       If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.
 
   * Type: list
-  * Default: []
+  * Default: ""
   * Importance: medium
 
 ``fields.whitelist``
@@ -108,7 +118,24 @@ Data Mapping
   Note that ``pk.fields`` is applied independently in the context of which field(s) form the primary key columns in the destination database, while this configuration is applicable for the other columns.
 
   * Type: list
-  * Default: []
+  * Default: ""
+  * Importance: medium
+
+DDL Support
+^^^^^^^^^^^
+
+``auto.create``
+  Whether to automatically create the destination table based on record schema if it is found to be missing by issuing ``CREATE``.
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
+``auto.evolve``
+  Whether to automatically dd columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.
+
+  * Type: boolean
+  * Default: false
   * Importance: medium
 
 Retries
@@ -119,6 +146,7 @@ Retries
 
   * Type: int
   * Default: 10
+  * Valid Values: [0,...]
   * Importance: medium
 
 ``retry.backoff.ms``
@@ -126,30 +154,5 @@ Retries
 
   * Type: int
   * Default: 3000
+  * Valid Values: [0,...]
   * Importance: medium
-
-Writes
-^^^^^^
-
-``insert.mode``
-  The insertion mode to use. Supported modes are:
-
-  `insert`
-
-      Use standard SQL ``INSERT`` statements.
-
-  `upsert`
-
-      Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
-
-  * Type: string
-  * Default: "insert"
-  * Importance: high
-
-``batch.size``
-  Specifies how many records to attempt to batch together for insertion into the destination table, when possible.
-
-  * Type: int
-  * Default: 3000
-  * Importance: medium
-

@@ -20,6 +20,7 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -238,19 +239,23 @@ public class JdbcSinkConfig extends AbstractConfig {
   }
 
   private static class EnumValidator implements ConfigDef.Validator {
+    private final List<String> canonicalValues;
     private final Set<String> validValues;
 
-    private EnumValidator(Set<String> validValues) {
+    private EnumValidator(List<String> canonicalValues, Set<String> validValues) {
+      this.canonicalValues = canonicalValues;
       this.validValues = validValues;
     }
 
     public static <E> EnumValidator in(E[] enumerators) {
-      final HashSet<String> values = new HashSet<>();
+      final List<String> canonicalValues = new ArrayList<>(enumerators.length);
+      final Set<String> validValues = new HashSet<>(enumerators.length * 2);
       for (E e : enumerators) {
-        values.add(e.toString().toUpperCase());
-        values.add(e.toString().toLowerCase());
+        canonicalValues.add(e.toString().toLowerCase());
+        validValues.add(e.toString().toUpperCase());
+        validValues.add(e.toString().toLowerCase());
       }
-      return new EnumValidator(values);
+      return new EnumValidator(canonicalValues, validValues);
     }
 
     @Override
@@ -258,6 +263,11 @@ public class JdbcSinkConfig extends AbstractConfig {
       if (!validValues.contains(value)) {
         throw new ConfigException(key, value, "Invalid enumerator");
       }
+    }
+
+    @Override
+    public String toString() {
+      return canonicalValues.toString();
     }
   }
 
