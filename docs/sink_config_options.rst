@@ -65,6 +65,8 @@ Data Mapping
   * Default: ${topic}
   * Importance: medium
 
+.. _sink-pk-config-options:
+
 ``pk.mode``
   The primary key mode, also refer to ``pk.fields`` documentation for interplay. Supported modes are:
 
