@@ -32,11 +32,11 @@ Writes
 ``insert.mode``
   The insertion mode to use. Supported modes are:
 
-  `insert`
+  ``insert``
 
       Use standard SQL ``INSERT`` statements.
 
-  `upsert`
+  ``upsert``
 
       Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
 
@@ -70,19 +70,19 @@ Data Mapping
 ``pk.mode``
   The primary key mode, also refer to ``pk.fields`` documentation for interplay. Supported modes are:
 
-  `none`
+  ``none``
 
       No keys utilized.
 
-  `kafka`
+  ``kafka``
 
       Kafka coordinates are used as the PK.
 
-  `record_key`
+  ``record_key``
 
       Field(s) from the record key are used, which may be a primitive or a struct.
 
-  `record_value`
+  ``record_value``
 
       Field(s) from the record value are used, which must be a struct.
 
@@ -94,19 +94,19 @@ Data Mapping
 ``pk.fields``
   List of comma-separated primary key field names. The runtime interpretation of this config depends on the ``pk.mode``:
 
-  `none`
+  ``none``
 
       Ignored as no fields are used as primary key in this mode.
 
-  `kafka`
+  ``kafka``
 
       Must be a trio representing the Kafka coordinates, defaults to ``__connect_topic,__connect_partition,__connect_offset`` if empty.
 
-  `record_key`
+  ``record_key``
 
       If empty, all fields from the key struct will be used, otherwise used to extract the desired fields - for primitive key only a single field name must be configured.
 
-  `record_value`
+  ``record_value``
 
       If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.
 

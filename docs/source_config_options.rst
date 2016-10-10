@@ -9,7 +9,7 @@ Database
 
   * Type: string
   * Importance: high
-  * Dependents: ``table.whitelist``,``table.blacklist``
+  * Dependents: ``table.whitelist``, ``table.blacklist``
 
 ``table.whitelist``
   List of tables to include in copying. If specified, table.blacklist may not be set.
@@ -112,7 +112,7 @@ Mode
   * Default: ""
   * Valid Values: [, bulk, timestamp, incrementing, timestamp+incrementing]
   * Importance: high
-  * Dependents: ``incrementing.column.name``,``timestamp.column.name``,``validate.non.null``
+  * Dependents: ``incrementing.column.name``, ``timestamp.column.name``, ``validate.non.null``
 
 ``incrementing.column.name``
   The name of the strictly incrementing column to use to detect new rows. Any empty value indicates the column should be autodetected by looking for an auto-incrementing column. This column may not be nullable.
