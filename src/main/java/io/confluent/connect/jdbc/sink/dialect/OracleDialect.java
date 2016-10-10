@@ -16,7 +16,11 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +38,18 @@ public class OracleDialect extends DbDialect {
 
   @Override
   protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Decimal.LOGICAL_NAME:
+          return "NUMBER(*," + parameters.get(Decimal.SCALE_FIELD) + ")";
+        case Date.LOGICAL_NAME:
+          return "DATE";
+        case Time.LOGICAL_NAME:
+          return "DATE";
+        case Timestamp.LOGICAL_NAME:
+          return "TIMESTAMP";
+      }
+    }
     switch (type) {
       case INT8:
         return "NUMBER(3,0)";

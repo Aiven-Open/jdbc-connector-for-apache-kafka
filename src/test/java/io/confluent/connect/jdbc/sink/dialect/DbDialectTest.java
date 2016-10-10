@@ -16,89 +16,121 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
+
+import java.math.BigDecimal;
+import java.util.Map;
+
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
 public class DbDialectTest {
 
-  private static final GenericDialect GENERIC_DIALECT = new GenericDialect();
-
-  @Test(expected = ConnectException.class)
-  public void shouldThrowAndExceptionIfTheUriDoesNotStartWithJdbcWhenExtractingTheProtocol() {
-    DbDialect.extractProtocolFromUrl("mysql://Server:port");
-  }
-
-  @Test
-  public void handleSqlServerJTDS() {
-    String[] conns = new String[]{
-        "jdbc:sqlserver://what.amazonaws.com:1433/jdbc_sink_01",
-        "jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01"
-    };
-    for (String c : conns) {
-      assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString(c).getClass());
+  public static final DbDialect DUMMY_DIALECT = new DbDialect("`", "`") {
+    @Override
+    protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+      return "DUMMY";
     }
-  }
+  };
 
   @Test
   public void formatColumnValue() {
-    verifyColumnValueConversion("42", Schema.Type.INT8, (byte) 42);
-    verifyColumnValueConversion("42", Schema.Type.INT16, (short) 42);
-    verifyColumnValueConversion("42", Schema.Type.INT32, 42);
-    verifyColumnValueConversion("42", Schema.Type.INT64, 42L);
-    verifyColumnValueConversion("42.5", Schema.Type.FLOAT32, 42.5f);
-    verifyColumnValueConversion("42.5", Schema.Type.FLOAT64, 42.5d);
-    verifyColumnValueConversion("0", Schema.Type.BOOLEAN, false);
-    verifyColumnValueConversion("1", Schema.Type.BOOLEAN, true);
-    verifyColumnValueConversion("'quoteit'", Schema.Type.STRING, "quoteit");
-    verifyColumnValueConversion("x'2A'", Schema.Type.BYTES, new byte[]{42});
+    verifyFormatColumnValue("42", Schema.INT8_SCHEMA, (byte) 42);
+    verifyFormatColumnValue("42", Schema.INT16_SCHEMA, (short) 42);
+    verifyFormatColumnValue("42", Schema.INT32_SCHEMA, 42);
+    verifyFormatColumnValue("42", Schema.INT64_SCHEMA, 42L);
+    verifyFormatColumnValue("42.5", Schema.FLOAT32_SCHEMA, 42.5f);
+    verifyFormatColumnValue("42.5", Schema.FLOAT64_SCHEMA, 42.5d);
+    verifyFormatColumnValue("0", Schema.BOOLEAN_SCHEMA, false);
+    verifyFormatColumnValue("1", Schema.BOOLEAN_SCHEMA, true);
+    verifyFormatColumnValue("'quoteit'", Schema.STRING_SCHEMA, "quoteit");
+    verifyFormatColumnValue("x'2A'", Schema.BYTES_SCHEMA, new byte[]{42});
+
+    verifyFormatColumnValue("42.42", Decimal.schema(2), new BigDecimal("42.42"));
+
+    final java.util.Date instant = new java.util.Date(1474661402123L);
+    verifyFormatColumnValue("'2016-09-23'", Date.SCHEMA, instant);
+    verifyFormatColumnValue("'20:10:02.123'", Time.SCHEMA, instant);
+    verifyFormatColumnValue("'2016-09-23 20:10:02.123'", Timestamp.SCHEMA, instant);
   }
 
-  private void verifyColumnValueConversion(String expected, Schema.Type type, Object value) {
+  private void verifyFormatColumnValue(String expected, Schema schema, Object value) {
     final StringBuilder builder = new StringBuilder();
-    GENERIC_DIALECT.formatColumnValue(builder, null, null, type, value);
+    DUMMY_DIALECT.formatColumnValue(builder, schema.name(), schema.parameters(), schema.type(), value);
+    assertEquals(expected, builder.toString());
+  }
+
+  @Test
+  public void writeColumnSpec() {
+    verifyWriteColumnSpec("`foo` DUMMY DEFAULT 42", new SinkRecordField(SchemaBuilder.int32().defaultValue(42).build(), "foo", true));
+    verifyWriteColumnSpec("`foo` DUMMY DEFAULT 42", new SinkRecordField(SchemaBuilder.int32().defaultValue(42).build(), "foo", false));
+    verifyWriteColumnSpec("`foo` DUMMY DEFAULT 42", new SinkRecordField(SchemaBuilder.int32().optional().defaultValue(42).build(), "foo", true));
+    verifyWriteColumnSpec("`foo` DUMMY DEFAULT 42", new SinkRecordField(SchemaBuilder.int32().optional().defaultValue(42).build(), "foo", false));
+    verifyWriteColumnSpec("`foo` DUMMY NOT NULL", new SinkRecordField(Schema.INT32_SCHEMA, "foo", true));
+    verifyWriteColumnSpec("`foo` DUMMY NOT NULL", new SinkRecordField(Schema.INT32_SCHEMA, "foo", false));
+    verifyWriteColumnSpec("`foo` DUMMY NOT NULL", new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "foo", true));
+    verifyWriteColumnSpec("`foo` DUMMY NULL", new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "foo", false));
+  }
+
+  private void verifyWriteColumnSpec(String expected, SinkRecordField field) {
+    final StringBuilder builder = new StringBuilder();
+    DUMMY_DIALECT.writeColumnSpec(builder, field);
     assertEquals(expected, builder.toString());
   }
 
   @Test(expected = ConnectException.class)
-  public void shouldThrowAndExceptionIfTheUriDoesntHaveSemiColonAndForwardSlashWhenExtractingTheProtocol() {
+  public void extractProtocolInvalidUrl() {
     DbDialect.extractProtocolFromUrl("jdbc:protocol:somethingelse;field=value;");
   }
 
-  @Test
-  public void shouldExtractTheProtocol() {
-    assertEquals(DbDialect.extractProtocolFromUrl("jdbc:protocol_test://SERVER:21421;field=value"), "protocol_test");
+  @Test(expected = ConnectException.class)
+  public void extractProtocolNoJdbcPrefix() {
+    DbDialect.extractProtocolFromUrl("mysql://Server:port");
   }
 
   @Test
-  public void getTheSqLiteDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:sqlite:/folder/db.file").getClass(), SqliteDialect.class);
+  public void extractProtocol() {
+    assertEquals("protocol_test", DbDialect.extractProtocolFromUrl("jdbc:protocol_test://SERVER:21421;field=value"));
   }
 
   @Test
-  public void getSql2003DialectForOracle() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:oracle:thin:@localhost:1521:xe").getClass(), OracleDialect.class);
+  public void detectSqlite() {
+    assertEquals(SqliteDialect.class, DbDialect.fromConnectionString("jdbc:sqlite:/folder/db.file").getClass());
   }
 
   @Test
-  public void getMySqlDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:mysql://HOST/DATABASE").getClass(), MySqlDialect.class);
+  public void detectOracle() {
+    assertEquals(OracleDialect.class, DbDialect.fromConnectionString("jdbc:oracle:thin:@localhost:1521:xe").getClass());
   }
 
   @Test
-  public void getSqlServerDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass(), SqlServerDialect.class);
+  public void detectMysql() {
+    assertEquals(MySqlDialect.class, DbDialect.fromConnectionString("jdbc:mysql://HOST/DATABASE").getClass());
   }
 
   @Test
-  public void getPostgreDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass(), PostgreSqlDialect.class);
+  public void detectSqlServer() {
+    assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString("jdbc:microsoft:sqlserver://HOST:1433;DatabaseName=DATABASE").getClass());
+    assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString("jdbc:sqlserver://what.amazonaws.com:1433/jdbc_sink_01").getClass());
+    assertEquals(SqlServerDialect.class, DbDialect.fromConnectionString("jdbc:jtds:sqlserver://localhost;instance=SQLEXPRESS;DatabaseName=jdbc_sink_01").getClass());
   }
 
   @Test
-  public void getGenericDialect() {
-    assertEquals(DbDialect.fromConnectionString("jdbc:other://host:42").getClass(), GenericDialect.class);
+  public void detectPostgres() {
+    assertEquals(PostgreSqlDialect.class, DbDialect.fromConnectionString("jdbc:postgresql://HOST:1433;DatabaseName=DATABASE").getClass());
   }
+
+  @Test
+  public void detectGeneric() {
+    assertEquals(GenericDialect.class, DbDialect.fromConnectionString("jdbc:other://host:42").getClass());
+  }
+
 }

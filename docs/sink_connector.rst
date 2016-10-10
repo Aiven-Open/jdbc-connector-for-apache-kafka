@@ -144,17 +144,17 @@ We use the following mapping from Connect schema types to database-specific type
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 | BYTES       | VARBINARY(1024) | BLOB            | BYTEA            | BLOB    | VARBINARY(MAX) |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
-| Decimal     |  n/a            | n/a             | DECIMAL          | n/a     | n/a            |
+| 'Decimal'   | DECIMAL(65,s)   | NUMBER(*,s)     | DECIMAL          | NUMERIC | DECIMAL(38,s)  |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
-| Date        |  n/a            | n/a             | DATE             | n/a     | n/a            |
+| 'Date'      | DATE            | DATE            | DATE             | NUMERIC | DATE           |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
-| Time        |  n/a            | n/a             | TIME             | n/a     | n/a            |
+| 'Time'      | TIME(3)         | DATE            | TIME             | NUMERIC | TIME           |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
-| Timestamp   |  n/a            | n/a             | TIMESTAMP        | n/a     | n/a            |
+| 'Timestamp' | TIMESTAMP(3)    | TIMESTAMP       | TIMESTAMP        | NUMERIC | DATETIME2      |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 
 Auto-creation or auto-evolution is not supported for databases not mentioned here.
 
 .. important::
-    For backwards-compatible table schema evolution, new fields in record schemas should be optional or have a default value. If you need to delete a field, the table schema should be manually
-    altered to either drop the corresponding column, assign it a default value, or make it nullable.
+    For backwards-compatible table schema evolution, new fields in record schemas must be optional or have a default value.
+    If you need to delete a field, the table schema should be manually altered to either drop the corresponding column, assign it a default value, or make it nullable.

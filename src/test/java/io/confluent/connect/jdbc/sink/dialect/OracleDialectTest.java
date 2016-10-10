@@ -16,127 +16,96 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-
-import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
-public class OracleDialectTest {
-  private final OracleDialect dialect = new OracleDialect();
+public class OracleDialectTest extends BaseDialectTest {
 
-  @Test
-  public void handleCreateTableMultiplePKColumns() {
-    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(Schema.INT32_SCHEMA, "userid", true),
-        new SinkRecordField(Schema.INT32_SCHEMA, "userdataid", true),
-        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "info", false)
-    ));
-
-    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
-                      "\"userid\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
-                      "\"userdataid\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
-                      "\"info\" CLOB NULL," + System.lineSeparator() +
-                      "PRIMARY KEY(\"userid\",\"userdataid\"))";
-    assertEquals(expected, actual);
+  public OracleDialectTest() {
+    super(new OracleDialect());
   }
 
   @Test
-  public void handleCreateTableOnePKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "col1", true),
-        new SinkRecordField(Schema.OPTIONAL_INT64_SCHEMA, "col2", false),
-        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col4", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT64_SCHEMA, "col5", false),
-        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col6", false),
-        new SinkRecordField(Schema.OPTIONAL_INT8_SCHEMA, "col7", false),
-        new SinkRecordField(Schema.OPTIONAL_INT16_SCHEMA, "col8", false)
-    ));
-
-    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
-                      "\"col1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
-                      "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
-                      "\"col3\" CLOB NULL," + System.lineSeparator() +
-                      "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
-                      "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
-                      "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
-                      "\"col7\" NUMBER(3,0) NULL," + System.lineSeparator() +
-                      "\"col8\" NUMBER(5,0) NULL," + System.lineSeparator() +
-                      "PRIMARY KEY(\"col1\"))";
-    assertEquals(expected, actual);
+  public void dataTypeMappings() {
+    verifyDataTypeMapping("NUMBER(3,0)", Schema.INT8_SCHEMA);
+    verifyDataTypeMapping("NUMBER(5,0)", Schema.INT16_SCHEMA);
+    verifyDataTypeMapping("NUMBER(10,0)", Schema.INT32_SCHEMA);
+    verifyDataTypeMapping("NUMBER(19,0)", Schema.INT64_SCHEMA);
+    verifyDataTypeMapping("BINARY_FLOAT", Schema.FLOAT32_SCHEMA);
+    verifyDataTypeMapping("BINARY_DOUBLE", Schema.FLOAT64_SCHEMA);
+    verifyDataTypeMapping("NUMBER(1,0)", Schema.BOOLEAN_SCHEMA);
+    verifyDataTypeMapping("CLOB", Schema.STRING_SCHEMA);
+    verifyDataTypeMapping("BLOB", Schema.BYTES_SCHEMA);
+    verifyDataTypeMapping("NUMBER(*,0)", Decimal.schema(0));
+    verifyDataTypeMapping("NUMBER(*,42)", Decimal.schema(42));
+    verifyDataTypeMapping("DATE", Date.SCHEMA);
+    verifyDataTypeMapping("DATE", Time.SCHEMA);
+    verifyDataTypeMapping("TIMESTAMP", Timestamp.SCHEMA);
   }
 
   @Test
-  public void handleCreateTableNoPKColumn() {
-    String actual = dialect.getCreateQuery("tableA", Arrays.asList(
-        new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "col1", false),
-        new SinkRecordField(Schema.OPTIONAL_INT64_SCHEMA, "col2", false),
-        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col4", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT64_SCHEMA, "col5", false),
-        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col6", false),
-        new SinkRecordField(Schema.OPTIONAL_INT8_SCHEMA, "col7", false),
-        new SinkRecordField(Schema.OPTIONAL_INT16_SCHEMA, "col8", false)
-    ));
-
-    String expected = "CREATE TABLE \"tableA\" (" + System.lineSeparator() +
-                      "\"col1\" NUMBER(10,0) NULL," + System.lineSeparator() +
-                      "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
-                      "\"col3\" CLOB NULL," + System.lineSeparator() +
-                      "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
-                      "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
-                      "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
-                      "\"col7\" NUMBER(3,0) NULL," + System.lineSeparator() +
-                      "\"col8\" NUMBER(5,0) NULL)";
-    assertEquals(expected, actual);
+  public void createOneColNoPk() {
+    verifyCreateOneColNoPk(
+        "CREATE TABLE \"test\" (" + System.lineSeparator() +
+        "\"col1\" NUMBER(10,0) NOT NULL)");
   }
 
   @Test
-  public void handleAmendAddColumns() {
-    List<String> actual = dialect.getAlterTable("tableA", Arrays.asList(
-        new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "col1", false),
-        new SinkRecordField(Schema.OPTIONAL_INT64_SCHEMA, "col2", false),
-        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col4", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT64_SCHEMA, "col5", false),
-        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col6", false),
-        new SinkRecordField(Schema.OPTIONAL_INT8_SCHEMA, "col7", false),
-        new SinkRecordField(Schema.OPTIONAL_INT16_SCHEMA, "col8", false)
-    ));
-
-    assertEquals(1, actual.size());
-
-    String expected = "ALTER TABLE \"tableA\" ADD(" + System.lineSeparator() +
-                      "\"col1\" NUMBER(10,0) NULL," + System.lineSeparator() +
-                      "\"col2\" NUMBER(19,0) NULL," + System.lineSeparator() +
-                      "\"col3\" CLOB NULL," + System.lineSeparator() +
-                      "\"col4\" BINARY_FLOAT NULL," + System.lineSeparator() +
-                      "\"col5\" BINARY_DOUBLE NULL," + System.lineSeparator() +
-                      "\"col6\" NUMBER(1,0) NULL," + System.lineSeparator() +
-                      "\"col7\" NUMBER(3,0) NULL," + System.lineSeparator() +
-                      "\"col8\" NUMBER(5,0) NULL)";
-    assertEquals(expected, actual.get(0));
+  public void createOneColOnePk() {
+    verifyCreateOneColOnePk(
+        "CREATE TABLE \"test\" (" + System.lineSeparator() +
+        "\"pk1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
+        "PRIMARY KEY(\"pk1\"))");
   }
 
   @Test
-  public void createTheUpsertStatement() {
-    String expected = "merge into \"ARTICLE\" " +
-                      "using (select ? \"title\", ? \"author\", ? \"body\" FROM dual) incoming on" +
-                      "(\"ARTICLE\".\"title\"=incoming.\"title\" and \"ARTICLE\".\"author\"=incoming.\"author\") " +
-                      "when matched then update set \"ARTICLE\".\"body\"=incoming.\"body\" " +
-                      "when not matched then insert(\"ARTICLE\".\"body\",\"ARTICLE\".\"title\",\"ARTICLE\".\"author\") " +
-                      "values(incoming.\"body\",incoming.\"title\",incoming.\"author\")";
-
-    String upsert = dialect.getUpsertQuery("ARTICLE",
-                                           Arrays.asList("title", "author"), Collections.singletonList("body")
+  public void createThreeColTwoPk() {
+    verifyCreateThreeColTwoPk(
+        "CREATE TABLE \"test\" (" + System.lineSeparator() +
+        "\"pk1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
+        "\"pk2\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
+        "\"col1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
+        "PRIMARY KEY(\"pk1\",\"pk2\"))"
     );
-
-    assertEquals(expected, upsert);
   }
+
+  @Test
+  public void alterAddOneCol() {
+    verifyAlterAddOneCol(
+        "ALTER TABLE \"test\" ADD(" + System.lineSeparator()
+        + "\"newcol1\" NUMBER(10,0) NULL)"
+    );
+  }
+
+  @Test
+  public void alterAddTwoCol() {
+    verifyAlterAddTwoCols(
+        "ALTER TABLE \"test\" ADD(" + System.lineSeparator()
+        + "\"newcol1\" NUMBER(10,0) NULL," + System.lineSeparator()
+        + "\"newcol2\" NUMBER(10,0) DEFAULT 42)"
+    );
+  }
+
+  @Test
+  public void upsert() {
+    assertEquals(
+        "merge into \"ARTICLE\" " +
+        "using (select ? \"title\", ? \"author\", ? \"body\" FROM dual) incoming on" +
+        "(\"ARTICLE\".\"title\"=incoming.\"title\" and \"ARTICLE\".\"author\"=incoming.\"author\") " +
+        "when matched then update set \"ARTICLE\".\"body\"=incoming.\"body\" " +
+        "when not matched then insert(\"ARTICLE\".\"body\",\"ARTICLE\".\"title\",\"ARTICLE\".\"author\") " +
+        "values(incoming.\"body\",incoming.\"title\",incoming.\"author\")",
+        dialect.getUpsertQuery("ARTICLE", Arrays.asList("title", "author"), Collections.singletonList("body"))
+    );
+  }
+
 }

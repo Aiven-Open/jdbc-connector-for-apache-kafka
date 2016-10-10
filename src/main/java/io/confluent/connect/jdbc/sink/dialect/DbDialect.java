@@ -16,15 +16,21 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -35,6 +41,17 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBui
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
 
 public abstract class DbDialect {
+
+  protected static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+  protected static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
+  protected static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+  static {
+    final TimeZone utc = TimeZone.getTimeZone("UTC");
+    DATE_FORMAT.setTimeZone(utc);
+    TIME_FORMAT.setTimeZone(utc);
+    TIMESTAMP_FORMAT.setTimeZone(utc);
+  }
 
   private final String escapeStart;
   private final String escapeEnd;
@@ -121,6 +138,22 @@ public abstract class DbDialect {
   }
 
   protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Decimal.LOGICAL_NAME:
+          builder.append(value);
+          return;
+        case Date.LOGICAL_NAME:
+          builder.append("'").append(DATE_FORMAT.format((java.util.Date) value)).append("'");
+          return;
+        case Time.LOGICAL_NAME:
+          builder.append("'").append(TIME_FORMAT.format((java.util.Date) value)).append("'");
+          return;
+        case Timestamp.LOGICAL_NAME:
+          builder.append("'").append(TIMESTAMP_FORMAT.format((java.util.Date) value)).append("'");
+          return;
+      }
+    }
     switch (type) {
       case INT8:
       case INT16:
@@ -206,7 +239,7 @@ public abstract class DbDialect {
 
     if (url.startsWith("jdbc:sap")) {
       // HANA url's are in the format : jdbc:sap://$host:3(instance)(port)/
-      return new HANADialect();
+      return new HanaDialect();
     }
 
     final String protocol = extractProtocolFromUrl(url).toLowerCase();
