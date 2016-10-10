@@ -16,35 +16,87 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
-
-import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static org.junit.Assert.assertEquals;
 
-public class SqliteDialectTest {
-  @Test
-  public void validateAlterTable() {
-    List<String> queries = new SqliteDialect().getAlterTable("tableA", Arrays.asList(
-        new SinkRecordField(Schema.OPTIONAL_BOOLEAN_SCHEMA, "col1", false),
-        new SinkRecordField(Schema.OPTIONAL_FLOAT32_SCHEMA, "col2", false),
-        new SinkRecordField(Schema.OPTIONAL_STRING_SCHEMA, "col3", false)
-    ));
+public class SqliteDialectTest extends BaseDialectTest {
 
-    assertEquals(3, queries.size());
-    assertEquals("ALTER TABLE `tableA` ADD `col1` NUMERIC NULL", queries.get(0));
-    assertEquals("ALTER TABLE `tableA` ADD `col2` REAL NULL", queries.get(1));
-    assertEquals("ALTER TABLE `tableA` ADD `col3` TEXT NULL", queries.get(2));
+  public SqliteDialectTest() {
+    super(new SqliteDialect());
   }
 
   @Test
-  public void produceTheRightSqlStatementWhithACompositePK() {
-    String insert = new SqliteDialect().getUpsertQuery("Book", Arrays.asList("author", "title"), Arrays.asList("ISBN", "year", "pages"));
-    assertEquals("INSERT OR REPLACE INTO `Book`(`author`,`title`,`ISBN`,`year`,`pages`) VALUES(?,?,?,?,?)", insert);
-
+  public void dataTypeMappings() {
+    verifyDataTypeMapping("INTEGER", Schema.INT8_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT16_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT32_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.INT64_SCHEMA);
+    verifyDataTypeMapping("REAL", Schema.FLOAT32_SCHEMA);
+    verifyDataTypeMapping("REAL", Schema.FLOAT64_SCHEMA);
+    verifyDataTypeMapping("INTEGER", Schema.BOOLEAN_SCHEMA);
+    verifyDataTypeMapping("TEXT", Schema.STRING_SCHEMA);
+    verifyDataTypeMapping("BLOB", Schema.BYTES_SCHEMA);
+    verifyDataTypeMapping("NUMERIC", Decimal.schema(0));
+    verifyDataTypeMapping("NUMERIC", Date.SCHEMA);
+    verifyDataTypeMapping("NUMERIC", Time.SCHEMA);
+    verifyDataTypeMapping("NUMERIC", Timestamp.SCHEMA);
   }
+
+  @Test
+  public void createOneColNoPk() {
+    verifyCreateOneColNoPk(
+        "CREATE TABLE `test` (" + System.lineSeparator() +
+        "`col1` INTEGER NOT NULL)");
+  }
+
+  @Test
+  public void createOneColOnePk() {
+    verifyCreateOneColOnePk(
+        "CREATE TABLE `test` (" + System.lineSeparator() +
+        "`pk1` INTEGER NOT NULL," + System.lineSeparator() +
+        "PRIMARY KEY(`pk1`))");
+  }
+
+  @Test
+  public void createThreeColTwoPk() {
+    verifyCreateThreeColTwoPk(
+        "CREATE TABLE `test` (" + System.lineSeparator() +
+        "`pk1` INTEGER NOT NULL," + System.lineSeparator() +
+        "`pk2` INTEGER NOT NULL," + System.lineSeparator() +
+        "`col1` INTEGER NOT NULL," + System.lineSeparator() +
+        "PRIMARY KEY(`pk1`,`pk2`))"
+    );
+  }
+
+  @Test
+  public void alterAddOneCol() {
+    verifyAlterAddOneCol(
+        "ALTER TABLE `test` ADD `newcol1` INTEGER NULL"
+    );
+  }
+
+  @Test
+  public void alterAddTwoCol() {
+    verifyAlterAddTwoCols(
+        "ALTER TABLE `test` ADD `newcol1` INTEGER NULL",
+        "ALTER TABLE `test` ADD `newcol2` INTEGER DEFAULT 42"
+    );
+  }
+
+  @Test
+  public void upsert() {
+    assertEquals(
+        "INSERT OR REPLACE INTO `Book`(`author`,`title`,`ISBN`,`year`,`pages`) VALUES(?,?,?,?,?)",
+        dialect.getUpsertQuery("Book", Arrays.asList("author", "title"), Arrays.asList("ISBN", "year", "pages"))
+    );
+  }
+
 }
