@@ -20,6 +20,7 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -102,45 +103,45 @@ public class JdbcSinkConfig extends AbstractConfig {
   private static final String INSERT_MODE_DEFAULT = "insert";
   private static final String INSERT_MODE_DOC =
       "The insertion mode to use. Supported modes are:\n"
-      + "`insert`\n"
+      + "``insert``\n"
       + "    Use standard SQL ``INSERT`` statements.\n"
-      + "`upsert`\n"
+      + "``upsert``\n"
       + "    Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.";
   private static final String INSERT_MODE_DISPLAY = "Insert Mode";
-
-  public static final String PK_MODE = "pk.mode";
-  private static final String PK_MODE_DEFAULT = "none";
-  private static final String PK_MODE_DOC =
-      "The primary key mode, also refer to ``pk.fields`` documentation for interplay. Supported modes are:\n"
-      + "`none`\n"
-      + "    No keys utilized.\n"
-      + "`kafka`\n"
-      + "    Kafka coordinates are used as the PK.\n"
-      + "`record_key`\n"
-      + "    Field(s) from the record key are used, which may be a primitive or a struct.\n"
-      + "`record_value`\n"
-      + "    Field(s) from the record value are used, which must be a struct.";
-  private static final String PK_MODE_DISPLAY = "Primary Key Mode";
 
   public static final String PK_FIELDS = "pk.fields";
   private static final String PK_FIELDS_DEFAULT = "";
   private static final String PK_FIELDS_DOC =
       "List of comma-separated primary key field names. The runtime interpretation of this config depends on the ``pk.mode``:\n"
-      + "`none`\n"
+      + "``none``\n"
       + "    Ignored as no fields are used as primary key in this mode.\n"
-      + "`kafka`\n"
+      + "``kafka``\n"
       + "    Must be a trio representing the Kafka coordinates, defaults to ``" + StringUtils.join(DEFAULT_KAFKA_PK_NAMES, ",") + "`` if empty.\n"
-      + "`record_key`\n"
+      + "``record_key``\n"
       + "    If empty, all fields from the key struct will be used, otherwise used to extract the desired fields - for primitive key only a single field name must be configured.\n"
-      + "`record_value`\n"
+      + "``record_value``\n"
       + "    If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.";
   private static final String PK_FIELDS_DISPLAY = "Primary Key Fields";
+
+  public static final String PK_MODE = "pk.mode";
+  private static final String PK_MODE_DEFAULT = "none";
+  private static final String PK_MODE_DOC =
+      "The primary key mode, also refer to ``" + PK_FIELDS + "`` documentation for interplay. Supported modes are:\n"
+      + "``none``\n"
+      + "    No keys utilized.\n"
+      + "``kafka``\n"
+      + "    Kafka coordinates are used as the PK.\n"
+      + "``record_key``\n"
+      + "    Field(s) from the record key are used, which may be a primitive or a struct.\n"
+      + "``record_value``\n"
+      + "    Field(s) from the record value are used, which must be a struct.";
+  private static final String PK_MODE_DISPLAY = "Primary Key Mode";
 
   public static final String FIELDS_WHITELIST = "fields.whitelist";
   private static final String FIELDS_WHITELIST_DEFAULT = "";
   private static final String FIELDS_WHITELIST_DOC =
       "List of comma-separated record value field names. If empty, all fields from the record value are utilized, otherwise used to filter to the desired fields.\n"
-      + "Note that ``pk.fields`` is applied independently in the context of which field(s) form the primary key columns in the destination database,"
+      + "Note that ``" + PK_FIELDS + "`` is applied independently in the context of which field(s) form the primary key columns in the destination database,"
       + " while this configuration is applicable for the other columns.";
   private static final String FIELDS_WHITELIST_DISPLAY = "Fields Whitelist";
 
@@ -238,19 +239,23 @@ public class JdbcSinkConfig extends AbstractConfig {
   }
 
   private static class EnumValidator implements ConfigDef.Validator {
+    private final List<String> canonicalValues;
     private final Set<String> validValues;
 
-    private EnumValidator(Set<String> validValues) {
+    private EnumValidator(List<String> canonicalValues, Set<String> validValues) {
+      this.canonicalValues = canonicalValues;
       this.validValues = validValues;
     }
 
     public static <E> EnumValidator in(E[] enumerators) {
-      final HashSet<String> values = new HashSet<>();
+      final List<String> canonicalValues = new ArrayList<>(enumerators.length);
+      final Set<String> validValues = new HashSet<>(enumerators.length * 2);
       for (E e : enumerators) {
-        values.add(e.toString().toUpperCase());
-        values.add(e.toString().toLowerCase());
+        canonicalValues.add(e.toString().toLowerCase());
+        validValues.add(e.toString().toUpperCase());
+        validValues.add(e.toString().toLowerCase());
       }
-      return new EnumValidator(values);
+      return new EnumValidator(canonicalValues, validValues);
     }
 
     @Override
@@ -258,6 +263,11 @@ public class JdbcSinkConfig extends AbstractConfig {
       if (!validValues.contains(value)) {
         throw new ConfigException(key, value, "Invalid enumerator");
       }
+    }
+
+    @Override
+    public String toString() {
+      return canonicalValues.toString();
     }
   }
 
