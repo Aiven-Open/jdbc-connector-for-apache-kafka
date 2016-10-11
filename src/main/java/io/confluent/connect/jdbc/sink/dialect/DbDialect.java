@@ -42,15 +42,29 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 
 public abstract class DbDialect {
 
-  protected static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-  protected static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
-  protected static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+  protected static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+    protected SimpleDateFormat initialValue() {
+      return new SimpleDateFormat("yyyy-MM-dd");
+    }
+  };
+
+  protected static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+    protected SimpleDateFormat initialValue() {
+      return new SimpleDateFormat("HH:mm:ss.SSS");
+    }
+  };
+
+  protected static final ThreadLocal<SimpleDateFormat> TIMESTAMP_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+    protected SimpleDateFormat initialValue() {
+      return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    }
+  };
 
   static {
     final TimeZone utc = TimeZone.getTimeZone("UTC");
-    DATE_FORMAT.setTimeZone(utc);
-    TIME_FORMAT.setTimeZone(utc);
-    TIMESTAMP_FORMAT.setTimeZone(utc);
+    DATE_FORMAT.get().setTimeZone(utc);
+    TIME_FORMAT.get().setTimeZone(utc);
+    TIMESTAMP_FORMAT.get().setTimeZone(utc);
   }
 
   private final String escapeStart;
@@ -144,13 +158,13 @@ public abstract class DbDialect {
           builder.append(value);
           return;
         case Date.LOGICAL_NAME:
-          builder.append("'").append(DATE_FORMAT.format((java.util.Date) value)).append("'");
+          builder.append("'").append(DATE_FORMAT.get().format((java.util.Date) value)).append("'");
           return;
         case Time.LOGICAL_NAME:
-          builder.append("'").append(TIME_FORMAT.format((java.util.Date) value)).append("'");
+          builder.append("'").append(TIME_FORMAT.get().format((java.util.Date) value)).append("'");
           return;
         case Timestamp.LOGICAL_NAME:
-          builder.append("'").append(TIMESTAMP_FORMAT.format((java.util.Date) value)).append("'");
+          builder.append("'").append(TIMESTAMP_FORMAT.get().format((java.util.Date) value)).append("'");
           return;
       }
     }
