@@ -20,13 +20,11 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class CachedConnectionProvider implements Closeable {
+public class CachedConnectionProvider {
 
   private static final Logger log = LoggerFactory.getLogger(CachedConnectionProvider.class);
 
@@ -67,16 +65,6 @@ public class CachedConnectionProvider implements Closeable {
     log.debug("Attempting to connect to {}", url);
     connection = DriverManager.getConnection(url, username, password);
     onConnect(connection);
-  }
-
-  public synchronized void close() throws IOException {
-    if (connection != null) {
-      try {
-        connection.close();
-      } catch (SQLException e) {
-        throw new IOException(e);
-      }
-    }
   }
 
   public synchronized void closeQuietly() {
