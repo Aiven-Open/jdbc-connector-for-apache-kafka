@@ -41,31 +41,31 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBui
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
 
 public abstract class DbDialect {
+  private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
   protected static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
     protected SimpleDateFormat initialValue() {
-      return new SimpleDateFormat("yyyy-MM-dd");
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+      sdf.setTimeZone(UTC);
+      return sdf;
     }
   };
 
   protected static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
     protected SimpleDateFormat initialValue() {
-      return new SimpleDateFormat("HH:mm:ss.SSS");
+      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+      sdf.setTimeZone(UTC);
+      return sdf;
     }
   };
 
   protected static final ThreadLocal<SimpleDateFormat> TIMESTAMP_FORMAT = new ThreadLocal<SimpleDateFormat>() {
     protected SimpleDateFormat initialValue() {
-      return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+      sdf.setTimeZone(UTC);
+      return sdf;
     }
   };
-
-  static {
-    final TimeZone utc = TimeZone.getTimeZone("UTC");
-    DATE_FORMAT.get().setTimeZone(utc);
-    TIME_FORMAT.get().setTimeZone(utc);
-    TIMESTAMP_FORMAT.get().setTimeZone(utc);
-  }
 
   private final String escapeStart;
   private final String escapeEnd;
