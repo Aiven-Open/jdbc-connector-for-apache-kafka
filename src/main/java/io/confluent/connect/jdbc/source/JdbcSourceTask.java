@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +34,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 import io.confluent.connect.jdbc.util.JdbcUtils;
 import io.confluent.connect.jdbc.util.Version;
 
@@ -48,7 +48,7 @@ public class JdbcSourceTask extends SourceTask {
 
   private Time time;
   private JdbcSourceTaskConfig config;
-  private Connection connection;
+  private CachedConnectionProvider cachedConnectionProvider;
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
   private AtomicBoolean stop;
 
@@ -72,6 +72,8 @@ public class JdbcSourceTask extends SourceTask {
     } catch (ConfigException e) {
       throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
+
+    cachedConnectionProvider = new CachedConnectionProvider(config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
@@ -105,11 +107,6 @@ public class JdbcSourceTask extends SourceTask {
       }
       offsets = context.offsetStorageReader().offsets(partitions);
     }
-
-    // Must setup the connection now to validate NOT NULL columns. At this point we've already
-    // caught any easy-to-find errors so deferring the connection creation won't save any effort
-
-    initConnection();
 
     String schemaPattern
         = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
@@ -165,7 +162,9 @@ public class JdbcSourceTask extends SourceTask {
     if (stop != null) {
       stop.set(true);
     }
-    closeConnectionQuietly();
+    if (cachedConnectionProvider != null) {
+      cachedConnectionProvider.closeQuietly();
+    }
   }
 
   @Override
@@ -185,12 +184,10 @@ public class JdbcSourceTask extends SourceTask {
         }
       }
 
-      initConnection();
-
       final List<SourceRecord> results = new ArrayList<>();
       try {
         log.debug("Checking for next block of results from {}", querier.toString());
-        querier.maybeStartQuery(connection);
+        querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
 
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
@@ -229,44 +226,9 @@ public class JdbcSourceTask extends SourceTask {
     tableQueue.add(expectedHead);
   }
 
-  void initConnection() {
-    try {
-      if (connection == null) {
-        connection = openConnection();
-      } else if (!connection.isValid(3000)) {
-        log.info("The database connection is invalid. Reconnecting...");
-        closeConnectionQuietly();
-        connection = openConnection();
-      }
-    } catch (SQLException sqle) {
-      throw new ConnectException(sqle);
-    }
-  }
-
-  private void closeConnectionQuietly() {
-    if (connection != null) {
-      try {
-        connection.close();
-        connection = null;
-      } catch (SQLException sqle) {
-        log.warn("Ignoring error closing connection", sqle);
-      }
-    }
-  }
-
-  private Connection openConnection() {
-    final String dbUrl = config.getString(JdbcSourceTaskConfig.CONNECTION_URL_CONFIG);
-    log.debug("Attempting to connect to {}", dbUrl);
-    try {
-      return DriverManager.getConnection(dbUrl);
-    } catch (SQLException e) {
-      log.error("Failed to open connection to {}", dbUrl, e);
-      throw new ConnectException(e);
-    }
-  }
-
   private void validateNonNullable(String incrementalMode, String schemaPattern, String table, String incrementingColumn, String timestampColumn) {
     try {
+      final Connection connection = cachedConnectionProvider.getValidConnection();
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
       // for table-based copying because custom query mode doesn't allow this to be looked up
       // without a query or parsing the query since we don't have a table name.

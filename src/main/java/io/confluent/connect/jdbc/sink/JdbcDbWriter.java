@@ -18,35 +18,38 @@ package io.confluent.connect.jdbc.sink;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 
 public class JdbcDbWriter {
-  private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
   private final JdbcSinkConfig config;
   private final DbDialect dbDialect;
   private final DbStructure dbStructure;
-
-  Connection connection;
+  final CachedConnectionProvider cachedConnectionProvider;
 
   JdbcDbWriter(final JdbcSinkConfig config, DbDialect dbDialect, DbStructure dbStructure) {
     this.config = config;
     this.dbDialect = dbDialect;
     this.dbStructure = dbStructure;
+
+    this.cachedConnectionProvider = new CachedConnectionProvider(config.connectionUrl, config.connectionUser, config.connectionPassword) {
+      @Override
+      protected void onConnect(Connection connection) throws SQLException {
+        connection.setAutoCommit(false);
+      }
+    };
   }
 
   void write(final Collection<SinkRecord> records) throws SQLException {
-    initConnection();
+    final Connection connection = cachedConnectionProvider.getValidConnection();
 
     final Map<String, BufferedRecords> bufferByTable = new HashMap<>();
     for (SinkRecord record : records) {
@@ -64,30 +67,8 @@ public class JdbcDbWriter {
     connection.commit();
   }
 
-  void initConnection() throws SQLException {
-    if (connection == null) {
-      connection = newConnection();
-    } else if (!connection.isValid(3000)) {
-      log.info("The database connection is invalid. Reconnecting...");
-      closeQuietly();
-      connection = newConnection();
-    }
-    connection.setAutoCommit(false);
-  }
-
-  Connection newConnection() throws SQLException {
-    return DriverManager.getConnection(config.connectionUrl, config.connectionUser, config.connectionPassword);
-  }
-
   void closeQuietly() {
-    if (connection != null) {
-      try {
-        connection.close();
-        connection = null;
-      } catch (SQLException sqle) {
-        log.warn("Ignoring error closing connection", sqle);
-      }
-    }
+    cachedConnectionProvider.closeQuietly();
   }
 
   String destinationTable(String topic) {
