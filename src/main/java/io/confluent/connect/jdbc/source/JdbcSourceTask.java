@@ -48,7 +48,7 @@ public class JdbcSourceTask extends SourceTask {
 
   private Time time;
   private JdbcSourceTaskConfig config;
-  private Connection db;
+  private Connection connection;
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
   private AtomicBoolean stop;
 
@@ -108,14 +108,8 @@ public class JdbcSourceTask extends SourceTask {
 
     // Must setup the connection now to validate NOT NULL columns. At this point we've already
     // caught any easy-to-find errors so deferring the connection creation won't save any effort
-    String dbUrl = config.getString(JdbcSourceTaskConfig.CONNECTION_URL_CONFIG);
-    log.debug("Trying to connect to {}", dbUrl);
-    try {
-      db = DriverManager.getConnection(dbUrl);
-    } catch (SQLException e) {
-      log.error("Couldn't open connection to {}: {}", dbUrl, e);
-      throw new ConnectException(e);
-    }
+
+    initConnection();
 
     String schemaPattern
         = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
@@ -171,40 +165,32 @@ public class JdbcSourceTask extends SourceTask {
     if (stop != null) {
       stop.set(true);
     }
-    if (db != null) {
-      log.debug("Trying to close database connection");
-      try {
-        db.close();
-      } catch (SQLException e) {
-        log.error("Failed to close database connection: ", e);
-      }
-    }
+    closeConnectionQuietly();
   }
 
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
-    long now = time.milliseconds();
     log.trace("{} Polling for new data");
+
     while (!stop.get()) {
-      // If not in the middle of an update, wait for next update time
-      TableQuerier querier = tableQueue.peek();
+      final TableQuerier querier = tableQueue.peek();
+
       if (!querier.querying()) {
-        long nextUpdate = querier.getLastUpdate() +
-                          config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
-        long untilNext = nextUpdate - now;
-        log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
-        if (untilNext > 0) {
+        // If not in the middle of an update, wait for next update time
+        final long nextUpdate = querier.getLastUpdate() + config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
+        for (long untilNext = nextUpdate - time.milliseconds(); untilNext > 0; untilNext = nextUpdate - time.milliseconds()) {
+          // The purpose of the loop is to handle spurious wakeups
+          log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
           time.sleep(untilNext);
-          now = time.milliseconds();
-          // Handle spurious wakeups
-          continue;
         }
       }
 
-      List<SourceRecord> results = new ArrayList<>();
+      initConnection();
+
+      final List<SourceRecord> results = new ArrayList<>();
       try {
         log.debug("Checking for next block of results from {}", querier.toString());
-        querier.maybeStartQuery(db);
+        querier.maybeStartQuery(connection);
 
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
@@ -212,15 +198,9 @@ public class JdbcSourceTask extends SourceTask {
           results.add(querier.extractRecord());
         }
 
-
-        // If we finished processing the results from this query, we can clear it out
         if (!hadNext) {
-          log.debug("Closing this query for {}", querier.toString());
-          TableQuerier removedQuerier = tableQueue.poll();
-          assert removedQuerier == querier;
-          now = time.milliseconds();
-          querier.close(now);
-          tableQueue.add(querier);
+          // If we finished processing the results from the current query, we can reset and send the querier to the tail of the queue
+          resetAndRequeueHead(querier);
         }
 
         if (results.isEmpty()) {
@@ -232,15 +212,7 @@ public class JdbcSourceTask extends SourceTask {
         return results;
       } catch (SQLException e) {
         log.error("Failed to run query for table {}: {}", querier.toString(), e);
-        // clear out the query if we had errors, this also handles backoff in case of errors
-        if (querier != null) {
-          now = time.milliseconds();
-          try {
-            querier.close(now);
-          } catch (SQLException e1) {
-            log.error("Failed to close result set for failed query ", e);
-          }
-        }
+        resetAndRequeueHead(querier);
         return null;
       }
     }
@@ -249,22 +221,65 @@ public class JdbcSourceTask extends SourceTask {
     return null;
   }
 
-  private void validateNonNullable(String incrementalMode, String schemaPattern, String table, String incrementingColumn,
-                                   String timestampColumn) {
+  private void resetAndRequeueHead(TableQuerier expectedHead) {
+    log.debug("Resetting querier {}", expectedHead.toString());
+    TableQuerier removedQuerier = tableQueue.poll();
+    assert removedQuerier == expectedHead;
+    expectedHead.reset(time.milliseconds());
+    tableQueue.add(expectedHead);
+  }
+
+  void initConnection() {
+    try {
+      if (connection == null) {
+        connection = openConnection();
+      } else if (!connection.isValid(3000)) {
+        log.info("The database connection is invalid. Reconnecting...");
+        closeConnectionQuietly();
+        connection = openConnection();
+      }
+    } catch (SQLException sqle) {
+      throw new ConnectException(sqle);
+    }
+  }
+
+  private void closeConnectionQuietly() {
+    if (connection != null) {
+      try {
+        connection.close();
+        connection = null;
+      } catch (SQLException sqle) {
+        log.warn("Ignoring error closing connection", sqle);
+      }
+    }
+  }
+
+  private Connection openConnection() {
+    final String dbUrl = config.getString(JdbcSourceTaskConfig.CONNECTION_URL_CONFIG);
+    log.debug("Attempting to connect to {}", dbUrl);
+    try {
+      return DriverManager.getConnection(dbUrl);
+    } catch (SQLException e) {
+      log.error("Failed to open connection to {}", dbUrl, e);
+      throw new ConnectException(e);
+    }
+  }
+
+  private void validateNonNullable(String incrementalMode, String schemaPattern, String table, String incrementingColumn, String timestampColumn) {
     try {
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
       // for table-based copying because custom query mode doesn't allow this to be looked up
       // without a query or parsing the query since we don't have a table name.
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING) ||
            incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
-          JdbcUtils.isColumnNullable(db, schemaPattern, table, incrementingColumn)) {
+          JdbcUtils.isColumnNullable(connection, schemaPattern, table, incrementingColumn)) {
         throw new ConnectException("Cannot make incremental queries using incrementing column " +
                                    incrementingColumn + " on " + table + " because this column is "
                                    + "nullable.");
       }
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
            incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
-          JdbcUtils.isColumnNullable(db, schemaPattern, table, timestampColumn)) {
+          JdbcUtils.isColumnNullable(connection, schemaPattern, table, timestampColumn)) {
         throw new ConnectException("Cannot make incremental queries using timestamp column " +
                                    timestampColumn + " on " + table + " because this column is "
                                    + "nullable.");
