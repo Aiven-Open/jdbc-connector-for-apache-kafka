@@ -134,7 +134,7 @@ controls this behavior and supports the following options:
 * **Timestamp and Incrementing Columns**: This is the most robust and accurate mode, combining an
   incrementing column with a timestamp column. By combining the two, as long as the timestamp is
   sufficiently granular, each (id, timestamp) tuple will uniquely identify an update to a row. Even
-  if an update fails after partially completing, unprocessed updates will are still correctly
+  if an update fails after partially completing, unprocessed updates will still be correctly
   detected and delivered when the system recovers.
 
 * **Custom Query**: The source connector supports using custom queries instead of copying whole
