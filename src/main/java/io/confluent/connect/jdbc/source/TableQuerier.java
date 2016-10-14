@@ -36,10 +36,12 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   }
 
   protected final QueryMode mode;
-  protected String schemaPattern;
+  protected final String schemaPattern;
   protected final String name;
   protected final String query;
   protected final String topicPrefix;
+
+  // Mutable state
   protected long lastUpdate;
   protected PreparedStatement stmt;
   protected ResultSet resultSet;
@@ -88,15 +90,33 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
 
   public abstract SourceRecord extractRecord() throws SQLException;
 
-  public void close(long now) throws SQLException {
-    if (resultSet != null)
-      resultSet.close();
-    resultSet = null;
+  public void reset(long now) {
+    closeResultSetQuietly();
+    closeStatementQuietly();
     // TODO: Can we cache this and quickly check that it's identical for the next query
     // instead of constructing from scratch since it's almost always the same
     schema = null;
-
     lastUpdate = now;
+  }
+
+  private void closeStatementQuietly() {
+    if (stmt != null) {
+      try {
+        stmt.close();
+      } catch (SQLException ignored) {
+      }
+    }
+    stmt = null;
+  }
+
+  private void closeResultSetQuietly() {
+    if (resultSet != null) {
+      try {
+        resultSet.close();
+      } catch (SQLException ignored) {
+      }
+    }
+    resultSet = null;
   }
 
   @Override
