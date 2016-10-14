@@ -108,7 +108,6 @@ public class TableMonitorThread extends Thread {
     shutdownLatch.countDown();
   }
 
-  // Update tables and return true if the
   private synchronized boolean updateTables() {
     final List<String> tables;
     try {
