@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,7 +97,7 @@ public class JdbcDbWriterTest {
 
     writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 1L, valueSchema1, valueStruct1, 0)));
 
-    DbTable metadata = DbMetadataQueries.getTableMetadata(writer.connection, topic);
+    DbTable metadata = DbMetadataQueries.getTableMetadata(writer.cachedConnectionProvider.getValidConnection(), topic);
     assertTrue(metadata.columns.get("id").isPrimaryKey);
     for (Field field : valueSchema1.fields()) {
       assertTrue(metadata.columns.containsKey(field.name()));

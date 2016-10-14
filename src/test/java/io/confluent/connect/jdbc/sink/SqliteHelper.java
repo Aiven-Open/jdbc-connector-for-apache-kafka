@@ -28,6 +28,14 @@ import java.sql.Statement;
 
 public final class SqliteHelper {
 
+  static {
+    try {
+      Class.forName("org.sqlite.JDBC");
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public interface ResultSetReadCallback {
     void read(final ResultSet rs) throws SQLException;
   }

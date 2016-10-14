@@ -21,7 +21,6 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 import io.confluent.connect.jdbc.util.JdbcUtils;
 
 /**
@@ -39,7 +39,7 @@ import io.confluent.connect.jdbc.util.JdbcUtils;
 public class TableMonitorThread extends Thread {
   private static final Logger log = LoggerFactory.getLogger(TableMonitorThread.class);
 
-  private final Connection db;
+  private final CachedConnectionProvider cachedConnectionProvider;
   private final String schemaPattern;
   private final ConnectorContext context;
   private final CountDownLatch shutdownLatch;
@@ -49,9 +49,9 @@ public class TableMonitorThread extends Thread {
   private List<String> tables;
   private Set<String> tableTypes;
 
-  public TableMonitorThread(Connection db, ConnectorContext context, String schemaPattern, long pollMs,
+  public TableMonitorThread(CachedConnectionProvider cachedConnectionProvider, ConnectorContext context, String schemaPattern, long pollMs,
                             Set<String> whitelist, Set<String> blacklist, Set<String> tableTypes) {
-    this.db = db;
+    this.cachedConnectionProvider = cachedConnectionProvider;
     this.schemaPattern = schemaPattern;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
@@ -65,8 +65,13 @@ public class TableMonitorThread extends Thread {
   @Override
   public void run() {
     while (shutdownLatch.getCount() > 0) {
-      if (updateTables()) {
-        context.requestTaskReconfiguration();
+      try {
+        if (updateTables()) {
+          context.requestTaskReconfiguration();
+        }
+      } catch (Exception e) {
+        context.raiseError(e);
+        throw e;
       }
 
       try {
@@ -80,74 +85,69 @@ public class TableMonitorThread extends Thread {
     }
   }
 
-  public List<String> tables() {
+  public synchronized List<String> tables() {
     //TODO: Timeout should probably be user-configurable or class-level constant
     final long timeout = 10000L;
-    synchronized (db) {
-      long started = System.currentTimeMillis();
-      long now = started;
-      while (tables == null && now - started < timeout) {
-        try {
-          db.wait(timeout - (now - started));
-        } catch (InterruptedException e) {
-          // Ignore
-        }
-        now = System.currentTimeMillis();
+    long started = System.currentTimeMillis();
+    long now = started;
+    while (tables == null && now - started < timeout) {
+      try {
+        wait(timeout - (now - started));
+      } catch (InterruptedException e) {
+        // Ignore
       }
-      if (tables == null) {
-        throw new ConnectException("Tables could not be updated quickly enough.");
-      }
-      return tables;
+      now = System.currentTimeMillis();
     }
+    if (tables == null) {
+      throw new ConnectException("Tables could not be updated quickly enough.");
+    }
+    return tables;
   }
 
   public void shutdown() {
     shutdownLatch.countDown();
   }
 
-  // Update tables and return true if the
-  private boolean updateTables() {
-    synchronized (db) {
-      final List<String> tables;
-      try {
-        tables = JdbcUtils.getTables(db, schemaPattern, tableTypes);
-        log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
-      } catch (SQLException e) {
-        log.error("Error while trying to get updated table list, ignoring and waiting for next "
-                  + "table poll interval", e);
-        return false;
-      }
-
-      final List<String> filteredTables;
-      if (whitelist != null) {
-        filteredTables = new ArrayList<>(tables.size());
-        for (String table : tables) {
-          if (whitelist.contains(table)) {
-            filteredTables.add(table);
-          }
-        }
-      } else if (blacklist != null) {
-        filteredTables = new ArrayList<>(tables.size());
-        for (String table : tables) {
-          if (!blacklist.contains(table)) {
-            filteredTables.add(table);
-          }
-        }
-      } else {
-        filteredTables = tables;
-      }
-
-      if (!filteredTables.equals(this.tables)) {
-        log.debug("After filtering we got tables: " + Arrays.toString(filteredTables.toArray()));
-        List<String> previousTables = this.tables;
-        this.tables = filteredTables;
-        db.notifyAll();
-        // Only return true if the table list wasn't previously null, i.e. if this was not the
-        // first table lookup
-        return previousTables != null;
-      }
-
+  private synchronized boolean updateTables() {
+    final List<String> tables;
+    try {
+      tables = JdbcUtils.getTables(cachedConnectionProvider.getValidConnection(), schemaPattern, tableTypes);
+      log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
+    } catch (SQLException e) {
+      log.error("Error while trying to get updated table list, ignoring and waiting for next table poll interval", e);
+      cachedConnectionProvider.closeQuietly();
       return false;
     }
+
+    final List<String> filteredTables;
+    if (whitelist != null) {
+      filteredTables = new ArrayList<>(tables.size());
+      for (String table : tables) {
+        if (whitelist.contains(table)) {
+          filteredTables.add(table);
+        }
+      }
+    } else if (blacklist != null) {
+      filteredTables = new ArrayList<>(tables.size());
+      for (String table : tables) {
+        if (!blacklist.contains(table)) {
+          filteredTables.add(table);
+        }
+      }
+    } else {
+      filteredTables = tables;
+    }
+
+    if (!filteredTables.equals(this.tables)) {
+      log.debug("After filtering we got tables: " + Arrays.toString(filteredTables.toArray()));
+      List<String> previousTables = this.tables;
+      this.tables = filteredTables;
+      notifyAll();
+      // Only return true if the table list wasn't previously null, i.e. if this was not the
+      // first table lookup
+      return previousTables != null;
+    }
+
+    return false;
   }
 }

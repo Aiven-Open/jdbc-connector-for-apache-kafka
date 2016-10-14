@@ -25,9 +25,6 @@ import org.apache.kafka.connect.util.ConnectorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
@@ -55,7 +53,7 @@ public class JdbcSourceConnector extends SourceConnector {
 
   private Map<String, String> configProperties;
   private JdbcSourceConnectorConfig config;
-  private Connection db;
+  private CachedConnectionProvider cachedConnectionProvider;
   private TableMonitorThread tableMonitorThread;
 
   @Override
@@ -73,14 +71,10 @@ public class JdbcSourceConnector extends SourceConnector {
                                  + "error", e);
     }
 
-    String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
-    log.debug("Trying to connect to {}", dbUrl);
-    try {
-      db = DriverManager.getConnection(dbUrl);
-    } catch (SQLException e) {
-      log.error("Couldn't open connection to {}: {}", dbUrl, e);
-      throw new ConnectException(e);
-    }
+    cachedConnectionProvider = new CachedConnectionProvider(config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
+
+    // Initial connection attempt
+    cachedConnectionProvider.getValidConnection();
 
     long tablePollMs = config.getLong(JdbcSourceConnectorConfig.TABLE_POLL_INTERVAL_MS_CONFIG);
     List<String> whitelist = config.getList(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG);
@@ -105,8 +99,7 @@ public class JdbcSourceConnector extends SourceConnector {
       // query.
       whitelistSet = Collections.emptySet();
     }
-    tableMonitorThread = new TableMonitorThread(db, context, schemaPattern, tablePollMs,
-                                                whitelistSet, blacklistSet, tableTypesSet);
+    tableMonitorThread = new TableMonitorThread(cachedConnectionProvider, context, schemaPattern, tablePollMs, whitelistSet, blacklistSet, tableTypesSet);
     tableMonitorThread.start();
   }
 
@@ -148,13 +141,7 @@ public class JdbcSourceConnector extends SourceConnector {
     } catch (InterruptedException e) {
       // Ignore, shouldn't be interrupted
     }
-
-    log.debug("Trying to close database connection");
-    try {
-      db.close();
-    } catch (SQLException e) {
-      log.error("Failed to close database connection: ", e);
-    }
+    cachedConnectionProvider.closeQuietly();
   }
 
   @Override
