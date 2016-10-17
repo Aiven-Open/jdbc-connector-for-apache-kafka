@@ -34,9 +34,9 @@ import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 public class JdbcSinkTask extends SinkTask {
   private static final Logger log = LoggerFactory.getLogger(JdbcSinkTask.class);
 
-  private JdbcSinkConfig config;
-  private JdbcDbWriter writer;
-  private int remainingRetries;
+  JdbcSinkConfig config;
+  JdbcDbWriter writer;
+  int remainingRetries;
 
   @Override
   public void start(final Map<String, String> props) {
@@ -46,7 +46,7 @@ public class JdbcSinkTask extends SinkTask {
     remainingRetries = config.maxRetries;
   }
 
-  private void initWriter() {
+  void initWriter() {
     final DbDialect dbDialect = DbDialect.fromConnectionString(config.connectionUrl);
     final DbStructure dbStructure = new DbStructure(dbDialect);
     log.info("Initializing writer using SQL dialect: {}", dbDialect.getClass().getSimpleName());

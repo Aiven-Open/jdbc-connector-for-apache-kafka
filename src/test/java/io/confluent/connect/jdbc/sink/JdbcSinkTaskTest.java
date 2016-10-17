@@ -19,8 +19,11 @@ package io.confluent.connect.jdbc.sink;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,12 +34,15 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
-public class SinkTaskTest {
+public class JdbcSinkTaskTest extends EasyMockSupport {
   private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
   private static final Schema SCHEMA = SchemaBuilder.struct().name("com.example.Person")
@@ -176,6 +182,64 @@ public class SinkTaskTest {
             }
         )
     );
+  }
+
+  @Test
+  public void retries() throws SQLException {
+    final int maxRetries = 2;
+    final int retryBackoffMs = 1000;
+
+    Set<SinkRecord> records = Collections.singleton(new SinkRecord("stub", 0, null, null, null, null, 0));
+    final JdbcDbWriter mockWriter = createMock(JdbcDbWriter.class);
+    SinkTaskContext ctx = createMock(SinkTaskContext.class);
+
+    mockWriter.write(records);
+    expectLastCall().andThrow(new SQLException()).times(1 + maxRetries);
+
+    ctx.timeout(retryBackoffMs);
+    expectLastCall().times(maxRetries);
+
+    mockWriter.closeQuietly();
+    expectLastCall().times(maxRetries);
+
+    JdbcSinkTask task = new JdbcSinkTask() {
+      @Override
+      void initWriter() {
+        this.writer = mockWriter;
+      }
+    };
+    task.initialize(ctx);
+
+    Map<String, String> props = new HashMap<>();
+    props.put(JdbcSinkConfig.CONNECTION_URL, "stub");
+    props.put(JdbcSinkConfig.MAX_RETRIES, String.valueOf(maxRetries));
+    props.put(JdbcSinkConfig.RETRY_BACKOFF_MS, String.valueOf(retryBackoffMs));
+    task.start(props);
+
+    replayAll();
+
+    try {
+      task.put(records);
+      fail();
+    } catch (RetriableException expected) {
+    }
+
+    try {
+      task.put(records);
+      fail();
+    } catch (RetriableException expected) {
+    }
+
+    try {
+      task.put(records);
+      fail();
+    } catch (RetriableException e) {
+      fail("Non-retriable exception expected");
+    } catch (ConnectException expected) {
+      assertEquals(SQLException.class, expected.getCause().getClass());
+    }
+
+    verifyAll();
   }
 
 }
