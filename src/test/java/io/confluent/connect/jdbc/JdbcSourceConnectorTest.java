@@ -28,7 +28,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,7 +98,7 @@ public class JdbcSourceConnectorTest {
   @Test
   public void testStartStop() throws Exception {
     CachedConnectionProvider mockCachedConnectionProvider = PowerMock.createMock(CachedConnectionProvider.class);
-    PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl()).andReturn(mockCachedConnectionProvider);
+    PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl(), null, null).andReturn(mockCachedConnectionProvider);
 
     // Should request a connection, then should close it on stop()
     Connection conn = PowerMock.createMock(Connection.class);
