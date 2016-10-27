@@ -18,6 +18,7 @@ package io.confluent.connect.jdbc;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -71,7 +72,10 @@ public class JdbcSourceConnector extends SourceConnector {
                                  + "error", e);
     }
 
-    cachedConnectionProvider = new CachedConnectionProvider(config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
+    final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    final String dbUser = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
+    final Password dbPassword = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
+    cachedConnectionProvider = new CachedConnectionProvider(dbUrl, dbUser, dbPassword == null ? null : dbPassword.value());
 
     // Initial connection attempt
     cachedConnectionProvider.getValidConnection();
