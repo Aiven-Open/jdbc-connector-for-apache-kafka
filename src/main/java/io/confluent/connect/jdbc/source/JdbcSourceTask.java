@@ -181,6 +181,7 @@ public class JdbcSourceTask extends SourceTask {
         if (untilNext > 0) {
           log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
           time.sleep(untilNext);
+          continue; // Re-check stop flag before continuing
         }
       }
 
