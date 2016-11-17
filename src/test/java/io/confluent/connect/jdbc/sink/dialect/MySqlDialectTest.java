@@ -49,7 +49,7 @@ public class MySqlDialectTest extends BaseDialectTest {
     verifyDataTypeMapping("DECIMAL(65,2)", Decimal.schema(2));
     verifyDataTypeMapping("DATE", Date.SCHEMA);
     verifyDataTypeMapping("TIME(3)", Time.SCHEMA);
-    verifyDataTypeMapping("TIMESTAMP(3)", Timestamp.SCHEMA);
+    verifyDataTypeMapping("DATETIME(3)", Timestamp.SCHEMA);
   }
 
   @Test
