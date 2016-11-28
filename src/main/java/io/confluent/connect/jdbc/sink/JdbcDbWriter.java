@@ -63,6 +63,7 @@ public class JdbcDbWriter {
     }
     for (BufferedRecords buffer : bufferByTable.values()) {
       buffer.flush();
+      buffer.close();
     }
     connection.commit();
   }
