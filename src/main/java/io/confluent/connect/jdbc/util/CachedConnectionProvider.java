@@ -28,7 +28,7 @@ public class CachedConnectionProvider {
 
   private static final Logger log = LoggerFactory.getLogger(CachedConnectionProvider.class);
 
-  private static final int VALIDITY_CHECK_TIMEOUT_MS = 5000;
+  private static final int VALIDITY_CHECK_TIMEOUT_S = 5;
 
   private final String url;
   private final String username;
@@ -50,7 +50,7 @@ public class CachedConnectionProvider {
     try {
       if (connection == null) {
         newConnection();
-      } else if (!connection.isValid(VALIDITY_CHECK_TIMEOUT_MS)) {
+      } else if (!connection.isValid(VALIDITY_CHECK_TIMEOUT_S)) {
         log.info("The database connection is invalid. Reconnecting...");
         closeQuietly();
         newConnection();

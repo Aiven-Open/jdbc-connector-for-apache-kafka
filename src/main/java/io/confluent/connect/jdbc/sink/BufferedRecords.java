@@ -65,6 +65,7 @@ public class BufferedRecords {
       dbStructure.createOrAmendIfNecessary(config, connection, tableName, fieldsMetadata);
       final String insertSql = getInsertSql();
       log.debug("{} sql: {}", config.insertMode, insertSql);
+      close();
       preparedStatement = connection.prepareStatement(insertSql);
       preparedStatementBinder = new PreparedStatementBinder(preparedStatement, config.pkMode, schemaPair, fieldsMetadata);
     }
@@ -111,6 +112,13 @@ public class BufferedRecords {
     final List<SinkRecord> flushedRecords = records;
     records = new ArrayList<>();
     return flushedRecords;
+  }
+
+  public void close() throws SQLException {
+    if (preparedStatement != null) {
+      preparedStatement.close();
+      preparedStatement = null;
+    }
   }
 
   private String getInsertSql() {
