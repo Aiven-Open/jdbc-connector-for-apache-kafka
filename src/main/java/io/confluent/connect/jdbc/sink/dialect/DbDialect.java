@@ -24,48 +24,22 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.xml.bind.DatatypeConverter;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.Transform;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
 
 public abstract class DbDialect {
-  private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-
-  protected static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-    protected SimpleDateFormat initialValue() {
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-      sdf.setTimeZone(UTC);
-      return sdf;
-    }
-  };
-
-  protected static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-    protected SimpleDateFormat initialValue() {
-      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
-      sdf.setTimeZone(UTC);
-      return sdf;
-    }
-  };
-
-  protected static final ThreadLocal<SimpleDateFormat> TIMESTAMP_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-    protected SimpleDateFormat initialValue() {
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-      sdf.setTimeZone(UTC);
-      return sdf;
-    }
-  };
 
   private final String escapeStart;
   private final String escapeEnd;
@@ -158,13 +132,13 @@ public abstract class DbDialect {
           builder.append(value);
           return;
         case Date.LOGICAL_NAME:
-          builder.append("'").append(DATE_FORMAT.get().format((java.util.Date) value)).append("'");
+          builder.append("'").append(DateTimeUtils.formatUtcDate((java.util.Date) value)).append("'");
           return;
         case Time.LOGICAL_NAME:
-          builder.append("'").append(TIME_FORMAT.get().format((java.util.Date) value)).append("'");
+          builder.append("'").append(DateTimeUtils.formatUtcTime((java.util.Date) value)).append("'");
           return;
         case Timestamp.LOGICAL_NAME:
-          builder.append("'").append(TIMESTAMP_FORMAT.get().format((java.util.Date) value)).append("'");
+          builder.append("'").append(DateTimeUtils.formatUtcTimestamp((java.util.Date) value)).append("'");
           return;
       }
     }

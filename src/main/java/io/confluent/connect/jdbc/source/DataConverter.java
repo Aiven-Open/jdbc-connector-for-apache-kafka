@@ -35,10 +35,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Types;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
 
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 
 /**
  * DataConverter handles translating table schemas to Kafka Connect schemas and row data to Kafka
@@ -46,13 +44,6 @@ import java.util.TimeZone;
  */
 public class DataConverter {
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
-
-  private static final ThreadLocal<Calendar> UTC_CALENDAR = new ThreadLocal<Calendar>() {
-    @Override
-    protected Calendar initialValue() {
-      return new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    }
-  };
 
   public static Schema convertSchema(String tableName, ResultSetMetaData metadata)
       throws SQLException {
@@ -355,19 +346,19 @@ public class DataConverter {
 
       // Date is day + moth + year
       case Types.DATE: {
-        colValue = resultSet.getDate(col, UTC_CALENDAR.get());
+        colValue = resultSet.getDate(col, DateTimeUtils.UTC_CALENDAR.get());
         break;
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        colValue = resultSet.getTime(col, UTC_CALENDAR.get());
+        colValue = resultSet.getTime(col, DateTimeUtils.UTC_CALENDAR.get());
         break;
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        colValue = resultSet.getTimestamp(col, UTC_CALENDAR.get());
+        colValue = resultSet.getTimestamp(col, DateTimeUtils.UTC_CALENDAR.get());
         break;
       }
 

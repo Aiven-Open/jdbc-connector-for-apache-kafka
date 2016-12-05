@@ -29,12 +29,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.Map;
-import java.util.TimeZone;
 
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 import io.confluent.connect.jdbc.util.JdbcUtils;
 
 /**
@@ -57,7 +55,6 @@ import io.confluent.connect.jdbc.util.JdbcUtils;
 public class TimestampIncrementingTableQuerier extends TableQuerier {
   private static final Logger log = LoggerFactory.getLogger(TimestampIncrementingTableQuerier.class);
 
-  private static final Calendar UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
   private static final BigDecimal LONG_MAX_VALUE_AS_BIGDEC = new BigDecimal(Long.MAX_VALUE);
 
   private String timestampColumn;
@@ -154,27 +151,27 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
     if (incrementingColumn != null && timestampColumn != null) {
       Timestamp tsOffset = offset.getTimestampOffset();
       Long incOffset = offset.getIncrementingOffset();
-      Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
-      stmt.setTimestamp(1, endTime, UTC_CALENDAR);
-      stmt.setTimestamp(2, tsOffset, UTC_CALENDAR);
+      Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), DateTimeUtils.UTC_CALENDAR.get()).getTime() - timestampDelay);
+      stmt.setTimestamp(1, endTime, DateTimeUtils.UTC_CALENDAR.get());
+      stmt.setTimestamp(2, tsOffset, DateTimeUtils.UTC_CALENDAR.get());
       stmt.setLong(3, incOffset);
-      stmt.setTimestamp(4, tsOffset, UTC_CALENDAR);
+      stmt.setTimestamp(4, tsOffset, DateTimeUtils.UTC_CALENDAR.get());
       log.debug("Executing prepared statement with start time value = {} end time = {} and incrementing value = {}",
-              JdbcUtils.formatUTC(tsOffset),
-              JdbcUtils.formatUTC(endTime),
-              incOffset);
+                DateTimeUtils.formatUtcTimestamp(tsOffset),
+                DateTimeUtils.formatUtcTimestamp(endTime),
+                incOffset);
     } else if (incrementingColumn != null) {
       Long incOffset = offset.getIncrementingOffset();
       stmt.setLong(1, incOffset);
       log.debug("Executing prepared statement with incrementing value = {}", incOffset);
     } else if (timestampColumn != null) {
       Timestamp tsOffset = offset.getTimestampOffset();
-      Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), UTC_CALENDAR).getTime() - timestampDelay);
-      stmt.setTimestamp(1, tsOffset, UTC_CALENDAR);
-      stmt.setTimestamp(2, endTime, UTC_CALENDAR);
+      Timestamp endTime = new Timestamp(JdbcUtils.getCurrentTimeOnDB(stmt.getConnection(), DateTimeUtils.UTC_CALENDAR.get()).getTime() - timestampDelay);
+      stmt.setTimestamp(1, tsOffset, DateTimeUtils.UTC_CALENDAR.get());
+      stmt.setTimestamp(2, endTime, DateTimeUtils.UTC_CALENDAR.get());
       log.debug("Executing prepared statement with timestamp value = {} end time = {}",
-              JdbcUtils.formatUTC(tsOffset),
-              JdbcUtils.formatUTC(endTime));
+                DateTimeUtils.formatUtcTimestamp(tsOffset),
+                DateTimeUtils.formatUtcTimestamp(endTime));
     }
     return stmt.executeQuery();
   }
