@@ -33,6 +33,7 @@ import java.sql.SQLException;
 
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 
 public class PreparedStatementBinder {
 
@@ -162,16 +163,16 @@ public class PreparedStatementBinder {
     if (schema.name() != null) {
       switch (schema.name()) {
         case Date.LOGICAL_NAME:
-          statement.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()));
+          statement.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()), DateTimeUtils.UTC_CALENDAR.get());
           return true;
         case Decimal.LOGICAL_NAME:
           statement.setBigDecimal(index, (BigDecimal) value);
           return true;
         case Time.LOGICAL_NAME:
-          statement.setTime(index, new java.sql.Time(((java.util.Date) value).getTime()));
+          statement.setTime(index, new java.sql.Time(((java.util.Date) value).getTime()), DateTimeUtils.UTC_CALENDAR.get());
           return true;
         case Timestamp.LOGICAL_NAME:
-          statement.setTimestamp(index, new java.sql.Timestamp(((java.util.Date) value).getTime()));
+          statement.setTimestamp(index, new java.sql.Timestamp(((java.util.Date) value).getTime()), DateTimeUtils.UTC_CALENDAR.get());
           return true;
         default:
           return false;
