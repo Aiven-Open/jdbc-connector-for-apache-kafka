@@ -97,7 +97,6 @@ public class DataConverter {
         metadata.isNullable(col) == ResultSetMetaData.columnNullableUnknown) {
       optional = true;
     }
-    boolean signed = metadata.isSigned(col);
 
     switch (sqlType) {
       case Types.NULL: {
@@ -126,13 +125,13 @@ public class DataConverter {
 
       case Types.TINYINT: {
         if (optional) {
-          if (signed) {
+          if (metadata.isSigned(col)) {
             builder.field(fieldName, Schema.OPTIONAL_INT8_SCHEMA);
           } else {
             builder.field(fieldName, Schema.OPTIONAL_INT16_SCHEMA);
           }
         } else {
-          if (signed) {
+          if (metadata.isSigned(col)) {
             builder.field(fieldName, Schema.INT8_SCHEMA);
           } else {
             builder.field(fieldName, Schema.INT16_SCHEMA);
@@ -144,13 +143,13 @@ public class DataConverter {
       // 16 bit ints
       case Types.SMALLINT: {
         if (optional) {
-          if (signed) {
+          if (metadata.isSigned(col)) {
             builder.field(fieldName, Schema.OPTIONAL_INT16_SCHEMA);
           } else {
             builder.field(fieldName, Schema.OPTIONAL_INT32_SCHEMA);
           }
         } else {
-          if (signed) {
+          if (metadata.isSigned(col)) {
             builder.field(fieldName, Schema.INT16_SCHEMA);
           } else {
             builder.field(fieldName, Schema.INT32_SCHEMA);
@@ -162,13 +161,13 @@ public class DataConverter {
       // 32 bit ints
       case Types.INTEGER: {
         if (optional) {
-          if (signed) {
+          if (metadata.isSigned(col)) {
             builder.field(fieldName, Schema.OPTIONAL_INT32_SCHEMA);
           } else {
             builder.field(fieldName, Schema.OPTIONAL_INT64_SCHEMA);
           }
         } else {
-          if (signed) {
+          if (metadata.isSigned(col)) {
             builder.field(fieldName, Schema.INT32_SCHEMA);
           } else {
             builder.field(fieldName, Schema.INT64_SCHEMA);
@@ -301,7 +300,6 @@ public class DataConverter {
                                         Struct struct, String fieldName)
       throws SQLException, IOException {
     final Object colValue;
-    final boolean signed = resultSet.getMetaData().isSigned(col);
     switch (colType) {
       case Types.NULL: {
         colValue = null;
@@ -325,7 +323,7 @@ public class DataConverter {
 
       // 8 bits int
       case Types.TINYINT: {
-        if (signed) {
+        if (resultSet.getMetaData().isSigned(col)) {
           colValue = resultSet.getByte(col);
         } else {
           colValue = resultSet.getShort(col);
@@ -335,7 +333,7 @@ public class DataConverter {
 
       // 16 bits int
       case Types.SMALLINT: {
-        if (signed) {
+        if (resultSet.getMetaData().isSigned(col)) {
           colValue = resultSet.getShort(col);
         } else {
           colValue = resultSet.getInt(col);
