@@ -87,7 +87,7 @@ public class MySqlDialect extends DbDialect {
     joinToBuilder(
         builder,
         ",",
-        cols,
+        cols.isEmpty() ? keyCols : cols,
         new StringBuilderUtil.Transform<String>() {
           @Override
           public void apply(StringBuilder builder, String col) {
