@@ -104,6 +104,15 @@ public class MySqlDialectTest extends BaseDialectTest {
   }
 
   @Test
+  public void upsertOnlyKeyCols() {
+    assertEquals(
+        "insert into `actor`(`actor_id`) " +
+        "values(?) on duplicate key update `actor_id`=values(`actor_id`)",
+        dialect.getUpsertQuery("actor", Arrays.asList("actor_id"), Collections.<String>emptyList())
+    );
+  }
+
+  @Test
   public void insert() {
     assertEquals(
         "INSERT INTO `customers`(`age`,`firstName`,`lastName`) VALUES(?,?,?)",
