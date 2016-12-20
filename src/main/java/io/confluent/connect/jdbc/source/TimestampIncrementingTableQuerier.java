@@ -65,8 +65,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, String incrementingColumn,
                                            Map<String, Object> offsetMap, Long timestampDelay,
-                                           String schemaPattern) {
-    super(mode, name, topicPrefix, schemaPattern);
+                                           String schemaPattern, boolean mapNumerics) {
+    super(mode, name, topicPrefix, schemaPattern, mapNumerics);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
     this.timestampDelay = timestampDelay;
@@ -178,7 +178,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
   @Override
   public SourceRecord extractRecord() throws SQLException {
-    final Struct record = DataConverter.convertRecord(schema, resultSet);
+    final Struct record = DataConverter.convertRecord(schema, resultSet, mapNumerics);
     offset = extractOffset(schema, record);
     // TODO: Key?
     final String topic;

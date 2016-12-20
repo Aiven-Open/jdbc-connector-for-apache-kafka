@@ -193,6 +193,22 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
+  public void testNumeric() throws Exception {
+    typeConversion("NUMERIC(1)", false,
+            new EmbeddedDerby.Literal("CAST (1 AS NUMERIC)"),
+            Schema.INT8_SCHEMA,new Byte("1"));
+    typeConversion("NUMERIC(3)", false,
+            new EmbeddedDerby.Literal("CAST (123 AS NUMERIC)"),
+            Schema.INT16_SCHEMA,new Short("123"));
+    typeConversion("NUMERIC(5)", false,
+            new EmbeddedDerby.Literal("CAST (12345 AS NUMERIC)"),
+            Schema.INT32_SCHEMA,new Integer("12345"));
+    typeConversion("NUMERIC(10)", false,
+            new EmbeddedDerby.Literal("CAST (1234567890 AS NUMERIC(10))"),
+            Schema.INT64_SCHEMA,new Long("1234567890"));
+  }
+
+  @Test
   public void testDecimal() throws Exception {
     typeConversion("DECIMAL(5,2)", false,
                    new EmbeddedDerby.Literal("CAST (123.45 AS DECIMAL(5,2))"),

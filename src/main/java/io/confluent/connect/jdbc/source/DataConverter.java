@@ -45,24 +45,24 @@ import io.confluent.connect.jdbc.util.DateTimeUtils;
 public class DataConverter {
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
-  public static Schema convertSchema(String tableName, ResultSetMetaData metadata)
+  public static Schema convertSchema(String tableName, ResultSetMetaData metadata, boolean mapNumerics)
       throws SQLException {
     // TODO: Detect changes to metadata, which will require schema updates
     SchemaBuilder builder = SchemaBuilder.struct().name(tableName);
     for (int col = 1; col <= metadata.getColumnCount(); col++) {
-      addFieldSchema(metadata, col, builder);
+      addFieldSchema(metadata, col, builder, mapNumerics);
     }
     return builder.build();
   }
 
-  public static Struct convertRecord(Schema schema, ResultSet resultSet)
+  public static Struct convertRecord(Schema schema, ResultSet resultSet, boolean mapNumerics)
       throws SQLException {
     ResultSetMetaData metadata = resultSet.getMetaData();
     Struct struct = new Struct(schema);
     for (int col = 1; col <= metadata.getColumnCount(); col++) {
       try {
         convertFieldValue(resultSet, col, metadata.getColumnType(col), struct,
-                          metadata.getColumnLabel(col));
+                          metadata.getColumnLabel(col), mapNumerics);
       } catch (IOException e) {
         log.warn("Ignoring record because processing failed:", e);
       } catch (SQLException e) {
@@ -74,7 +74,7 @@ public class DataConverter {
 
 
   private static void addFieldSchema(ResultSetMetaData metadata, int col,
-                                     SchemaBuilder builder)
+                                     SchemaBuilder builder, boolean mapNumerics)
       throws SQLException {
     // Label is what the query requested the column name be using an "AS" clause, name is the
     // original
@@ -200,8 +200,33 @@ public class DataConverter {
       }
 
       case Types.NUMERIC:
+        if (mapNumerics) {
+          int precision = metadata.getPrecision(col);
+          if (metadata.getScale(col) == 0 && precision < 19) { // integer
+            Schema schema;
+            if (precision > 9) {
+              schema = (optional) ? Schema.OPTIONAL_INT64_SCHEMA :
+                      Schema.INT64_SCHEMA;
+            } else if (precision > 4) {
+              schema = (optional) ? Schema.OPTIONAL_INT32_SCHEMA :
+                      Schema.INT32_SCHEMA;
+            } else if (precision > 2) {
+              schema = (optional) ? Schema.OPTIONAL_INT16_SCHEMA :
+                      Schema.INT16_SCHEMA;
+            } else {
+              schema = (optional) ? Schema.OPTIONAL_INT8_SCHEMA :
+                      Schema.INT8_SCHEMA;
+            }
+            builder.field(fieldName, schema);
+            break;
+          }
+        }
+
       case Types.DECIMAL: {
-        SchemaBuilder fieldBuilder = Decimal.builder(metadata.getScale(col));
+        int scale = metadata.getScale(col);
+        if (scale == -127) //NUMBER without precision defined for OracleDB
+          scale = 127;
+        SchemaBuilder fieldBuilder = Decimal.builder(scale);
         if (optional) {
           fieldBuilder.optional();
         }
@@ -288,7 +313,7 @@ public class DataConverter {
   }
 
   private static void convertFieldValue(ResultSet resultSet, int col, int colType,
-                                        Struct struct, String fieldName)
+                                        Struct struct, String fieldName, boolean mapNumerics)
       throws SQLException, IOException {
     final Object colValue;
     switch (colType) {
@@ -363,8 +388,28 @@ public class DataConverter {
       }
 
       case Types.NUMERIC:
+        if (mapNumerics) {
+          ResultSetMetaData metadata = resultSet.getMetaData();
+          int precision = metadata.getPrecision(col);
+          if (metadata.getScale(col) == 0 && precision < 19) { // integer
+            if (precision > 9) {
+              colValue = resultSet.getLong(col);
+            } else if (precision > 4) {
+              colValue = resultSet.getInt(col);
+            } else if (precision > 2) {
+              colValue = resultSet.getShort(col);
+            } else {
+              colValue = resultSet.getByte(col);
+            }
+            break;
+          }
+        }
       case Types.DECIMAL: {
-        colValue = resultSet.getBigDecimal(col);
+        ResultSetMetaData metadata = resultSet.getMetaData();
+        int scale = metadata.getScale(col);
+        if (scale == -127)
+          scale = 127;
+        colValue = resultSet.getBigDecimal(col, scale);
         break;
       }
 

@@ -70,7 +70,7 @@ public class TimestampIncrementingTableQuerierTest {
   }
 
   private TimestampIncrementingTableQuerier newQuerier() {
-    return new TimestampIncrementingTableQuerier(TableQuerier.QueryMode.TABLE, null, "", null, "id", Collections.<String, Object>emptyMap(), 0L, null);
+    return new TimestampIncrementingTableQuerier(TableQuerier.QueryMode.TABLE, null, "", null, "id", Collections.<String, Object>emptyMap(), 0L, null, false);
   }
 
 }

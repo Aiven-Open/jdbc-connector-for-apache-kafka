@@ -108,6 +108,13 @@ Connector
   * Default: 0
   * Importance: high
 
+``numeric.precision.mapping``
+  Whether or not to attempt mapping NUMERIC values by precision to integral types
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
 Mode
 ^^^^
 
