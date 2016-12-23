@@ -59,7 +59,7 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
   public void testStartStop() throws Exception {
     // Minimal start/stop functionality
     CachedConnectionProvider mockCachedConnectionProvider = PowerMock.createMock(CachedConnectionProvider.class);
-    PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl()).andReturn(mockCachedConnectionProvider);
+    PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl(), null, null).andReturn(mockCachedConnectionProvider);
 
     // Should request a connection, then should close it on stop()
     Connection conn = PowerMock.createMock(Connection.class);
