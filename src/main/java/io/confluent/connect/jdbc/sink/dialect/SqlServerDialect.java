@@ -90,7 +90,7 @@ public class SqlServerDialect extends DbDialect {
     String tableName = escaped(table);
     builder.append(tableName);
     builder.append(" with (HOLDLOCK) AS target using (select ");
-    joinToBuilder(builder, ", ", cols, keyCols, prefixedEscaper("? AS "));
+    joinToBuilder(builder, ", ", keyCols, cols, prefixedEscaper("? AS "));
     builder.append(") AS incoming on (");
     joinToBuilder(builder, " and ", keyCols, new StringBuilderUtil.Transform<String>() {
       @Override
