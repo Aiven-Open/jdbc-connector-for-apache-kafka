@@ -232,7 +232,7 @@
 						<directory>/usr/share/java/${project.artifactId}</directory>
 						<sources>
 							<source>
-								<location>${project.package.home}/share/java${project.artifactId}</location>
+								<location>${project.package.home}/share/java/${project.artifactId}</location>
 							</source>
 						</sources>
 					</mapping>
