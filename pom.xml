@@ -50,7 +50,7 @@
     </scm>
 
     <properties>
-        <confluent.version>3.3.0-SNAPSHOT</confluent.version>
+        <confluent.version>${project.version}</confluent.version>
         <kafka.version>0.10.3.0-SNAPSHOT</kafka.version>
         <junit.version>4.12</junit.version>
         <easymock.version>3.0</easymock.version>
@@ -59,10 +59,11 @@
         <commons-io.version>2.4</commons-io.version>
         <mockito.version>1.10.19</mockito.version>
         <slf4j.version>1.7.5</slf4j.version>
-        <licenses.version>3.3.0-SNAPSHOT</licenses.version>
+	<licenses.name>Apache License 2.0</licenses.name>
+        <licenses.version>${project.version}</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
-		<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
     </properties>
 
     <repositories>
@@ -206,55 +207,56 @@
                     </execution>
                 </executions>
             </plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>rpm-maven-plugin</artifactId>
-				<version>2.1.5</version>
-				<executions>
-					<execution>
-						<id>generate-rpm</id>
-						<goals>
-							<goal>rpm</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<group>Applications/Internet</group>
-					<packager>Confluent Packaging</packager>
-					<needarch>false</needarch>
-					<requires>
-  						<require>confluent-common</require>
-					</requires>
-					<mappings>
-						<mapping>
-							<directory>/usr/share/java/</directory>
-							<sources>
-								<source>
-									<location>${project.package.home}/share/java</location>
-								</source>
-							</sources>
-						</mapping>
-						<mapping>
-							<configuration>true</configuration>
-							<directory>/etc</directory>
-							<sources>
-								<source>
-									<location>${project.package.home}/etc/</location>
-								</source>
-							</sources>
-						</mapping>
-						<mapping>
-							<documentation>true</documentation>
-							<directory>/usr/share/doc/</directory>
-							<sources>
-								<source>
-									<location>${project.package.home}/share/doc</location>
-								</source>
-							</sources>
-						</mapping>
-					</mappings>
-				</configuration>
-			</plugin>
+		<plugin>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>rpm-maven-plugin</artifactId>
+			<version>2.1.5</version>
+			<executions>
+				<execution>
+					<id>generate-rpm</id>
+					<goals>
+						<goal>rpm</goal>
+					</goals>
+				</execution>
+			</executions>
+			<configuration>
+				<group>Applications/Internet</group>
+				<packager>Confluent Packaging</packager>
+				 <license>${licenses.name}</license>
+				<needarch>false</needarch>
+				<requires>
+  					<require>confluent-common</require>
+				</requires>
+				<mappings>
+					<mapping>
+						<directory>/usr/share/java/</directory>
+						<sources>
+							<source>
+								<location>${project.package.home}/share/java</location>
+							</source>
+						</sources>
+					</mapping>
+					<mapping>
+						<configuration>true</configuration>
+						<directory>/etc/${project.artifactId}</directory>
+						<sources>
+							<source>
+								<location>${project.package.home}/etc/${project.artifactId}</location>
+							</source>
+						</sources>
+					</mapping>
+					<mapping>
+						<documentation>true</documentation>
+						<directory>/usr/share/doc/${project.artifactId}</directory>
+						<sources>
+							<source>
+								<location>${project.package.home}/share/doc/${project.artifactId}</location>
+							</source>
+						</sources>
+					</mapping>
+				</mappings>
+			</configuration>
+		</plugin>
         </plugins>
         <resources>
             <resource>
