@@ -206,55 +206,6 @@
                     </execution>
                 </executions>
             </plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>rpm-maven-plugin</artifactId>
-				<version>2.1.5</version>
-				<executions>
-					<execution>
-						<id>generate-rpm</id>
-						<goals>
-							<goal>rpm</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<group>Applications/Internet</group>
-					<packager>Confluent Packaging</packager>
-					<needarch>false</needarch>
-					<requires>
-  						<require>confluent-common</require>
-					</requires>
-					<mappings>
-						<mapping>
-							<directory>/usr/share/java/</directory>
-							<sources>
-								<source>
-									<location>${project.package.home}/share/java</location>
-								</source>
-							</sources>
-						</mapping>
-						<mapping>
-							<configuration>true</configuration>
-							<directory>/etc</directory>
-							<sources>
-								<source>
-									<location>${project.package.home}/etc/</location>
-								</source>
-							</sources>
-						</mapping>
-						<mapping>
-							<documentation>true</documentation>
-							<directory>/usr/share/doc/</directory>
-							<sources>
-								<source>
-									<location>${project.package.home}/share/doc</location>
-								</source>
-							</sources>
-						</mapping>
-					</mappings>
-				</configuration>
-			</plugin>
         </plugins>
         <resources>
             <resource>
@@ -265,6 +216,62 @@
     </build>
 
     <profiles>
+		<profile>
+			<id>rpm</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>rpm-maven-plugin</artifactId>
+						<version>2.1.5</version>
+						<executions>
+							<execution>
+								<id>attach-rpm</id>
+								<goals>
+									<goal>attached-rpm</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<group>Applications/Internet</group>
+							<packager>Confluent Packaging</packager>
+							<needarch>false</needarch>
+							<requires>
+								<require>confluent-common</require>
+							</requires>
+							<mappings>
+								<mapping>
+									<directory>/usr/share/java/</directory>
+									<sources>
+										<source>
+											<location>${project.package.home}/share/java</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<configuration>true</configuration>
+									<directory>/etc</directory>
+									<sources>
+										<source>
+											<location>${project.package.home}/etc/</location>
+										</source>
+									</sources>
+								</mapping>
+								<mapping>
+									<documentation>true</documentation>
+									<directory>/usr/share/doc/</directory>
+									<sources>
+										<source>
+											<location>${project.package.home}/share/doc</location>
+										</source>
+									</sources>
+								</mapping>
+							</mappings>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
         <profile>
             <id>standalone</id>
             <build>
