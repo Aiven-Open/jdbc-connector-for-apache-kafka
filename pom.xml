@@ -50,7 +50,7 @@
     </scm>
 
     <properties>
-        <confluent.version>3.3.0-SNAPSHOT</confluent.version>
+        <confluent.version>${project.version}</confluent.version>
         <kafka.version>0.10.3.0-SNAPSHOT</kafka.version>
         <junit.version>4.12</junit.version>
         <easymock.version>3.0</easymock.version>
@@ -59,10 +59,11 @@
         <commons-io.version>2.4</commons-io.version>
         <mockito.version>1.10.19</mockito.version>
         <slf4j.version>1.7.5</slf4j.version>
-        <licenses.version>3.3.0-SNAPSHOT</licenses.version>
+	<licenses.name>Apache License 2.0</licenses.name>
+        <licenses.version>${project.version}</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
-		<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
     </properties>
 
     <repositories>
@@ -226,9 +227,9 @@
 						<version>2.1.5</version>
 						<executions>
 							<execution>
-								<id>attach-rpm</id>
+								<id>generate-rpm</id>
 								<goals>
-									<goal>attached-rpm</goal>
+									<goal>rpm</goal>
 								</goals>
 							</execution>
 						</executions>
