@@ -59,10 +59,10 @@
         <commons-io.version>2.4</commons-io.version>
         <mockito.version>1.10.19</mockito.version>
         <slf4j.version>1.7.5</slf4j.version>
-	<licenses.name>Apache License 2.0</licenses.name>
+		<licenses.name>Apache License 2.0</licenses.name>
         <licenses.version>${project.version}</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
+		<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
 
@@ -236,34 +236,35 @@
 						<configuration>
 							<group>Applications/Internet</group>
 							<packager>Confluent Packaging</packager>
+							<license>${licenses.name}</license>
 							<needarch>false</needarch>
 							<requires>
 								<require>confluent-common</require>
 							</requires>
 							<mappings>
 								<mapping>
-									<directory>/usr/share/java/</directory>
+									<directory>/usr/share/java/${project.artifactId}</directory>
 									<sources>
 										<source>
-											<location>${project.package.home}/share/java</location>
+											<location>${project.package.home}/share/java/${project.artifactId}</location>
 										</source>
 									</sources>
 								</mapping>
 								<mapping>
 									<configuration>true</configuration>
-									<directory>/etc</directory>
+									<directory>/etc/${project.artifactId}</directory>
 									<sources>
 										<source>
-											<location>${project.package.home}/etc/</location>
+											<location>${project.package.home}/etc/${project.artifactId}</location>
 										</source>
 									</sources>
 								</mapping>
 								<mapping>
 									<documentation>true</documentation>
-									<directory>/usr/share/doc/</directory>
+									<directory>/usr/share/doc/${project.artifactId}</directory>
 									<sources>
 										<source>
-											<location>${project.package.home}/share/doc</location>
+											<location>${project.package.home}/share/doc/${project.artifactId}</location>
 										</source>
 									</sources>
 								</mapping>
@@ -338,8 +339,8 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>licenses-source</id>
+		<profile>
+			<id>licenses-source</id>
             <build>
                 <plugins>
                     <plugin>
