@@ -59,10 +59,10 @@
         <commons-io.version>2.4</commons-io.version>
         <mockito.version>1.10.19</mockito.version>
         <slf4j.version>1.7.5</slf4j.version>
-		<licenses.name>Apache License 2.0</licenses.name>
+	<licenses.name>Apache License 2.0</licenses.name>
         <licenses.version>${project.version}</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
+	<project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
 
@@ -340,8 +340,8 @@
                 </plugins>
             </build>
         </profile>
-		<profile>
-			<id>licenses-source</id>
+	<profile>
+		<id>licenses-source</id>
             <build>
                 <plugins>
                     <plugin>
