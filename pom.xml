@@ -237,7 +237,8 @@
 							<group>Applications/Internet</group>
 							<packager>Confluent Packaging</packager>
 							<license>${licenses.name}</license>
-							<needarch>false</needarch>
+							<needarch>noarch</needarch>
+							<targetOS>linux</targetOS>
 							<requires>
 								<require>confluent-common</require>
 							</requires>
