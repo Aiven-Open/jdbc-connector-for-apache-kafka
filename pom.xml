@@ -31,7 +31,7 @@
     </organization>
     <url>http://confluent.io</url>
     <description>
-        A Kafka Connect JDBC connector for copying data between databases and Kafka.
+       A Kafka Connect JDBC connector for copying data between databases and Kafka.
     </description>
 
     <licenses>
@@ -341,7 +341,7 @@
             </build>
         </profile>
 	<profile>
-		<id>licenses-source</id>
+        <id>licenses-source</id>
             <build>
                 <plugins>
                     <plugin>
