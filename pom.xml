@@ -240,7 +240,7 @@
                             <needarch>noarch</needarch>
                             <targetOS>linux</targetOS>
                             <requires>
-                                <require>confluent-common &gt;= ${project.version}</require>
+                                <require>confluent-common = ${project.version}</require>
                             </requires>
                             <mappings>
                                 <mapping>
