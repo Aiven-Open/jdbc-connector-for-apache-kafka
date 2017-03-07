@@ -114,7 +114,7 @@ public class BufferedRecords {
           log.trace("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
       }
     }
-    if( successNoInfo ){
+    if (successNoInfo) {
       log.info(
               "Insert records:{} , but no count of the number of rows it affected is available",
               records.size());
