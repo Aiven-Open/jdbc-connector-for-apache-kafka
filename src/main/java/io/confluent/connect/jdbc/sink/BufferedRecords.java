@@ -116,7 +116,7 @@ public class BufferedRecords {
     }
     if (successNoInfo) {
       log.info(
-              "Insert records:{} , but no count of the number of rows it affected is available",
+              config.insertMode + " records:{} , but no count of the number of rows it affected is available",
               records.size());
     }
 
