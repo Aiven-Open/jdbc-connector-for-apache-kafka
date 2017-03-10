@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -25,14 +26,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import org.mockito.Matchers;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BufferedRecordsTest {
 
@@ -92,4 +99,44 @@ public class BufferedRecordsTest {
     assertEquals(Collections.singletonList(recordA), buffer.flush());
   }
 
+  @Test
+  public void testFlushSuccessNoInfo() throws SQLException {
+    final DbDialect dbDialect = DbDialect.fromConnectionString(sqliteHelper.sqliteUri());
+    final HashMap<Object, Object> props = new HashMap<>();
+    props.put("connection.url", "");
+    props.put("auto.create", true);
+    props.put("auto.evolve", true);
+    props.put("batch.size", 1000);
+    final JdbcSinkConfig config = new JdbcSinkConfig(props);
+
+    int[] batchResponse = new int[2];
+    batchResponse[0] = Statement.SUCCESS_NO_INFO;
+    batchResponse[1] = Statement.SUCCESS_NO_INFO;
+
+    final DbStructure dbStructureMock = mock(DbStructure.class);
+    when(dbStructureMock.createOrAmendIfNecessary(Matchers.any(JdbcSinkConfig.class),
+            Matchers.any(Connection.class), Matchers.anyString(), Matchers.any(FieldsMetadata.class))).thenReturn(
+            true);
+
+    PreparedStatement preparedStatementMock = mock(PreparedStatement.class);
+    when(preparedStatementMock.executeBatch()).thenReturn(batchResponse);
+
+    Connection connectionMock = mock(Connection.class);
+    when(connectionMock.prepareStatement(Matchers.anyString())).thenReturn(preparedStatementMock);
+
+    final BufferedRecords buffer = new BufferedRecords(config, "dummy", dbDialect, dbStructureMock,
+            connectionMock);
+
+    final Schema schemaA = SchemaBuilder.struct().field("name", Schema.STRING_SCHEMA).build();
+    final Struct valueA = new Struct(schemaA).put("name", "cuba");
+    final SinkRecord recordA = new SinkRecord("dummy", 0, null, null, schemaA, valueA, 0);
+    buffer.add(recordA);
+
+    final Schema schemaB = SchemaBuilder.struct().field("name", Schema.STRING_SCHEMA).build();
+    final Struct valueB = new Struct(schemaA).put("name", "cubb");
+    final SinkRecord recordB = new SinkRecord("dummy", 0, null, null, schemaB, valueB, 0);
+    buffer.add(recordB);
+    buffer.flush();
+
+  }
 }
