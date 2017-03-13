@@ -3,6 +3,26 @@
 Changelog
 =========
 
+Version 3.2.0
+-------------
+
+JDBC Source Connector
+~~~~~~~~~~~~~~~~~~~~~
+* `PR-156 <https://github.com/confluentinc/kafka-connect-jdbc/pull/156>`_ - CC-348: Separate username & password config for JDBC source connector
+* `PR-155 <https://github.com/confluentinc/kafka-connect-jdbc/pull/155>`_ - Switch RST generation to ConfigDef.toEnrichedRst() available against 0.10.2
+* `PR-154 <https://github.com/confluentinc/kafka-connect-jdbc/pull/154>`_ - Re-check stop flag before continuing after sleep
+* `PR-167 <https://github.com/confluentinc/kafka-connect-jdbc/pull/167>`_ - Connection.isValid() expects seconds not milliseconds
+* `PR-175 <https://github.com/confluentinc/kafka-connect-jdbc/pull/175>`_ - Use UTC Calendar when binding date/times in sink; fix thread-unsafe usage of UTC_CALENDAR in TimestampIncrementingTableQuerier
+* `PR-169 <https://github.com/confluentinc/kafka-connect-jdbc/pull/169>`_ - Widen schema types for unsigned numeric types.
+
+JDBC Sink Connector
+~~~~~~~~~~~~~~~~~~~
+
+* `PR-168 <https://github.com/confluentinc/kafka-connect-jdbc/pull/168>`_ - Change default MySQL Schema.Type.TIMESTAMP mapping from TIMESTAMP to DATETIME
+* `PR-171 <https://github.com/confluentinc/kafka-connect-jdbc/pull/171>`_ - CC-432: Missing PreparedStatement.close()
+* `PR-180 <https://github.com/confluentinc/kafka-connect-jdbc/pull/180>`_ - SqlServerDialect's upsert query placeholders should be in the order keyCols*, cols*
+
+
 Version 3.1.1
 -------------
 No changes
