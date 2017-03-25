@@ -17,6 +17,7 @@
 package io.confluent.connect.jdbc.source;
 
 import org.apache.kafka.connect.connector.ConnectorContext;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;
@@ -29,6 +30,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -201,4 +203,30 @@ public class TableMonitorThreadTest {
 
     PowerMock.verifyAll();
   }
+
+  @Test
+  public void testInvalidConnection() throws Exception {
+    CachedConnectionProvider provider = EasyMock.createMock(CachedConnectionProvider.class);
+    tableMonitorThread = new TableMonitorThread(provider, context, null, POLL_INTERVAL, null, null, VIEW_TABLE_TYPES);
+
+    EasyMock.expect(provider.getValidConnection()).andAnswer(new IAnswer<Connection>() {
+      @Override
+      public Connection answer() throws Throwable {
+        tableMonitorThread.shutdown();
+        throw new ConnectException("Simulated error with the db.");
+      }
+    });
+    provider.closeQuietly();
+    EasyMock.expectLastCall().anyTimes();
+
+    EasyMock.replay(provider);
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+
+    EasyMock.verify(provider);
+  }
+
+
+
 }
