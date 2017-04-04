@@ -34,7 +34,9 @@ public class JdbcSinkConfig extends AbstractConfig {
 
   public enum InsertMode {
     INSERT,
-    UPSERT;
+    UPSERT,
+    UPDATE;
+
   }
 
   public enum PrimaryKeyMode {
@@ -106,7 +108,9 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "``insert``\n"
       + "    Use standard SQL ``INSERT`` statements.\n"
       + "``upsert``\n"
-      + "    Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.";
+      + "    Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``."
+      + "``update``\n"
+      + "    Use the appropriate update semantics for the target database if it is supported by the connector, e.g. ``UPDATE``.";
   private static final String INSERT_MODE_DISPLAY = "Insert Mode";
 
   public static final String PK_FIELDS = "pk.fields";
@@ -274,5 +278,4 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static void main(String... args) {
     System.out.println(CONFIG_DEF.toEnrichedRst());
   }
-
 }

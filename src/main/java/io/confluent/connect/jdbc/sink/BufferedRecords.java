@@ -68,7 +68,7 @@ public class BufferedRecords {
       log.debug("{} sql: {}", config.insertMode, insertSql);
       close();
       preparedStatement = connection.prepareStatement(insertSql);
-      preparedStatementBinder = new PreparedStatementBinder(preparedStatement, config.pkMode, schemaPair, fieldsMetadata);
+      preparedStatementBinder = new PreparedStatementBinder(preparedStatement, config.pkMode, schemaPair, fieldsMetadata, config.insertMode);
     }
 
     final List<SinkRecord> flushed;
@@ -111,7 +111,8 @@ public class BufferedRecords {
           throw new ConnectException(String.format("Update count (%d) did not sum up to total number of records inserted (%d)",
                                                    totalUpdateCount, records.size()));
         case UPSERT:
-          log.trace("Upserted records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
+        case UPDATE:
+          log.trace(config.insertMode + " records:{} resulting in in totalUpdateCount:{}", records.size(), totalUpdateCount);
       }
     }
     if (successNoInfo) {
@@ -144,6 +145,8 @@ public class BufferedRecords {
           ));
         }
         return dbDialect.getUpsertQuery(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames);
+      case UPDATE:
+        return  dbDialect.getUpdate(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames);
       default:
         throw new ConnectException("Invalid insert mode");
     }

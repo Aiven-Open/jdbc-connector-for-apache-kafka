@@ -120,4 +120,11 @@ public class MySqlDialectTest extends BaseDialectTest {
     );
   }
 
+  @Test
+  public void update() {
+    assertEquals(
+        "UPDATE `customers` SET `age` = ?, `firstName` = ?, `lastName` = ? WHERE `id` = ?",
+        dialect.getUpdate("customers", Arrays.asList("id"), Arrays.asList("age", "firstName", "lastName"))
+    );
+  }
 }

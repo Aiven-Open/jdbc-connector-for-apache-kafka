@@ -41,26 +41,48 @@ public class PreparedStatementBinder {
   private final PreparedStatement statement;
   private final SchemaPair schemaPair;
   private final FieldsMetadata fieldsMetadata;
+  private final JdbcSinkConfig.InsertMode insertMode;
 
   public PreparedStatementBinder(
       PreparedStatement statement,
       JdbcSinkConfig.PrimaryKeyMode pkMode,
       SchemaPair schemaPair,
-      FieldsMetadata fieldsMetadata
+      FieldsMetadata fieldsMetadata,
+      JdbcSinkConfig.InsertMode insertMode
   ) {
     this.pkMode = pkMode;
     this.statement = statement;
     this.schemaPair = schemaPair;
     this.fieldsMetadata = fieldsMetadata;
+    this.insertMode = insertMode;
   }
 
   public void bindRecord(SinkRecord record) throws SQLException {
     final Struct valueStruct = (Struct) record.value();
 
-    // Assumption: the relevant SQL has placeholders for keyFieldNames first followed by nonKeyFieldNames, in iteration order
+    // Assumption: the relevant SQL has placeholders for keyFieldNames first followed by nonKeyFieldNames, in iteration order for all INSERT/ UPSERT queries
+    //             the relevant SQL has placeholders for nonKeyFieldNames first followed by keyFieldNames, in iteration order for all UPDATE queries
 
     int index = 1;
+    switch (insertMode) {
+      case INSERT:
+      case UPSERT:
+        index = bindKeyFields(record, index);
+        bindNonKeyFields(record, valueStruct, index);
+        break;
 
+      case UPDATE:
+        index = bindNonKeyFields(record, valueStruct, index);
+        bindKeyFields(record, index);
+        break;
+      default:
+        throw new AssertionError();
+
+    }
+    statement.addBatch();
+  }
+
+  private int bindKeyFields(SinkRecord record, int index) throws SQLException {
     switch (pkMode) {
       case NONE:
         if (!fieldsMetadata.keyFieldNames.isEmpty()) {
@@ -97,13 +119,15 @@ public class PreparedStatementBinder {
       }
       break;
     }
+    return index;
+  }
 
+  private int bindNonKeyFields(SinkRecord record, Struct valueStruct, int index) throws SQLException {
     for (final String fieldName : fieldsMetadata.nonKeyFieldNames) {
       final Field field = record.valueSchema().field(fieldName);
       bindField(index++, field.schema(), valueStruct.get(field));
     }
-
-    statement.addBatch();
+    return index;
   }
 
   void bindField(int index, Schema schema, Object value) throws SQLException {

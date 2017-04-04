@@ -36,6 +36,7 @@ import java.util.HashMap;
 
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 import org.mockito.Matchers;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -137,6 +138,36 @@ public class BufferedRecordsTest {
     final SinkRecord recordB = new SinkRecord("dummy", 0, null, null, schemaB, valueB, 0);
     buffer.add(recordB);
     buffer.flush();
+
+  }
+
+
+  @Test
+  public void testInsertModeUpdate() throws SQLException {
+    final DbDialect dbDialect = DbDialect.fromConnectionString(sqliteHelper.sqliteUri());
+    final HashMap<Object, Object> props = new HashMap<>();
+    props.put("connection.url", "");
+    props.put("auto.create", true);
+    props.put("auto.evolve", true);
+    props.put("batch.size", 1000);
+    props.put("insert.mode", "update");
+    final JdbcSinkConfig config = new JdbcSinkConfig(props);
+
+    final DbStructure dbStructureMock = mock(DbStructure.class);
+    when(dbStructureMock.createOrAmendIfNecessary(Matchers.any(JdbcSinkConfig.class),
+            Matchers.any(Connection.class), Matchers.anyString(), Matchers.any(FieldsMetadata.class))).thenReturn(
+            true);
+
+    final Connection connectionMock = mock(Connection.class);
+    final BufferedRecords buffer = new BufferedRecords(config, "dummy", dbDialect, dbStructureMock,
+            connectionMock);
+
+    final Schema schemaA = SchemaBuilder.struct().field("name", Schema.STRING_SCHEMA).build();
+    final Struct valueA = new Struct(schemaA).put("name", "cuba");
+    final SinkRecord recordA = new SinkRecord("dummy", 0, null, null, schemaA, valueA, 0);
+    buffer.add(recordA);
+
+    Mockito.verify(connectionMock, Mockito.times(1)).prepareStatement(Matchers.eq("UPDATE `dummy` SET `name` = ?"));
 
   }
 }
