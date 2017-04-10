@@ -133,4 +133,9 @@ public class DbDialectTest {
     assertEquals(GenericDialect.class, DbDialect.fromConnectionString("jdbc:other://host:42").getClass());
   }
 
+  @Test
+  public void detectVertica() {
+    assertEquals(VerticaDialect.class, DbDialect.fromConnectionString("jdbc:vertica://host:5433/db").getClass());
+  }
+
 }
