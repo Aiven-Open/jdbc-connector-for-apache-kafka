@@ -253,6 +253,10 @@ public abstract class DbDialect {
       return new HanaDialect();
     }
 
+    if (url.startsWith("jdbc:vertica")) {
+      return new VerticaDialect();
+    }
+
     final String protocol = extractProtocolFromUrl(url).toLowerCase();
     switch (protocol) {
       case "microsoft:sqlserver":
