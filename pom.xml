@@ -23,7 +23,7 @@
     <groupId>io.confluent</groupId>
     <artifactId>kafka-connect-jdbc</artifactId>
     <packaging>jar</packaging>
-    <version>3.2.2-SNAPSHOT</version>
+    <version>3.2.2</version>
     <name>kafka-connect-jdbc</name>
     <organization>
         <name>Confluent, Inc.</name>
@@ -50,8 +50,8 @@
     </scm>
 
     <properties>
-        <confluent.version>3.2.2-SNAPSHOT</confluent.version>
-        <kafka.version>0.10.2.2-SNAPSHOT</kafka.version>
+        <confluent.version>3.2.2</confluent.version>
+        <kafka.version>0.10.2.1-cp2</kafka.version>
         <junit.version>4.12</junit.version>
         <easymock.version>3.0</easymock.version>
         <powermock.version>1.6.2</powermock.version>
@@ -59,7 +59,7 @@
         <commons-io.version>2.4</commons-io.version>
         <mockito.version>1.10.19</mockito.version>
         <slf4j.version>1.7.5</slf4j.version>
-        <licenses.version>3.2.2-SNAPSHOT</licenses.version>
+        <licenses.version>3.2.2</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
     </properties>
