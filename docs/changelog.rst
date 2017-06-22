@@ -3,6 +3,20 @@
 Changelog
 =========
 
+Version 3.3.0
+-------------
+
+JDBC Source Connector
+~~~~~~~~~~~~~~~~~~~~~
+No changes
+
+JDBC Sink Connector
+~~~~~~~~~~~~~~~~~~~
+* `PR-188 <https://github.com/confluentinc/kafka-connect-jdbc/pull/188>`_ - Add rpm build to lifecycle.
+* `PR-195 <https://github.com/confluentinc/kafka-connect-jdbc/pull/195>`_ - Statement.SUCCESS_NO_INFO should be treated in BufferedRecords.flush.
+* `PR-202 <https://github.com/confluentinc/kafka-connect-jdbc/pull/202>`_ - HP Vertica dialect.
+* `PR-205 <https://github.com/confluentinc/kafka-connect-jdbc/pull/205>`_ - JDBC Sink Connector - Add insert.mode = UPDATE, that generates only update queries.
+
 Version 3.2.2
 -------------
 
