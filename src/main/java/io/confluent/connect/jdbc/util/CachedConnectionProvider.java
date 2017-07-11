@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.util;
 
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,8 @@ public class CachedConnectionProvider {
   private final String url;
   private final String username;
   private final String password;
+  private final int maxConnectionAttempts;
+  private final long connectionRetryBackoff;
 
   private Connection connection;
 
@@ -41,9 +44,17 @@ public class CachedConnectionProvider {
   }
 
   public CachedConnectionProvider(String url, String username, String password) {
+    this(url, username, password, JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT,
+      JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT);
+  }
+
+  public CachedConnectionProvider(String url, String username, String password, int maxConnectionAttempts,
+                                  long connectionRetryBackoff) {
     this.url = url;
     this.username = username;
     this.password = password;
+    this.maxConnectionAttempts = maxConnectionAttempts;
+    this.connectionRetryBackoff = connectionRetryBackoff;
   }
 
   public synchronized Connection getValidConnection() {
@@ -62,18 +73,38 @@ public class CachedConnectionProvider {
   }
 
   private void newConnection() throws SQLException {
-    log.debug("Attempting to connect to {}", url);
-    connection = DriverManager.getConnection(url, username, password);
-    onConnect(connection);
+    int attempts = 0;
+    while (attempts < maxConnectionAttempts) {
+      try {
+        log.debug("Attempting to connect to {}", url);
+        connection = DriverManager.getConnection(url, username, password);
+        onConnect(connection);
+        return;
+      } catch (SQLException sqle) {
+        attempts++;
+        if (attempts < maxConnectionAttempts) {
+          log.info("Unable to connect to database on attempt {}/{}. Will retry in {} ms.", attempts,
+                  maxConnectionAttempts, connectionRetryBackoff, sqle);
+          try {
+            Thread.sleep(connectionRetryBackoff);
+          } catch (InterruptedException e) {
+            // this is ok because just woke up early
+          }
+        } else {
+          throw sqle;
+        }
+      }
+    }
   }
 
   public synchronized void closeQuietly() {
     if (connection != null) {
       try {
         connection.close();
-        connection = null;
       } catch (SQLException sqle) {
         log.warn("Ignoring error closing connection", sqle);
+      } finally {
+        connection = null;
       }
     }
   }

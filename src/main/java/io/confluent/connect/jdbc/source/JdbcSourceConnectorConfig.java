@@ -48,6 +48,16 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
   private static final String CONNECTION_PASSWORD_DISPLAY = "JDBC Password";
 
+  public static final String CONNECTION_ATTEMPTS_CONFIG = "connection.attempts";
+  private static final String CONNECTION_ATTEMPTS_DOC = "Maximum number of attempts to retrieve a valid JDBC connection.";
+  private static final String CONNECTION_ATTEMPTS_DISPLAY = "JDBC connection attempts";
+  public static final int CONNECTION_ATTEMPTS_DEFAULT = 3;
+
+  public static final String CONNECTION_BACKOFF_CONFIG = "connection.backoff.ms";
+  private static final String CONNECTION_BACKOFF_DOC = "Backoff time in milliseconds between connection attemps.";
+  private static final String CONNECTION_BACKOFF_DISPLAY = "JDBC connection backoff in milliseconds";
+  public static final long CONNECTION_BACKOFF_DEFAULT = 10000L;
+
   public static final String POLL_INTERVAL_MS_CONFIG = "poll.interval.ms";
   private static final String POLL_INTERVAL_MS_DOC = "Frequency in ms to poll for new data in "
                                                      + "each table.";
@@ -195,6 +205,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC, DATABASE_GROUP, 1, Width.LONG, CONNECTION_URL_DISPLAY, Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG))
         .define(CONNECTION_USER_CONFIG, Type.STRING, null, Importance.HIGH, CONNECTION_USER_DOC, DATABASE_GROUP, 2, Width.LONG, CONNECTION_USER_DISPLAY)
         .define(CONNECTION_PASSWORD_CONFIG, Type.PASSWORD, null, Importance.HIGH, CONNECTION_PASSWORD_DOC, DATABASE_GROUP, 3, Width.SHORT, CONNECTION_PASSWORD_DISPLAY)
+        .define(CONNECTION_ATTEMPTS_CONFIG, Type.INT, CONNECTION_ATTEMPTS_DEFAULT, Importance.LOW, CONNECTION_ATTEMPTS_DOC, DATABASE_GROUP, 4, Width.SHORT, CONNECTION_ATTEMPTS_DISPLAY)
+        .define(CONNECTION_BACKOFF_CONFIG, Type.LONG, CONNECTION_BACKOFF_DEFAULT, Importance.LOW, CONNECTION_BACKOFF_DOC, DATABASE_GROUP, 5, Width.SHORT, CONNECTION_BACKOFF_DISPLAY)
         .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT, Importance.MEDIUM, TABLE_WHITELIST_DOC, DATABASE_GROUP, 4, Width.LONG, TABLE_WHITELIST_DISPLAY,
                 TABLE_RECOMMENDER)
         .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT, Importance.MEDIUM, TABLE_BLACKLIST_DOC, DATABASE_GROUP, 5, Width.LONG, TABLE_BLACKLIST_DISPLAY,
