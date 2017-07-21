@@ -134,7 +134,7 @@ DDL Support
   * Importance: medium
 
 ``auto.evolve``
-  Whether to automatically dd columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.
+  Whether to automatically add columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.
 
   * Type: boolean
   * Default: false

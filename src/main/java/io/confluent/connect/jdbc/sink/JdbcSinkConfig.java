@@ -98,7 +98,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static final String AUTO_EVOLVE = "auto.evolve";
   private static final String AUTO_EVOLVE_DEFAULT = "false";
   private static final String AUTO_EVOLVE_DOC =
-      "Whether to automatically dd columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.";
+      "Whether to automatically add columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.";
   private static final String AUTO_EVOLVE_DISPLAY = "Auto-Evolve";
 
   public static final String INSERT_MODE = "insert.mode";
