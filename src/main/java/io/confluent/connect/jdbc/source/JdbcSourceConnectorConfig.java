@@ -240,9 +240,6 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       throw new ConfigException("Query mode must be specified");
   }
 
-  /**
-   * A recommender for table names.
-   */
   private static class TableRecommender implements Recommender {
 
     @Override
@@ -269,7 +266,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   }
 
   /**
-   * A recommender for table names that caches the table names for the last configuration and for a specified maximum duration.
+   * A recommender that caches values returned by a delegate, where the cache remains valid for a specified duration
+   * and as long as the configuration remains unchanged.
    */
   static class CachingRecommender implements Recommender {
 
