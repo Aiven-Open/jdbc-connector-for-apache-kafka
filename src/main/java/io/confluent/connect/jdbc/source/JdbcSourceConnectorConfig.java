@@ -30,9 +30,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
 
@@ -171,7 +173,6 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String CONNECTOR_GROUP = "Connector";
 
 
-  private static final Recommender TABLE_RECOMMENDER = new TableRecommender();
   private static final Recommender MODE_DEPENDENTS_RECOMMENDER =  new ModeDependentsRecommender();
 
 
@@ -191,14 +192,15 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String TABLE_TYPE_DISPLAY = "Table Types";
 
   public static ConfigDef baseConfigDef() {
+    TableRecommender tableRecommender = new CachingTableRecommender();
     return new ConfigDef()
         .define(CONNECTION_URL_CONFIG, Type.STRING, Importance.HIGH, CONNECTION_URL_DOC, DATABASE_GROUP, 1, Width.LONG, CONNECTION_URL_DISPLAY, Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG))
         .define(CONNECTION_USER_CONFIG, Type.STRING, null, Importance.HIGH, CONNECTION_USER_DOC, DATABASE_GROUP, 2, Width.LONG, CONNECTION_USER_DISPLAY)
         .define(CONNECTION_PASSWORD_CONFIG, Type.PASSWORD, null, Importance.HIGH, CONNECTION_PASSWORD_DOC, DATABASE_GROUP, 3, Width.SHORT, CONNECTION_PASSWORD_DISPLAY)
         .define(TABLE_WHITELIST_CONFIG, Type.LIST, TABLE_WHITELIST_DEFAULT, Importance.MEDIUM, TABLE_WHITELIST_DOC, DATABASE_GROUP, 4, Width.LONG, TABLE_WHITELIST_DISPLAY,
-                TABLE_RECOMMENDER)
+                tableRecommender)
         .define(TABLE_BLACKLIST_CONFIG, Type.LIST, TABLE_BLACKLIST_DEFAULT, Importance.MEDIUM, TABLE_BLACKLIST_DOC, DATABASE_GROUP, 5, Width.LONG, TABLE_BLACKLIST_DISPLAY,
-                TABLE_RECOMMENDER)
+                tableRecommender)
         .define(SCHEMA_PATTERN_CONFIG, Type.STRING, null, Importance.MEDIUM, SCHEMA_PATTERN_DOC, DATABASE_GROUP, 6, Width.SHORT, SCHEMA_PATTERN_DISPLAY)
         .define(TABLE_TYPE_CONFIG, Type.LIST, TABLE_TYPE_DEFAULT, Importance.LOW,
                 TABLE_TYPE_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TABLE_TYPE_DISPLAY)
@@ -228,6 +230,9 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       throw new ConfigException("Query mode must be specified");
   }
 
+  /**
+   * A recommender for table names.
+   */
   private static class TableRecommender implements Recommender {
 
     @Override
@@ -236,14 +241,40 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       String dbUser = (String) config.get(CONNECTION_USER_CONFIG);
       Password dbPassword = (Password) config.get(CONNECTION_PASSWORD_CONFIG);
       String schemaPattern = (String) config.get(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
+      Set<String> tableTypes = new HashSet<>((List<String>) config.get(JdbcSourceTaskConfig.TABLE_TYPE_CONFIG));
       if (dbUrl == null) {
         throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
       }
       try (Connection db = DriverManager.getConnection(dbUrl, dbUser, dbPassword == null ? null : dbPassword.value())) {
-        return new LinkedList<Object>(JdbcUtils.getTables(db, schemaPattern));
+        return new LinkedList<Object>(JdbcUtils.getTables(db, schemaPattern, tableTypes));
       } catch (SQLException e) {
         throw new ConfigException("Couldn't open connection to " + dbUrl, e);
       }
+    }
+
+    @Override
+    public boolean visible(String name, Map<String, Object> config) {
+      return true;
+    }
+  }
+
+  /**
+   * A recommender for table names that caches the table names for the last configuration.
+   */
+  private static class CachingTableRecommender extends TableRecommender {
+
+    private Map<String, Object> lastConfig;
+    private List<Object> results;
+
+    @Override
+    public List<Object> validValues(String name, Map<String, Object> config) {
+      if (lastConfig != null && lastConfig.equals(config)) {
+        // The configuration is the same as the last time, so return the previous results ...
+        return results;
+      }
+      results = super.validValues(name, config);
+      lastConfig = config;
+      return results;
     }
 
     @Override

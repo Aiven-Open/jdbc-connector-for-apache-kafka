@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 import io.confluent.connect.jdbc.util.JdbcUtils;
 
@@ -58,17 +59,33 @@ public class JdbcUtilsTest {
   }
 
   @Test
+  public void testFindTablesWithKnownTableType() throws Exception {
+    db.createTable("test", "id", "INT");
+    Set<String> types = Collections.singleton("TABLE");
+    assertEquals(Arrays.asList("test"), JdbcUtils.getTables(db.getConnection(), null, types));
+  }
+
+  @Test
+  public void testNotFindTablesWithUnknownTableType() throws Exception {
+    db.createTable("test", "id", "INT");
+    Set<String> types = Collections.singleton("view");
+    assertEquals(Arrays.asList(), JdbcUtils.getTables(db.getConnection(), null, types));
+  }
+
+  @Test
   public void testGetTablesMany() throws Exception {
     db.createTable("test", "id", "INT");
     db.createTable("foo", "id", "INT", "bar", "VARCHAR(20)");
     db.createTable("zab", "id", "INT");
     assertEquals(
-        new HashSet<String>(Arrays.asList("test", "foo", "zab")),
-        new HashSet<String>(JdbcUtils.getTables(db.getConnection(), null)));
+        new HashSet<>(Arrays.asList("test", "foo", "zab")),
+        new HashSet<>(JdbcUtils.getTables(db.getConnection(), null)));
   }
 
   @Test
   public void testGetTablesNarrowedToSchemas() throws Exception {
+    Set<String> types = Collections.singleton("TABLE");
+
     db.createTable("some_table", "id", "INT");
 
     db.execute("CREATE SCHEMA PUBLIC_SCHEMA");
@@ -81,14 +98,23 @@ public class JdbcUtilsTest {
     db.createTable("another_private_table", "id", "INT");
 
     assertEquals(
-      new HashSet<String>(Arrays.asList("public_table")),
-      new HashSet<String>(JdbcUtils.getTables(db.getConnection(), "PUBLIC_SCHEMA")));
+      new HashSet<>(Arrays.asList("public_table")),
+      new HashSet<>(JdbcUtils.getTables(db.getConnection(), "PUBLIC_SCHEMA")));
     assertEquals(
-      new HashSet<String>(Arrays.asList("private_table", "another_private_table")),
-      new HashSet<String>(JdbcUtils.getTables(db.getConnection(), "PRIVATE_SCHEMA")));
+      new HashSet<>(Arrays.asList("private_table", "another_private_table")),
+      new HashSet<>(JdbcUtils.getTables(db.getConnection(), "PRIVATE_SCHEMA")));
     assertEquals(
-      new HashSet<String>(Arrays.asList("some_table", "public_table", "private_table", "another_private_table")),
-      new HashSet<String>(JdbcUtils.getTables(db.getConnection(), null)));
+      new HashSet<>(Arrays.asList("some_table", "public_table", "private_table", "another_private_table")),
+      new HashSet<>(JdbcUtils.getTables(db.getConnection(), null)));
+    assertEquals(
+      new HashSet<>(Arrays.asList("public_table")),
+      new HashSet<>(JdbcUtils.getTables(db.getConnection(), "PUBLIC_SCHEMA", types)));
+    assertEquals(
+      new HashSet<>(Arrays.asList("private_table", "another_private_table")),
+      new HashSet<>(JdbcUtils.getTables(db.getConnection(), "PRIVATE_SCHEMA", types)));
+    assertEquals(
+      new HashSet<>(Arrays.asList("some_table", "public_table", "private_table", "another_private_table")),
+      new HashSet<>(JdbcUtils.getTables(db.getConnection(), null, types)));
   }
 
   @Test

@@ -63,7 +63,7 @@ public class JdbcUtils {
    * Get a list of tables in the database. This uses the default filters, which only include
    * user-defined tables.
    * @param conn database connection
-   * @return a list of tables
+   * @return a list of tables; never null
    * @throws SQLException
    */
   public static List<String> getTables(Connection conn, String schemaPattern) throws SQLException {
@@ -73,26 +73,55 @@ public class JdbcUtils {
   /**
    * Get a list of table names in the database.
    * @param conn database connection
-   * @param types a set of table types that should be included in the results
+   * @param types a set of table types that should be included in the results; may not be null but may be empty if
+   *              the tables should be returned regardless of their type
+   * @return a list of tables; never null
    * @throws SQLException
    */
   public static List<String> getTables(Connection conn, String schemaPattern, Set<String> types) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
-    try (ResultSet rs = metadata.getTables(null, schemaPattern, "%", null)) {
+    String[] tableTypes = types.isEmpty() ? null : getActualTableTypes(metadata, types);
+
+    try (ResultSet rs = metadata.getTables(null, schemaPattern, "%", tableTypes)) {
       List<String> tableNames = new ArrayList<>();
       while (rs.next()) {
-        if (types.contains(rs.getString(GET_TABLES_TYPE_COLUMN))) {
-          String colName = rs.getString(GET_TABLES_NAME_COLUMN);
-          // SQLite JDBC driver does not correctly mark these as system tables
-          if (metadata.getDatabaseProductName().equals("SQLite") && colName.startsWith("sqlite_")) {
-            continue;
-          }
-
-          tableNames.add(colName);
+        String colName = rs.getString(GET_TABLES_NAME_COLUMN);
+        // SQLite JDBC driver does not correctly mark these as system tables
+        if (metadata.getDatabaseProductName().equals("SQLite") && colName.startsWith("sqlite_")) {
+          continue;
         }
+
+        tableNames.add(colName);
       }
       return tableNames;
     }
+  }
+
+  /**
+   * Find the available table types that are returned by the JDBC driver that case insensitively match the specified types.
+   *
+   * @param metadata the database metadata; may not be null but may be empty if no table types
+   * @param types the case-independent table types
+   * @return the array of table types take directly from the list of available types returned by the JDBC driver; never null
+   * @throws SQLException
+   */
+  protected static String[] getActualTableTypes(DatabaseMetaData metadata, Set<String> types) throws SQLException {
+    // Compute the uppercase form of the desired types ...
+    Set<String> uppercaseTypes = new HashSet<>();
+    for (String type : types) {
+      if (type != null) uppercaseTypes.add(type.toUpperCase());
+    }
+    // Now find out the available table types ...
+    Set<String> matchingTableTypes = new HashSet<>();
+    try (ResultSet rs = metadata.getTableTypes()) {
+      while (rs.next()) {
+        String tableType = rs.getString(1);
+        if (tableType != null && uppercaseTypes.contains(tableType.toUpperCase())) {
+          matchingTableTypes.add(tableType);
+        }
+      }
+    }
+    return matchingTableTypes.toArray(new String[matchingTableTypes.size()]);
   }
 
   /**
