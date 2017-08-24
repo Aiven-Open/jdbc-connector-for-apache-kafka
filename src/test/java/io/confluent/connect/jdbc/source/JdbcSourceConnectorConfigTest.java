@@ -15,18 +15,26 @@
  **/
 package io.confluent.connect.jdbc.source;
 
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachedTableValues;
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachingRecommender;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigValue;
+import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.api.easymock.PowerMock;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class JdbcSourceConnectorConfigTest {
@@ -35,6 +43,8 @@ public class JdbcSourceConnectorConfigTest {
   private Map<String, String> props;
   private ConfigDef configDef;
   private List<ConfigValue> results;
+  private Recommender mockRecommender = PowerMock.createMock(Recommender.class);
+  private MockTime time = new MockTime();
 
   @Before
   public void setup() throws Exception {
@@ -89,6 +99,71 @@ public class JdbcSourceConnectorConfigTest {
     results = configDef.validate(props);
     assertWhitelistRecommendations();
     assertBlacklistRecommendations();
+  }
+
+  @Test
+  public void testCachingRecommender() {
+    final List<Object> results1 = Collections.singletonList((Object) "xyz");
+    final List<Object> results2 = Collections.singletonList((Object) "123");
+    // Set up the mock recommender to be called twice, returning different results each time
+    EasyMock.expect(mockRecommender.validValues(EasyMock.anyObject(String.class), EasyMock.anyObject(Map.class))).andReturn(results1);
+    EasyMock.expect(mockRecommender.validValues(EasyMock.anyObject(String.class), EasyMock.anyObject(Map.class))).andReturn(results2);
+
+    PowerMock.replayAll();
+
+    CachingRecommender recommender = new CachingRecommender(mockRecommender, time, 1000L);
+
+    Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
+    // Populate the cache
+    assertSame(results1, recommender.validValues("x", config1));
+    // Try the cache before expiration
+    time.sleep(100L);
+    assertSame(results1, recommender.validValues("x", config1));
+    // Wait for the cache to expire
+    time.sleep(2000L);
+    assertSame(results2, recommender.validValues("x", config1));
+
+    PowerMock.verifyAll();
+  }
+
+  @Test
+  public void testDefaultConstructedCachedTableValuesReturnsNull() {
+    Map<String, Object> config = Collections.singletonMap("k", (Object) "v");
+    CachedTableValues cached = new CachedTableValues();
+    assertNull(cached.cachedValue(config, 20L));
+  }
+
+  @Test
+  public void testCachedTableValuesReturnsCachedResultWithinExpiryTime() {
+    Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
+    Map<String, Object> config2 = Collections.singletonMap("k", (Object) "v");
+    List<Object> results = Collections.singletonList((Object) "xyz");
+    long expiry = 20L;
+    CachedTableValues cached = new CachedTableValues(config1, results, expiry);
+    assertSame(results, cached.cachedValue(config2, expiry - 1L));
+  }
+
+  @Test
+  public void testCachedTableValuesReturnsNullResultAtOrAfterExpiryTime() {
+    Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
+    Map<String, Object> config2 = Collections.singletonMap("k", (Object) "v");
+    List<Object> results = Collections.singletonList((Object) "xyz");
+    long expiry = 20L;
+    CachedTableValues cached = new CachedTableValues(config1, results, expiry);
+    assertNull(cached.cachedValue(config2, expiry));
+    assertNull(cached.cachedValue(config2, expiry + 1L));
+  }
+
+  @Test
+  public void testCachedTableValuesReturnsNullResultIfConfigurationChanges() {
+    Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
+    Map<String, Object> config2 = Collections.singletonMap("k", (Object) "zed");
+    List<Object> results = Collections.singletonList((Object) "xyz");
+    long expiry = 20L;
+    CachedTableValues cached = new CachedTableValues(config1, results, expiry);
+    assertNull(cached.cachedValue(config2, expiry - 1L));
+    assertNull(cached.cachedValue(config2, expiry));
+    assertNull(cached.cachedValue(config2, expiry + 1L));
   }
 
   protected <T> void assertContains(Collection<T> actual, T... expected) {
