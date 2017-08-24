@@ -273,7 +273,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
     private final Time time;
     private final long cacheDurationInMillis;
-    private final AtomicReference<CachedTableValues> cachedValues = new AtomicReference<>(new CachedTableValues());
+    private final AtomicReference<CachedRecommenderValues> cachedValues = new AtomicReference<>(new CachedRecommenderValues());
     private final Recommender delegate;
 
     public CachingRecommender(Recommender delegate, Time time, long cacheDurationInMillis) {
@@ -292,7 +292,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       LOG.trace("Fetching table names");
       results = delegate.validValues(name, config);
       LOG.debug("Caching table names: {}", results);
-      cachedValues.set(new CachedTableValues(config, results, time.milliseconds() + cacheDurationInMillis));
+      cachedValues.set(new CachedRecommenderValues(config, results, time.milliseconds() + cacheDurationInMillis));
       return results;
     }
 
@@ -302,14 +302,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
     }
   }
 
-  static class CachedTableValues {
+  static class CachedRecommenderValues {
     private final Map<String, Object> lastConfig;
     private final List<Object> results;
     private final long expiryTimeInMillis;
-    public CachedTableValues() {
+    public CachedRecommenderValues() {
       this(null, null, 0L);
     }
-    public CachedTableValues(Map<String, Object> lastConfig, List<Object> results, long expiryTimeInMillis) {
+    public CachedRecommenderValues(Map<String, Object> lastConfig, List<Object> results, long expiryTimeInMillis) {
       this.lastConfig = lastConfig;
       this.results = results;
       this.expiryTimeInMillis = expiryTimeInMillis;

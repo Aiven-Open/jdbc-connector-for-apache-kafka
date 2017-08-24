@@ -15,7 +15,7 @@
  **/
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachedTableValues;
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachedRecommenderValues;
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachingRecommender;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Recommender;
@@ -129,7 +129,7 @@ public class JdbcSourceConnectorConfigTest {
   @Test
   public void testDefaultConstructedCachedTableValuesReturnsNull() {
     Map<String, Object> config = Collections.singletonMap("k", (Object) "v");
-    CachedTableValues cached = new CachedTableValues();
+    CachedRecommenderValues cached = new CachedRecommenderValues();
     assertNull(cached.cachedValue(config, 20L));
   }
 
@@ -139,7 +139,7 @@ public class JdbcSourceConnectorConfigTest {
     Map<String, Object> config2 = Collections.singletonMap("k", (Object) "v");
     List<Object> results = Collections.singletonList((Object) "xyz");
     long expiry = 20L;
-    CachedTableValues cached = new CachedTableValues(config1, results, expiry);
+    CachedRecommenderValues cached = new CachedRecommenderValues(config1, results, expiry);
     assertSame(results, cached.cachedValue(config2, expiry - 1L));
   }
 
@@ -149,7 +149,7 @@ public class JdbcSourceConnectorConfigTest {
     Map<String, Object> config2 = Collections.singletonMap("k", (Object) "v");
     List<Object> results = Collections.singletonList((Object) "xyz");
     long expiry = 20L;
-    CachedTableValues cached = new CachedTableValues(config1, results, expiry);
+    CachedRecommenderValues cached = new CachedRecommenderValues(config1, results, expiry);
     assertNull(cached.cachedValue(config2, expiry));
     assertNull(cached.cachedValue(config2, expiry + 1L));
   }
@@ -160,7 +160,7 @@ public class JdbcSourceConnectorConfigTest {
     Map<String, Object> config2 = Collections.singletonMap("k", (Object) "zed");
     List<Object> results = Collections.singletonList((Object) "xyz");
     long expiry = 20L;
-    CachedTableValues cached = new CachedTableValues(config1, results, expiry);
+    CachedRecommenderValues cached = new CachedRecommenderValues(config1, results, expiry);
     assertNull(cached.cachedValue(config2, expiry - 1L));
     assertNull(cached.cachedValue(config2, expiry));
     assertNull(cached.cachedValue(config2, expiry + 1L));
