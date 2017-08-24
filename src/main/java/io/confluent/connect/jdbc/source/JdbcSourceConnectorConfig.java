@@ -251,9 +251,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       if (dbUrl == null) {
         throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
       }
-      Connection db;
-      try {
-        db = DriverManager.getConnection(dbUrl, dbUser, dbPassword == null ? null : dbPassword.value());
+      try (Connection db = DriverManager.getConnection(dbUrl, dbUser, dbPassword == null ? null : dbPassword.value())) {
         return new LinkedList<Object>(JdbcUtils.getTables(db, schemaPattern));
       } catch (SQLException e) {
         throw new ConfigException("Couldn't open connection to " + dbUrl, e);
