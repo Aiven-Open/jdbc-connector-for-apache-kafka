@@ -186,7 +186,8 @@ public class JdbcSourceConnectorTest {
     connProps.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "SOME_SCHEMA");
 
     PowerMock.mockStatic(JdbcUtils.class);
-    EasyMock.expect(JdbcUtils.getTables(EasyMock.anyObject(Connection.class), EasyMock.eq("SOME_SCHEMA")))
+    EasyMock.expect(JdbcUtils.getTables(EasyMock.anyObject(Connection.class), EasyMock.eq("SOME_SCHEMA"),
+            EasyMock.eq(JdbcUtils.DEFAULT_TABLE_TYPES)))
       .andReturn(new ArrayList<String>())
       .atLeastOnce();
 
