@@ -25,16 +25,25 @@ import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
+import org.apache.kafka.common.utils.Time;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
+
+  private static final Logger LOG = LoggerFactory.getLogger(JdbcSourceConnectorConfig.class);
 
   public static final String CONNECTION_URL_CONFIG = "connection.url";
   private static final String CONNECTION_URL_DOC = "JDBC connection URL.";
@@ -180,8 +189,11 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String MODE_GROUP = "Mode";
   public static final String CONNECTOR_GROUP = "Connector";
 
-
-  private static final Recommender TABLE_RECOMMENDER = new TableRecommender();
+  // We want the table recommender to only cache values for a short period of time so that the blacklist and whitelist
+  // config properties can use a single query.
+  private static final Recommender TABLE_RECOMMENDER = new CachingRecommender(new TableRecommender(),
+                                                                              Time.SYSTEM,
+                                                                              TimeUnit.SECONDS.toMillis(5));
   private static final Recommender MODE_DEPENDENTS_RECOMMENDER =  new ModeDependentsRecommender();
 
 
@@ -248,11 +260,12 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       String dbUser = (String) config.get(CONNECTION_USER_CONFIG);
       Password dbPassword = (Password) config.get(CONNECTION_PASSWORD_CONFIG);
       String schemaPattern = (String) config.get(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
+      Set<String> tableTypes = new HashSet<>((List<String>) config.get(JdbcSourceTaskConfig.TABLE_TYPE_CONFIG));
       if (dbUrl == null) {
         throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
       }
       try (Connection db = DriverManager.getConnection(dbUrl, dbUser, dbPassword == null ? null : dbPassword.value())) {
-        return new LinkedList<Object>(JdbcUtils.getTables(db, schemaPattern));
+        return new LinkedList<Object>(JdbcUtils.getTables(db, schemaPattern, tableTypes));
       } catch (SQLException e) {
         throw new ConfigException("Couldn't open connection to " + dbUrl, e);
       }
@@ -261,6 +274,63 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
     @Override
     public boolean visible(String name, Map<String, Object> config) {
       return true;
+    }
+  }
+
+  /**
+   * A recommender that caches values returned by a delegate, where the cache remains valid for a specified duration
+   * and as long as the configuration remains unchanged.
+   */
+  static class CachingRecommender implements Recommender {
+
+    private final Time time;
+    private final long cacheDurationInMillis;
+    private final AtomicReference<CachedRecommenderValues> cachedValues = new AtomicReference<>(new CachedRecommenderValues());
+    private final Recommender delegate;
+
+    public CachingRecommender(Recommender delegate, Time time, long cacheDurationInMillis) {
+      this.delegate = delegate;
+      this.time = time;
+      this.cacheDurationInMillis = cacheDurationInMillis;
+    }
+
+    @Override
+    public List<Object> validValues(String name, Map<String, Object> config) {
+      List<Object> results = cachedValues.get().cachedValue(config, time.milliseconds());
+      if (results != null) {
+        LOG.debug("Returning cached table names: {}", results);
+        return results;
+      }
+      LOG.trace("Fetching table names");
+      results = delegate.validValues(name, config);
+      LOG.debug("Caching table names: {}", results);
+      cachedValues.set(new CachedRecommenderValues(config, results, time.milliseconds() + cacheDurationInMillis));
+      return results;
+    }
+
+    @Override
+    public boolean visible(String name, Map<String, Object> config) {
+      return true;
+    }
+  }
+
+  static class CachedRecommenderValues {
+    private final Map<String, Object> lastConfig;
+    private final List<Object> results;
+    private final long expiryTimeInMillis;
+    public CachedRecommenderValues() {
+      this(null, null, 0L);
+    }
+    public CachedRecommenderValues(Map<String, Object> lastConfig, List<Object> results, long expiryTimeInMillis) {
+      this.lastConfig = lastConfig;
+      this.results = results;
+      this.expiryTimeInMillis = expiryTimeInMillis;
+    }
+    public List<Object> cachedValue(Map<String, Object> config, long currentTimeInMillis) {
+      if (currentTimeInMillis < expiryTimeInMillis && lastConfig != null && lastConfig.equals(config)) {
+        return results;
+      }
+      return null;
     }
   }
 
