@@ -36,7 +36,10 @@ import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
 public abstract class DbMetadataQueries {
   private static final Logger log = LoggerFactory.getLogger(DbMetadataQueries.class);
 
-  public static boolean doesTableExist(final Connection connection, final String tableName) throws SQLException {
+  public static boolean doesTableExist(
+      final Connection connection,
+      final String tableName
+  ) throws SQLException {
     final String catalog = connection.getCatalog();
 
     final DatabaseMetaData meta = connection.getMetaData();
@@ -44,27 +47,51 @@ public abstract class DbMetadataQueries {
     final String product = meta.getDatabaseProductName();
     final String schema = getSchema(connection, product);
 
-    log.info("Checking table:{} exists for product:{} schema:{} catalog:", tableName, product, schema, catalog);
+    log.info(
+        "Checking table:{} exists for product:{} schema:{} catalog:",
+        tableName,
+        product,
+        schema,
+        catalog
+    );
 
     try (ResultSet rs = meta.getTables(catalog, schema, tableName, new String[]{"TABLE"})) {
       final boolean exists = rs.next();
-      log.info("product:{} schema:{} catalog:{} -- table:{} is {}", product, schema, catalog, tableName, exists ? "present" : "absent");
+      log.info(
+          "product:{} schema:{} catalog:{} -- table:{} is {}",
+          product,
+          schema,
+          catalog,
+          tableName,
+          exists ? "present" : "absent"
+      );
       return exists;
     }
   }
 
-  public static DbTable getTableMetadata(final Connection connection, final String tableName) throws SQLException {
+  public static DbTable getTableMetadata(
+      final Connection connection,
+      final String tableName
+  ) throws SQLException {
     final DatabaseMetaData dbMetaData = connection.getMetaData();
     final String product = dbMetaData.getDatabaseProductName();
     final String catalog = connection.getCatalog();
 
     final String schema = getSchema(connection, product);
-    final String tableNameForQuery = product.equalsIgnoreCase("oracle") ? tableName.toUpperCase() : tableName;
+    final String tableNameForQuery
+        = product.equalsIgnoreCase("oracle") ? tableName.toUpperCase() : tableName;
 
-    log.info("Querying column metadata for product:{} schema:{} catalog:{} table:{}", product, schema, catalog, tableNameForQuery);
+    log.info(
+        "Querying column metadata for product:{} schema:{} catalog:{} table:{}",
+        product,
+        schema,
+        catalog,
+        tableNameForQuery
+    );
 
     final Set<String> pkColumns = new HashSet<>();
-    try (final ResultSet primaryKeysResultSet = dbMetaData.getPrimaryKeys(catalog, schema, tableNameForQuery)) {
+    try (final ResultSet primaryKeysResultSet
+             = dbMetaData.getPrimaryKeys(catalog, schema, tableNameForQuery)) {
       while (primaryKeysResultSet.next()) {
         final String colName = primaryKeysResultSet.getString("COLUMN_NAME");
         pkColumns.add(colName);
@@ -72,13 +99,15 @@ public abstract class DbMetadataQueries {
     }
 
     final List<DbTableColumn> columns = new ArrayList<>();
-    try (final ResultSet columnsResultSet = dbMetaData.getColumns(catalog, schema, tableNameForQuery, null)) {
+    try (final ResultSet columnsResultSet
+             = dbMetaData.getColumns(catalog, schema, tableNameForQuery, null)) {
       while (columnsResultSet.next()) {
         final String colName = columnsResultSet.getString("COLUMN_NAME");
         final int sqlType = columnsResultSet.getInt("DATA_TYPE");
         final boolean isPk = pkColumns.contains(colName);
-        final boolean isNullable = !isPk // SQLite can report PK's as nullable
-                                   && Objects.equals("YES", columnsResultSet.getString("IS_NULLABLE"));
+        final boolean isNullable
+            = !isPk // SQLite can report PK's as nullable
+              && Objects.equals("YES", columnsResultSet.getString("IS_NULLABLE"));
         columns.add(new DbTableColumn(colName, isPk, isNullable, sqlType));
       }
     }
@@ -86,12 +115,18 @@ public abstract class DbMetadataQueries {
     return new DbTable(tableName, columns);
   }
 
-  private static String getSchema(final Connection connection, final String product) throws SQLException {
+  private static String getSchema(
+      final Connection connection,
+      final String product
+  ) throws SQLException {
     if (product.equalsIgnoreCase("oracle")) {
-      // Use SQL to retrieve the database name for Oracle, apparently the JDBC API doesn't work as expected
+      // Use SQL to retrieve the database name for Oracle, apparently the JDBC API doesn't work
+      // as expected
       try (
           Statement statement = connection.createStatement();
-          ResultSet rs = statement.executeQuery("select sys_context('userenv','current_schema') x from dual")
+          ResultSet rs = statement.executeQuery(
+              "select sys_context('userenv','current_schema') x from dual"
+          )
       ) {
         if (rs.next()) {
           return rs.getString("x").toUpperCase();

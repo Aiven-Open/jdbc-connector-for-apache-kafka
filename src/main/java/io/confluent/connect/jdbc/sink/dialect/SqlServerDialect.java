@@ -49,6 +49,8 @@ public class SqlServerDialect extends DbDialect {
           return "time";
         case Timestamp.LOGICAL_NAME:
           return "datetime2";
+        default:
+          // pass through to normal types
       }
     }
     switch (type) {
@@ -70,8 +72,9 @@ public class SqlServerDialect extends DbDialect {
         return "varchar(max)";
       case BYTES:
         return "varbinary(max)";
+      default:
+        return super.getSqlType(schemaName, parameters, type);
     }
-    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

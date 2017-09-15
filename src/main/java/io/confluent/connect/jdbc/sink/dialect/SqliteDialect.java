@@ -31,7 +31,7 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.copiesToBuilder;
 
 public class SqliteDialect extends DbDialect {
   public SqliteDialect() {
@@ -39,7 +39,13 @@ public class SqliteDialect extends DbDialect {
   }
 
   @Override
-  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
+  protected void formatColumnValue(
+      StringBuilder builder,
+      String schemaName,
+      Map<String, String> schemaParameters,
+      Schema.Type type,
+      Object value
+  ) {
     if (schemaName != null) {
       switch (schemaName) {
         case Date.LOGICAL_NAME:
@@ -47,6 +53,8 @@ public class SqliteDialect extends DbDialect {
         case Timestamp.LOGICAL_NAME:
           builder.append(((java.util.Date) value).getTime());
           return;
+        default:
+          // pass through for normal types
       }
     }
     super.formatColumnValue(builder, schemaName, schemaParameters, type, value);
@@ -61,6 +69,8 @@ public class SqliteDialect extends DbDialect {
         case Time.LOGICAL_NAME:
         case Timestamp.LOGICAL_NAME:
           return "NUMERIC";
+        default:
+          // pass through to normal types
       }
     }
     switch (type) {
@@ -77,8 +87,9 @@ public class SqliteDialect extends DbDialect {
         return "TEXT";
       case BYTES:
         return "BLOB";
+      default:
+        return super.getSqlType(schemaName, parameters, type);
     }
-    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override
@@ -97,7 +108,7 @@ public class SqliteDialect extends DbDialect {
     builder.append(escaped(table)).append("(");
     joinToBuilder(builder, ",", keyCols, cols, escaper());
     builder.append(") VALUES(");
-    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
+    copiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(")");
     return builder.toString();
   }

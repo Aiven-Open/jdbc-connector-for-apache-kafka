@@ -48,8 +48,13 @@ public class CachedConnectionProvider {
       JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT);
   }
 
-  public CachedConnectionProvider(String url, String username, String password, int maxConnectionAttempts,
-                                  long connectionRetryBackoff) {
+  public CachedConnectionProvider(
+      String url,
+      String username,
+      String password,
+      int maxConnectionAttempts,
+      long connectionRetryBackoff
+  ) {
     this.url = url;
     this.username = username;
     this.password = password;

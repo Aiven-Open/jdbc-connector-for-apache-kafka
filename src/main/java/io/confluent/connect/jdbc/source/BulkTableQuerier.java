@@ -54,6 +54,8 @@ public class BulkTableQuerier extends TableQuerier {
         log.debug("{} prepared SQL query: {}", this, query);
         stmt = db.prepareStatement(query);
         break;
+      default:
+        throw new ConnectException("Unknown mode: " + mode);
     }
   }
 
@@ -86,11 +88,11 @@ public class BulkTableQuerier extends TableQuerier {
 
   @Override
   public String toString() {
-    return "BulkTableQuerier{" +
-           "name='" + name + '\'' +
-           ", query='" + query + '\'' +
-           ", topicPrefix='" + topicPrefix + '\'' +
-           '}';
+    return "BulkTableQuerier{"
+           + "name='" + name + '\''
+           + ", query='" + query + '\''
+           + ", topicPrefix='" + topicPrefix + '\''
+           + '}';
   }
 
 }

@@ -74,13 +74,7 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
 
-    final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
-    final String dbUser = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
-    final Password dbPassword = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
-    final int maxConnectionAttempts = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
-    final long connectionRetryBackoff = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
-    cachedConnectionProvider = new CachedConnectionProvider(dbUrl, dbUser,
-      dbPassword == null ? null : dbPassword.value(), maxConnectionAttempts, connectionRetryBackoff);
+    createConnectionProvider();
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
@@ -90,14 +84,14 @@ public class JdbcSourceTask extends SourceTask {
     }
     TableQuerier.QueryMode queryMode = !query.isEmpty() ? TableQuerier.QueryMode.QUERY :
                                        TableQuerier.QueryMode.TABLE;
-    List<String> tablesOrQuery = queryMode == TableQuerier.QueryMode.QUERY ?
-                                 Collections.singletonList(query) : tables;
+    List<String> tablesOrQuery = queryMode == TableQuerier.QueryMode.QUERY
+                                 ? Collections.singletonList(query) : tables;
 
     String mode = config.getString(JdbcSourceTaskConfig.MODE_CONFIG);
     Map<Map<String, String>, Map<String, Object>> offsets = null;
-    if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING) ||
-        mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP) ||
-        mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
+    if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)
+        || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)
+        || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
       List<Map<String, String>> partitions = new ArrayList<>(tables.size());
       switch (queryMode) {
         case TABLE:
@@ -111,6 +105,8 @@ public class JdbcSourceTask extends SourceTask {
           partitions.add(Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
                                                   JdbcSourceConnectorConstants.QUERY_NAME_VALUE));
           break;
+        default:
+          throw new ConnectException("Unknown query mode: " + queryMode);
       }
       offsets = context.offsetStorageReader().offsets(partitions);
     }
@@ -131,7 +127,13 @@ public class JdbcSourceTask extends SourceTask {
       switch (queryMode) {
         case TABLE:
           if (validateNonNulls) {
-            validateNonNullable(mode, schemaPattern, tableOrQuery, incrementingColumn, timestampColumn);
+            validateNonNullable(
+                mode,
+                schemaPattern,
+                tableOrQuery,
+                incrementingColumn,
+                timestampColumn
+            );
           }
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.TABLE_NAME_KEY, tableOrQuery);
@@ -146,7 +148,8 @@ public class JdbcSourceTask extends SourceTask {
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
 
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
-      boolean mapNumerics = config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG);
+      boolean mapNumerics
+          = config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG);
 
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
         tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, schemaPattern,
@@ -169,6 +172,24 @@ public class JdbcSourceTask extends SourceTask {
     stop = new AtomicBoolean(false);
   }
 
+  private void createConnectionProvider() {
+    final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    final String dbUser = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
+    final Password dbPassword
+        = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
+    final int maxConnectionAttempts
+        = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
+    final long connectionRetryBackoff
+        = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
+    cachedConnectionProvider = new CachedConnectionProvider(
+        dbUrl,
+        dbUser,
+        dbPassword == null ? null : dbPassword.value(),
+        maxConnectionAttempts,
+        connectionRetryBackoff
+    );
+  }
+
   @Override
   public void stop() throws ConnectException {
     if (stop != null) {
@@ -188,7 +209,8 @@ public class JdbcSourceTask extends SourceTask {
 
       if (!querier.querying()) {
         // If not in the middle of an update, wait for next update time
-        final long nextUpdate = querier.getLastUpdate() + config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
+        final long nextUpdate = querier.getLastUpdate()
+                                + config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
         final long untilNext = nextUpdate - time.milliseconds();
         if (untilNext > 0) {
           log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
@@ -209,7 +231,8 @@ public class JdbcSourceTask extends SourceTask {
         }
 
         if (!hadNext) {
-          // If we finished processing the results from the current query, we can reset and send the querier to the tail of the queue
+          // If we finished processing the results from the current query, we can reset and send
+          // the querier to the tail of the queue
           resetAndRequeueHead(querier);
         }
 
@@ -239,24 +262,30 @@ public class JdbcSourceTask extends SourceTask {
     tableQueue.add(expectedHead);
   }
 
-  private void validateNonNullable(String incrementalMode, String schemaPattern, String table, String incrementingColumn, String timestampColumn) {
+  private void validateNonNullable(
+      String incrementalMode,
+      String schemaPattern,
+      String table,
+      String incrementingColumn,
+      String timestampColumn
+  ) {
     try {
       final Connection connection = cachedConnectionProvider.getValidConnection();
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
       // for table-based copying because custom query mode doesn't allow this to be looked up
       // without a query or parsing the query since we don't have a table name.
-      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING) ||
-           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
-          JdbcUtils.isColumnNullable(connection, schemaPattern, table, incrementingColumn)) {
-        throw new ConnectException("Cannot make incremental queries using incrementing column " +
-                                   incrementingColumn + " on " + table + " because this column is "
-                                   + "nullable.");
+      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
+           || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING))
+          && JdbcUtils.isColumnNullable(connection, schemaPattern, table, incrementingColumn)) {
+        throw new ConnectException("Cannot make incremental queries using incrementing column "
+                                   + incrementingColumn + " on " + table + " because this column "
+                                   + "is nullable.");
       }
-      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP) ||
-           incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)) &&
-          JdbcUtils.isColumnNullable(connection, schemaPattern, table, timestampColumn)) {
-        throw new ConnectException("Cannot make incremental queries using timestamp column " +
-                                   timestampColumn + " on " + table + " because this column is "
+      if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
+           || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING))
+          && JdbcUtils.isColumnNullable(connection, schemaPattern, table, timestampColumn)) {
+        throw new ConnectException("Cannot make incremental queries using timestamp column "
+                                   + timestampColumn + " on " + table + " because this column is "
                                    + "nullable.");
       }
     } catch (SQLException e) {

@@ -33,29 +33,32 @@ public class DateTimeUtils {
     }
   };
 
-  private static final ThreadLocal<SimpleDateFormat> UTC_DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-    protected SimpleDateFormat initialValue() {
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-      sdf.setTimeZone(UTC);
-      return sdf;
-    }
-  };
+  private static final ThreadLocal<SimpleDateFormat> UTC_DATE_FORMAT
+      = new ThreadLocal<SimpleDateFormat>() {
+        protected SimpleDateFormat initialValue() {
+          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+          sdf.setTimeZone(UTC);
+          return sdf;
+        }
+      };
 
-  private static final ThreadLocal<SimpleDateFormat> UTC_TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-    protected SimpleDateFormat initialValue() {
-      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
-      sdf.setTimeZone(UTC);
-      return sdf;
-    }
-  };
+  private static final ThreadLocal<SimpleDateFormat> UTC_TIME_FORMAT
+      = new ThreadLocal<SimpleDateFormat>() {
+        protected SimpleDateFormat initialValue() {
+          SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+          sdf.setTimeZone(UTC);
+          return sdf;
+        }
+      };
 
-  private static final ThreadLocal<SimpleDateFormat> UTC_TIMESTAMP_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-    protected SimpleDateFormat initialValue() {
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-      sdf.setTimeZone(UTC);
-      return sdf;
-    }
-  };
+  private static final ThreadLocal<SimpleDateFormat> UTC_TIMESTAMP_FORMAT
+      = new ThreadLocal<SimpleDateFormat>() {
+        protected SimpleDateFormat initialValue() {
+          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+          sdf.setTimeZone(UTC);
+          return sdf;
+        }
+      };
 
   public static String formatUtcDate(Date date) {
     return UTC_DATE_FORMAT.get().format(date);

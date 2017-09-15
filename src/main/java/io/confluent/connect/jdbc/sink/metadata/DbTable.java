@@ -39,9 +39,9 @@ public class DbTable {
 
   @Override
   public String toString() {
-    return "DbTable{" +
-           "name='" + name + '\'' +
-           ", columns=" + columns +
-           '}';
+    return "DbTable{"
+           + "name='" + name + '\''
+           + ", columns=" + columns
+           + '}';
   }
 }

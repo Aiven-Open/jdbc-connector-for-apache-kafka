@@ -108,6 +108,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
       try {
         stmt.close();
       } catch (SQLException ignored) {
+        // intentionally ignored
       }
     }
     stmt = null;
@@ -118,6 +119,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
       try {
         resultSet.close();
       } catch (SQLException ignored) {
+        // intentionally ignored
       }
     }
     resultSet = null;

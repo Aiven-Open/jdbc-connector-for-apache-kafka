@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+
+    <suppress checks="CyclomaticComplexity"
+              files="(BufferedRecords|DataConverter|DbDialect|FieldsMetadata|HanaDialect|JdbcSourceTask|MySqlDialect|OracleDialect|PostgreSqlDialect|PreparedStatementBinder|SqlServerDialect|SqliteDialect|TimestampIncrementingTableQuerier|VerticaDialect).java"/>
+
+    <suppress checks="ClassDataAbstractionCoupling"
+              files="(DbDialect|JdbcSourceTask).java"/>
+
+    <suppress checks="NPathComplexity"
+              files="(DataConverter|FieldsMetadata|JdbcSourceTask).java"/>
+
+    <suppress checks="JavaNCSS"
+              files="(DataConverter|FieldsMetadata|JdbcSourceTask).java"/>
+
+    <suppress checks="MethodLength"
+              files="DataConverter.java"/>
+</suppressions>
