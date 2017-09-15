@@ -49,8 +49,15 @@ public class TableMonitorThread extends Thread {
   private List<String> tables;
   private Set<String> tableTypes;
 
-  public TableMonitorThread(CachedConnectionProvider cachedConnectionProvider, ConnectorContext context, String schemaPattern, long pollMs,
-                            Set<String> whitelist, Set<String> blacklist, Set<String> tableTypes) {
+  public TableMonitorThread(
+      CachedConnectionProvider cachedConnectionProvider,
+      ConnectorContext context,
+      String schemaPattern,
+      long pollMs,
+      Set<String> whitelist,
+      Set<String> blacklist,
+      Set<String> tableTypes
+  ) {
     this.cachedConnectionProvider = cachedConnectionProvider;
     this.schemaPattern = schemaPattern;
     this.context = context;
@@ -111,10 +118,18 @@ public class TableMonitorThread extends Thread {
   private synchronized boolean updateTables() {
     final List<String> tables;
     try {
-      tables = JdbcUtils.getTables(cachedConnectionProvider.getValidConnection(), schemaPattern, tableTypes);
+      tables = JdbcUtils.getTables(
+          cachedConnectionProvider.getValidConnection(),
+          schemaPattern,
+          tableTypes
+      );
       log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
     } catch (SQLException e) {
-      log.error("Error while trying to get updated table list, ignoring and waiting for next table poll interval", e);
+      log.error(
+          "Error while trying to get updated table list, ignoring and waiting for next table poll"
+          + " interval",
+          e
+      );
       cachedConnectionProvider.closeQuietly();
       return false;
     }

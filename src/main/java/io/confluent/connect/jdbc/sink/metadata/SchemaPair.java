@@ -38,8 +38,8 @@ public class SchemaPair {
       return false;
     }
     SchemaPair that = (SchemaPair) o;
-    return Objects.equals(keySchema, that.keySchema) &&
-           Objects.equals(valueSchema, that.valueSchema);
+    return Objects.equals(keySchema, that.keySchema)
+           && Objects.equals(valueSchema, that.valueSchema);
   }
 
   @Override

@@ -25,8 +25,8 @@ import org.apache.kafka.connect.data.Timestamp;
 import java.util.Collection;
 import java.util.Map;
 
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.copiesToBuilder;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
 
 public class PostgreSqlDialect extends DbDialect {
 
@@ -46,6 +46,8 @@ public class PostgreSqlDialect extends DbDialect {
           return "TIME";
         case Timestamp.LOGICAL_NAME:
           return "TIMESTAMP";
+        default:
+          // fall through to normal types
       }
     }
     switch (type) {
@@ -67,19 +69,24 @@ public class PostgreSqlDialect extends DbDialect {
         return "TEXT";
       case BYTES:
         return "BLOB";
+      default:
+        return super.getSqlType(schemaName, parameters, type);
     }
-    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override
-  public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols) {
+  public String getUpsertQuery(
+      final String table,
+      final Collection<String> keyCols,
+      final Collection<String> cols
+  ) {
     final StringBuilder builder = new StringBuilder();
     builder.append("INSERT INTO ");
     builder.append(escaped(table));
     builder.append(" (");
     joinToBuilder(builder, ",", keyCols, cols, escaper());
     builder.append(") VALUES (");
-    nCopiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
+    copiesToBuilder(builder, ",", "?", cols.size() + keyCols.size());
     builder.append(") ON CONFLICT (");
     joinToBuilder(builder, ",", keyCols, escaper());
     builder.append(") DO UPDATE SET ");

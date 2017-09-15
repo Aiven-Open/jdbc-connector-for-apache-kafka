@@ -37,9 +37,10 @@ import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import io.confluent.connect.jdbc.sink.metadata.TableMetadataLoadingCache;
 
 public class DbStructure {
-  private final static Logger log = LoggerFactory.getLogger(DbStructure.class);
+  private static final Logger log = LoggerFactory.getLogger(DbStructure.class);
 
-  private final TableMetadataLoadingCache tableMetadataLoadingCache = new TableMetadataLoadingCache();
+  private final TableMetadataLoadingCache tableMetadataLoadingCache
+      = new TableMetadataLoadingCache();
 
   private final DbDialect dbDialect;
 
@@ -82,7 +83,9 @@ public class DbStructure {
       final FieldsMetadata fieldsMetadata
   ) throws SQLException {
     if (!config.autoCreate) {
-      throw new ConnectException(String.format("Table %s is missing and auto-creation is disabled", tableName));
+      throw new ConnectException(
+          String.format("Table %s is missing and auto-creation is disabled", tableName)
+      );
     }
     final String sql = dbDialect.getCreateQuery(tableName, fieldsMetadata.allFields.values());
     log.info("Creating table:{} with SQL: {}", tableName, sql);
@@ -105,21 +108,25 @@ public class DbStructure {
       final int maxRetries
   ) throws SQLException {
     // NOTE:
-    //   The table might have extra columns defined (hopefully with default values), which is not a case we check for here.
+    //   The table might have extra columns defined (hopefully with default values), which is not
+    //   a case we check for here.
     //   We also don't check if the data types for columns that do line-up are compatible.
 
     final DbTable tableMetadata = tableMetadataLoadingCache.get(connection, tableName);
     final Map<String, DbTableColumn> dbColumns = tableMetadata.columns;
 
-// FIXME: SQLite JDBC driver seems to not always return the PK column names?
-//    if (!tableMetadata.getPrimaryKeyColumnNames().equals(fieldsMetadata.keyFieldNames)) {
-//      throw new ConnectException(String.format(
-//          "Table %s has different primary key columns - database (%s), desired (%s)",
-//          tableName, tableMetadata.getPrimaryKeyColumnNames(), fieldsMetadata.keyFieldNames
-//      ));
-//    }
+    // FIXME: SQLite JDBC driver seems to not always return the PK column names?
+    //    if (!tableMetadata.getPrimaryKeyColumnNames().equals(fieldsMetadata.keyFieldNames)) {
+    //      throw new ConnectException(String.format(
+    //          "Table %s has different primary key columns - database (%s), desired (%s)",
+    //          tableName, tableMetadata.getPrimaryKeyColumnNames(), fieldsMetadata.keyFieldNames
+    //      ));
+    //    }
 
-    final Set<SinkRecordField> missingFields = missingFields(fieldsMetadata.allFields.values(), dbColumns.keySet());
+    final Set<SinkRecordField> missingFields = missingFields(
+        fieldsMetadata.allFields.values(),
+        dbColumns.keySet()
+    );
 
     if (missingFields.isEmpty()) {
       return false;
@@ -127,16 +134,28 @@ public class DbStructure {
 
     for (SinkRecordField missingField: missingFields) {
       if (!missingField.isOptional() && missingField.defaultValue() == null) {
-        throw new ConnectException("Cannot ALTER to add missing field " + missingField + ", as it is not optional and does not have a default value");
+        throw new ConnectException(
+            "Cannot ALTER to add missing field " + missingField
+            + ", as it is not optional and does not have a default value"
+        );
       }
     }
 
     if (!config.autoEvolve) {
-      throw new ConnectException(String.format("Table %s is missing fields (%s) and auto-evolution is disabled", tableName, missingFields));
+      throw new ConnectException(String.format(
+          "Table %s is missing fields (%s) and auto-evolution is disabled",
+          tableName,
+          missingFields
+      ));
     }
 
     final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, missingFields);
-    log.info("Amending table to add missing fields:{} maxRetries:{} with SQL: {}", missingFields, maxRetries, amendTableQueries);
+    log.info(
+        "Amending table to add missing fields:{} maxRetries:{} with SQL: {}",
+        missingFields,
+        maxRetries,
+        amendTableQueries
+    );
     try (Statement statement = connection.createStatement()) {
       for (String amendTableQuery : amendTableQueries) {
         statement.executeUpdate(amendTableQuery);
@@ -145,7 +164,11 @@ public class DbStructure {
     } catch (SQLException sqle) {
       if (maxRetries <= 0) {
         throw new ConnectException(
-            String.format("Failed to amend table '%s' to add missing fields: %s", tableName, missingFields),
+            String.format(
+                "Failed to amend table '%s' to add missing fields: %s",
+                tableName,
+                missingFields
+            ),
             sqle
         );
       }
@@ -165,7 +188,10 @@ public class DbStructure {
     return true;
   }
 
-  Set<SinkRecordField> missingFields(Collection<SinkRecordField> fields, Set<String> dbColumnNames) {
+  Set<SinkRecordField> missingFields(
+      Collection<SinkRecordField> fields,
+      Set<String> dbColumnNames
+  ) {
     final Set<SinkRecordField> missingFields = new HashSet<>();
     for (SinkRecordField field : fields) {
       if (!dbColumnNames.contains(field.name())) {

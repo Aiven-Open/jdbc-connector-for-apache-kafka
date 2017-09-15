@@ -21,6 +21,7 @@ import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.errors.ConnectException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +48,9 @@ public class VerticaDialect extends DbDialect {
           return "TIME";
         case Timestamp.LOGICAL_NAME:
           return "TIMESTAMP";
+        default:
+          // fall through to non-logical types
+          break;
       }
     }
     switch (type) {
@@ -68,8 +72,9 @@ public class VerticaDialect extends DbDialect {
         return "VARCHAR(1024)";
       case BYTES:
         return "VARBINARY(1024)";
+      default:
+        return super.getSqlType(schemaName, parameters, type);
     }
-    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override

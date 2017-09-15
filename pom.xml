@@ -20,10 +20,15 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>io.confluent</groupId>
+        <artifactId>common</artifactId>
+        <version>3.4.0-SNAPSHOT</version>
+    </parent>
+
     <groupId>io.confluent</groupId>
     <artifactId>kafka-connect-jdbc</artifactId>
     <packaging>jar</packaging>
-    <version>3.4.0-SNAPSHOT</version>
     <name>kafka-connect-jdbc</name>
     <organization>
         <name>Confluent, Inc.</name>
@@ -51,14 +56,10 @@
 
     <properties>
         <confluent.version>${project.version}</confluent.version>
-        <kafka.version>0.11.0.1-SNAPSHOT</kafka.version>
-        <junit.version>4.12</junit.version>
-        <easymock.version>3.0</easymock.version>
-        <powermock.version>1.6.2</powermock.version>
         <derby.version>10.11.1.1</derby.version>
         <commons-io.version>2.4</commons-io.version>
-        <mockito.version>1.10.19</mockito.version>
-        <slf4j.version>1.7.5</slf4j.version>
+        <sqlite-jdbc.version>3.8.11.2</sqlite-jdbc.version>
+        <postgresql.version>9.4-1206-jdbc41</postgresql.version>
         <licenses.name>Apache License 2.0</licenses.name>
         <licenses.version>${project.version}</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,7 +79,6 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -86,38 +86,34 @@
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.8.11.2</version>
+            <version>${sqlite-jdbc.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4-1206-jdbc41</version>
+            <version>${postgresql.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
-            <version>${easymock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-easymock</artifactId>
-            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -135,13 +131,11 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <artifactId>slf4j-log4j12</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -188,18 +182,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
                 <executions>
                     <execution>
                         <id>validate</id>
                         <phase>validate</phase>
                         <configuration>
-                            <configLocation>checkstyle/checkstyle.xml</configLocation>
-                            <encoding>UTF-8</encoding>
-                            <consoleOutput>true</consoleOutput>
-                            <failsOnError>true</failsOnError>
-                            <includeResources>false</includeResources>
-                            <includeTestResources>false</includeTestResources>
+                            <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
                         </configuration>
                         <goals>
                             <goal>check</goal>
