@@ -60,8 +60,10 @@ public class PreparedStatementBinder {
   public void bindRecord(SinkRecord record) throws SQLException {
     final Struct valueStruct = (Struct) record.value();
 
-    // Assumption: the relevant SQL has placeholders for keyFieldNames first followed by nonKeyFieldNames, in iteration order for all INSERT/ UPSERT queries
-    //             the relevant SQL has placeholders for nonKeyFieldNames first followed by keyFieldNames, in iteration order for all UPDATE queries
+    // Assumption: the relevant SQL has placeholders for keyFieldNames first followed by
+    //             nonKeyFieldNames, in iteration order for all INSERT/ UPSERT queries
+    //             the relevant SQL has placeholders for nonKeyFieldNames first followed by
+    //             keyFieldNames, in iteration order for all UPDATE queries
 
     int index = 1;
     switch (insertMode) {
@@ -118,11 +120,18 @@ public class PreparedStatementBinder {
         }
       }
       break;
+
+      default:
+        throw new ConnectException("Unknown primary key mode: " + pkMode);
     }
     return index;
   }
 
-  private int bindNonKeyFields(SinkRecord record, Struct valueStruct, int index) throws SQLException {
+  private int bindNonKeyFields(
+      SinkRecord record,
+      Struct valueStruct,
+      int index
+  ) throws SQLException {
     for (final String fieldName : fieldsMetadata.nonKeyFieldNames) {
       final Field field = record.valueSchema().field(fieldName);
       bindField(index++, field.schema(), valueStruct.get(field));
@@ -134,7 +143,12 @@ public class PreparedStatementBinder {
     bindField(statement, index, schema, value);
   }
 
-  static void bindField(PreparedStatement statement, int index, Schema schema, Object value) throws SQLException {
+  static void bindField(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException {
     if (value == null) {
       statement.setObject(index, null);
     } else {
@@ -183,20 +197,37 @@ public class PreparedStatementBinder {
     }
   }
 
-  static boolean maybeBindLogical(PreparedStatement statement, int index, Schema schema, Object value) throws SQLException {
+  static boolean maybeBindLogical(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException {
     if (schema.name() != null) {
       switch (schema.name()) {
         case Date.LOGICAL_NAME:
-          statement.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()), DateTimeUtils.UTC_CALENDAR.get());
+          statement.setDate(
+              index,
+              new java.sql.Date(((java.util.Date) value).getTime()),
+              DateTimeUtils.UTC_CALENDAR.get()
+          );
           return true;
         case Decimal.LOGICAL_NAME:
           statement.setBigDecimal(index, (BigDecimal) value);
           return true;
         case Time.LOGICAL_NAME:
-          statement.setTime(index, new java.sql.Time(((java.util.Date) value).getTime()), DateTimeUtils.UTC_CALENDAR.get());
+          statement.setTime(
+              index,
+              new java.sql.Time(((java.util.Date) value).getTime()),
+              DateTimeUtils.UTC_CALENDAR.get()
+          );
           return true;
         case Timestamp.LOGICAL_NAME:
-          statement.setTimestamp(index, new java.sql.Timestamp(((java.util.Date) value).getTime()), DateTimeUtils.UTC_CALENDAR.get());
+          statement.setTimestamp(
+              index,
+              new java.sql.Timestamp(((java.util.Date) value).getTime()),
+              DateTimeUtils.UTC_CALENDAR.get()
+          );
           return true;
         default:
           return false;

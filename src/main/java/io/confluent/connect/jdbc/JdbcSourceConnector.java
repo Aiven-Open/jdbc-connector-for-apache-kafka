@@ -74,11 +74,22 @@ public class JdbcSourceConnector extends SourceConnector {
 
     final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     final String dbUser = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
-    final Password dbPassword = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
-    final int maxConnectionAttempts = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
-    final long connectionRetryBackoff = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
-    cachedConnectionProvider = new CachedConnectionProvider(dbUrl, dbUser,
-      dbPassword == null ? null : dbPassword.value(), maxConnectionAttempts, connectionRetryBackoff);
+    final Password dbPassword = config.getPassword(
+        JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG
+    );
+    final int maxConnectionAttempts = config.getInt(
+        JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG
+    );
+    final long connectionRetryBackoff = config.getLong(
+        JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG
+    );
+    cachedConnectionProvider = new CachedConnectionProvider(
+        dbUrl,
+        dbUser,
+        dbPassword == null ? null : dbPassword.value(),
+        maxConnectionAttempts,
+        connectionRetryBackoff
+    );
 
     // Initial connection attempt
     cachedConnectionProvider.getValidConnection();
@@ -92,21 +103,32 @@ public class JdbcSourceConnector extends SourceConnector {
     Set<String> tableTypesSet =  new HashSet<>(tableTypes);
 
 
-    if (whitelistSet != null && blacklistSet != null)
+    if (whitelistSet != null && blacklistSet != null) {
       throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
                                  + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + " are "
                                  + "exclusive.");
+    }
     String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
     String schemaPattern = config.getString(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG);
     if (!query.isEmpty()) {
-      if (whitelistSet != null || blacklistSet != null)
+      if (whitelistSet != null || blacklistSet != null) {
         throw new ConnectException(JdbcSourceConnectorConfig.QUERY_CONFIG + " may not be combined"
                                    + " with whole-table copying settings.");
+      }
       // Force filtering out the entire set of tables since the one task we'll generate is for the
       // query.
       whitelistSet = Collections.emptySet();
+
     }
-    tableMonitorThread = new TableMonitorThread(cachedConnectionProvider, context, schemaPattern, tablePollMs, whitelistSet, blacklistSet, tableTypesSet);
+    tableMonitorThread = new TableMonitorThread(
+        cachedConnectionProvider,
+        context,
+        schemaPattern,
+        tablePollMs,
+        whitelistSet,
+        blacklistSet,
+        tableTypesSet
+    );
     tableMonitorThread.start();
   }
 

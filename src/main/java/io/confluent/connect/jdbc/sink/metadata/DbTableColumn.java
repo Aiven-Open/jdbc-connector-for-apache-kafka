@@ -22,7 +22,12 @@ public final class DbTableColumn {
   public final boolean allowsNull;
   public final int sqlType;
 
-  public DbTableColumn(final String name, final boolean isPrimaryKey, final boolean allowsNull, final int sqlType) {
+  public DbTableColumn(
+      final String name,
+      final boolean isPrimaryKey,
+      final boolean allowsNull,
+      final int sqlType
+  ) {
     this.name = name;
     this.isPrimaryKey = isPrimaryKey;
     this.allowsNull = allowsNull;
@@ -31,11 +36,11 @@ public final class DbTableColumn {
 
   @Override
   public String toString() {
-    return "DbTableColumn{" +
-           "name='" + name + '\'' +
-           ", isPrimaryKey=" + isPrimaryKey +
-           ", allowsNull=" + allowsNull +
-           ", sqlType=" + sqlType +
-           '}';
+    return "DbTableColumn{"
+           + "name='" + name + '\''
+           + ", isPrimaryKey=" + isPrimaryKey
+           + ", allowsNull=" + allowsNull
+           + ", sqlType=" + sqlType
+           + '}';
   }
 }

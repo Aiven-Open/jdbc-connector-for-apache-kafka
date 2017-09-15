@@ -67,8 +67,10 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static final String TABLE_NAME_FORMAT = "table.name.format";
   private static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
   private static final String TABLE_NAME_FORMAT_DOC =
-      "A format string for the destination table name, which may contain '${topic}' as a placeholder for the originating topic name.\n"
-      + "For example, ``kafka_${topic}`` for the topic 'orders' will map to the table name 'kafka_orders'.";
+      "A format string for the destination table name, which may contain '${topic}' as a "
+      + "placeholder for the originating topic name.\n"
+      + "For example, ``kafka_${topic}`` for the topic 'orders' will map to the table name "
+      + "'kafka_orders'.";
   private static final String TABLE_NAME_FORMAT_DISPLAY = "Table Name Format";
 
   public static final String MAX_RETRIES = "max.retries";
@@ -86,19 +88,22 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static final String BATCH_SIZE = "batch.size";
   private static final int BATCH_SIZE_DEFAULT = 3000;
   private static final String BATCH_SIZE_DOC =
-      "Specifies how many records to attempt to batch together for insertion into the destination table, when possible.";
+      "Specifies how many records to attempt to batch together for insertion into the destination"
+      + " table, when possible.";
   private static final String BATCH_SIZE_DISPLAY = "Batch Size";
 
   public static final String AUTO_CREATE = "auto.create";
   private static final String AUTO_CREATE_DEFAULT = "false";
   private static final String AUTO_CREATE_DOC =
-      "Whether to automatically create the destination table based on record schema if it is found to be missing by issuing ``CREATE``.";
+      "Whether to automatically create the destination table based on record schema if it is "
+      + "found to be missing by issuing ``CREATE``.";
   private static final String AUTO_CREATE_DISPLAY = "Auto-Create";
 
   public static final String AUTO_EVOLVE = "auto.evolve";
   private static final String AUTO_EVOLVE_DEFAULT = "false";
   private static final String AUTO_EVOLVE_DOC =
-      "Whether to automatically add columns in the table schema when found to be missing relative to the record schema by issuing ``ALTER``.";
+      "Whether to automatically add columns in the table schema when found to be missing relative "
+      + "to the record schema by issuing ``ALTER``.";
   private static final String AUTO_EVOLVE_DISPLAY = "Auto-Evolve";
 
   public static final String INSERT_MODE = "insert.mode";
@@ -108,29 +113,36 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "``insert``\n"
       + "    Use standard SQL ``INSERT`` statements.\n"
       + "``upsert``\n"
-      + "    Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``."
+      + "    Use the appropriate upsert semantics for the target database if it is supported by "
+      + "the connector, e.g. ``INSERT OR IGNORE``."
       + "``update``\n"
-      + "    Use the appropriate update semantics for the target database if it is supported by the connector, e.g. ``UPDATE``.";
+      + "    Use the appropriate update semantics for the target database if it is supported by "
+      + "the connector, e.g. ``UPDATE``.";
   private static final String INSERT_MODE_DISPLAY = "Insert Mode";
 
   public static final String PK_FIELDS = "pk.fields";
   private static final String PK_FIELDS_DEFAULT = "";
   private static final String PK_FIELDS_DOC =
-      "List of comma-separated primary key field names. The runtime interpretation of this config depends on the ``pk.mode``:\n"
+      "List of comma-separated primary key field names. The runtime interpretation of this config"
+      + " depends on the ``pk.mode``:\n"
       + "``none``\n"
       + "    Ignored as no fields are used as primary key in this mode.\n"
       + "``kafka``\n"
-      + "    Must be a trio representing the Kafka coordinates, defaults to ``" + StringUtils.join(DEFAULT_KAFKA_PK_NAMES, ",") + "`` if empty.\n"
+      + "    Must be a trio representing the Kafka coordinates, defaults to ``"
+      + StringUtils.join(DEFAULT_KAFKA_PK_NAMES, ",") + "`` if empty.\n"
       + "``record_key``\n"
-      + "    If empty, all fields from the key struct will be used, otherwise used to extract the desired fields - for primitive key only a single field name must be configured.\n"
+      + "    If empty, all fields from the key struct will be used, otherwise used to extract the"
+      + " desired fields - for primitive key only a single field name must be configured.\n"
       + "``record_value``\n"
-      + "    If empty, all fields from the value struct will be used, otherwise used to extract the desired fields.";
+      + "    If empty, all fields from the value struct will be used, otherwise used to extract "
+      + "the desired fields.";
   private static final String PK_FIELDS_DISPLAY = "Primary Key Fields";
 
   public static final String PK_MODE = "pk.mode";
   private static final String PK_MODE_DEFAULT = "none";
   private static final String PK_MODE_DOC =
-      "The primary key mode, also refer to ``" + PK_FIELDS + "`` documentation for interplay. Supported modes are:\n"
+      "The primary key mode, also refer to ``" + PK_FIELDS + "`` documentation for interplay. "
+      + "Supported modes are:\n"
       + "``none``\n"
       + "    No keys utilized.\n"
       + "``kafka``\n"
@@ -144,8 +156,10 @@ public class JdbcSinkConfig extends AbstractConfig {
   public static final String FIELDS_WHITELIST = "fields.whitelist";
   private static final String FIELDS_WHITELIST_DEFAULT = "";
   private static final String FIELDS_WHITELIST_DOC =
-      "List of comma-separated record value field names. If empty, all fields from the record value are utilized, otherwise used to filter to the desired fields.\n"
-      + "Note that ``" + PK_FIELDS + "`` is applied independently in the context of which field(s) form the primary key columns in the destination database,"
+      "List of comma-separated record value field names. If empty, all fields from the record "
+      + "value are utilized, otherwise used to filter to the desired fields.\n"
+      + "Note that ``" + PK_FIELDS + "`` is applied independently in the context of which field"
+      + "(s) form the primary key columns in the destination database,"
       + " while this configuration is applicable for the other columns.";
   private static final String FIELDS_WHITELIST_DISPLAY = "Fields Whitelist";
 
@@ -169,7 +183,8 @@ public class JdbcSinkConfig extends AbstractConfig {
               ConfigDef.Importance.HIGH, CONNECTION_PASSWORD_DOC,
               CONNECTION_GROUP, 3, ConfigDef.Width.MEDIUM, CONNECTION_PASSWORD_DISPLAY)
       // Writes
-      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT, EnumValidator.in(InsertMode.values()),
+      .define(INSERT_MODE, ConfigDef.Type.STRING, INSERT_MODE_DEFAULT,
+              EnumValidator.in(InsertMode.values()),
               ConfigDef.Importance.HIGH, INSERT_MODE_DOC,
               WRITES_GROUP, 1, ConfigDef.Width.MEDIUM, INSERT_MODE_DISPLAY)
       .define(BATCH_SIZE, ConfigDef.Type.INT, BATCH_SIZE_DEFAULT, NON_NEGATIVE_INT_VALIDATOR,
@@ -179,7 +194,8 @@ public class JdbcSinkConfig extends AbstractConfig {
       .define(TABLE_NAME_FORMAT, ConfigDef.Type.STRING, TABLE_NAME_FORMAT_DEFAULT,
               ConfigDef.Importance.MEDIUM, TABLE_NAME_FORMAT_DOC,
               DATAMAPPING_GROUP, 1, ConfigDef.Width.LONG, TABLE_NAME_FORMAT_DISPLAY)
-      .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT, EnumValidator.in(PrimaryKeyMode.values()),
+      .define(PK_MODE, ConfigDef.Type.STRING, PK_MODE_DEFAULT,
+              EnumValidator.in(PrimaryKeyMode.values()),
               ConfigDef.Importance.HIGH, PK_MODE_DOC,
               DATAMAPPING_GROUP, 2, ConfigDef.Width.MEDIUM, PK_MODE_DISPLAY)
       .define(PK_FIELDS, ConfigDef.Type.LIST, PK_FIELDS_DEFAULT,
@@ -199,7 +215,8 @@ public class JdbcSinkConfig extends AbstractConfig {
       .define(MAX_RETRIES, ConfigDef.Type.INT, MAX_RETRIES_DEFAULT, NON_NEGATIVE_INT_VALIDATOR,
               ConfigDef.Importance.MEDIUM, MAX_RETRIES_DOC,
               RETRIES_GROUP, 1, ConfigDef.Width.SHORT, MAX_RETRIES_DISPLAY)
-      .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT, NON_NEGATIVE_INT_VALIDATOR,
+      .define(RETRY_BACKOFF_MS, ConfigDef.Type.INT, RETRY_BACKOFF_MS_DEFAULT,
+              NON_NEGATIVE_INT_VALIDATOR,
               ConfigDef.Importance.MEDIUM, RETRY_BACKOFF_MS_DOC,
               RETRIES_GROUP, 2, ConfigDef.Width.SHORT, RETRY_BACKOFF_MS_DISPLAY);
 

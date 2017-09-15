@@ -30,7 +30,7 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
-import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesToBuilder;
+import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.copiesToBuilder;
 
 public class HanaDialect extends DbDialect {
 
@@ -50,6 +50,9 @@ public class HanaDialect extends DbDialect {
           return "DATE";
         case Timestamp.LOGICAL_NAME:
           return "TIMESTAMP";
+        default:
+          // fall through to normal types
+          break;
       }
     }
     switch (type) {
@@ -71,8 +74,9 @@ public class HanaDialect extends DbDialect {
         return "VARCHAR(1000)";
       case BYTES:
         return "BLOB";
+      default:
+        return super.getSqlType(schemaName, parameters, type);
     }
-    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override
@@ -92,14 +96,18 @@ public class HanaDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(final String table, Collection<String> keyCols, Collection<String> cols) {
+  public String getUpsertQuery(
+      final String table,
+      Collection<String> keyCols,
+      Collection<String> cols
+  ) {
     // https://help.sap.com/hana_one/html/sql_replace_upsert.html
     StringBuilder builder = new StringBuilder("UPSERT ");
     builder.append(escaped(table));
     builder.append("(");
     joinToBuilder(builder, ",", keyCols, cols, escaper());
     builder.append(") VALUES(");
-    nCopiesToBuilder(builder, ",", "?", keyCols.size() + cols.size());
+    copiesToBuilder(builder, ",", "?", keyCols.size() + cols.size());
     builder.append(")");
     builder.append(" WITH PRIMARY KEY");
     return builder.toString();

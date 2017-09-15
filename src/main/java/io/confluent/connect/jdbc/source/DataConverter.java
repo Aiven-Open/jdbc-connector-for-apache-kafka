@@ -45,8 +45,11 @@ import io.confluent.connect.jdbc.util.DateTimeUtils;
 public class DataConverter {
   private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
-  public static Schema convertSchema(String tableName, ResultSetMetaData metadata, boolean mapNumerics)
-      throws SQLException {
+  public static Schema convertSchema(
+      String tableName,
+      ResultSetMetaData metadata,
+      boolean mapNumerics
+  ) throws SQLException {
     // TODO: Detect changes to metadata, which will require schema updates
     SchemaBuilder builder = SchemaBuilder.struct().name(tableName);
     for (int col = 1; col <= metadata.getColumnCount(); col++) {
@@ -84,8 +87,8 @@ public class DataConverter {
 
     int sqlType = metadata.getColumnType(col);
     boolean optional = false;
-    if (metadata.isNullable(col) == ResultSetMetaData.columnNullable ||
-        metadata.isNullable(col) == ResultSetMetaData.columnNullableUnknown) {
+    if (metadata.isNullable(col) == ResultSetMetaData.columnNullable
+        || metadata.isNullable(col) == ResultSetMetaData.columnNullableUnknown) {
       optional = true;
     }
 
@@ -221,11 +224,13 @@ public class DataConverter {
             break;
           }
         }
+        // fallthrough
 
       case Types.DECIMAL: {
         int scale = metadata.getScale(col);
-        if (scale == -127) //NUMBER without precision defined for OracleDB
+        if (scale == -127) { //NUMBER without precision defined for OracleDB
           scale = 127;
+        }
         SchemaBuilder fieldBuilder = Decimal.builder(scale);
         if (optional) {
           fieldBuilder.optional();
@@ -404,11 +409,13 @@ public class DataConverter {
             break;
           }
         }
+        // fallthrough
       case Types.DECIMAL: {
         ResultSetMetaData metadata = resultSet.getMetaData();
         int scale = metadata.getScale(col);
-        if (scale == -127)
+        if (scale == -127) {
           scale = 127;
+        }
         colValue = resultSet.getBigDecimal(col, scale);
         break;
       }

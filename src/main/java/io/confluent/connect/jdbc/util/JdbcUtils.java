@@ -64,7 +64,7 @@ public class JdbcUtils {
    * user-defined tables.
    * @param conn database connection
    * @return a list of tables; never null
-   * @throws SQLException
+   * @throws SQLException if there is an error with the database connection
    */
   public static List<String> getTables(Connection conn, String schemaPattern) throws SQLException {
     return getTables(conn, schemaPattern, DEFAULT_TABLE_TYPES);
@@ -73,12 +73,16 @@ public class JdbcUtils {
   /**
    * Get a list of table names in the database.
    * @param conn database connection
-   * @param types a set of table types that should be included in the results; may not be null but may be empty if
-   *              the tables should be returned regardless of their type
+   * @param types a set of table types that should be included in the results; may not be null
+   *              but may be empty if the tables should be returned regardless of their type
    * @return a list of tables; never null
-   * @throws SQLException
+   * @throws SQLException if there is an error with the database connection
    */
-  public static List<String> getTables(Connection conn, String schemaPattern, Set<String> types) throws SQLException {
+  public static List<String> getTables(
+      Connection conn,
+      String schemaPattern,
+      Set<String> types
+  ) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
     String[] tableTypes = types.isEmpty() ? null : getActualTableTypes(metadata, types);
 
@@ -98,18 +102,25 @@ public class JdbcUtils {
   }
 
   /**
-   * Find the available table types that are returned by the JDBC driver that case insensitively match the specified types.
+   * Find the available table types that are returned by the JDBC driver that case insensitively
+   * match the specified types.
    *
    * @param metadata the database metadata; may not be null but may be empty if no table types
    * @param types the case-independent table types
-   * @return the array of table types take directly from the list of available types returned by the JDBC driver; never null
-   * @throws SQLException
+   * @return the array of table types take directly from the list of available types returned by
+   *         the JDBC driver; never null
+   * @throws SQLException if there is an error with the database connection
    */
-  protected static String[] getActualTableTypes(DatabaseMetaData metadata, Set<String> types) throws SQLException {
+  protected static String[] getActualTableTypes(
+      DatabaseMetaData metadata,
+      Set<String> types
+  ) throws SQLException {
     // Compute the uppercase form of the desired types ...
     Set<String> uppercaseTypes = new HashSet<>();
     for (String type : types) {
-      if (type != null) uppercaseTypes.add(type.toUpperCase());
+      if (type != null) {
+        uppercaseTypes.add(type.toUpperCase());
+      }
     }
     // Now find out the available table types ...
     Set<String> matchingTableTypes = new HashSet<>();
@@ -130,9 +141,13 @@ public class JdbcUtils {
    * @param table the table to
    * @return the name of the column that is an autoincrement column, or null if there is no
    *         autoincrement column or more than one exists
-   * @throws SQLException
+   * @throws SQLException if there is an error with the database connection
    */
-  public static String getAutoincrementColumn(Connection conn, String schemaPattern, String table) throws SQLException {
+  public static String getAutoincrementColumn(
+      Connection conn,
+      String schemaPattern,
+      String table
+  ) throws SQLException {
     String result = null;
     int matches = 0;
 
@@ -154,7 +169,9 @@ public class JdbcUtils {
     log.trace("Falling back to SELECT detection of auto-increment column for {}:{}", conn, table);
     try (Statement stmt = conn.createStatement()) {
       String quoteString = getIdentifierQuoteString(conn);
-      ResultSet rs = stmt.executeQuery("SELECT * FROM " + quoteString + table + quoteString + " LIMIT 1");
+      ResultSet rs = stmt.executeQuery(
+          "SELECT * FROM " + quoteString + table + quoteString + " LIMIT 1"
+      );
       ResultSetMetaData rsmd = rs.getMetaData();
       for (int i = 1; i < rsmd.getColumnCount(); i++) {
         if (rsmd.isAutoIncrement(i)) {
@@ -166,8 +183,12 @@ public class JdbcUtils {
     return (matches == 1 ? result : null);
   }
 
-  public static boolean isColumnNullable(Connection conn, String schemaPattern, String table, String column)
-      throws SQLException {
+  public static boolean isColumnNullable(
+      Connection conn,
+      String schemaPattern,
+      String table,
+      String column
+  ) throws SQLException {
     try (ResultSet rs = conn.getMetaData().getColumns(null, schemaPattern, table, column)) {
       if (rs.getMetaData().getColumnCount() > GET_COLUMNS_IS_NULLABLE) {
         // Should only be one match
@@ -185,7 +206,7 @@ public class JdbcUtils {
    * Get the string used for quoting identifiers in this database's SQL dialect.
    * @param connection the database connection
    * @return the quote string
-   * @throws SQLException
+   * @throws SQLException if there is an error with the database connection
    */
   public static String getIdentifierQuoteString(Connection connection) throws SQLException {
     String quoteString = connection.getMetaData().getIdentifierQuoteString();
@@ -205,33 +226,44 @@ public class JdbcUtils {
 
   /**
    * Return current time at the database
-   * @param conn
-   * @param cal
-   * @return
+   * @param conn database connection
+   * @param cal calendar
+   * @return the current time at the database
    */
-  public static Timestamp getCurrentTimeOnDB(Connection conn, Calendar cal) throws SQLException, ConnectException {
+  public static Timestamp getCurrentTimeOnDB(
+      Connection conn,
+      Calendar cal
+  ) throws SQLException, ConnectException {
     String query;
 
     // This is ugly, but to run a function, everyone does 'select function()'
     // except Oracle that does 'select function() from dual'
-    // and Derby uses either the dummy table SYSIBM.SYSDUMMY1  or values expression (I chose to use values)
+    // and Derby uses either the dummy table SYSIBM.SYSDUMMY1  or values expression (I chose to
+    // use values)
     String dbProduct = conn.getMetaData().getDatabaseProductName();
-    if ("Oracle".equals(dbProduct))
+    if ("Oracle".equals(dbProduct)) {
       query = "select CURRENT_TIMESTAMP from dual";
-    else if ("Apache Derby".equals(dbProduct) || "DB2 UDB for AS/400".equals(dbProduct))
+    } else if ("Apache Derby".equals(dbProduct) || "DB2 UDB for AS/400".equals(dbProduct)) {
       query = "values(CURRENT_TIMESTAMP)";
-    else
+    } else {
       query = "select CURRENT_TIMESTAMP;";
+    }
 
     try (Statement stmt = conn.createStatement()) {
       log.debug("executing query " + query + " to get current time from database");
       ResultSet rs = stmt.executeQuery(query);
-      if (rs.next())
+      if (rs.next()) {
         return rs.getTimestamp(1, cal);
-      else
-        throw new ConnectException("Unable to get current time from DB using query " + query + " on database " + dbProduct);
+      } else {
+        throw new ConnectException(
+            "Unable to get current time from DB using query " + query + " on database " + dbProduct
+        );
+      }
     } catch (SQLException e) {
-      log.error("Failed to get current time from DB using query " + query + " on database " + dbProduct, e);
+      log.error(
+          "Failed to get current time from DB using query " + query + " on database " + dbProduct,
+          e
+      );
       throw e;
     }
   }
