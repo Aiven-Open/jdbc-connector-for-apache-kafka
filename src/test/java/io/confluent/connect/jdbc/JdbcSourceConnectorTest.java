@@ -100,16 +100,17 @@ public class JdbcSourceConnectorTest {
     CachedConnectionProvider mockCachedConnectionProvider = PowerMock.createMock(CachedConnectionProvider.class);
     PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl(), null, null).andReturn(mockCachedConnectionProvider);
 
-    // Should request a connection, then should close it on stop()
+    // Should request a connection, then should close it on stop(). The background thread may also
+    // request connections any time it performs updates.
     Connection conn = PowerMock.createMock(Connection.class);
-    EasyMock.expect(mockCachedConnectionProvider.getValidConnection()).andReturn(conn);
+    EasyMock.expect(mockCachedConnectionProvider.getValidConnection()).andReturn(conn).anyTimes();
 
     // Since we're just testing start/stop, we don't worry about the value here but need to stub
     // something since the background thread will be started and try to lookup metadata.
     EasyMock.expect(conn.getMetaData()).andStubThrow(new SQLException());
-
+    // Close will be invoked both for the SQLExeption and when the connector is stopped
     mockCachedConnectionProvider.closeQuietly();
-    PowerMock.expectLastCall();
+    PowerMock.expectLastCall().times(2);
 
     PowerMock.replayAll();
 
