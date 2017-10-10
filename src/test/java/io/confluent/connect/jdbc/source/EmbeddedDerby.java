@@ -21,6 +21,7 @@ import org.apache.derby.jdbc.EmbeddedDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Blob;
@@ -28,8 +29,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import javax.xml.bind.DatatypeConverter;
 
 /**
  * Embedded Derby server useful for testing against a real JDBC database.

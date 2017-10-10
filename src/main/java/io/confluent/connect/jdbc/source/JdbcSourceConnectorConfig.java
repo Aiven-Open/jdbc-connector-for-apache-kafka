@@ -16,7 +16,6 @@
 
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.util.JdbcUtils;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -24,13 +23,11 @@ import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.common.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +40,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.DatabaseDialects;
+import io.confluent.connect.jdbc.util.TableId;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
 
@@ -146,8 +147,10 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
   private static final String TIMESTAMP_COLUMN_NAME_DOC =
-      "The name of the timestamp column to use to detect new or modified rows. This column may "
-      + "not be nullable.";
+      "Comma separated list of one or more timestamp columns to detect new or modified rows using "
+      + "the COALESCE SQL function. Rows whose first non-null timestamp value is greater than the "
+      + "largest previous timestamp value seen will be discovered with each poll. At least one "
+      + "column should not be nullable.";
   public static final String TIMESTAMP_COLUMN_NAME_DEFAULT = "";
   private static final String TIMESTAMP_COLUMN_NAME_DISPLAY = "Timestamp Column Name";
 
@@ -180,6 +183,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + "all tables "
       + "metadata would be fetched, regardless their schema.";
   private static final String SCHEMA_PATTERN_DISPLAY = "Schema pattern";
+  public static final String SCHEMA_PATTERN_DEFAULT = null;
 
   public static final String QUERY_CONFIG = "query";
   private static final String QUERY_DOC =
@@ -332,7 +336,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
     ).define(
         SCHEMA_PATTERN_CONFIG,
         Type.STRING,
-        null,
+        SCHEMA_PATTERN_DEFAULT,
         Importance.MEDIUM,
         SCHEMA_PATTERN_DOC,
         DATABASE_GROUP,
@@ -400,7 +404,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         MODE_DEPENDENTS_RECOMMENDER
     ).define(
         TIMESTAMP_COLUMN_NAME_CONFIG,
-        Type.STRING,
+        Type.LIST,
         TIMESTAMP_COLUMN_NAME_DEFAULT,
         Importance.MEDIUM,
         TIMESTAMP_COLUMN_NAME_DOC,
@@ -497,7 +501,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final ConfigDef CONFIG_DEF = baseConfigDef();
 
-  public JdbcSourceConnectorConfig(Map<String, String> props) {
+  public JdbcSourceConnectorConfig(Map<String, ?> props) {
     super(CONFIG_DEF, props);
     String mode = getString(JdbcSourceConnectorConfig.MODE_CONFIG);
     if (mode.equals(JdbcSourceConnectorConfig.MODE_UNSPECIFIED)) {
@@ -511,18 +515,19 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
     @Override
     public List<Object> validValues(String name, Map<String, Object> config) {
       String dbUrl = (String) config.get(CONNECTION_URL_CONFIG);
-      String dbUser = (String) config.get(CONNECTION_USER_CONFIG);
-      Password dbPassword = (Password) config.get(CONNECTION_PASSWORD_CONFIG);
-      String schemaPattern = (String) config.get(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
-      Set<String> tableTypes = new HashSet<>(
-          (List<String>) config.get(JdbcSourceTaskConfig.TABLE_TYPE_CONFIG)
-      );
       if (dbUrl == null) {
         throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
       }
-      String dbPasswordStr = dbPassword == null ? null : dbPassword.value();
-      try (Connection db = DriverManager.getConnection(dbUrl, dbUser, dbPasswordStr)) {
-        return new LinkedList<Object>(JdbcUtils.getTables(db, schemaPattern, tableTypes));
+      // Create the dialect to get the tables ...
+      AbstractConfig jdbcConfig = new AbstractConfig(CONFIG_DEF, config);
+      DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
+      try (Connection db = dialect.createConnectionProvider().getConnection()) {
+        List<Object> result = new LinkedList<>();
+        for (TableId id : dialect.tableNames(db)) {
+          // Just add the unqualified table name
+          result.add(id.tableName());
+        }
+        return result;
       } catch (SQLException e) {
         throw new ConfigException("Couldn't open connection to " + dbUrl, e);
       }
@@ -708,6 +713,10 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   protected JdbcSourceConnectorConfig(ConfigDef subclassConfigDef, Map<String, String> props) {
     super(subclassConfigDef, props);
+  }
+
+  public NumericMapping numericMapping() {
+    return NumericMapping.get(this);
   }
 
   public static void main(String[] args) {

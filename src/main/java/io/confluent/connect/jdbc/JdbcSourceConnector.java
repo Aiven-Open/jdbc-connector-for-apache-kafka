@@ -18,7 +18,6 @@ package io.confluent.connect.jdbc;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -34,11 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.confluent.connect.jdbc.util.CachedConnectionProvider;
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.DatabaseDialects;
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.confluent.connect.jdbc.source.TableMonitorThread;
+import io.confluent.connect.jdbc.util.CachedConnectionProvider;
+import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.StringUtils;
 import io.confluent.connect.jdbc.util.Version;
 
@@ -68,40 +70,36 @@ public class JdbcSourceConnector extends SourceConnector {
       configProperties = properties;
       config = new JdbcSourceConnectorConfig(configProperties);
     } catch (ConfigException e) {
-      throw new ConnectException("Couldn't start JdbcSourceConnector due to configuration "
-                                 + "error", e);
+      throw new ConnectException("Couldn't start JdbcSourceConnector due to configuration error",
+                                 e);
     }
 
     final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
-    final String dbUser = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
-    final Password dbPassword = config.getPassword(
-        JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG
-    );
     final int maxConnectionAttempts = config.getInt(
         JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG
     );
     final long connectionRetryBackoff = config.getLong(
         JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG
     );
-    cachedConnectionProvider = new CachedConnectionProvider(
+    DatabaseDialect dialect = DatabaseDialects.findBestFor(
         dbUrl,
-        dbUser,
-        dbPassword == null ? null : dbPassword.value(),
+        config
+    );
+    ConnectionProvider connectionProvider = dialect.createConnectionProvider();
+    cachedConnectionProvider = new CachedConnectionProvider(
+        connectionProvider,
         maxConnectionAttempts,
         connectionRetryBackoff
     );
 
     // Initial connection attempt
-    cachedConnectionProvider.getValidConnection();
+    cachedConnectionProvider.getConnection();
 
     long tablePollMs = config.getLong(JdbcSourceConnectorConfig.TABLE_POLL_INTERVAL_MS_CONFIG);
     List<String> whitelist = config.getList(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG);
     Set<String> whitelistSet = whitelist.isEmpty() ? null : new HashSet<>(whitelist);
     List<String> blacklist = config.getList(JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG);
     Set<String> blacklistSet = blacklist.isEmpty() ? null : new HashSet<>(blacklist);
-    List<String> tableTypes =  config.getList(JdbcSourceConnectorConfig.TABLE_TYPE_CONFIG);
-    Set<String> tableTypesSet =  new HashSet<>(tableTypes);
-
 
     if (whitelistSet != null && blacklistSet != null) {
       throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
@@ -109,7 +107,6 @@ public class JdbcSourceConnector extends SourceConnector {
                                  + "exclusive.");
     }
     String query = config.getString(JdbcSourceConnectorConfig.QUERY_CONFIG);
-    String schemaPattern = config.getString(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG);
     if (!query.isEmpty()) {
       if (whitelistSet != null || blacklistSet != null) {
         throw new ConnectException(JdbcSourceConnectorConfig.QUERY_CONFIG + " may not be combined"
@@ -121,13 +118,12 @@ public class JdbcSourceConnector extends SourceConnector {
 
     }
     tableMonitorThread = new TableMonitorThread(
+        dialect,
         cachedConnectionProvider,
         context,
-        schemaPattern,
         tablePollMs,
         whitelistSet,
-        blacklistSet,
-        tableTypesSet
+        blacklistSet
     );
     tableMonitorThread.start();
   }
@@ -170,7 +166,7 @@ public class JdbcSourceConnector extends SourceConnector {
     } catch (InterruptedException e) {
       // Ignore, shouldn't be interrupted
     }
-    cachedConnectionProvider.closeQuietly();
+    cachedConnectionProvider.close();
   }
 
   @Override

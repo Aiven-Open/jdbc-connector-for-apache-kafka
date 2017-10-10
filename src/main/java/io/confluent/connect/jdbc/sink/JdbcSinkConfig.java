@@ -19,6 +19,7 @@ package io.confluent.connect.jdbc.sink;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.config.types.Password;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,8 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.util.StringUtils;
-import org.apache.kafka.common.config.types.Password;
 
 public class JdbcSinkConfig extends AbstractConfig {
 
@@ -55,15 +56,16 @@ public class JdbcSinkConfig extends AbstractConfig {
       )
   );
 
-  public static final String CONNECTION_URL = "connection.url";
+  public static final String CONNECTION_URL = JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG;
   private static final String CONNECTION_URL_DOC = "JDBC connection URL.";
   private static final String CONNECTION_URL_DISPLAY = "JDBC URL";
 
-  public static final String CONNECTION_USER = "connection.user";
+  public static final String CONNECTION_USER = JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG;
   private static final String CONNECTION_USER_DOC = "JDBC connection user.";
   private static final String CONNECTION_USER_DISPLAY = "JDBC User";
 
-  public static final String CONNECTION_PASSWORD = "connection.password";
+  public static final String CONNECTION_PASSWORD =
+      JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG;
   private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
   private static final String CONNECTION_PASSWORD_DISPLAY = "JDBC Password";
 

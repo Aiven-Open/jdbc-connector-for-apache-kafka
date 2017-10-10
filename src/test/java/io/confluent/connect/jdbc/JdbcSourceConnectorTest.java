@@ -18,6 +18,7 @@ package io.confluent.connect.jdbc;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.easymock.EasyMock;
+import org.easymock.Mock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,30 +30,32 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.source.EmbeddedDerby;
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.JdbcUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JdbcSourceConnector.class, JdbcUtils.class})
+@PrepareForTest({JdbcSourceConnector.class, DatabaseDialect.class})
 @PowerMockIgnore("javax.management.*")
 public class JdbcSourceConnectorTest {
 
   private JdbcSourceConnector connector;
   private EmbeddedDerby db;
   private Map<String, String> connProps;
+
+  @Mock
+  private DatabaseDialect dialect;
 
   @Before
   public void setup() {
@@ -98,19 +101,23 @@ public class JdbcSourceConnectorTest {
   @Test
   public void testStartStop() throws Exception {
     CachedConnectionProvider mockCachedConnectionProvider = PowerMock.createMock(CachedConnectionProvider.class);
-    PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl(), null, null,
-      JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT, JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT).andReturn(mockCachedConnectionProvider);
+    PowerMock.expectNew(
+        CachedConnectionProvider.class,
+        EasyMock.anyObject(DatabaseDialect.class),
+        EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT),
+        EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT))
+             .andReturn(mockCachedConnectionProvider);
 
     // Should request a connection, then should close it on stop(). The background thread may also
     // request connections any time it performs updates.
     Connection conn = PowerMock.createMock(Connection.class);
-    EasyMock.expect(mockCachedConnectionProvider.getValidConnection()).andReturn(conn).anyTimes();
+    EasyMock.expect(mockCachedConnectionProvider.getConnection()).andReturn(conn).anyTimes();
 
     // Since we're just testing start/stop, we don't worry about the value here but need to stub
     // something since the background thread will be started and try to lookup metadata.
     EasyMock.expect(conn.getMetaData()).andStubThrow(new SQLException());
     // Close will be invoked both for the SQLExeption and when the connector is stopped
-    mockCachedConnectionProvider.closeQuietly();
+    mockCachedConnectionProvider.close();
     PowerMock.expectLastCall().times(2);
 
     PowerMock.replayAll();
@@ -181,23 +188,6 @@ public class JdbcSourceConnectorTest {
     connProps.put(JdbcSourceConnectorConfig.QUERY_CONFIG, sample_query);
     connProps.put(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG, "foo,bar");
     connector.start(connProps);
-  }
-
-  @Test
-  public void testSchemaPatternUsedForConfigValidation() throws Exception {
-    connProps.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "SOME_SCHEMA");
-
-    PowerMock.mockStatic(JdbcUtils.class);
-    EasyMock.expect(JdbcUtils.getTables(EasyMock.anyObject(Connection.class), EasyMock.eq("SOME_SCHEMA"),
-            EasyMock.eq(JdbcUtils.DEFAULT_TABLE_TYPES)))
-      .andReturn(new ArrayList<String>())
-      .atLeastOnce();
-
-    PowerMock.replayAll();
-
-    connector.validate(connProps);
-
-    PowerMock.verifyAll();
   }
 
   private void assertTaskConfigsHaveParentConfigs(List<Map<String, String>> configs) {

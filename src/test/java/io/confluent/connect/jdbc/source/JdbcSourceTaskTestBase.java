@@ -22,7 +22,6 @@ import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
-import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 
 import java.util.Collection;

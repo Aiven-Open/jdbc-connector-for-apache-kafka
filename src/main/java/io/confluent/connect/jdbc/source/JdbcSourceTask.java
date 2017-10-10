@@ -17,7 +17,6 @@
 package io.confluent.connect.jdbc.source;
 
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.common.utils.SystemTime;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -30,16 +29,22 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.DatabaseDialects;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.JdbcUtils;
+import io.confluent.connect.jdbc.util.ColumnDefinition;
+import io.confluent.connect.jdbc.util.ColumnId;
+import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.Version;
-
-import static io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
 
 /**
  * JdbcSourceTask is a Kafka Connect SourceTask implementation that reads from JDBC databases and
@@ -51,6 +56,7 @@ public class JdbcSourceTask extends SourceTask {
 
   private Time time;
   private JdbcSourceTaskConfig config;
+  private DatabaseDialect dialect;
   private CachedConnectionProvider cachedConnectionProvider;
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
   private AtomicBoolean stop;
@@ -76,7 +82,13 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
 
-    createConnectionProvider();
+    final String url = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    final int maxConnAttempts = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
+    final long retryBackoff = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
+    dialect = DatabaseDialects.findBestFor(url, config);
+    ConnectionProvider connectionProvider = dialect.createConnectionProvider();
+    cachedConnectionProvider = new CachedConnectionProvider(connectionProvider,
+                                                            maxConnAttempts, retryBackoff);
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
@@ -113,12 +125,10 @@ public class JdbcSourceTask extends SourceTask {
       offsets = context.offsetStorageReader().offsets(partitions);
     }
 
-    String schemaPattern
-        = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
     String incrementingColumn
         = config.getString(JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
-    String timestampColumn
-        = config.getString(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+    List<String> timestampColumns
+        = config.getList(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
     Long timestampDelayInterval
         = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG);
     boolean validateNonNulls
@@ -131,10 +141,9 @@ public class JdbcSourceTask extends SourceTask {
           if (validateNonNulls) {
             validateNonNullable(
                 mode,
-                schemaPattern,
                 tableOrQuery,
                 incrementingColumn,
-                timestampColumn
+                timestampColumns
             );
           }
           partition = Collections.singletonMap(
@@ -150,45 +159,26 @@ public class JdbcSourceTask extends SourceTask {
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
 
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
-      NumericMapping mapNumerics = NumericMapping.get(config);
 
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
-        tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, schemaPattern,
-                topicPrefix, mapNumerics));
+        tableQueue.add(new BulkTableQuerier(dialect, queryMode, tableOrQuery,
+                topicPrefix));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, null, incrementingColumn, offset,
-                timestampDelayInterval, schemaPattern, mapNumerics));
+            dialect, queryMode, tableOrQuery, topicPrefix, null, incrementingColumn, offset,
+                timestampDelayInterval));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, timestampColumn, null, offset,
-                timestampDelayInterval, schemaPattern, mapNumerics));
+            dialect, queryMode, tableOrQuery, topicPrefix, timestampColumns, null, offset,
+                timestampDelayInterval));
       } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, timestampColumn, incrementingColumn,
-                offset, timestampDelayInterval, schemaPattern, mapNumerics));
+            dialect, queryMode, tableOrQuery, topicPrefix, timestampColumns, incrementingColumn,
+                offset, timestampDelayInterval));
       }
     }
 
     stop = new AtomicBoolean(false);
-  }
-
-  private void createConnectionProvider() {
-    final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
-    final String dbUser = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
-    final Password dbPassword
-        = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
-    final int maxConnectionAttempts
-        = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
-    final long connectionRetryBackoff
-        = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
-    cachedConnectionProvider = new CachedConnectionProvider(
-        dbUrl,
-        dbUser,
-        dbPassword == null ? null : dbPassword.value(),
-        maxConnectionAttempts,
-        connectionRetryBackoff
-    );
   }
 
   @Override
@@ -197,7 +187,7 @@ public class JdbcSourceTask extends SourceTask {
       stop.set(true);
     }
     if (cachedConnectionProvider != null) {
-      cachedConnectionProvider.closeQuietly();
+      cachedConnectionProvider.close();
     }
   }
 
@@ -223,7 +213,7 @@ public class JdbcSourceTask extends SourceTask {
       final List<SourceRecord> results = new ArrayList<>();
       try {
         log.debug("Checking for next block of results from {}", querier.toString());
-        querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
+        querier.maybeStartQuery(cachedConnectionProvider.getConnection());
 
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
@@ -272,28 +262,51 @@ public class JdbcSourceTask extends SourceTask {
 
   private void validateNonNullable(
       String incrementalMode,
-      String schemaPattern,
       String table,
       String incrementingColumn,
-      String timestampColumn
+      List<String> timestampColumns
   ) {
     try {
-      final Connection connection = cachedConnectionProvider.getValidConnection();
+      Set<String> lowercaseTsColumns = new HashSet<>();
+      for (String timestampColumn: timestampColumns) {
+        lowercaseTsColumns.add(timestampColumn.toLowerCase(Locale.getDefault()));
+      }
+
+      final Connection conn = cachedConnectionProvider.getConnection();
+      Map<ColumnId, ColumnDefinition> defnsById = dialect.describeColumns(conn, table, null);
+      Map<String, ColumnDefinition> defnsByLowercase = new HashMap<>();
+      for (ColumnDefinition defn : defnsById.values()) {
+        defnsByLowercase.put(defn.id().name().toLowerCase(Locale.getDefault()), defn);
+      }
+      boolean incrementingOptional = false;
+      boolean atLeastOneTimestampNotOptional = false;
+      for (ColumnDefinition defn : defnsById.values()) {
+        String columnName = defn.id().name();
+        if (columnName.equalsIgnoreCase(incrementingColumn)) {
+          incrementingOptional = defn.isOptional();
+        } else if (lowercaseTsColumns.contains(columnName.toLowerCase(Locale.getDefault()))) {
+          if (!defn.isOptional()) {
+            atLeastOneTimestampNotOptional = true;
+          }
+        }
+      }
+
       // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
       // for table-based copying because custom query mode doesn't allow this to be looked up
       // without a query or parsing the query since we don't have a table name.
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
            || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING))
-          && JdbcUtils.isColumnNullable(connection, schemaPattern, table, incrementingColumn)) {
+          && incrementingOptional) {
         throw new ConnectException("Cannot make incremental queries using incrementing column "
                                    + incrementingColumn + " on " + table + " because this column "
                                    + "is nullable.");
       }
       if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
            || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING))
-          && JdbcUtils.isColumnNullable(connection, schemaPattern, table, timestampColumn)) {
-        throw new ConnectException("Cannot make incremental queries using timestamp column "
-                                   + timestampColumn + " on " + table + " because this column is "
+          && !atLeastOneTimestampNotOptional) {
+        throw new ConnectException("Cannot make incremental queries using timestamp columns "
+                                   + timestampColumns + " on " + table + " because all of these "
+                                   + "columns "
                                    + "nullable.");
       }
     } catch (SQLException e) {

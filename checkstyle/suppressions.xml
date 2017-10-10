@@ -7,17 +7,20 @@
 <suppressions>
 
     <suppress checks="CyclomaticComplexity"
-              files="(BufferedRecords|DataConverter|DbDialect|FieldsMetadata|HanaDialect|JdbcSourceTask|MySqlDialect|OracleDialect|PostgreSqlDialect|PreparedStatementBinder|SqlServerDialect|SqliteDialect|TimestampIncrementingTableQuerier|VerticaDialect).java"/>
+              files="(BufferedRecords|DataConverter|DatabaseDialect|FieldsMetadata|HanaDialect|JdbcSourceTask|MySqlDatabaseDialect|OracleDatabaseDialect|PostgreSqlDatabaseDialect|PreparedStatementBinder|SqlServerDatabaseDialect|SqliteDatabaseDialect|TimestampIncrementingTableQuerier|VerticaDatabaseDialect|SapHanaDatabaseDialect|TableId|ColumnDefinition|TableMonitorThread).java"/>
 
     <suppress checks="ClassDataAbstractionCoupling"
-              files="(DbDialect|JdbcSourceTask).java"/>
+              files="(DbDialect|JdbcSourceTask|GenericDatabaseDialect).java"/>
 
     <suppress checks="NPathComplexity"
-              files="(DataConverter|FieldsMetadata|JdbcSourceTask).java"/>
+              files="(DataConverter|FieldsMetadata|JdbcSourceTask|GenericDatabaseDialect).java"/>
 
     <suppress checks="JavaNCSS"
-              files="(DataConverter|FieldsMetadata|JdbcSourceTask).java"/>
+              files="(DataConverter|FieldsMetadata|JdbcSourceTask|GenericDatabaseDialect).java"/>
 
     <suppress checks="MethodLength"
-              files="DataConverter.java"/>
+              files="(DataConverter|GenericDatabaseDialect).java"/>
+
+    <suppress checks="ParameterNumber"
+              files="(ColumnDefinition|GenericDatabaseDialect).java"/>
 </suppressions>

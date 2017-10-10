@@ -29,7 +29,8 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.DatabaseDialects;
 
 public class JdbcSinkTask extends SinkTask {
   private static final Logger log = LoggerFactory.getLogger(JdbcSinkTask.class);
@@ -47,10 +48,10 @@ public class JdbcSinkTask extends SinkTask {
   }
 
   void initWriter() {
-    final DbDialect dbDialect = DbDialect.fromConnectionString(config.connectionUrl);
-    final DbStructure dbStructure = new DbStructure(dbDialect);
-    log.info("Initializing writer using SQL dialect: {}", dbDialect.getClass().getSimpleName());
-    writer = new JdbcDbWriter(config, dbDialect, dbStructure);
+    DatabaseDialect dialect = DatabaseDialects.findBestFor(config.connectionUrl, config);
+    final DbStructure dbStructure = new DbStructure(dialect);
+    log.info("Initializing writer using SQL dialect: {}", dialect.getClass().getSimpleName());
+    writer = new JdbcDbWriter(config, dialect, dbStructure);
   }
 
   @Override

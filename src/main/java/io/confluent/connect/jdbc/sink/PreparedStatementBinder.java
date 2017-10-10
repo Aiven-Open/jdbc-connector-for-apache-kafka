@@ -31,11 +31,12 @@ import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import io.confluent.connect.jdbc.dialect.DatabaseDialect.StatementBinder;
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
 import io.confluent.connect.jdbc.util.DateTimeUtils;
 
-public class PreparedStatementBinder {
+public class PreparedStatementBinder implements StatementBinder {
 
   private final JdbcSinkConfig.PrimaryKeyMode pkMode;
   private final PreparedStatement statement;
@@ -57,6 +58,7 @@ public class PreparedStatementBinder {
     this.insertMode = insertMode;
   }
 
+  @Override
   public void bindRecord(SinkRecord record) throws SQLException {
     final Struct valueStruct = (Struct) record.value();
 
@@ -84,7 +86,7 @@ public class PreparedStatementBinder {
     statement.addBatch();
   }
 
-  private int bindKeyFields(SinkRecord record, int index) throws SQLException {
+  protected int bindKeyFields(SinkRecord record, int index) throws SQLException {
     switch (pkMode) {
       case NONE:
         if (!fieldsMetadata.keyFieldNames.isEmpty()) {
@@ -127,7 +129,7 @@ public class PreparedStatementBinder {
     return index;
   }
 
-  private int bindNonKeyFields(
+  protected int bindNonKeyFields(
       SinkRecord record,
       Struct valueStruct,
       int index
@@ -139,7 +141,7 @@ public class PreparedStatementBinder {
     return index;
   }
 
-  void bindField(int index, Schema schema, Object value) throws SQLException {
+  protected void bindField(int index, Schema schema, Object value) throws SQLException {
     bindField(statement, index, schema, value);
   }
 
