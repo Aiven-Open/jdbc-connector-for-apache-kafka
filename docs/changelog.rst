@@ -3,6 +3,21 @@
 Changelog
 =========
 
+Version 3.3.1
+-------------
+
+JDBC Source Connector
+~~~~~~~~~~~~~~~~~~~~~
+
+* `PR-293 <https://github.com/confluentinc/kafka-connect-jdbc/pull/293>`_ - Fix source connector start/stop test
+* `PR-285 <https://github.com/confluentinc/kafka-connect-jdbc/pull/285>`_ - Add upstream project so build are triggered automatically
+* `PR-273 <https://github.com/confluentinc/kafka-connect-jdbc/pull/273>`_ - CC-1065 Source connector’s recommender uses table type filter and caches results
+* `PR-272 <https://github.com/confluentinc/kafka-connect-jdbc/pull/272>`_ - CC-1064 Corrected the table name recommender to always close the JDBC connection
+
+JDBC Sink Connector
+~~~~~~~~~~~~~~~~~~~~~
+No changes
+
 Version 3.3.0
 -------------
 
