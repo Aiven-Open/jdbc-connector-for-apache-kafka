@@ -13,7 +13,7 @@ JDBC Source Connector
 * `PR-288 <https://github.com/confluentinc/kafka-connect-jdbc/pull/288>`_ - Remove unnecessary surefire configuration overrides.
 * `PR-287 <https://github.com/confluentinc/kafka-connect-jdbc/pull/287>`_ - CC-1112: Use common pom as parent and fix checkstyle issues.
 * `PR-212 <https://github.com/confluentinc/kafka-connect-jdbc/pull/212>`_ - Fixed issue #211 - get current timestamp on DB2 UDB for AS/400
-* `PR-203 <https://github.com/confluentinc/kafka-connect-jdbc/pull/203>`_ - Issue #198: Improved the JdbcSourceConnector such that if there was a…
+* `PR-203 <https://github.com/confluentinc/kafka-connect-jdbc/pull/203>`_ - Issue #198: Improved the JdbcSourceConnector to retry JDBC connection when needed on startup
 
 JDBC Sink Connector
 ~~~~~~~~~~~~~~~~~~~~~
