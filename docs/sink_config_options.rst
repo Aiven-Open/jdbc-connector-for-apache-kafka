@@ -40,9 +40,13 @@ Writes
 
       Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
 
+  ``update``
+
+      Use the appropriate update semantics for the target database if it is supported by the connector, e.g. ``UPDATE``.
+
   * Type: string
   * Default: insert
-  * Valid Values: [insert, upsert]
+  * Valid Values: [insert, upsert, update]
   * Importance: high
 
 ``batch.size``
