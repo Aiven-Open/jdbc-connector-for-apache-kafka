@@ -114,7 +114,7 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "    Use standard SQL ``INSERT`` statements.\n"
       + "``upsert``\n"
       + "    Use the appropriate upsert semantics for the target database if it is supported by "
-      + "the connector, e.g. ``INSERT OR IGNORE``."
+      + "the connector, e.g. ``INSERT OR IGNORE``.\n"
       + "``update``\n"
       + "    Use the appropriate update semantics for the target database if it is supported by "
       + "the connector, e.g. ``UPDATE``.";

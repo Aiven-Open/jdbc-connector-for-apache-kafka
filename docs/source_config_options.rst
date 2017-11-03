@@ -32,12 +32,33 @@ Database
   * Default: ""
   * Importance: medium
 
+``connection.attempts``
+  Maximum number of attempts to retrieve a valid JDBC connection.
+
+  * Type: int
+  * Default: 3
+  * Importance: low
+
+``numeric.precision.mapping``
+  Whether or not to attempt mapping NUMERIC values by precision to integral types
+
+  * Type: boolean
+  * Default: false
+  * Importance: low
+
 ``table.blacklist``
   List of tables to exclude from copying. If specified, table.whitelist may not be set.
 
   * Type: list
   * Default: ""
   * Importance: medium
+
+``connection.backoff.ms``
+  Backoff time in milliseconds between connection attempts.
+
+  * Type: long
+  * Default: 10000
+  * Importance: low
 
 ``schema.pattern``
   Schema pattern to fetch tables metadata from the database:
@@ -46,73 +67,6 @@ Database
 
   * Type: string
   * Default: null
-  * Importance: medium
-
-Connector
-^^^^^^^^^
-
-``poll.interval.ms``
-  Frequency in ms to poll for new data in each table.
-
-  * Type: int
-  * Default: 5000
-  * Importance: high
-
-``batch.max.rows``
-  Maximum number of rows to include in a single batch when polling for new data. This setting can be used to limit the amount of data buffered internally in the connector.
-
-  * Type: int
-  * Default: 100
-  * Importance: low
-
-``table.poll.interval.ms``
-  Frequency in ms to poll for new or removed tables, which may result in updated task configurations to start polling for data in added tables or stop polling for data in removed tables.
-
-  * Type: long
-  * Default: 60000
-  * Importance: low
-
-``table.types``
-  By default, the JDBC connector will only detect tables with type TABLE from the source Database. This config allows a command separated list of table types to extract. Options include:
-
-  * TABLE
-
-  * VIEW
-
-  * SYSTEM TABLE
-
-  * GLOBAL TEMPORARY
-
-  * LOCAL TEMPORARY
-
-  * ALIAS
-
-  * SYNONYM
-
-  In most cases it only makes sense to have either TABLE or VIEW.
-
-  * Type: list
-  * Default: TABLE
-  * Importance: low
-
-``topic.prefix``
-  Prefix to prepend to table names to generate the name of the Kafka topic to publish data to, or in the case of a custom query, the full name of the topic to publish to.
-
-  * Type: string
-  * Importance: high
-
-``timestamp.delay.interval.ms``
-  How long to wait after a row with certain timestamp appears before we include it in the result. You may choose to add some delay to allow transactions with earlier timestamp to complete. The first execution will fetch all available records (i.e. starting at timestamp 0) until current time minus the delay. Every following execution will get data from the last time we fetched until current time minus the delay.
-
-  * Type: long
-  * Default: 0
-  * Importance: high
-
-``numeric.precision.mapping``
-  Whether or not to attempt mapping NUMERIC values by precision to integral types
-
-  * Type: boolean
-  * Default: false
   * Importance: medium
 
 Mode
@@ -162,3 +116,63 @@ Mode
   * Type: string
   * Default: ""
   * Importance: medium
+
+Connector
+^^^^^^^^^
+
+``poll.interval.ms``
+  Frequency in ms to poll for new data in each table.
+
+  * Type: int
+  * Default: 5000
+  * Importance: high
+
+``batch.max.rows``
+  Maximum number of rows to include in a single batch when polling for new data. This setting can be used to limit the amount of data buffered internally in the connector.
+
+  * Type: int
+  * Default: 100
+  * Importance: low
+
+``table.poll.interval.ms``
+  Frequency in ms to poll for new or removed tables, which may result in updated task configurations to start polling for data in added tables or stop polling for data in removed tables.
+
+  * Type: long
+  * Default: 60000
+  * Importance: low
+
+``topic.prefix``
+  Prefix to prepend to table names to generate the name of the Kafka topic to publish data to, or in the case of a custom query, the full name of the topic to publish to.
+
+  * Type: string
+  * Importance: high
+
+``table.types``
+  By default, the JDBC connector will only detect tables with type TABLE from the source Database. This config allows a command separated list of table types to extract. Options include:
+
+  * TABLE
+
+  * VIEW
+
+  * SYSTEM TABLE
+
+  * GLOBAL TEMPORARY
+
+  * LOCAL TEMPORARY
+
+  * ALIAS
+
+  * SYNONYM
+
+  In most cases it only makes sense to have either TABLE or VIEW.
+
+  * Type: list
+  * Default: TABLE
+  * Importance: low
+
+``timestamp.delay.interval.ms``
+  How long to wait after a row with certain timestamp appears before we include it in the result. You may choose to add some delay to allow transactions with earlier timestamp to complete. The first execution will fetch all available records (i.e. starting at timestamp 0) until current time minus the delay. Every following execution will get data from the last time we fetched until current time minus the delay.
+
+  * Type: long
+  * Default: 0
+  * Importance: high
