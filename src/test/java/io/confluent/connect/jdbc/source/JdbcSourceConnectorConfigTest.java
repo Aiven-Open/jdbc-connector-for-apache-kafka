@@ -24,7 +24,12 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
+import org.powermock.api.easymock.annotation.Mock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,13 +42,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Recommender.class})
+@PowerMockIgnore("javax.management.*")
 public class JdbcSourceConnectorConfigTest {
 
   private EmbeddedDerby db;
   private Map<String, String> props;
   private ConfigDef configDef;
   private List<ConfigValue> results;
-  private Recommender mockRecommender = PowerMock.createMock(Recommender.class);
+  @Mock
+  private Recommender mockRecommender;
   private MockTime time = new MockTime();
 
   @Before
