@@ -19,9 +19,11 @@ package io.confluent.connect.jdbc.source;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.easymock.EasyMock;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
+import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -41,6 +43,12 @@ import static org.junit.Assert.assertEquals;
 @PowerMockIgnore("javax.management.*")
 public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
+  @Mock
+  private CachedConnectionProvider mockCachedConnectionProvider;
+
+  @Mock
+  private Connection conn;
+
   @Test(expected = ConnectException.class)
   public void testMissingParentConfig() {
     Map<String, String> props = singleTableConfig();
@@ -58,12 +66,10 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
   @Test
   public void testStartStop() throws Exception {
     // Minimal start/stop functionality
-    CachedConnectionProvider mockCachedConnectionProvider = PowerMock.createMock(CachedConnectionProvider.class);
     PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl(), null, null,
       JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT, JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT).andReturn(mockCachedConnectionProvider);
 
     // Should request a connection, then should close it on stop()
-    Connection conn = PowerMock.createMock(Connection.class);
     EasyMock.expect(mockCachedConnectionProvider.getValidConnection()).andReturn(conn);
 
     // Since we're just testing start/stop, we don't worry about the value here but need to stub
