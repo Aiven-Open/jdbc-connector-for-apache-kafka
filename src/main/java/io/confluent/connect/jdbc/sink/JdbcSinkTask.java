@@ -79,13 +79,13 @@ public class JdbcSinkTask extends SinkTask {
         sqleAllMessages += e + System.lineSeparator();
       }
       if (remainingRetries == 0) {
-        throw new ConnectException(sqleAllMessages);
+        throw new ConnectException(new SQLException(sqleAllMessages));
       } else {
         writer.closeQuietly();
         initWriter();
         remainingRetries--;
         context.timeout(config.retryBackoffMs);
-        throw new RetriableException(sqleAllMessages);
+        throw new RetriableException(new SQLException(sqleAllMessages));
       }
     }
     remainingRetries = config.maxRetries;
