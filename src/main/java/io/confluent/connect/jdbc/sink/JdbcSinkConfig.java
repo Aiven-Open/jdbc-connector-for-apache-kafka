@@ -22,6 +22,7 @@ import org.apache.kafka.common.config.ConfigException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +47,12 @@ public class JdbcSinkConfig extends AbstractConfig {
     RECORD_VALUE;
   }
 
-  public static final List<String> DEFAULT_KAFKA_PK_NAMES = Arrays.asList(
-      "__connect_topic",
-      "__connect_partition",
-      "__connect_offset"
+  public static final List<String> DEFAULT_KAFKA_PK_NAMES = Collections.unmodifiableList(
+      Arrays.asList(
+          "__connect_topic",
+          "__connect_partition",
+          "__connect_offset"
+      )
   );
 
   public static final String CONNECTION_URL = "connection.url";
