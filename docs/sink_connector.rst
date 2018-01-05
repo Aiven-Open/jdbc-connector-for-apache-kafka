@@ -7,60 +7,104 @@ The connector polls data from Kafka to write to the database based on the topics
 It is possible to achieve idempotent writes with upserts.
 Auto-creation of tables, and limited auto-evolution is also supported.
 
-Quickstart
-----------
+Quick Start
+-----------
+
+.. include:: includes/prerequisites.rst
+        :start-line: 2
+        :end-line: 8
 
 To see the basic functionality of the connector, we'll be copying Avro data from a single topic to a local SQLite database.
-This example assumes you are running Kafka and Schema Registry locally on the default ports.
 
-.. note::
-    We use SQLite in these examples, but you can use your favorite database.
-    Follow the same steps, but adjust the ``connection.url`` setting for your database.
-    Confluent Platform includes JDBC drivers for SQLite and PostgreSQL,
-    but if you're using a different database you'll also need to make sure the JDBC driver is available on the Kafka Connect process's ``CLASSPATH``.
+.. include:: includes/prerequisites.rst
+    :start-line: 11
+    :end-line: 45
 
-Let's create a configuration file for the connector.
-This file is included with the connector in ``./etc/kafka-connect-jdbc/sink-quickstart-sqlite.properties`` and contains the following settings::
+----------------------------
+Load the JDBC Sink Connector
+----------------------------
 
-    name=test-sink
-    connector.class=io.confluent.connect.jdbc.JdbcSinkConnector
-    tasks.max=1
-    topics=orders
-    connection.url=jdbc:sqlite:test.db
-    auto.create=true
+Load the predefined JDBC sink connector.
 
-The first few settings are common settings you'll specify for all connectors, except for ``topics`` which is specific to sink connectors like this one.
-The ``connection.url`` specifies the database to connect to, in this case a local SQLite database file.
-Enabling ``auto.create`` allows us to rely on the connector for creating the table.
+#.  Optional: View the available predefined connectors with this command:
 
-Now we can run the connector with this configuration.
+    .. sourcecode:: bash
 
-.. sourcecode:: bash
+        confluent list connectors
 
-    $ ./bin/connect-standalone etc/schema-registry/connect-avro-standalone.properties etc/kafka-connect-jdbc/sink-quickstart-sqlite.properties
+    Your output should resemble:
 
-Now, we will produce a record into the `orders` topic.
+    .. sourcecode:: bash
 
-.. sourcecode:: bash
+        Bundled Predefined Connectors (edit configuration under etc/):
+          elasticsearch-sink
+          file-source
+          file-sink
+          jdbc-source
+          jdbc-sink
+          hdfs-sink
+          s3-sink
 
-    $ bin/kafka-avro-console-producer \
-     --broker-list localhost:9092 --topic orders \
-     --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"id","type":"int"},{"name":"product", "type": "string"}, {"name":"quantity", "type": "int"}, {"name":"price",
-     "type": "float"}]}'
+#.  Load the the ``jdbc-sink`` connector:
 
-The console producer is waiting for input. Copy and paste the following record into the terminal:
+    .. sourcecode:: bash
 
-.. sourcecode:: bash
+        confluent load jdbc-sink
 
-    {"id": 999, "product": "foo", "quantity": 100, "price": 50}
+    Your output should resemble:
 
-Now if we query the database, we will see that the `orders` table was automatically created and contains the record.
+    .. sourcecode:: bash
 
-.. sourcecode:: bash
+        {
+          "name": "jdbc-sink",
+          "config": {
+            "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+            "tasks.max": "1",
+            "topics": "orders",
+            "connection.url": "jdbc:sqlite:test.db",
+            "auto.create": "true",
+            "name": "jdbc-sink"
+          },
+          "tasks": [],
+          "type": null
+        }
 
-    $ sqlite3 test.db
-    sqlite> select * from orders;
-    foo|50.0|100|999
+.. tip:: For non-CLI users, you can load the JDBC sink connector with this command:
+
+    .. sourcecode:: bash
+
+        <path-to-confluent>/bin/connect-standalone \
+        <path-to-confluent>/etc/schema-registry/connect-avro-standalone.properties \
+        <path-to-confluent>/etc/kafka-connect-jdbc/sink-quickstart-sqlite.properties
+
+--------------------------
+Produce a Record in SQLite
+--------------------------
+
+#.  Produce a record into the ``orders`` topic.
+
+    .. sourcecode:: bash
+
+        $ ./bin/kafka-avro-console-producer \
+         --broker-list localhost:9092 --topic orders \
+         --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"id","type":"int"},{"name":"product", "type": "string"}, {"name":"quantity", "type": "int"}, {"name":"price",
+         "type": "float"}]}'
+
+    The console producer waits for input.
+
+#.  Copy and paste the following record into the terminal and press **Enter**:
+
+    .. sourcecode:: bash
+
+        {"id": 999, "product": "foo", "quantity": 100, "price": 50}
+
+#.  Query the SQLite database and you should see that the ``orders`` table was automatically created and contains the record.
+
+    .. sourcecode:: bash
+
+        $ sqlite3 test.db
+        sqlite> SELECT * from orders;
+        foo|50.0|100|999
 
 Features
 --------
