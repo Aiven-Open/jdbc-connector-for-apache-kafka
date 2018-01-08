@@ -3,6 +3,8 @@
 JDBC Sink Configuration Options
 -------------------------------
 
+.. include:: includes/db_connection_security.rst
+
 Connection
 ^^^^^^^^^^
 
