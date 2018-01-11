@@ -39,7 +39,6 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
 
   protected final DatabaseDialect dialect;
   protected final QueryMode mode;
-  protected final String name;
   protected final String query;
   protected final String topicPrefix;
   protected final TableId tableId;
@@ -59,11 +58,10 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   ) {
     this.dialect = dialect;
     this.mode = mode;
-    this.name = mode.equals(QueryMode.TABLE) ? nameOrQuery : null;
+    this.tableId = mode.equals(QueryMode.TABLE) ? dialect.parseTableIdentifier(nameOrQuery) : null;
     this.query = mode.equals(QueryMode.QUERY) ? nameOrQuery : null;
     this.topicPrefix = topicPrefix;
     this.lastUpdate = 0;
-    this.tableId = this.name == null ? null : new TableId(null, null, name);
   }
 
   public long getLastUpdate() {
@@ -88,7 +86,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     if (resultSet == null) {
       stmt = getOrCreatePreparedStatement(db);
       resultSet = executeQuery();
-      schemaMapping = SchemaMapping.create(name, resultSet.getMetaData(), dialect);
+      String schemaName = tableId != null ? tableId.tableName() : null; // backwards compatible
+      schemaMapping = SchemaMapping.create(schemaName, resultSet.getMetaData(), dialect);
     }
   }
 
@@ -138,7 +137,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     } else if (this.lastUpdate > other.lastUpdate) {
       return 1;
     } else {
-      return this.name.compareTo(other.name);
+      return this.tableId.compareTo(other.tableId);
     }
   }
 }

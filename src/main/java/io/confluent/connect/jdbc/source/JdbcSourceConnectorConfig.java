@@ -177,13 +177,21 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String SCHEMA_PATTERN_CONFIG = "schema.pattern";
   private static final String SCHEMA_PATTERN_DOC =
-      "Schema pattern to fetch tables metadata from the database:\n"
+      "Schema pattern to fetch table metadata from the database:\n"
       + "  * \"\" retrieves those without a schema,"
-      + "  * null (default) means that the schema name should not be used to narrow the search, "
-      + "all tables "
-      + "metadata would be fetched, regardless their schema.";
+      + "  * null (default) means that the schema name should not be used to narrow the search,"
+      + " so that all table metadata would be fetched, regardless their schema.";
   private static final String SCHEMA_PATTERN_DISPLAY = "Schema pattern";
   public static final String SCHEMA_PATTERN_DEFAULT = null;
+
+  public static final String CATALOG_PATTERN_CONFIG = "catalog.pattern";
+  private static final String CATALOG_PATTERN_DOC =
+      "Catalog pattern to fetch table metadata from the database:\n"
+      + "  * \"\" retrieves those without a catalog,"
+      + "  * null (default) means that the catalog name should not be used to narrow the search"
+      + " so that all table metadata would be fetched, regardless their catalog.";
+  private static final String CATALOG_PATTERN_DISPLAY = "Schema pattern";
+  public static final String CATALOG_PATTERN_DEFAULT = null;
 
   public static final String QUERY_CONFIG = "query";
   private static final String QUERY_DOC =
@@ -333,6 +341,16 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Width.LONG,
         TABLE_BLACKLIST_DISPLAY,
         TABLE_RECOMMENDER
+    ).define(
+        CATALOG_PATTERN_CONFIG,
+        Type.STRING,
+        CATALOG_PATTERN_DEFAULT,
+        Importance.MEDIUM,
+        CATALOG_PATTERN_DOC,
+        DATABASE_GROUP,
+        6,
+        Width.SHORT,
+        CATALOG_PATTERN_DISPLAY
     ).define(
         SCHEMA_PATTERN_CONFIG,
         Type.STRING,
@@ -521,7 +539,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       // Create the dialect to get the tables ...
       AbstractConfig jdbcConfig = new AbstractConfig(CONFIG_DEF, config);
       DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
-      try (Connection db = dialect.createConnectionProvider().getConnection()) {
+      try (Connection db = dialect.getConnection()) {
         List<Object> result = new LinkedList<>();
         for (TableId id : dialect.tableNames(db)) {
           // Just add the unqualified table name

@@ -27,8 +27,6 @@ import java.util.Map;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.ConnectionProvider;
-import io.confluent.connect.jdbc.util.GenericConnectionProvider;
 import io.confluent.connect.jdbc.util.TableId;
 
 public class JdbcDbWriter {
@@ -43,11 +41,7 @@ public class JdbcDbWriter {
     this.dbDialect = dbDialect;
     this.dbStructure = dbStructure;
 
-    ConnectionProvider provider = new GenericConnectionProvider(
-        config.connectionUrl,
-        config.connectionUser,
-        config.connectionPassword);
-    this.cachedConnectionProvider = new CachedConnectionProvider(provider) {
+    this.cachedConnectionProvider = new CachedConnectionProvider(this.dbDialect) {
       @Override
       protected void onConnect(Connection connection) throws SQLException {
         connection.setAutoCommit(false);
@@ -58,14 +52,13 @@ public class JdbcDbWriter {
   void write(final Collection<SinkRecord> records) throws SQLException {
     final Connection connection = cachedConnectionProvider.getConnection();
 
-    final Map<String, BufferedRecords> bufferByTable = new HashMap<>();
+    final Map<TableId, BufferedRecords> bufferByTable = new HashMap<>();
     for (SinkRecord record : records) {
-      final String table = destinationTable(record.topic());
-      BufferedRecords buffer = bufferByTable.get(table);
+      final TableId tableId = destinationTable(record.topic());
+      BufferedRecords buffer = bufferByTable.get(tableId);
       if (buffer == null) {
-        TableId tableId = new TableId(null, null, table);
         buffer = new BufferedRecords(config, tableId, dbDialect, dbStructure, connection);
-        bufferByTable.put(table, buffer);
+        bufferByTable.put(tableId, buffer);
       }
       buffer.add(record);
     }
@@ -80,7 +73,7 @@ public class JdbcDbWriter {
     cachedConnectionProvider.close();
   }
 
-  String destinationTable(String topic) {
+  TableId destinationTable(String topic) {
     final String tableName = config.tableNameFormat.replace("${topic}", topic);
     if (tableName.isEmpty()) {
       throw new ConnectException(String.format(
@@ -89,6 +82,6 @@ public class JdbcDbWriter {
           config.tableNameFormat
       ));
     }
-    return tableName;
+    return dbDialect.parseTableIdentifier(tableName);
   }
 }

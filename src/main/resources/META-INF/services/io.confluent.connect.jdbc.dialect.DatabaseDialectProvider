@@ -7,4 +7,5 @@ io.confluent.connect.jdbc.dialect.PostgreSqlDatabaseDialect$Provider
 io.confluent.connect.jdbc.dialect.MySqlDatabaseDialect$Provider
 io.confluent.connect.jdbc.dialect.SqlServerDatabaseDialect$Provider
 io.confluent.connect.jdbc.dialect.SapHanaDatabaseDialect$Provider
+io.confluent.connect.jdbc.dialect.SybaseDatabaseDialect$Provider
 io.confluent.connect.jdbc.dialect.VerticaDatabaseDialect$Provider

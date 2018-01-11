@@ -52,7 +52,7 @@ public class BulkTableQuerier extends TableQuerier {
     switch (mode) {
       case TABLE:
         String queryStr = dialect.expressionBuilder().append("SELECT * FROM ")
-                                 .appendIdentifierQuoted(name).toString();
+                                 .append(tableId).toString();
         log.debug("{} prepared SQL query: {}", this, queryStr);
         stmt = dialect.createPreparedStatement(db, queryStr);
         break;
@@ -87,6 +87,7 @@ public class BulkTableQuerier extends TableQuerier {
     final Map<String, String> partition;
     switch (mode) {
       case TABLE:
+        String name = tableId.tableName(); // backwards compatible
         partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
         topic = topicPrefix + name;
         break;
@@ -104,7 +105,7 @@ public class BulkTableQuerier extends TableQuerier {
 
   @Override
   public String toString() {
-    return "BulkTableQuerier{" + "name='" + name + '\'' + ", query='" + query + '\''
+    return "BulkTableQuerier{" + "table='" + tableId + '\'' + ", query='" + query + '\''
            + ", topicPrefix='" + topicPrefix + '\'' + '}';
   }
 

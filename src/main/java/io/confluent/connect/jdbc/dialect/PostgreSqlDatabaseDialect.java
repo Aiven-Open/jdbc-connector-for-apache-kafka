@@ -29,9 +29,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
-import java.util.Map;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
+import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import io.confluent.connect.jdbc.source.ColumnMapping;
 import io.confluent.connect.jdbc.util.ColumnDefinition;
 import io.confluent.connect.jdbc.util.ColumnId;
@@ -190,13 +190,9 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
   }
 
   @Override
-  protected String getSqlType(
-      String schemaName,
-      Map<String, String> parameters,
-      Schema.Type type
-  ) {
-    if (schemaName != null) {
-      switch (schemaName) {
+  protected String getSqlType(SinkRecordField field) {
+    if (field.schemaName() != null) {
+      switch (field.schemaName()) {
         case Decimal.LOGICAL_NAME:
           return "DECIMAL";
         case Date.LOGICAL_NAME:
@@ -209,7 +205,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
           // fall through to normal types
       }
     }
-    switch (type) {
+    switch (field.schemaType()) {
       case INT8:
         return "SMALLINT";
       case INT16:
@@ -229,7 +225,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
       case BYTES:
         return "BLOB";
       default:
-        return super.getSqlType(schemaName, parameters, type);
+        return super.getSqlType(field);
     }
   }
 

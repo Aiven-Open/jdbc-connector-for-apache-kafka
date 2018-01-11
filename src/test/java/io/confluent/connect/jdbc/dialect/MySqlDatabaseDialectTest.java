@@ -95,9 +95,9 @@ public class MySqlDatabaseDialectTest extends BaseDialectTest<MySqlDatabaseDiale
         "CREATE TABLE `myTable` (\n" + "`c1` INT NOT NULL,\n" + "`c2` BIGINT NOT NULL,\n" +
         "`c3` VARCHAR(256) NOT NULL,\n" + "`c4` VARCHAR(256) NULL,\n" +
         "`c5` DATE DEFAULT '2001-03-15',\n" + "`c6` TIME(3) DEFAULT '00:00:00.000',\n" +
-        "`c7` DATETIME(3) DEFAULT '2001-03-15 00:00:00.000',\n" + "`c7` DECIMAL(65,4) NULL,\n" +
+        "`c7` DATETIME(3) DEFAULT '2001-03-15 00:00:00.000',\n" + "`c8` DECIMAL(65,4) NULL,\n" +
         "PRIMARY KEY(`c1`))";
-    String sql = dialect.buildCreateQuery(tableId, sinkRecordFields);
+    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
     assertEquals(expected, sql);
   }
 
@@ -109,7 +109,7 @@ public class MySqlDatabaseDialectTest extends BaseDialectTest<MySqlDatabaseDiale
         "ADD `c3` VARCHAR(256) NOT NULL,\n" + "ADD `c4` VARCHAR(256) NULL,\n" +
         "ADD `c5` DATE DEFAULT '2001-03-15',\n" + "ADD `c6` TIME(3) DEFAULT '00:00:00.000',\n" +
         "ADD `c7` DATETIME(3) DEFAULT '2001-03-15 00:00:00.000',\n" +
-        "ADD `c7` DECIMAL(65,4) NULL"};
+        "ADD `c8` DECIMAL(65,4) NULL"};
     assertStatements(sql, statements);
   }
 

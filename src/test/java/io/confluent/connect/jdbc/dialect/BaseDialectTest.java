@@ -18,28 +18,42 @@ import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Before;
+import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ThreadLocalRandom;
 
 import io.confluent.connect.jdbc.sink.JdbcSinkConfig;
+import io.confluent.connect.jdbc.sink.PreparedStatementBinder;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.util.ColumnId;
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 import io.confluent.connect.jdbc.util.TableId;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
 
@@ -103,7 +117,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     SinkRecordField f5 = new SinkRecordField(optionalDateWithDefault, "c5", false);
     SinkRecordField f6 = new SinkRecordField(optionalTimeWithDefault, "c6", false);
     SinkRecordField f7 = new SinkRecordField(optionalTsWithDefault, "c7", false);
-    SinkRecordField f8 = new SinkRecordField(optionalDecimal, "c7", false);
+    SinkRecordField f8 = new SinkRecordField(optionalDecimal, "c8", false);
     sinkRecordFields = Arrays.asList(f1, f2, f3, f4, f5, f6, f7, f8);
   }
 
@@ -189,7 +203,14 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
       String schemaName,
       Map<String, String> schemaParams
   ) {
-    String sqlType = dialect.getSqlType(schemaName, schemaParams, type);
+    SchemaBuilder schemaBuilder = new SchemaBuilder(type).name(schemaName);
+    if (schemaParams != null) {
+      for (Map.Entry<String, String> entry : schemaParams.entrySet()) {
+        schemaBuilder.parameter(entry.getKey(), entry.getValue());
+      }
+    }
+    SinkRecordField field = new SinkRecordField(schemaBuilder.build(), schemaName,false);
+    String sqlType = dialect.getSqlType(field);
     assertEquals(expectedSqlType, sqlType);
   }
 
@@ -241,23 +262,24 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
   }
 
   protected void verifyDataTypeMapping(String expected, Schema schema) {
-    assertEquals(expected, dialect.getSqlType(schema.name(), schema.parameters(), schema.type()));
+    SinkRecordField field = new SinkRecordField(schema, schema.name(),schema.isOptional());
+    assertEquals(expected, dialect.getSqlType(field));
   }
 
   protected void verifyCreateOneColNoPk(String expected) {
-    assertEquals(expected, dialect.buildCreateQuery(tableId, Arrays.asList(
+    assertEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
         new SinkRecordField(Schema.INT32_SCHEMA, "col1", false)
     )));
   }
 
   protected void verifyCreateOneColOnePk(String expected) {
-    assertEquals(expected, dialect.buildCreateQuery(tableId, Arrays.asList(
+    assertEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
         new SinkRecordField(Schema.INT32_SCHEMA, "pk1", true)
     )));
   }
 
   protected void verifyCreateThreeColTwoPk(String expected) {
-    assertEquals(expected, dialect.buildCreateQuery(tableId, Arrays.asList(
+    assertEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
         new SinkRecordField(Schema.INT32_SCHEMA, "pk1", true),
         new SinkRecordField(Schema.INT32_SCHEMA, "pk2", true),
         new SinkRecordField(Schema.INT32_SCHEMA, "col1", false)
@@ -275,5 +297,74 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
         new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "newcol1", false),
         new SinkRecordField(SchemaBuilder.int32().defaultValue(42).build(), "newcol2", false)
     )).toArray());
+  }
+
+  @Test
+  public void bindFieldPrimitiveValues() throws SQLException {
+    int index = ThreadLocalRandom.current().nextInt();
+    verifyBindField(++index, Schema.INT8_SCHEMA, (byte) 42).setByte(index, (byte) 42);
+    verifyBindField(++index, Schema.INT16_SCHEMA, (short) 42).setShort(index, (short) 42);
+    verifyBindField(++index, Schema.INT32_SCHEMA, 42).setInt(index, 42);
+    verifyBindField(++index, Schema.INT64_SCHEMA, 42L).setLong(index, 42L);
+    verifyBindField(++index, Schema.BOOLEAN_SCHEMA, false).setBoolean(index, false);
+    verifyBindField(++index, Schema.BOOLEAN_SCHEMA, true).setBoolean(index, true);
+    verifyBindField(++index, Schema.FLOAT32_SCHEMA, -42f).setFloat(index, -42f);
+    verifyBindField(++index, Schema.FLOAT64_SCHEMA, 42d).setDouble(index, 42d);
+    verifyBindField(++index, Schema.BYTES_SCHEMA, new byte[]{42}).setBytes(index, new byte[]{42});
+    verifyBindField(++index, Schema.BYTES_SCHEMA, ByteBuffer.wrap(new byte[]{42})).setBytes(index, new byte[]{42});
+    verifyBindField(++index, Schema.STRING_SCHEMA, "yep").setString(index, "yep");
+    verifyBindField(++index, Decimal.schema(0), new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)).setBigDecimal(index, new BigDecimal(2));
+    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0)).setDate(index, new java.sql.Date
+        (0), DateTimeUtils.UTC_CALENDAR.get());
+    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setTime(index, new java.sql.Time(1000), DateTimeUtils.UTC_CALENDAR.get());
+    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setTimestamp(index, new java.sql.Timestamp(100), DateTimeUtils.UTC_CALENDAR.get());
+  }
+
+  @Test
+  public void bindFieldNull() throws SQLException {
+    final List<Schema> nullableTypes = Arrays.asList(
+        Schema.INT8_SCHEMA,
+        Schema.INT16_SCHEMA,
+        Schema.INT32_SCHEMA,
+        Schema.INT64_SCHEMA,
+        Schema.FLOAT32_SCHEMA,
+        Schema.FLOAT64_SCHEMA,
+        Schema.BOOLEAN_SCHEMA,
+        Schema.BYTES_SCHEMA,
+        Schema.STRING_SCHEMA,
+        Decimal.schema(0),
+        Date.SCHEMA,
+        Time.SCHEMA,
+        Timestamp.SCHEMA
+    );
+    int index = 0;
+    for (Schema schema : nullableTypes) {
+      verifyBindField(++index, schema, null).setObject(index, null);
+    }
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldStructUnsupported() throws SQLException {
+    Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
+    dialect.bindField(mock(PreparedStatement.class), 1, structSchema, new Struct(structSchema));
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldArrayUnsupported() throws SQLException {
+    Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
+    dialect.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList());
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldMapUnsupported() throws SQLException {
+    Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
+    dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
+  }
+
+  protected PreparedStatement verifyBindField(int index, Schema schema, Object value)
+      throws SQLException {
+    PreparedStatement statement = mock(PreparedStatement.class);
+    dialect.bindField(statement, index, schema, value);
+    return verify(statement, times(1));
   }
 }

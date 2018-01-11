@@ -94,9 +94,9 @@ public class VerticaDatabaseDialectTest extends BaseDialectTest<VerticaDatabaseD
         "CREATE TABLE \"myTable\" (\n" + "\"c1\" INT NOT NULL,\n" + "\"c2\" INT NOT NULL,\n" +
         "\"c3\" VARCHAR(1024) NOT NULL,\n" + "\"c4\" VARCHAR(1024) NULL,\n" +
         "\"c5\" DATE DEFAULT '2001-03-15',\n" + "\"c6\" TIME DEFAULT '00:00:00.000',\n" +
-        "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c7\" DECIMAL(18,4) NULL,\n" +
+        "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c8\" DECIMAL(18,4) NULL,\n" +
         "PRIMARY KEY(\"c1\"))";
-    String sql = dialect.buildCreateQuery(tableId, sinkRecordFields);
+    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
     assertEquals(expected, sql);
   }
 
@@ -110,7 +110,7 @@ public class VerticaDatabaseDialectTest extends BaseDialectTest<VerticaDatabaseD
                     "ALTER TABLE \"myTable\" ADD \"c5\" DATE DEFAULT '2001-03-15'",
                     "ALTER TABLE \"myTable\" ADD \"c6\" TIME DEFAULT '00:00:00.000'",
                     "ALTER TABLE \"myTable\" ADD \"c7\" TIMESTAMP DEFAULT '2001-03-15 " +
-                    "00:00:00.000'", "ALTER TABLE \"myTable\" ADD \"c7\" DECIMAL(18,4) NULL"};
+                    "00:00:00.000'", "ALTER TABLE \"myTable\" ADD \"c8\" DECIMAL(18,4) NULL"};
     assertStatements(sql, statements);
   }
 

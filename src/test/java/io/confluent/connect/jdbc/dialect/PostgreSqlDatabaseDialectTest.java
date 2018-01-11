@@ -94,9 +94,9 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
         "CREATE TABLE \"myTable\" (\n" + "\"c1\" INT NOT NULL,\n" + "\"c2\" BIGINT NOT NULL,\n" +
         "\"c3\" TEXT NOT NULL,\n" + "\"c4\" TEXT NULL,\n" + "\"c5\" DATE DEFAULT '2001-03-15',\n" +
         "\"c6\" TIME DEFAULT '00:00:00.000',\n" +
-        "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c7\" DECIMAL NULL,\n" +
+        "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c8\" DECIMAL NULL,\n" +
         "PRIMARY KEY(\"c1\"))";
-    String sql = dialect.buildCreateQuery(tableId, sinkRecordFields);
+    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
     assertEquals(expected, sql);
   }
 
@@ -108,7 +108,7 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
                     "ADD \"c4\" TEXT NULL,\n" + "ADD \"c5\" DATE DEFAULT '2001-03-15',\n" +
                     "ADD \"c6\" TIME DEFAULT '00:00:00.000',\n" +
                     "ADD \"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" +
-                    "ADD \"c7\" DECIMAL NULL"};
+                    "ADD \"c8\" DECIMAL NULL"};
     assertStatements(sql, statements);
   }
 

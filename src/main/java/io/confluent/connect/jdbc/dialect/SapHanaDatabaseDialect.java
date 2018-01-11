@@ -19,14 +19,12 @@ package io.confluent.connect.jdbc.dialect;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
@@ -65,13 +63,14 @@ public class SapHanaDatabaseDialect extends GenericDatabaseDialect {
   }
 
   @Override
-  protected String getSqlType(
-      String schemaName,
-      Map<String, String> parameters,
-      Schema.Type type
-  ) {
-    if (schemaName != null) {
-      switch (schemaName) {
+  protected String checkConnectionQuery() {
+    return "SELECT DATABASE_NAME FROM SYS.M_DATABASES";
+  }
+
+  @Override
+  protected String getSqlType(SinkRecordField field) {
+    if (field.schemaName() != null) {
+      switch (field.schemaName()) {
         case Decimal.LOGICAL_NAME:
           return "DECIMAL";
         case Date.LOGICAL_NAME:
@@ -85,7 +84,7 @@ public class SapHanaDatabaseDialect extends GenericDatabaseDialect {
           break;
       }
     }
-    switch (type) {
+    switch (field.schemaType()) {
       case INT8:
         return "TINYINT";
       case INT16:
@@ -105,17 +104,18 @@ public class SapHanaDatabaseDialect extends GenericDatabaseDialect {
       case BYTES:
         return "BLOB";
       default:
-        return super.getSqlType(schemaName, parameters, type);
+        return super.getSqlType(field);
     }
   }
 
   @Override
-  public String buildCreateQuery(
+  public String buildCreateTableStatement(
       TableId table,
       Collection<SinkRecordField> fields
   ) {
     // Defaulting to Column Store
-    return super.buildCreateQuery(table, fields).replace("CREATE TABLE", "CREATE COLUMN TABLE");
+    return super.buildCreateTableStatement(table, fields)
+                .replace("CREATE TABLE", "CREATE COLUMN TABLE");
   }
 
   @Override

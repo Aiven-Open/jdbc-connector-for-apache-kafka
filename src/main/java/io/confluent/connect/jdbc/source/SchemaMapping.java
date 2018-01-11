@@ -47,7 +47,7 @@ public final class SchemaMapping {
   /**
    * Convert the result set into a {@link Schema}.
    *
-   * @param schemaName the name of the schema; never null
+   * @param schemaName the name of the schema; may be null
    * @param metadata   the result set metadata; never null
    * @param dialect    the dialect for the source database; never null
    * @return the schema mapping; never null

@@ -43,7 +43,6 @@ import io.confluent.connect.jdbc.dialect.DatabaseDialects;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 import io.confluent.connect.jdbc.util.ColumnDefinition;
 import io.confluent.connect.jdbc.util.ColumnId;
-import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.Version;
 
 /**
@@ -59,7 +58,7 @@ public class JdbcSourceTask extends SourceTask {
   private DatabaseDialect dialect;
   private CachedConnectionProvider cachedConnectionProvider;
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
-  private AtomicBoolean stop;
+  private final AtomicBoolean running = new AtomicBoolean(false);
 
   public JdbcSourceTask() {
     this.time = new SystemTime();
@@ -86,9 +85,7 @@ public class JdbcSourceTask extends SourceTask {
     final int maxConnAttempts = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
     final long retryBackoff = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
     dialect = DatabaseDialects.findBestFor(url, config);
-    ConnectionProvider connectionProvider = dialect.createConnectionProvider();
-    cachedConnectionProvider = new CachedConnectionProvider(connectionProvider,
-                                                            maxConnAttempts, retryBackoff);
+    cachedConnectionProvider = new CachedConnectionProvider(dialect, maxConnAttempts, retryBackoff);
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
@@ -178,16 +175,25 @@ public class JdbcSourceTask extends SourceTask {
       }
     }
 
-    stop = new AtomicBoolean(false);
+    running.set(true);
   }
 
   @Override
   public void stop() throws ConnectException {
-    if (stop != null) {
-      stop.set(true);
-    }
-    if (cachedConnectionProvider != null) {
-      cachedConnectionProvider.close();
+    try {
+      running.set(false);
+      if (cachedConnectionProvider != null) {
+        cachedConnectionProvider.close();
+      }
+    } finally {
+      cachedConnectionProvider = null;
+      try {
+        if (dialect != null) {
+          dialect.close();
+        }
+      } finally {
+        dialect = null;
+      }
     }
   }
 
@@ -195,7 +201,7 @@ public class JdbcSourceTask extends SourceTask {
   public List<SourceRecord> poll() throws InterruptedException {
     log.trace("{} Polling for new data");
 
-    while (!stop.get()) {
+    while (running.get()) {
       final TableQuerier querier = tableQueue.peek();
 
       if (!querier.querying()) {

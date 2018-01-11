@@ -22,8 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,8 +62,12 @@ public class DbStructure {
         create(config, connection, tableId, fieldsMetadata);
       } catch (SQLException sqle) {
         log.warn("Create failed, will attempt amend if table already exists", sqle);
-        TableDefinition newDefn = tableDefns.refresh(connection, tableId);
-        if (newDefn == null) {
+        try {
+          TableDefinition newDefn = tableDefns.refresh(connection, tableId);
+          if (newDefn == null) {
+            throw sqle;
+          }
+        } catch (SQLException e) {
           throw sqle;
         }
       }
@@ -85,13 +89,8 @@ public class DbStructure {
           String.format("Table %s is missing and auto-creation is disabled", tableId)
       );
     }
-    final String sql = dbDialect.buildCreateQuery(tableId, fieldsMetadata.allFields.values());
-    log.info("Creating table:{} with SQL: {}", tableId, sql);
-    try (Statement statement = connection.createStatement()) {
-      statement.executeUpdate(sql);
-      connection.commit();
-    }
-    tableDefns.refresh(connection, tableId);
+    String sql = dbDialect.buildCreateTableStatement(tableId, fieldsMetadata.allFields.values());
+    dbDialect.applyDdlStatements(connection, Collections.singletonList(sql));
   }
 
   /**
@@ -153,11 +152,8 @@ public class DbStructure {
         maxRetries,
         amendTableQueries
     );
-    try (Statement statement = connection.createStatement()) {
-      for (String amendTableQuery : amendTableQueries) {
-        statement.executeUpdate(amendTableQuery);
-      }
-      connection.commit();
+    try {
+      dbDialect.applyDdlStatements(connection, amendTableQueries);
     } catch (SQLException sqle) {
       if (maxRetries <= 0) {
         throw new ConnectException(

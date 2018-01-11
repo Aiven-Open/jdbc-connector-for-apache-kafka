@@ -21,7 +21,10 @@ import javax.xml.bind.DatatypeConverter;
 public class ExpressionBuilder {
 
   public interface Expressable {
-    void appendTo(ExpressionBuilder builder, boolean useQuotes);
+    void appendTo(
+        ExpressionBuilder builder,
+        boolean useQuotes
+    );
   }
 
   public interface Transform<T> {
@@ -158,6 +161,19 @@ public class ExpressionBuilder {
     this.rules = rules != null ? rules : IdentifierRules.DEFAULT;
   }
 
+  /**
+   * Return a new ExpressionBuilder that escapes quotes with the specified prefix.
+   *
+   * @param prefix the prefix
+   * @return the new ExpressionBuilder, or this builder if the prefix is null or empty
+   */
+  public ExpressionBuilder escapeQuotesWith(String prefix) {
+    if (prefix == null || prefix.isEmpty()) {
+      return this;
+    }
+    return new ExpressionBuilder(this.rules.escapeQuotesWith(prefix));
+  }
+
   public ExpressionBuilder appendIdentifierDelimiter() {
     sb.append(rules.identifierDelimiter());
     return this;
@@ -185,7 +201,10 @@ public class ExpressionBuilder {
     return this;
   }
 
-  public ExpressionBuilder appendIdentifier(String name, boolean quoted) {
+  public ExpressionBuilder appendIdentifier(
+      String name,
+      boolean quoted
+  ) {
     if (quoted) {
       appendLeadingQuote();
     }
@@ -212,7 +231,10 @@ public class ExpressionBuilder {
     return this;
   }
 
-  public ExpressionBuilder append(Object obj, boolean useQuotes) {
+  public ExpressionBuilder append(
+      Object obj,
+      boolean useQuotes
+  ) {
     if (obj instanceof Expressable) {
       ((Expressable) obj).appendTo(this, useQuotes);
     } else if (obj != null) {

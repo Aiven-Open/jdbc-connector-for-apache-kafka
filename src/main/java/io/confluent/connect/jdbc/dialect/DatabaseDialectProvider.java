@@ -25,6 +25,26 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * An abstract provider of {@link DatabaseDialect} instances, and used to {@link
+ * #score(JdbcUrlInfo) score} the dialect for a given JDBC URL.
+ *
+ * <p>The {@link DatabaseDialects} class uses Java's Service Provider API to discover and register
+ * all {@link DatabaseDialectProvider} classes that are on the classpath. All of these registered
+ * providers are then consulted any time someone attempts to
+ * {@link DatabaseDialects#findBestFor(String, AbstractConfig) find the best dialect} for a given
+ * URL and JDBC source or sink connector configuration. The dialect providers compute a score
+ * for the URL, and the dialect provider with the highest score is then used to create a new
+ * {@link DatabaseDialect} instance.
+ *
+ * <p>To implement a new dialect, extend this class and place the name of the implementation class
+ * in a file that will appear in the JAR at
+ * {@code META-INF/services/io.confluent.connect.jdbc.dialect.DatabaseDialectProvider}.
+ *
+ * <p>For example, all of the dialects providers provided by the Confluent JDBC connector are listed
+ * in the {@code META-INF/services/io.confluent.connect.jdbc.dialect.DatabaseDialectProvider}.
+ * Other JARs can be added to the plugin (or classpath) with additional database dialects.
+ */
 public abstract class DatabaseDialectProvider {
 
   /**
@@ -40,10 +60,27 @@ public abstract class DatabaseDialectProvider {
    * the subprotocol.
    */
   public interface JdbcUrlInfo {
+
+    /**
+     * Get the subprotocol in the JDBC URL.
+     *
+     * @return the subprotocol
+     */
     String subprotocol();
 
+    /**
+     * Get the subname in the JDBC URL, which is everything after the ':' character following the
+     * subprotocol.
+     *
+     * @return the subname
+     */
     String subname();
 
+    /**
+     * Get the full JDBC URL.
+     *
+     * @return the URL.
+     */
     String url();
   }
 

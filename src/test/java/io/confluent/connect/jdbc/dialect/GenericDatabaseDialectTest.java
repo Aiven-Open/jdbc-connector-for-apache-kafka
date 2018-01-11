@@ -76,7 +76,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
     newDialectFor(null, null);
     super.setup();
-    connectionProvider = dialect.createConnectionProvider();
+    connectionProvider = dialect;
     conn = connectionProvider.getConnection();
   }
 
@@ -309,7 +309,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
 
   @Test(expected = ConnectException.class)
   public void shouldBuildCreateQueryStatement() {
-    dialect.buildCreateQuery(tableId, sinkRecordFields);
+    dialect.buildCreateTableStatement(tableId, sinkRecordFields);
   }
 
   @Test(expected = ConnectException.class)
@@ -362,15 +362,10 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     IdentifierRules rules = new IdentifierRules(",", "`", "`");
     return new GenericDatabaseDialect(config, rules) {
       @Override
-      protected String getSqlType(
-          String schemaName,
-          Map<String, String> parameters,
-          Schema.Type type
-      ) {
+      protected String getSqlType(SinkRecordField f) {
         return "DUMMY";
       }
     };
-
   }
 
   @Test

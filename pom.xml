@@ -60,6 +60,7 @@
         <commons-io.version>2.4</commons-io.version>
         <sqlite-jdbc.version>3.8.11.2</sqlite-jdbc.version>
         <postgresql.version>9.4-1206-jdbc41</postgresql.version>
+        <jtds.driver.version>1.3.1</jtds.driver.version>
         <licenses.name>Apache License 2.0</licenses.name>
         <licenses.version>${project.version}</licenses.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -93,6 +94,12 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.jtds</groupId>
+            <artifactId>jtds</artifactId>
+            <version>${jtds.driver.version}</version>
             <scope>runtime</scope>
         </dependency>
 

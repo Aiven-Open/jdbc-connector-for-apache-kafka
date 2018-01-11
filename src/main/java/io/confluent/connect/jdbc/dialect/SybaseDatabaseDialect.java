@@ -19,12 +19,18 @@ package io.confluent.connect.jdbc.dialect;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
@@ -37,19 +43,20 @@ import io.confluent.connect.jdbc.util.TableId;
 /**
  * A {@link DatabaseDialect} for SQL Server.
  */
-public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
+public class SybaseDatabaseDialect extends GenericDatabaseDialect {
   /**
-   * The provider for {@link SqlServerDatabaseDialect}.
+   * The provider for {@link SybaseDatabaseDialect}.
    */
   public static class Provider extends SubprotocolBasedProvider {
     public Provider() {
-      super(SqlServerDatabaseDialect.class.getSimpleName(), "microsoft:sqlserver", "sqlserver",
-            "jtds:sqlserver");
+      super(SybaseDatabaseDialect.class.getSimpleName(), "microsoft:sqlserver", "sqlserver",
+            "jtds:sybase"
+      );
     }
 
     @Override
     public DatabaseDialect create(AbstractConfig config) {
-      return new SqlServerDatabaseDialect(config);
+      return new SybaseDatabaseDialect(config);
     }
   }
 
@@ -58,15 +65,25 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
    *
    * @param config the connector configuration; may not be null
    */
-  public SqlServerDatabaseDialect(AbstractConfig config) {
-    super(config, new IdentifierRules(".", "[", "]"));
+  public SybaseDatabaseDialect(AbstractConfig config) {
+    super(config, new IdentifierRules(".", "\"", "\""));
   }
 
   @Override
   protected boolean useCatalog() {
-    // SQL Server uses JDBC's catalog to represent the database,
+    // Sybase uses JDBC's catalog to represent the database,
     // and JDBC's schema to represent the owner (e.g., "dbo")
     return true;
+  }
+
+  @Override
+  protected String currentTimestampDatabaseQuery() {
+    return "select getdate()";
+  }
+
+  @Override
+  protected String checkConnectionQuery() {
+    return "SELECT 1";
   }
 
   @Override
@@ -80,14 +97,15 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
         case Time.LOGICAL_NAME:
           return "time";
         case Timestamp.LOGICAL_NAME:
-          return "datetime2";
+          return "datetime";
         default:
           // pass through to normal types
       }
     }
     switch (field.schemaType()) {
       case INT8:
-        return "tinyint";
+        // 'tinyint' has a range of 0-255 and cannot handle negative numbers
+        return "smallint";
       case INT16:
         return "smallint";
       case INT32:
@@ -99,13 +117,81 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
       case FLOAT64:
         return "float";
       case BOOLEAN:
-        return "bit";
+        if (field.isOptional()) {
+          return "tinyint"; // Sybase does not allow 'bit' to be nullable
+        } else {
+          return "bit";
+        }
       case STRING:
-        return "varchar(max)";
+        if (field.isPrimaryKey()) {
+          // Could always use 'text', except columns of type 'text', 'image' and 'unitext'
+          // cannot be used in indexes. Also, 2600 is the max allowable size of an index,
+          // so use something smaller if multiple columns are to be used in the index.
+          return "varchar(512)";
+        } else {
+          return "text";
+        }
       case BYTES:
-        return "varbinary(max)";
+        return "image";
       default:
         return super.getSqlType(field);
+    }
+  }
+
+  protected boolean maybeBindPrimitive(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException {
+    // First handle non-standard bindings ...
+    switch (schema.type()) {
+      case INT8:
+        if (value instanceof Number) {
+          statement.setShort(index, ((Number) value).shortValue());
+          return true;
+        }
+        break;
+      default:
+        break;
+    }
+    return super.maybeBindPrimitive(statement, index, schema, value);
+  }
+
+  @Override
+  public void applyDdlStatements(
+      Connection connection,
+      List<String> statements
+  ) throws SQLException {
+    boolean autoCommit = connection.getAutoCommit();
+    if (!autoCommit) {
+      connection.setAutoCommit(true);
+    }
+    try (Statement statement = connection.createStatement()) {
+      for (String ddlStatement : statements) {
+        statement.executeUpdate(ddlStatement);
+      }
+    } finally {
+      connection.setAutoCommit(autoCommit);
+    }
+  }
+
+  @Override
+  protected Set<ColumnId> primaryKeyColumns(
+      Connection connection,
+      String catalogPattern,
+      String schemaPattern,
+      String tablePattern
+  ) throws SQLException {
+    // Must be done only with auto-commit enabled?!
+    boolean autoCommit = connection.getAutoCommit();
+    try {
+      if (!autoCommit) {
+        connection.setAutoCommit(true);
+      }
+      return super.primaryKeyColumns(connection, catalogPattern, schemaPattern, tablePattern);
+    } finally {
+      connection.setAutoCommit(autoCommit);
     }
   }
 
@@ -117,16 +203,28 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
     ExpressionBuilder builder = expressionBuilder();
 
     if (options.ifExists()) {
-      builder.append("IF OBJECT_ID('");
-      builder.append(table);
-      builder.append(", 'U') IS NOT NULL");
+      builder.append("IF EXISTS (");
+
+      builder.append("SELECT 1 FROM sysobjects ");
+      if (table.schemaName() != null) {
+        builder.append("INNER JOIN sysusers ON sysobjects.uid=sysusers.uid ");
+        builder.append("WHERE sysusers.name='");
+        builder.append(table.schemaName());
+        builder.append("' AND sysobjects.name='");
+        builder.append(table.tableName());
+      } else {
+        builder.append("WHERE name='");
+        builder.append(table.tableName());
+      }
+      builder.append("' AND type='U') ");
     }
-    // SQL Server 2016 supports IF EXISTS
     builder.append("DROP TABLE ");
     builder.append(table);
-    if (options.cascade()) {
-      builder.append(" CASCADE");
-    }
+
+    // ASE 12 does not support cascade, and doing this is complex
+    //    if (options.cascade()) {
+    //      builder.append(" CASCADE");
+    //    }
     return builder.toString();
   }
 

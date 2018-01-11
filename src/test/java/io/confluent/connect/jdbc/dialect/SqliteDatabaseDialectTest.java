@@ -114,9 +114,9 @@ public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDia
         "CREATE TABLE `myTable` (\n" + "`c1` INTEGER NOT NULL,\n" + "`c2` INTEGER NOT NULL,\n" +
         "`c3` TEXT NOT NULL,\n" + "`c4` TEXT NULL,\n" + "`c5` NUMERIC DEFAULT '2001-03-15',\n" +
         "`c6` NUMERIC DEFAULT '00:00:00.000',\n" +
-        "`c7` NUMERIC DEFAULT '2001-03-15 00:00:00.000',\n" + "`c7` NUMERIC NULL,\n" +
+        "`c7` NUMERIC DEFAULT '2001-03-15 00:00:00.000',\n" + "`c8` NUMERIC NULL,\n" +
         "PRIMARY KEY(`c1`))";
-    String sql = dialect.buildCreateQuery(tableId, sinkRecordFields);
+    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
     assertEquals(expected, sql);
   }
 
@@ -130,7 +130,7 @@ public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDia
                     "ALTER TABLE `myTable` ADD `c5` NUMERIC DEFAULT '2001-03-15'",
                     "ALTER TABLE `myTable` ADD `c6` NUMERIC DEFAULT '00:00:00.000'",
                     "ALTER TABLE `myTable` ADD `c7` NUMERIC DEFAULT '2001-03-15 00:00:00.000'",
-                    "ALTER TABLE `myTable` ADD `c7` NUMERIC NULL"};
+                    "ALTER TABLE `myTable` ADD `c8` NUMERIC NULL"};
     assertStatements(sql, statements);
   }
 

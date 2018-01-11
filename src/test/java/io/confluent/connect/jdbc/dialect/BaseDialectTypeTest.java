@@ -139,7 +139,12 @@ public abstract class BaseDialectTypeTest<T extends GenericDatabaseDialect> {
 
     // Check the converter operates correctly
     ColumnMapping mapping = new ColumnMapping(columnDefn, 1, field);
-    converter = dialect.createColumnConverter(mapping);
+    converter = dialect.columnConverterFor(
+        mapping,
+        mapping.columnDefn(),
+        mapping.columnNumber(),
+        true
+    );
     Object value = converter.convert(resultSet);
     if (value instanceof Number && expectedValue instanceof Number) {
       assertEquals(((Number) expectedValue).floatValue(), ((Number) value).floatValue(), 0.01d);

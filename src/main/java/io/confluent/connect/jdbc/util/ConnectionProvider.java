@@ -32,6 +32,22 @@ public interface ConnectionProvider extends AutoCloseable {
   Connection getConnection() throws SQLException;
 
   /**
+   * Determine if the specified connection is valid.
+   *
+   * @param connection the database connection; may not be null
+   * @param timeout    The time in seconds to wait for the database operation used to validate
+   *                   the connection to complete.  If the timeout period expires before the
+   *                   operation completes, this method returns false.  A value of 0 indicates a
+   *                   timeout is not applied to the database operation.
+   * @return true if it is valid, or false otherwise
+   * @throws SQLException if there is an error with the database connection
+   */
+  boolean isConnectionValid(
+      Connection connection,
+      int timeout
+  ) throws SQLException;
+
+  /**
    * Close this connection provider.
    */
   void close();

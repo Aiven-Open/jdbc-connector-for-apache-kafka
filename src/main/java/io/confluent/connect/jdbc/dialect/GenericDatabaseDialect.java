@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
@@ -55,7 +56,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.FixedScoreProvider;
@@ -75,12 +78,11 @@ import io.confluent.connect.jdbc.util.ColumnDefinition;
 import io.confluent.connect.jdbc.util.ColumnDefinition.Mutability;
 import io.confluent.connect.jdbc.util.ColumnDefinition.Nullability;
 import io.confluent.connect.jdbc.util.ColumnId;
-import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.DateTimeUtils;
 import io.confluent.connect.jdbc.util.ExpressionBuilder;
 import io.confluent.connect.jdbc.util.ExpressionBuilder.Transform;
-import io.confluent.connect.jdbc.util.GenericConnectionProvider;
 import io.confluent.connect.jdbc.util.IdentifierRules;
+import io.confluent.connect.jdbc.util.JdbcDriverInfo;
 import io.confluent.connect.jdbc.util.TableDefinition;
 import io.confluent.connect.jdbc.util.TableId;
 
@@ -114,7 +116,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     }
   }
 
-  protected final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log = LoggerFactory.getLogger(GenericDatabaseDialect.class);
   protected final AbstractConfig config;
 
   /**
@@ -124,7 +126,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   protected String catalogPattern;
   protected final String schemaPattern;
   protected final Set<String> tableTypes;
+  protected final String jdbcUrl;
+  private final IdentifierRules defaultIdentifierRules;
   private final AtomicReference<IdentifierRules> identifierRules = new AtomicReference<>();
+  private final Queue<Connection> connections = new ConcurrentLinkedQueue<>();
+  private volatile JdbcDriverInfo jdbcDriverInfo;
 
   /**
    * Create a new dialect instance with the given connector configuration.
@@ -132,26 +138,29 @@ public class GenericDatabaseDialect implements DatabaseDialect {
    * @param config the connector configuration; may not be null
    */
   public GenericDatabaseDialect(AbstractConfig config) {
-    this(config, null);
+    this(config, IdentifierRules.DEFAULT);
   }
 
   /**
    * Create a new dialect instance with the given connector configuration.
    *
-   * @param config          the connector configuration; may not be null
-   * @param identifierRules the rules for identifiers; may be null if the rules are to be determined
-   *                        from the database metadata
+   * @param config                 the connector configuration; may not be null
+   * @param defaultIdentifierRules the default rules for identifiers; may be null if the rules are
+   *                               to be determined from the database metadata
    */
   protected GenericDatabaseDialect(
       AbstractConfig config,
-      IdentifierRules identifierRules
+      IdentifierRules defaultIdentifierRules
   ) {
     this.config = config;
-    this.identifierRules.set(identifierRules);
+    this.defaultIdentifierRules = defaultIdentifierRules;
+    this.jdbcUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     if (!(config instanceof JdbcSinkConfig)) {
+      catalogPattern = config.getString(JdbcSourceTaskConfig.CATALOG_PATTERN_CONFIG);
       schemaPattern = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
       tableTypes = new HashSet<>(config.getList(JdbcSourceTaskConfig.TABLE_TYPE_CONFIG));
     } else {
+      catalogPattern = JdbcSourceTaskConfig.CATALOG_PATTERN_DEFAULT;
       schemaPattern = JdbcSourceTaskConfig.SCHEMA_PATTERN_DEFAULT;
       tableTypes = new HashSet<>(Arrays.asList(JdbcSourceTaskConfig.TABLE_TYPE_DEFAULT));
     }
@@ -163,9 +172,8 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   }
 
   @Override
-  public ConnectionProvider createConnectionProvider() {
+  public Connection getConnection() throws SQLException {
     // These config names are the same for both source and sink configs ...
-    final String jdbcUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     String username = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
     Password dbPassword = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
     Properties properties = new Properties();
@@ -176,11 +184,81 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       properties.setProperty("password", dbPassword.value());
     }
     properties = addConnectionProperties(properties);
-    return new GenericConnectionProvider(jdbcUrl, properties);
+    Connection connection = DriverManager.getConnection(jdbcUrl, properties);
+    if (jdbcDriverInfo == null) {
+      jdbcDriverInfo = createJdbcDriverInfo(connection);
+    }
+    connections.add(connection);
+    return connection;
+  }
+
+  @Override
+  public void close() {
+    while (!connections.isEmpty()) {
+      Connection conn = connections.poll();
+      if (conn != null) {
+        try {
+          conn.close();
+        } catch (SQLException e) {
+          log.warn("Error while closing connection to {}", jdbcDriverInfo, e);
+        }
+      }
+    }
+  }
+
+  @Override
+  public boolean isConnectionValid(
+      Connection connection,
+      int timeout
+  ) throws SQLException {
+    if (jdbcDriverInfo().jdbcMajorVersion() >= 4) {
+      return connection.isValid(timeout);
+    }
+    // issue a test query ...
+    String query = checkConnectionQuery();
+    if (query != null) {
+      try (Statement statement = connection.createStatement()) {
+        boolean hasResultSet = statement.execute(query);
+        if (hasResultSet) {
+          statement.getResultSet().close();
+        }
+      }
+    }
+    return true;
   }
 
   /**
-   * Add any connection properties based upon the {@link #config configuration}.
+   * Return a query that can be used to check the validity of an existing database connection
+   * when the JDBC driver does not support JDBC 4. By default this returns {@code SELECT 1},
+   * but subclasses should override this when a different query should be used.
+   *
+   * @return the check connection query; may be null if the connection should not be queried
+   */
+  protected String checkConnectionQuery() {
+    return "SELECT 1";
+  }
+
+  protected JdbcDriverInfo jdbcDriverInfo() {
+    if (jdbcDriverInfo == null) {
+      try (Connection connection = getConnection()) {
+        jdbcDriverInfo = createJdbcDriverInfo(connection);
+      } catch (SQLException e) {
+        throw new ConnectException("Unable to get JDBC driver information", e);
+      }
+    }
+    return jdbcDriverInfo;
+  }
+
+  protected JdbcDriverInfo createJdbcDriverInfo(Connection connection) throws SQLException {
+    DatabaseMetaData metadata = connection.getMetaData();
+    return new JdbcDriverInfo(metadata.getJDBCMajorVersion(), metadata.getJDBCMinorVersion(),
+                              metadata.getDriverName(), metadata.getDatabaseProductName(),
+                              metadata.getDatabaseProductVersion()
+    );
+  }
+
+  /**
+   * Add or modify any connection properties based upon the {@link #config configuration}.
    *
    * <p>By default this method does nothing and returns the {@link Properties} object supplied as a
    * parameter, but subclasses can override it to add/remove properties used to create new
@@ -188,8 +266,8 @@ public class GenericDatabaseDialect implements DatabaseDialect {
    * @param properties the properties that will be passed to the {@link DriverManager}'s {@link
    *                   DriverManager#getConnection(String, Properties) getConnection(...) method};
    *                   never null
-   * @return the updated connection properties, or {@code properties} if they are modified or should
-   *     be returned; never null
+   * @return the updated connection properties, or {@code properties} if they are not modified or
+   *     should be returned; never null
    */
   protected Properties addConnectionProperties(Properties properties) {
     return properties;
@@ -206,13 +284,41 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   }
 
   @Override
+  public TableId parseTableIdentifier(String fqn) {
+    List<String> parts = identifierRules().parseQualifiedIdentifier(fqn);
+    if (parts == null || parts.isEmpty()) {
+      throw new IllegalArgumentException("Invalid fully qualified name: '" + fqn + "'");
+    }
+    if (parts.size() == 1) {
+      return new TableId(null, null, parts.get(0));
+    }
+    if (parts.size() == 3) {
+      return new TableId(parts.get(0), parts.get(1), parts.get(2));
+    }
+    assert parts.size() >= 2;
+    if (useCatalog()) {
+      return new TableId(parts.get(0), null, parts.get(1));
+    }
+    return new TableId(null, parts.get(0), parts.get(1));
+  }
+
+  /**
+   * Return whether the database uses JDBC catalogs.
+   *
+   * @return true if catalogs are used, or false otherwise
+   */
+  protected boolean useCatalog() {
+    return false;
+  }
+
+  @Override
   public List<TableId> tableNames(
       Connection conn
   ) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
     String[] tableTypes = tableTypes(metadata, this.tableTypes);
 
-    try (ResultSet rs = metadata.getTables(null, schemaPattern, "%", tableTypes)) {
+    try (ResultSet rs = metadata.getTables(catalogPattern(), schemaPattern(), "%", tableTypes)) {
       List<TableId> tableIds = new ArrayList<>();
       while (rs.next()) {
         String catalogName = rs.getString(1);
@@ -225,6 +331,14 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       }
       return tableIds;
     }
+  }
+
+  protected String catalogPattern() {
+    return catalogPattern;
+  }
+
+  protected String schemaPattern() {
+    return schemaPattern;
   }
 
   /**
@@ -275,13 +389,33 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   @Override
   public IdentifierRules identifierRules() {
     if (identifierRules.get() == null) {
-      try (Connection connection = createConnectionProvider().getConnection()) {
+      if (defaultIdentifierRules != null && connections.peek() == null) {
+        // We've not yet established a connection to the database, so in this case
+        // just return the default rules ...
+        return defaultIdentifierRules;
+      }
+      // Otherwise try to get the actual quote string and separator from the database, since
+      // many databases allow them to be changed
+      try (Connection connection = getConnection()) {
         DatabaseMetaData metaData = connection.getMetaData();
-        String quoteStr = metaData.getIdentifierQuoteString();
+        String leadingQuoteStr = metaData.getIdentifierQuoteString();
+        String trailingQuoteStr = leadingQuoteStr; // JDBC does not distinguish
         String separator = metaData.getCatalogSeparator();
-        identifierRules.set(new IdentifierRules(separator, quoteStr));
+        if (leadingQuoteStr == null || leadingQuoteStr.isEmpty()) {
+          leadingQuoteStr = defaultIdentifierRules.leadingQuoteString();
+          trailingQuoteStr = defaultIdentifierRules.trailingQuoteString();
+        }
+        if (separator == null || separator.isEmpty()) {
+          separator = defaultIdentifierRules.identifierDelimiter();
+        }
+        identifierRules.set(new IdentifierRules(separator, leadingQuoteStr, trailingQuoteStr));
       } catch (SQLException e) {
-        throw new ConnectException("Unable to get identifier metadata", e);
+        if (defaultIdentifierRules != null) {
+          identifierRules.set(defaultIdentifierRules);
+          log.warn("Unable to get identifier metadata; using default rules", e);
+        } else {
+          throw new ConnectException("Unable to get identifier metadata", e);
+        }
       }
     }
     return identifierRules.get();
@@ -526,10 +660,10 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   @Override
   public Map<ColumnId, ColumnDefinition> describeColumnsByQuerying(
       Connection db,
-      String name
+      TableId tableId
   ) throws SQLException {
     String queryStr = "SELECT * FROM {} LIMIT 1";
-    String quotedName = expressionBuilder().appendIdentifierQuoted(name).toString();
+    String quotedName = expressionBuilder().append(tableId).toString();
     try (PreparedStatement stmt = db.prepareStatement(queryStr)) {
       stmt.setString(1, quotedName);
       ResultSet rs = stmt.executeQuery();
@@ -636,12 +770,32 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       ColumnDefinition columnDefn,
       SchemaBuilder builder
   ) {
-    final String fieldName = fieldNameFor(columnDefn);
-    final int sqlType = columnDefn.type();
-    boolean optional = columnDefn.isOptional();
+    return addFieldToSchema(columnDefn, builder, fieldNameFor(columnDefn), columnDefn.type(),
+                            columnDefn.isOptional()
+    );
+  }
+
+  /**
+   * Use the supplied {@link SchemaBuilder} to add a field that corresponds to the column with the
+   * specified definition. This is intended to be easily overridden by subclasses.
+   *
+   * @param columnDefn the definition of the column; may not be null
+   * @param builder    the schema builder; may not be null
+   * @param fieldName  the name of the field and {@link #fieldNameFor(ColumnDefinition) computed}
+   *                   from the column definition; may not be null
+   * @param sqlType    the JDBC {@link java.sql.Types type} as obtained from the column definition
+   * @param optional   true if the field is to be optional as obtained from the column definition
+   * @return the name of the field, or null if no field was added
+   */
+  protected String addFieldToSchema(
+      final ColumnDefinition columnDefn,
+      final SchemaBuilder builder,
+      final String fieldName,
+      final int sqlType,
+      final boolean optional
+  ) {
     int precision = columnDefn.precision();
     int scale = columnDefn.scale();
-
     switch (sqlType) {
       case Types.NULL: {
         log.warn("JDBC type {} not currently supported", sqlType);
@@ -885,12 +1039,32 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   }
 
   @Override
+  public void applyDdlStatements(
+      Connection connection,
+      List<String> statements
+  ) throws SQLException {
+    try (Statement statement = connection.createStatement()) {
+      for (String ddlStatement : statements) {
+        statement.executeUpdate(ddlStatement);
+      }
+    }
+  }
+
+  @Override
   public ColumnConverter createColumnConverter(
       ColumnMapping mapping
   ) {
-    final int col = mapping.columnNumber();
-    final ColumnDefinition defn = mapping.columnDefn();
+    return columnConverterFor(mapping, mapping.columnDefn(), mapping.columnNumber(),
+                              jdbcDriverInfo().jdbcVersionAtLeast(4, 0)
+    );
+  }
 
+  protected ColumnConverter columnConverterFor(
+      final ColumnMapping mapping,
+      final ColumnDefinition defn,
+      final int col,
+      final boolean isJdbc4
+  ) {
     switch (mapping.columnDefn().type()) {
 
       case Types.BOOLEAN: {
@@ -1191,7 +1365,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
                 }
                 return blob.getBytes(1, (int) blob.length());
               } finally {
-                blob.free();
+                if (isJdbc4) {
+                  free(blob);
+                }
               }
             }
           }
@@ -1211,7 +1387,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
                 }
                 return clob.getSubString(1, (int) clob.length());
               } finally {
-                clob.free();
+                if (isJdbc4) {
+                  free(clob);
+                }
               }
             }
           }
@@ -1230,7 +1408,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
                 }
                 return clob.getSubString(1, (int) clob.length());
               } finally {
-                clob.free();
+                if (isJdbc4) {
+                  free(clob);
+                }
               }
             }
           }
@@ -1267,6 +1447,26 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   protected int decimalScale(ColumnDefinition defn) {
     return defn.scale() == NUMERIC_TYPE_SCALE_UNSET ? NUMERIC_TYPE_SCALE_HIGH : defn.scale();
+  }
+
+  /**
+   * Called when the object has been fully read and {@link Blob#free()} should be called.
+   *
+   * @param blob the Blob; never null
+   * @throws SQLException if there is a problem calling free()
+   */
+  protected void free(Blob blob) throws SQLException {
+    blob.free();
+  }
+
+  /**
+   * Called when the object has been fully read and {@link Clob#free()} should be called.
+   *
+   * @param clob the Clob; never null
+   * @throws SQLException if there is a problem calling free()
+   */
+  protected void free(Clob clob) throws SQLException {
+    clob.free();
   }
 
   @Override
@@ -1330,11 +1530,125 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       FieldsMetadata fieldsMetadata,
       InsertMode insertMode
   ) {
-    return new PreparedStatementBinder(statement, pkMode, schemaPair, fieldsMetadata, insertMode);
+    return new PreparedStatementBinder(
+        this,
+        statement,
+        pkMode,
+        schemaPair,
+        fieldsMetadata,
+        insertMode
+    );
   }
 
   @Override
-  public String buildCreateQuery(
+  public void bindField(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException {
+    if (value == null) {
+      statement.setObject(index, null);
+    } else {
+      boolean bound = maybeBindLogical(statement, index, schema, value);
+      if (!bound) {
+        bound = maybeBindPrimitive(statement, index, schema, value);
+      }
+      if (!bound) {
+        throw new ConnectException("Unsupported source data type: " + schema.type());
+      }
+    }
+  }
+
+  protected boolean maybeBindPrimitive(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException {
+    switch (schema.type()) {
+      case INT8:
+        statement.setByte(index, (Byte) value);
+        break;
+      case INT16:
+        statement.setShort(index, (Short) value);
+        break;
+      case INT32:
+        statement.setInt(index, (Integer) value);
+        break;
+      case INT64:
+        statement.setLong(index, (Long) value);
+        break;
+      case FLOAT32:
+        statement.setFloat(index, (Float) value);
+        break;
+      case FLOAT64:
+        statement.setDouble(index, (Double) value);
+        break;
+      case BOOLEAN:
+        statement.setBoolean(index, (Boolean) value);
+        break;
+      case STRING:
+        statement.setString(index, (String) value);
+        break;
+      case BYTES:
+        final byte[] bytes;
+        if (value instanceof ByteBuffer) {
+          final ByteBuffer buffer = ((ByteBuffer) value).slice();
+          bytes = new byte[buffer.remaining()];
+          buffer.get(bytes);
+        } else {
+          bytes = (byte[]) value;
+        }
+        statement.setBytes(index, bytes);
+        break;
+      default:
+        return false;
+    }
+    return true;
+  }
+
+  protected boolean maybeBindLogical(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException {
+    if (schema.name() != null) {
+      switch (schema.name()) {
+        case Date.LOGICAL_NAME:
+          statement.setDate(
+              index,
+              new java.sql.Date(((java.util.Date) value).getTime()),
+              DateTimeUtils.UTC_CALENDAR.get()
+          );
+          return true;
+        case Decimal.LOGICAL_NAME:
+          statement.setBigDecimal(index, (BigDecimal) value);
+          return true;
+        case Time.LOGICAL_NAME:
+          statement.setTime(
+              index,
+              new java.sql.Time(((java.util.Date) value).getTime()),
+              DateTimeUtils.UTC_CALENDAR.get()
+          );
+          return true;
+        case org.apache.kafka.connect.data.Timestamp.LOGICAL_NAME:
+          statement.setTimestamp(
+              index,
+              new java.sql.Timestamp(((java.util.Date) value).getTime()),
+              DateTimeUtils.UTC_CALENDAR.get()
+          );
+          return true;
+        default:
+          return false;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public String buildCreateTableStatement(
       TableId table,
       Collection<SinkRecordField> fields
   ) {
@@ -1356,6 +1670,24 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       builder.append(")");
     }
     builder.append(")");
+    return builder.toString();
+  }
+
+  @Override
+  public String buildDropTableStatement(
+      TableId table,
+      DropOptions options
+  ) {
+    ExpressionBuilder builder = expressionBuilder();
+
+    builder.append("DROP TABLE ");
+    builder.append(table);
+    if (options.ifExists()) {
+      builder.append(" IF EXISTS");
+    }
+    if (options.cascade()) {
+      builder.append(" CASCADE");
+    }
     return builder.toString();
   }
 
@@ -1421,17 +1753,22 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   ) {
     builder.appendIdentifierQuoted(f.name());
     builder.append(" ");
-    builder.append(getSqlType(f.schemaName(), f.schemaParameters(), f.schemaType()));
+    String sqlType = getSqlType(f);
+    builder.append(sqlType);
     if (f.defaultValue() != null) {
       builder.append(" DEFAULT ");
       formatColumnValue(builder, f.schemaName(), f.schemaParameters(), f.schemaType(),
                         f.defaultValue()
       );
-    } else if (f.isOptional()) {
+    } else if (isColumnOptional(f)) {
       builder.append(" NULL");
     } else {
       builder.append(" NOT NULL");
     }
+  }
+
+  protected boolean isColumnOptional(SinkRecordField field) {
+    return field.isOptional();
   }
 
   protected void formatColumnValue(
@@ -1493,13 +1830,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     }
   }
 
-  protected String getSqlType(
-      String schemaName,
-      Map<String, String> parameters,
-      Schema.Type type
-  ) {
+  protected String getSqlType(SinkRecordField f) {
     throw new ConnectException(String.format(
-        "%s (%s) type doesn't have a mapping to the SQL database column type", schemaName, type));
+        "%s (%s) type doesn't have a mapping to the SQL database column type", f.schemaName(),
+        f.schemaType()
+    ));
   }
 
   @Override

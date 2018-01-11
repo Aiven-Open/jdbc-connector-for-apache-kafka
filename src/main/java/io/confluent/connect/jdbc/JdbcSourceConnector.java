@@ -40,7 +40,6 @@ import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.confluent.connect.jdbc.source.TableMonitorThread;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.StringUtils;
 import io.confluent.connect.jdbc.util.Version;
 
@@ -85,9 +84,8 @@ public class JdbcSourceConnector extends SourceConnector {
         dbUrl,
         config
     );
-    ConnectionProvider connectionProvider = dialect.createConnectionProvider();
     cachedConnectionProvider = new CachedConnectionProvider(
-        connectionProvider,
+        dialect,
         maxConnectionAttempts,
         connectionRetryBackoff
     );

@@ -37,7 +37,9 @@ public class CachedConnectionProvider implements ConnectionProvider {
 
   private Connection connection;
 
-  public CachedConnectionProvider(ConnectionProvider provider) {
+  public CachedConnectionProvider(
+      ConnectionProvider provider
+  ) {
     this(provider, JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT,
          JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT
     );
@@ -58,7 +60,7 @@ public class CachedConnectionProvider implements ConnectionProvider {
     try {
       if (connection == null) {
         newConnection();
-      } else if (!connection.isValid(VALIDITY_CHECK_TIMEOUT_S)) {
+      } else if (!isConnectionValid(connection, VALIDITY_CHECK_TIMEOUT_S)) {
         log.info("The database connection is invalid. Reconnecting...");
         close();
         newConnection();
@@ -67,6 +69,14 @@ public class CachedConnectionProvider implements ConnectionProvider {
       throw new ConnectException(sqle);
     }
     return connection;
+  }
+
+  @Override
+  public boolean isConnectionValid(
+      Connection connection,
+      int timeout
+  ) throws SQLException {
+    return provider.isConnectionValid(connection, timeout);
   }
 
   private void newConnection() throws SQLException {

@@ -94,7 +94,12 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
     // Default when unspecified uses an autoincrementing column
     if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
       // Find the first auto-incremented column ...
-      for (ColumnDefinition defn : dialect.describeColumns(db, name, null).values()) {
+      for (ColumnDefinition defn : dialect.describeColumns(
+          db,
+          tableId.catalogName(),
+          tableId.schemaName(),
+          tableId.tableName(),
+          null).values()) {
         if (defn.isAutoIncrement()) {
           incrementingColumnName = defn.id().name();
           break;
@@ -104,8 +109,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
     // If still not found, query the table and use the result set metadata.
     // This doesn't work if the table is empty.
     if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
-      log.debug("Falling back to describe '{}' table by querying {}", name, db);
-      for (ColumnDefinition defn : dialect.describeColumnsByQuerying(db, name).values()) {
+      log.debug("Falling back to describe '{}' table by querying {}", tableId, db);
+      for (ColumnDefinition defn : dialect.describeColumnsByQuerying(db, tableId).values()) {
         if (defn.isAutoIncrement()) {
           incrementingColumnName = defn.id().name();
           break;
@@ -166,6 +171,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
     final Map<String, String> partition;
     switch (mode) {
       case TABLE:
+        String name = tableId.tableName(); // backward compatible
         partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
         topic = topicPrefix + name;
         break;
@@ -202,7 +208,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
   @Override
   public String toString() {
     return "TimestampIncrementingTableQuerier{"
-           + "name='" + name + '\''
+           + "table=" + tableId
            + ", query='" + query + '\''
            + ", topicPrefix='" + topicPrefix + '\''
            + ", incrementingColumn='" + (incrementingColumnName != null

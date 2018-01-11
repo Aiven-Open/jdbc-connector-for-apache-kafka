@@ -16,7 +16,6 @@
 
 package io.confluent.connect.jdbc.dialect;
 
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -125,15 +124,7 @@ import io.confluent.connect.jdbc.util.TableId;
  * the connector to find and register your dialect implementation classes, check that your JARs have
  * the service provider file and your JAR is included in the JDBC connector's plugin directory.
  */
-public interface DatabaseDialect {
-
-  /**
-   * Create a {@link ConnectionProvider} that can create connections to the database using the
-   * configuration supplied by the {@link DatabaseDialectProvider#create(AbstractConfig) provider}.
-   *
-   * @return the connection provider; never null
-   */
-  ConnectionProvider createConnectionProvider();
+public interface DatabaseDialect extends ConnectionProvider {
 
   /**
    * Create a new prepared statement using the specified database connection.
@@ -147,6 +138,14 @@ public interface DatabaseDialect {
       Connection db,
       String query
   ) throws SQLException;
+
+  /**
+   * Parse the supplied simple name or fully qualified name for a table into a {@link TableId}.
+   *
+   * @param fqn the fully qualified string representation; may not be null
+   * @return the table identifier; never null
+   */
+  TableId parseTableIdentifier(String fqn);
 
   /**
    * Get the identifier rules for this database.
@@ -267,13 +266,13 @@ public interface DatabaseDialect {
    * may not work if the table is empty.
    *
    * @param connection the database connection; may not be null
-   * @param tableName  the name of the table; may be null
+   * @param tableId    the name of the table; may be null
    * @return the column definitions keyed by their {@link ColumnId}; never null
    * @throws SQLException if there is an error accessing the result set metadata
    */
   Map<ColumnId, ColumnDefinition> describeColumnsByQuerying(
       Connection connection,
-      String tableName
+      TableId tableId
   ) throws SQLException;
 
   /**
@@ -303,6 +302,16 @@ public interface DatabaseDialect {
       ColumnDefinition column,
       SchemaBuilder builder
   );
+
+  /**
+   * Apply the supplied DDL statements using the given connection. This gives the dialect the
+   * opportunity to execute the statements with a different autocommit setting.
+   *
+   * @param connection the connection to use
+   * @param statements the list of DDL statements to execute
+   * @throws SQLException if there is an error executing the statements
+   */
+  void applyDdlStatements(Connection connection, List<String> statements) throws SQLException;
 
   /**
    * Build the INSERT prepared statement expression for the given table and its columns.
@@ -356,13 +365,25 @@ public interface DatabaseDialect {
   );
 
   /**
+   * Build the DROP TABLE statement expression for the given table.
+   *
+   * @param table  the identifier of the table; may not be null
+   * @param options the options; may be null
+   * @return the DROP TABLE statement; may not be null
+   */
+  String buildDropTableStatement(
+      TableId table,
+      DropOptions options
+  );
+
+  /**
    * Build the CREATE TABLE statement expression for the given table and its columns.
    *
    * @param table  the identifier of the table; may not be null
    * @param fields the information about the fields in the sink records; may not be null
-   * @return the INSERT statement; may not be null
+   * @return the CREATE TABLE statement; may not be null
    */
-  String buildCreateQuery(
+  String buildCreateTableStatement(
       TableId table,
       Collection<SinkRecordField> fields
   );
@@ -375,12 +396,13 @@ public interface DatabaseDialect {
   /**
    * Create a component that can bind record values into the
    *
-   * @param statement the prepared statement
-   * @param pkMode the primary key mode; may not be null
-   * @param schemaPair the key and value schemas; may not be null
+   * @param statement      the prepared statement
+   * @param pkMode         the primary key mode; may not be null
+   * @param schemaPair     the key and value schemas; may not be null
    * @param fieldsMetadata the field metadata; may not be null
-   * @param insertMode the insert mode; may not be null
+   * @param insertMode     the insert mode; may not be null
    * @return the statement binder; may not be null
+   * @see #bindField(PreparedStatement, int, Schema, Object)
    */
   StatementBinder statementBinder(
       PreparedStatement statement,
@@ -389,6 +411,25 @@ public interface DatabaseDialect {
       FieldsMetadata fieldsMetadata,
       JdbcSinkConfig.InsertMode insertMode
   );
+
+  /**
+   * Method that binds a value with the given schema at the specified variable within a prepared
+   * statement.
+   *
+   * @param statement the prepared statement; may not be null
+   * @param index the 1-based index of the variable within the prepared statement
+   * @param schema the schema for the value; may be null only if the value is null
+   * @param value the value to be bound to the variable; may be null
+   * @throws SQLException if there is a problem binding the value into the statement
+   * @see #statementBinder(PreparedStatement, PrimaryKeyMode, SchemaPair, FieldsMetadata,
+   * InsertMode)
+   */
+  void bindField(
+      PreparedStatement statement,
+      int index,
+      Schema schema,
+      Object value
+  ) throws SQLException;
 
   /**
    * A function to bind the values from a sink record into a prepared statement.

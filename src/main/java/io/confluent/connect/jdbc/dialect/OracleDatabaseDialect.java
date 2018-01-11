@@ -19,14 +19,12 @@ package io.confluent.connect.jdbc.dialect;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
-import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
@@ -70,15 +68,16 @@ public class OracleDatabaseDialect extends GenericDatabaseDialect {
   }
 
   @Override
-  protected String getSqlType(
-      String schemaName,
-      Map<String, String> parameters,
-      Type type
-  ) {
-    if (schemaName != null) {
-      switch (schemaName) {
+  protected String checkConnectionQuery() {
+    return "SELECT 1 FROM DUAL";
+  }
+
+  @Override
+  protected String getSqlType(SinkRecordField field) {
+    if (field.schemaName() != null) {
+      switch (field.schemaName()) {
         case Decimal.LOGICAL_NAME:
-          return "NUMBER(*," + parameters.get(Decimal.SCALE_FIELD) + ")";
+          return "NUMBER(*," + field.schemaParameters().get(Decimal.SCALE_FIELD) + ")";
         case Date.LOGICAL_NAME:
           return "DATE";
         case Time.LOGICAL_NAME:
@@ -89,7 +88,7 @@ public class OracleDatabaseDialect extends GenericDatabaseDialect {
           // fall through to normal types
       }
     }
-    switch (type) {
+    switch (field.schemaType()) {
       case INT8:
         return "NUMBER(3,0)";
       case INT16:
@@ -109,8 +108,41 @@ public class OracleDatabaseDialect extends GenericDatabaseDialect {
       case BYTES:
         return "BLOB";
       default:
-        return super.getSqlType(schemaName, parameters, type);
+        return super.getSqlType(field);
     }
+  }
+
+  @Override
+  public String buildDropTableStatement(
+      TableId table,
+      DropOptions options
+  ) {
+    // https://stackoverflow.com/questions/1799128/oracle-if-table-exists
+    ExpressionBuilder builder = expressionBuilder();
+
+    builder.append("DROP TABLE ");
+    builder.append(table);
+    if (options.cascade()) {
+      builder.append(" CASCADE CONSTRAINTS");
+    }
+    String dropStatement = builder.toString();
+
+    if (!options.ifExists()) {
+      return dropStatement;
+    }
+    builder = expressionBuilder();
+    builder.append("BEGIN ");
+    // The drop statement includes double quotes for identifiers, so that's compatible with the
+    // single quote used to delimit the string literal
+    // https://docs.oracle.com/cd/B28359_01/appdev.111/b28370/literal.htm#LNPLS01326
+    builder.append("EXECUTE IMMEDIATE '" + dropStatement + "' ");
+    builder.append("EXCEPTION ");
+    builder.append("WHEN OTHERS THEN ");
+    builder.append("IF SQLCODE != -942 THEN ");
+    builder.append("    RAISE;");
+    builder.append("END IF;");
+    builder.append("END;");
+    return builder.toString();
   }
 
   @Override

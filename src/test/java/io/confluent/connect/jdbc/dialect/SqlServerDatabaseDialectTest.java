@@ -96,9 +96,9 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
         "CREATE TABLE [myTable] (\n" + "[c1] int NOT NULL,\n" + "[c2] bigint NOT NULL,\n" +
         "[c3] varchar(max) NOT NULL,\n" + "[c4] varchar(max) NULL,\n" +
         "[c5] date DEFAULT '2001-03-15',\n" + "[c6] time DEFAULT '00:00:00.000',\n" +
-        "[c7] datetime2 DEFAULT '2001-03-15 00:00:00.000',\n" + "[c7] decimal(38,4) NULL,\n" +
+        "[c7] datetime2 DEFAULT '2001-03-15 00:00:00.000',\n" + "[c8] decimal(38,4) NULL,\n" +
         "PRIMARY KEY([c1]))";
-    String sql = dialect.buildCreateQuery(tableId, sinkRecordFields);
+    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
     assertEquals(expected, sql);
   }
 
@@ -109,7 +109,7 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
         "ALTER TABLE [myTable] ADD\n" + "[c1] int NOT NULL,\n" + "[c2] bigint NOT NULL,\n" +
         "[c3] varchar(max) NOT NULL,\n" + "[c4] varchar(max) NULL,\n" +
         "[c5] date DEFAULT '2001-03-15',\n" + "[c6] time DEFAULT '00:00:00.000',\n" +
-        "[c7] datetime2 DEFAULT '2001-03-15 00:00:00.000',\n" + "[c7] decimal(38,4) NULL"};
+        "[c7] datetime2 DEFAULT '2001-03-15 00:00:00.000',\n" + "[c8] decimal(38,4) NULL"};
     assertStatements(sql, statements);
   }
 

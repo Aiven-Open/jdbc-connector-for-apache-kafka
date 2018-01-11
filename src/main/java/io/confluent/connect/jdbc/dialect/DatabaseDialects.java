@@ -107,8 +107,10 @@ public class DatabaseDialects {
   }
 
   /**
-   * Find the {@link DatabaseDialect} instances that has the highest {@link
-   * DatabaseDialectProvider#score(JdbcUrlInfo) score} for the supplied JDBC URL and Connection.
+   * Find the {@link DatabaseDialect} that has the highest {@link
+   * DatabaseDialectProvider#score(JdbcUrlInfo) score} for the supplied JDBC URL and Connection,
+   * and return a new instance of that dialect. Note that the DatabaseDialect needs to be
+   * {@link DatabaseDialect#close() closed}.
    *
    * @param jdbcUrl the JDBC connection URL; may not be null
    * @param config  the connector configuration used to create the dialect; may not be null
