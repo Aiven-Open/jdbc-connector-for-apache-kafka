@@ -29,7 +29,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -278,14 +277,10 @@ public class JdbcSourceTask extends SourceTask {
         lowercaseTsColumns.add(timestampColumn.toLowerCase(Locale.getDefault()));
       }
 
-      final Connection conn = cachedConnectionProvider.getConnection();
-      Map<ColumnId, ColumnDefinition> defnsById = dialect.describeColumns(conn, table, null);
-      Map<String, ColumnDefinition> defnsByLowercase = new HashMap<>();
-      for (ColumnDefinition defn : defnsById.values()) {
-        defnsByLowercase.put(defn.id().name().toLowerCase(Locale.getDefault()), defn);
-      }
       boolean incrementingOptional = false;
       boolean atLeastOneTimestampNotOptional = false;
+      final Connection conn = cachedConnectionProvider.getConnection();
+      Map<ColumnId, ColumnDefinition> defnsById = dialect.describeColumns(conn, table, null);
       for (ColumnDefinition defn : defnsById.values()) {
         String columnName = defn.id().name();
         if (columnName.equalsIgnoreCase(incrementingColumn)) {

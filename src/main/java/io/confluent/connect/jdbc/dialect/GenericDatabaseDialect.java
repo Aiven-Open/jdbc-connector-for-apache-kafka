@@ -443,12 +443,13 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     assert !query.isEmpty();
     try (Statement stmt = conn.createStatement()) {
       log.debug("executing query " + query + " to get current time from database");
-      ResultSet rs = stmt.executeQuery(query);
-      if (rs.next()) {
-        return rs.getTimestamp(1, cal);
-      } else {
-        throw new ConnectException(
-            "Unable to get current time from DB using " + this + " and query '" + query + "'");
+      try (ResultSet rs = stmt.executeQuery(query)) {
+        if (rs.next()) {
+          return rs.getTimestamp(1, cal);
+        } else {
+          throw new ConnectException(
+              "Unable to get current time from DB using " + this + " and query '" + query + "'");
+        }
       }
     } catch (SQLException e) {
       log.error("Failed to get current time from DB using {} and query '{}'", this, query, e);
@@ -666,9 +667,10 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     String quotedName = expressionBuilder().append(tableId).toString();
     try (PreparedStatement stmt = db.prepareStatement(queryStr)) {
       stmt.setString(1, quotedName);
-      ResultSet rs = stmt.executeQuery();
-      ResultSetMetaData rsmd = rs.getMetaData();
-      return describeColumns(rsmd);
+      try (ResultSet rs = stmt.executeQuery()) {
+        ResultSetMetaData rsmd = rs.getMetaData();
+        return describeColumns(rsmd);
+      }
     }
   }
 

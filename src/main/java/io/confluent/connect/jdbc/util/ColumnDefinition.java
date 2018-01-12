@@ -268,15 +268,20 @@ public class ColumnDefinition {
     }
     if (obj instanceof ColumnDefinition) {
       ColumnDefinition that = (ColumnDefinition) obj;
-      return Objects.equals(this.id, that.id) && this.jdbcType == that.jdbcType
-             && this.displaySize == that.displaySize && this.precision == that.precision
-             && this.scale == that.scale && this.autoIncremented == that.autoIncremented
-             && this.caseSensitive == that.caseSensitive && this.searchable == that.searchable
-             && this.currency == that.currency && this.signedNumbers == that.signedNumbers
-             && this.nullability == that.nullability && this.nullability == that.nullability
-             && Objects.equals(this.typeName, that.typeName) && Objects.equals(
-          this.classNameForType, that.classNameForType) && Objects.equals(
-          this.isPrimaryKey, that.isPrimaryKey);
+      return Objects.equals(this.id, that.id)
+             && this.jdbcType == that.jdbcType
+             && this.displaySize == that.displaySize
+             && this.precision == that.precision
+             && this.scale == that.scale
+             && this.autoIncremented == that.autoIncremented
+             && this.caseSensitive == that.caseSensitive
+             && this.searchable == that.searchable
+             && this.currency == that.currency
+             && this.signedNumbers == that.signedNumbers
+             && this.nullability == that.nullability
+             && Objects.equals(this.typeName, that.typeName)
+             && Objects.equals(this.classNameForType, that.classNameForType)
+             && Objects.equals(this.isPrimaryKey, that.isPrimaryKey);
     }
     return false;
   }

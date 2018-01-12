@@ -59,7 +59,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
     }
   }
 
-  private static final String JSON_TYPE_NAME = "jsonb";
+  private static final String JSON_TYPE_NAME = "json";
   private static final String JSONB_TYPE_NAME = "jsonb";
 
   /**

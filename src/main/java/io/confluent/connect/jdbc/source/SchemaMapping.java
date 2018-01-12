@@ -25,7 +25,10 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
@@ -78,10 +81,9 @@ public final class SchemaMapping {
   }
 
   private final Schema schema;
-  private final Map<String, ColumnConverter> convertersByFieldName;
-  private final FieldSetter[] fieldSetters;
+  private final List<FieldSetter> fieldSetters;
 
-  public SchemaMapping(
+  private SchemaMapping(
       Schema schema,
       Map<String, ColumnConverter> convertersByFieldName
   ) {
@@ -89,15 +91,14 @@ public final class SchemaMapping {
     assert convertersByFieldName != null;
     assert !convertersByFieldName.isEmpty();
     this.schema = schema;
-    this.convertersByFieldName = convertersByFieldName;
-    this.fieldSetters = new FieldSetter[convertersByFieldName.size()];
-    int i = 0;
+    List<FieldSetter> fieldSetters = new ArrayList<>(convertersByFieldName.size());
     for (Map.Entry<String, ColumnConverter> entry : convertersByFieldName.entrySet()) {
       ColumnConverter converter = entry.getValue();
       Field field = schema.field(entry.getKey());
       assert field != null;
-      fieldSetters[i++] = new FieldSetter(converter, field);
+      fieldSetters.add(new FieldSetter(converter, field));
     }
+    this.fieldSetters = Collections.unmodifiableList(fieldSetters);
   }
 
   public Schema schema() {
@@ -111,7 +112,7 @@ public final class SchemaMapping {
    *
    * @return the array of {@link FieldSetter} instances; never null and never empty
    */
-  public FieldSetter[] fieldSetters() {
+  List<FieldSetter> fieldSetters() {
     return fieldSetters;
   }
 
@@ -125,7 +126,7 @@ public final class SchemaMapping {
     private final ColumnConverter converter;
     private final Field field;
 
-    protected FieldSetter(
+    private FieldSetter(
         ColumnConverter converter,
         Field field
     ) {
@@ -152,7 +153,7 @@ public final class SchemaMapping {
      * @throws SQLException if there is an error accessing the result set
      * @throws IOException  if there is an error accessing a streaming value from the result set
      */
-    public void setField(
+    void setField(
         Struct struct,
         ResultSet resultSet
     ) throws SQLException, IOException {
