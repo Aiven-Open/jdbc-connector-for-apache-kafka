@@ -47,7 +47,7 @@ public class TableMonitorThread extends Thread {
   private final long pollMs;
   private Set<String> whitelist;
   private Set<String> blacklist;
-  private List<String> tables;
+  private List<TableId> tables;
 
   public TableMonitorThread(DatabaseDialect dialect,
       ConnectionProvider connectionProvider,
@@ -89,7 +89,7 @@ public class TableMonitorThread extends Thread {
     }
   }
 
-  public synchronized List<String> tables() {
+  public synchronized List<TableId> tables() {
     //TODO: Timeout should probably be user-configurable or class-level constant
     final long timeout = 10000L;
     long started = System.currentTimeMillis();
@@ -128,7 +128,6 @@ public class TableMonitorThread extends Thread {
     }
 
     final List<TableId> filteredTables = new ArrayList<>(tables.size());
-    final List<String> filteredTableNames = new ArrayList<>(tables.size());
     if (whitelist != null) {
       for (TableId table : tables) {
         String fqn1 = dialect.expressionBuilder().append(table, false).toString();
@@ -136,7 +135,6 @@ public class TableMonitorThread extends Thread {
         if (whitelist.contains(fqn1) || whitelist.contains(fqn2)
             || whitelist.contains(table.tableName())) {
           filteredTables.add(table);
-          filteredTableNames.add(table.tableName());
         }
       }
     } else if (blacklist != null) {
@@ -146,14 +144,10 @@ public class TableMonitorThread extends Thread {
         if (!(blacklist.contains(fqn1) || blacklist.contains(fqn2)
               || blacklist.contains(table.tableName()))) {
           filteredTables.add(table);
-          filteredTableNames.add(table.tableName());
         }
       }
     } else {
       filteredTables.addAll(tables);
-      for (TableId table : tables) {
-        filteredTableNames.add(table.tableName());
-      }
     }
 
     if (!filteredTables.equals(this.tables)) {
@@ -164,8 +158,8 @@ public class TableMonitorThread extends Thread {
                  .delimitedBy(",")
                  .of(filteredTables)
       );
-      List<String> previousTables = this.tables;
-      this.tables = filteredTableNames;
+      List<TableId> previousTables = this.tables;
+      this.tables = filteredTables;
       notifyAll();
       // Only return true if the table list wasn't previously null, i.e. if this was not the
       // first table lookup

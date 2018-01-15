@@ -500,8 +500,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       String tablePattern,
       String columnPattern
   ) throws SQLException {
-    log.info("Querying {} dialect column metadata for catalog:{} schema:{} table:{}", this,
-             catalogPattern, schemaPattern, tablePattern
+    log.debug(
+        "Querying {} dialect column metadata for catalog:{} schema:{} table:{}",
+        this,
+        catalogPattern,
+        schemaPattern,
+        tablePattern
     );
 
     // Get the primary keys of the table(s) ...

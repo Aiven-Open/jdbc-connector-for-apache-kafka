@@ -29,6 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.GenericDatabaseDialect;
 import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.ExpressionBuilder;
 import io.confluent.connect.jdbc.util.TableId;
@@ -187,7 +189,12 @@ public class TableMonitorThreadTest {
     return new Op() {
       @Override
       public void execute() {
-        assertEquals(Arrays.asList(expectedTableNames), tableMonitorThread.tables());
+        List<TableId> expectedTableIds = new ArrayList<>();
+        for (String expectedTableName: expectedTableNames) {
+          TableId id = new TableId(null, null, expectedTableName);
+          expectedTableIds.add(id);
+        }
+        assertEquals(expectedTableIds, tableMonitorThread.tables());
       }
     };
   }

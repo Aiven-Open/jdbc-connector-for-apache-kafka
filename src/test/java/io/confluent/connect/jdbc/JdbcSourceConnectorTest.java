@@ -30,6 +30,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +42,8 @@ import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
+import io.confluent.connect.jdbc.util.ExpressionBuilder;
+import io.confluent.connect.jdbc.util.TableId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -137,7 +140,7 @@ public class JdbcSourceConnectorTest {
     List<Map<String, String>> configs = connector.taskConfigs(10);
     assertEquals(1, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
-    assertEquals("test", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
     connector.stop();
   }
@@ -154,11 +157,11 @@ public class JdbcSourceConnectorTest {
     assertEquals(3, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
 
-    assertEquals("test1,test2", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test1","test2"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-    assertEquals("test3", configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test3"), configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(1).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-    assertEquals("test4", configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test4"), configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(2).get(JdbcSourceTaskConfig.QUERY_CONFIG));
 
     connector.stop();
@@ -195,5 +198,15 @@ public class JdbcSourceConnectorTest {
       assertEquals(this.db.getUrl(),
                    config.get(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
     }
+  }
+
+  private String tables(String... names) {
+    List<TableId> tableIds = new ArrayList<>();
+    for (String name : names) {
+      tableIds.add(new TableId(null, "APP", name));
+    }
+    ExpressionBuilder builder = ExpressionBuilder.create();
+    builder.appendList().delimitedBy(",").of(tableIds);
+    return builder.toString();
   }
 }

@@ -40,7 +40,8 @@ import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.confluent.connect.jdbc.source.TableMonitorThread;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.StringUtils;
+import io.confluent.connect.jdbc.util.ExpressionBuilder;
+import io.confluent.connect.jdbc.util.TableId;
 import io.confluent.connect.jdbc.util.Version;
 
 /**
@@ -57,6 +58,7 @@ public class JdbcSourceConnector extends SourceConnector {
   private JdbcSourceConnectorConfig config;
   private CachedConnectionProvider cachedConnectionProvider;
   private TableMonitorThread tableMonitorThread;
+  private DatabaseDialect dialect;
 
   @Override
   public String version() {
@@ -80,7 +82,7 @@ public class JdbcSourceConnector extends SourceConnector {
     final long connectionRetryBackoff = config.getLong(
         JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG
     );
-    DatabaseDialect dialect = DatabaseDialects.findBestFor(
+    dialect = DatabaseDialects.findBestFor(
         dbUrl,
         config
     );
@@ -141,14 +143,15 @@ public class JdbcSourceConnector extends SourceConnector {
       taskConfigs.add(taskProps);
       return taskConfigs;
     } else {
-      List<String> currentTables = tableMonitorThread.tables();
+      List<TableId> currentTables = tableMonitorThread.tables();
       int numGroups = Math.min(currentTables.size(), maxTasks);
-      List<List<String>> tablesGrouped = ConnectorUtils.groupPartitions(currentTables, numGroups);
+      List<List<TableId>> tablesGrouped = ConnectorUtils.groupPartitions(currentTables, numGroups);
       List<Map<String, String>> taskConfigs = new ArrayList<>(tablesGrouped.size());
-      for (List<String> taskTables : tablesGrouped) {
+      for (List<TableId> taskTables : tablesGrouped) {
         Map<String, String> taskProps = new HashMap<>(configProperties);
-        taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG,
-                      StringUtils.join(taskTables, ","));
+        ExpressionBuilder builder = dialect.expressionBuilder();
+        builder.appendList().delimitedBy(",").of(taskTables);
+        taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG, builder.toString());
         taskConfigs.add(taskProps);
       }
       return taskConfigs;
@@ -163,8 +166,19 @@ public class JdbcSourceConnector extends SourceConnector {
       tableMonitorThread.join(MAX_TIMEOUT);
     } catch (InterruptedException e) {
       // Ignore, shouldn't be interrupted
+    } finally {
+      try {
+        cachedConnectionProvider.close();
+      } finally {
+        try {
+          if (dialect != null) {
+            dialect.close();
+          }
+        } finally {
+          dialect = null;
+        }
+      }
     }
-    cachedConnectionProvider.close();
   }
 
   @Override
