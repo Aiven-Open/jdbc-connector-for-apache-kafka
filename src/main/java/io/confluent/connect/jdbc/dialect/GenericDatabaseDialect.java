@@ -286,7 +286,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   @Override
   public TableId parseTableIdentifier(String fqn) {
     List<String> parts = identifierRules().parseQualifiedIdentifier(fqn);
-    if (parts == null || parts.isEmpty()) {
+    if (parts.isEmpty()) {
       throw new IllegalArgumentException("Invalid fully qualified name: '" + fqn + "'");
     }
     if (parts.size() == 1) {
