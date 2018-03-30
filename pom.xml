@@ -190,10 +190,6 @@
                             <requirements>
                                 <requirement>Both: Confluent Platform installed and running</requirement>
                             </requirements>
-
-                            <deliveryGuarantee>
-                                <deliveryGuarantee>exactlyOnce</deliveryGuarantee>
-                            </deliveryGuarantee>
                         </configuration>
                     </execution>
                 </executions>
