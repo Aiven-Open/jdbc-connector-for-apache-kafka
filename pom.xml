@@ -143,6 +143,62 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>io.confluent</groupId>
+                <version>0.9.0-SNAPSHOT</version>
+                <artifactId>kafka-connect-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>kafka-connect</goal>
+                        </goals>
+                        <configuration>
+                            <title>Kafka Connect JDBC</title>
+                            <logo>logos/jdbc.png</logo>
+                            <sourceUrl>https://github.com/confluentinc/kafka-connect-jdbc</sourceUrl>
+                            <documentationUrl>https://docs.confluent.io/current/connect/connect-jdbc/docs/index.html</documentationUrl>
+                            <description>
+                                The JDBC source connector allows you to import data from any relational database with a JDBC driver into Kafka topics. By using JDBC, this connector can support a wide variety of databases without requiring custom code for each one.
+
+                                Data is loaded by periodically executing a SQL query and creating an output record for each row in the result set. By default, all tables in a database are copied, each to its own output topic. The database is monitored for new or deleted tables and adapts automatically. When copying data from a table, the connector can load only new or modified rows by specifying which columns should be used to detect new or modified data.
+
+                                The JDBC sink connector allows you to export data from Kafka topics to any relational database with a JDBC driver. By using JDBC, this connector can support a wide variety of databases without requiring a dedicated connector for each one. The connector polls data from Kafka to write to the database based on the topics subscription. It is possible to achieve idempotent writes with upserts. Auto-creation of tables, and limited auto-evolution is also supported.
+                            </description>
+
+                            <supportProviderName>Confluent, Inc.</supportProviderName>
+                            <supportSummary>Confluent supports the JDBC sink connector alongside community members as part of its Confluent Platform open source offering.</supportSummary>
+                            <supportUrl>https://docs.confluent.io/current/</supportUrl>
+                            <supportLogo>logos/confluent.png</supportLogo>
+
+                            <ownerUsername>confluentinc</ownerUsername>
+                            <ownerType>organization</ownerType>
+                            <ownerName>Confluent, Inc.</ownerName>
+                            <ownerUrl>https://confluent.io/</ownerUrl>
+                            <ownerLogo>logos/confluent.png</ownerLogo>
+
+                            <pluginTypes>
+                                <pluginType>sink</pluginType>
+                                <pluginType>source</pluginType>
+                            </pluginTypes>
+
+                            <tags>
+                                <tag>jdbc</tag>
+                                <tag>java</tag>
+                                <tag>database</tag>
+                                <tag>schema evolution</tag>
+                            </tags>
+
+                            <requirements>
+                                <requirement>Both: Confluent Platform installed and running</requirement>
+                            </requirements>
+
+                            <deliveryGuarantee>
+                                <deliveryGuarantee>exactlyOnce</deliveryGuarantee>
+                            </deliveryGuarantee>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.5.1</version>
