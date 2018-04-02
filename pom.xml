@@ -185,6 +185,16 @@
                                 <tag>dbms</tag>
                                 <tag>rdbms</tag>
                                 <tag>sql</tag>
+                                <tag>mysql</tag>
+                                <tag>postgresql</tag>
+                                <tag>oracle</tag>
+                                <tag>sql server</tag>
+                                <tag>db2</tag>
+                                <tag>sybase</tag>
+                                <tag>vertica</tag>
+                                <tag>sap hana</tag>
+                                <tag>derby</tag>
+                                <tag>sqlite</tag>
                             </tags>>
                         </configuration>
                     </execution>
