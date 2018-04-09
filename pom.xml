@@ -153,7 +153,6 @@
                         </goals>
                         <configuration>
                             <title>Kafka Connect JDBC</title>
-                            <logo>logos/jdbc.png</logo>
                             <documentationUrl>https://docs.confluent.io/current/connect/connect-jdbc/docs/index.html</documentationUrl>
                             <description>
                                 The JDBC source connector allows you to import data from any relational database with a JDBC driver into Kafka topics. By using JDBC, this connector can support a wide variety of databases without requiring custom code for each one.
