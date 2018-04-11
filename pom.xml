@@ -194,7 +194,9 @@
                                 <tag>sap hana</tag>
                                 <tag>derby</tag>
                                 <tag>sqlite</tag>
-                            </tags>>
+                            </tags>
+
+                            <confluentControlCenterIntegration>true</confluentControlCenterIntegration>
                         </configuration>
                     </execution>
                 </executions>
