@@ -161,6 +161,7 @@
 
                                 The JDBC sink connector allows you to export data from Kafka topics to any relational database with a JDBC driver. By using JDBC, this connector can support a wide variety of databases without requiring a dedicated connector for each one. The connector polls data from Kafka to write to the database based on the topics subscription. It is possible to achieve idempotent writes with upserts. Auto-creation of tables, and limited auto-evolution is also supported.
                             </description>
+                            <logo>logos/jdbc.jpg</logo>
 
                             <supportProviderName>Confluent, Inc.</supportProviderName>
                             <supportSummary>Confluent supports the JDBC sink and source connectors alongside community members as part of its Confluent Platform open source offering.</supportSummary>
