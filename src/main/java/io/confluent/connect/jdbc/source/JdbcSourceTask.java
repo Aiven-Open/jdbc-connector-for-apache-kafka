@@ -151,6 +151,9 @@ public class JdbcSourceTask extends SourceTask {
       boolean mapNumerics
           = config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG);
 
+      boolean mapNumericsCompletely
+          = config.getBoolean(JdbcSourceTaskConfig.NUMERIC_COMPLETE_MAPPING_CONFIG);
+
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
         tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, schemaPattern,
                 topicPrefix, mapNumerics));

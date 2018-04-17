@@ -32,10 +32,13 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -88,6 +91,16 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
           "Whether or not to attempt mapping NUMERIC values by precision to integral types";
   public static final boolean NUMERIC_PRECISION_MAPPING_DEFAULT = false;
   private static final String NUMERIC_PRECISION_MAPPING_DISPLAY = "Map Numeric Values By Precision";
+
+  public static final String NUMERIC_MAPPING_CONFIG = "numeric.mapping";
+  private static final String NUMERIC_MAPPING_DOC =
+          "Whether or not to attempt mapping NUMERIC values by precision to integral types";
+  public static final String NUMERIC_MAPPING_DEFAULT = "none";
+  private static final String NUMERIC_MAPPING_DISPLAY = "Map Numeric Values, Integral "
+      + "or Decimal By Precision";
+
+  private static final EnumRecommender NUMERIC_MAPPING_RECOMMENDER =
+      EnumRecommender.in(NumericMapping.values());
 
   public static final String MODE_CONFIG = "mode";
   private static final String MODE_DOC =
@@ -230,13 +243,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   }
 
   private static final void addDatabaseOptions(ConfigDef config) {
+    int orderInGroup = 0;
     config.define(
         CONNECTION_URL_CONFIG,
         Type.STRING,
         Importance.HIGH,
         CONNECTION_URL_DOC,
         DATABASE_GROUP,
-        1,
+        ++orderInGroup,
         Width.LONG,
         CONNECTION_URL_DISPLAY,
         Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG)
@@ -247,7 +261,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.HIGH,
         CONNECTION_USER_DOC,
         DATABASE_GROUP,
-        2,
+        ++orderInGroup,
         Width.LONG,
         CONNECTION_USER_DISPLAY
     ).define(
@@ -257,7 +271,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.HIGH,
         CONNECTION_PASSWORD_DOC,
         DATABASE_GROUP,
-        3,
+        ++orderInGroup,
         Width.SHORT,
         CONNECTION_PASSWORD_DISPLAY
     ).define(
@@ -267,7 +281,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         CONNECTION_ATTEMPTS_DOC,
         DATABASE_GROUP,
-        4,
+        ++orderInGroup,
         Width.SHORT,
         CONNECTION_ATTEMPTS_DISPLAY
     ).define(
@@ -277,7 +291,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         CONNECTION_BACKOFF_DOC,
         DATABASE_GROUP,
-        5,
+        ++orderInGroup,
         Width.SHORT,
         CONNECTION_BACKOFF_DISPLAY
     ).define(
@@ -287,7 +301,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         TABLE_WHITELIST_DOC,
         DATABASE_GROUP,
-        4,
+        ++orderInGroup,
         Width.LONG,
         TABLE_WHITELIST_DISPLAY,
         TABLE_RECOMMENDER
@@ -298,7 +312,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         TABLE_BLACKLIST_DOC,
         DATABASE_GROUP,
-        5,
+        ++orderInGroup,
         Width.LONG,
         TABLE_BLACKLIST_DISPLAY,
         TABLE_RECOMMENDER
@@ -309,7 +323,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         SCHEMA_PATTERN_DOC,
         DATABASE_GROUP,
-        6,
+        ++orderInGroup,
         Width.SHORT,
         SCHEMA_PATTERN_DISPLAY
     ).define(
@@ -319,12 +333,25 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         NUMERIC_PRECISION_MAPPING_DOC,
         DATABASE_GROUP,
-        4,
+        ++orderInGroup,
         Width.SHORT,
-        NUMERIC_PRECISION_MAPPING_DISPLAY);
+        NUMERIC_PRECISION_MAPPING_DISPLAY
+    ).define(
+        NUMERIC_MAPPING_CONFIG,
+        Type.STRING,
+        NUMERIC_MAPPING_DEFAULT,
+        NUMERIC_MAPPING_RECOMMENDER,
+        Importance.LOW,
+        NUMERIC_MAPPING_DOC,
+        DATABASE_GROUP,
+        ++orderInGroup,
+        Width.SHORT,
+        NUMERIC_MAPPING_DISPLAY,
+        NUMERIC_MAPPING_RECOMMENDER);
   }
 
   private static final void addModeOptions(ConfigDef config) {
+    int orderInGroup = 0;
     config.define(
         MODE_CONFIG,
         Type.STRING,
@@ -339,7 +366,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.HIGH,
         MODE_DOC,
         MODE_GROUP,
-        1,
+        ++orderInGroup,
         Width.MEDIUM,
         MODE_DISPLAY,
         Arrays.asList(
@@ -354,7 +381,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         INCREMENTING_COLUMN_NAME_DOC,
         MODE_GROUP,
-        2,
+        ++orderInGroup,
         Width.MEDIUM,
         INCREMENTING_COLUMN_NAME_DISPLAY,
         MODE_DEPENDENTS_RECOMMENDER
@@ -365,7 +392,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         TIMESTAMP_COLUMN_NAME_DOC,
         MODE_GROUP,
-        3,
+        ++orderInGroup,
         Width.MEDIUM,
         TIMESTAMP_COLUMN_NAME_DISPLAY,
         MODE_DEPENDENTS_RECOMMENDER
@@ -376,7 +403,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         VALIDATE_NON_NULL_DOC,
         MODE_GROUP,
-        4,
+        ++orderInGroup,
         Width.SHORT,
         VALIDATE_NON_NULL_DISPLAY,
         MODE_DEPENDENTS_RECOMMENDER
@@ -387,12 +414,13 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         QUERY_DOC,
         MODE_GROUP,
-        5,
+        ++orderInGroup,
         Width.SHORT,
         QUERY_DISPLAY);
   }
 
   private static final void addConnectorOptions(ConfigDef config) {
+    int orderInGroup = 0;
     config.define(
         TABLE_TYPE_CONFIG,
         Type.LIST,
@@ -400,7 +428,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         TABLE_TYPE_DOC,
         CONNECTOR_GROUP,
-        4,
+        ++orderInGroup,
         Width.MEDIUM,
         TABLE_TYPE_DISPLAY
     ).define(
@@ -410,7 +438,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.HIGH,
         POLL_INTERVAL_MS_DOC,
         CONNECTOR_GROUP,
-        1,
+        ++orderInGroup,
         Width.SHORT,
         POLL_INTERVAL_MS_DISPLAY
     ).define(
@@ -420,7 +448,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         BATCH_MAX_ROWS_DOC,
         CONNECTOR_GROUP,
-        2,
+        ++orderInGroup,
         Width.SHORT,
         BATCH_MAX_ROWS_DISPLAY
     ).define(
@@ -430,7 +458,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.LOW,
         TABLE_POLL_INTERVAL_MS_DOC,
         CONNECTOR_GROUP,
-        3,
+        ++orderInGroup,
         Width.SHORT,
         TABLE_POLL_INTERVAL_MS_DISPLAY
     ).define(
@@ -439,7 +467,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.HIGH,
         TOPIC_PREFIX_DOC,
         CONNECTOR_GROUP,
-        4,
+        ++orderInGroup,
         Width.MEDIUM,
         TOPIC_PREFIX_DISPLAY
     ).define(
@@ -449,7 +477,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.HIGH,
         TIMESTAMP_DELAY_INTERVAL_MS_DOC,
         CONNECTOR_GROUP,
-        5,
+        ++orderInGroup,
         Width.MEDIUM,
         TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
   }
@@ -584,6 +612,77 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         default:
           throw new ConfigException("Invalid mode: " + mode);
       }
+    }
+  }
+
+  public enum NumericMapping {
+    NONE,
+    ONLY_PRECISION,
+    COMPLETE;
+
+    private static final Map<String, NumericMapping> reverse = new HashMap<>(values().length);
+    static {
+      for (NumericMapping val : values()) {
+        reverse.put(val.name().toLowerCase(Locale.ROOT), val);
+      }
+    }
+
+    public static NumericMapping get(String prop) {
+      // not adding a check for null value because the recommender/validator should catch those.
+      return reverse.get(prop);
+    }
+
+    public static NumericMapping get(JdbcSourceConnectorConfig config) {
+      if (config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG)) {
+        return NumericMapping.ONLY_PRECISION;
+      }
+      return get(config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG));
+    }
+  }
+
+  //Porting from JdbcSinkConfig and extending to implement Recommender interface too.
+  //TODO: Should factor out to common class.
+  private static class EnumRecommender implements ConfigDef.Validator, ConfigDef.Recommender {
+    private final List<String> canonicalValues;
+    private final Set<String> validValues;
+
+    private EnumRecommender(List<String> canonicalValues, Set<String> validValues) {
+      this.canonicalValues = canonicalValues;
+      this.validValues = validValues;
+    }
+
+    public static <E> EnumRecommender in(E[] enumerators) {
+      final List<String> canonicalValues = new ArrayList<>(enumerators.length);
+      final Set<String> validValues = new HashSet<>(enumerators.length * 2);
+      for (E e : enumerators) {
+        canonicalValues.add(e.toString().toLowerCase());
+        validValues.add(e.toString().toUpperCase(Locale.ROOT));
+        validValues.add(e.toString().toLowerCase(Locale.ROOT));
+      }
+      return new EnumRecommender(canonicalValues, validValues);
+    }
+
+    @Override
+    public void ensureValid(String key, Object value) {
+      // calling toString on itself because IDE complains if the Object is passed.
+      if (!validValues.contains(value.toString())) {
+        throw new ConfigException(key, value, "Invalid enumerator");
+      }
+    }
+
+    @Override
+    public String toString() {
+      return canonicalValues.toString();
+    }
+
+    @Override
+    public List<Object> validValues(String name, Map<String, Object> connectorConfigs) {
+      return new ArrayList<Object>(canonicalValues);
+    }
+
+    @Override
+    public boolean visible(String name, Map<String, Object> connectorConfigs) {
+      return true;
     }
   }
 
