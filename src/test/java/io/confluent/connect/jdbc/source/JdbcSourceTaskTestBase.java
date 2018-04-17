@@ -82,13 +82,20 @@ public class JdbcSourceTaskTestBase {
   }
 
   protected Map<String, String> singleTableConfig() {
+    return singleTableConfig(false);
+  }
+
+  protected Map<String, String> singleTableConfig(boolean completeMapping) {
     Map<String, String> props = new HashMap<>();
     props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
     props.put(JdbcSourceTaskConfig.TABLES_CONFIG, SINGLE_TABLE_NAME);
     props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     props.put(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG, TOPIC_PREFIX);
-    props.put(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG, "true");
-    props.put(JdbcSourceTaskConfig.NUMERIC_COMPLETE_MAPPING_CONFIG, "true");
+    if (completeMapping) {
+      props.put(JdbcSourceTaskConfig.NUMERIC_MAPPING_CONFIG, "complete");
+    } else {
+      props.put(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG, "true");
+    }
     return props;
   }
 
