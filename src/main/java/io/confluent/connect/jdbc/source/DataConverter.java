@@ -471,7 +471,6 @@ public class DataConverter {
               if (precision > 9) {
                 colValue = resultSet.getDouble(col);
               } else {
-                log.info("float");
                 colValue = resultSet.getFloat(col);
               }
               break;
