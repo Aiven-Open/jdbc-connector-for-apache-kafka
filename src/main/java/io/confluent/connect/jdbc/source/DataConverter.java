@@ -233,7 +233,7 @@ public class DataConverter {
           int precision = metadata.getPrecision(col);
           int scale = metadata.getScale(col);
           if (precision < 19) { // fits in primitive data types.
-            if (scale < 1 && scale > NUMERIC_TYPE_SCALE_LOW) { // integer
+            if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               Schema schema;
               if (precision > 9) {
                 schema = (optional) ? Schema.OPTIONAL_INT64_SCHEMA :
@@ -250,15 +250,8 @@ public class DataConverter {
               }
               builder.field(fieldName, schema);
               break;
-            } else if (scale > 0) { // floating point
-              Schema schema;
-              if (precision > 9) {
-                schema = (optional) ? Schema.OPTIONAL_FLOAT64_SCHEMA :
-                         Schema.FLOAT64_SCHEMA;
-              } else {
-                schema = (optional) ? Schema.OPTIONAL_FLOAT32_SCHEMA :
-                         Schema.FLOAT32_SCHEMA;
-              }
+            } else if (scale > 0) { // floating point - use double in all cases
+              Schema schema = (optional) ? Schema.OPTIONAL_FLOAT64_SCHEMA : Schema.FLOAT64_SCHEMA;
               builder.field(fieldName, schema);
               break;
             }
@@ -456,7 +449,7 @@ public class DataConverter {
           int scale = metadata.getScale(col);
           log.trace("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (precision < 19) { // fits in primitive data types.
-            if (scale < 1 && scale > NUMERIC_TYPE_SCALE_LOW) { // integer
+            if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               if (precision > 9) {
                 colValue = resultSet.getLong(col);
               } else if (precision > 4) {
@@ -467,12 +460,8 @@ public class DataConverter {
                 colValue = resultSet.getByte(col);
               }
               break;
-            } else if (scale > 0) { // floating point
-              if (precision > 9) {
-                colValue = resultSet.getDouble(col);
-              } else {
-                colValue = resultSet.getFloat(col);
-              }
+            } else if (scale > 0) { // floating point - use double in all cases
+              colValue = resultSet.getDouble(col);
               break;
             }
           }
