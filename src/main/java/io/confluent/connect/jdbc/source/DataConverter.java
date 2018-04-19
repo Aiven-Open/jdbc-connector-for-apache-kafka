@@ -209,7 +209,7 @@ public class DataConverter {
       }
 
       case Types.NUMERIC:
-        if (mapNumerics == NumericMapping.ONLY_PRECISION) {
+        if (mapNumerics == NumericMapping.PRECISION_ONLY) {
           int precision = metadata.getPrecision(col);
           if (metadata.getScale(col) == 0 && precision < 19) { // integer
             Schema schema;
@@ -229,7 +229,7 @@ public class DataConverter {
             builder.field(fieldName, schema);
             break;
           }
-        } else if (mapNumerics == NumericMapping.COMPLETE) {
+        } else if (mapNumerics == NumericMapping.BEST_FIT) {
           int precision = metadata.getPrecision(col);
           int scale = metadata.getScale(col);
           if (precision < 19) { // fits in primitive data types.
@@ -433,7 +433,7 @@ public class DataConverter {
       }
 
       case Types.NUMERIC:
-        if (mapNumerics == NumericMapping.ONLY_PRECISION) {
+        if (mapNumerics == NumericMapping.PRECISION_ONLY) {
           ResultSetMetaData metadata = resultSet.getMetaData();
           int precision = metadata.getPrecision(col);
           int scale = metadata.getScale(col);
@@ -450,7 +450,7 @@ public class DataConverter {
             }
             break;
           }
-        } else if (mapNumerics == NumericMapping.COMPLETE) {
+        } else if (mapNumerics == NumericMapping.BEST_FIT) {
           ResultSetMetaData metadata = resultSet.getMetaData();
           int precision = metadata.getPrecision(col);
           int scale = metadata.getScale(col);

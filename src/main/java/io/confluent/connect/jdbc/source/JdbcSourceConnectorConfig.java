@@ -95,7 +95,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String NUMERIC_MAPPING_CONFIG = "numeric.mapping";
   private static final String NUMERIC_MAPPING_DOC =
           "Whether or not to attempt mapping NUMERIC values by precision to integral types";
-  public static final String NUMERIC_MAPPING_DEFAULT = "none";
+  public static final String NUMERIC_MAPPING_DEFAULT = null;
   private static final String NUMERIC_MAPPING_DISPLAY = "Map Numeric Values, Integral "
       + "or Decimal By Precision";
 
@@ -617,8 +617,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public enum NumericMapping {
     NONE,
-    ONLY_PRECISION,
-    COMPLETE;
+    PRECISION_ONLY,
+    BEST_FIT;
 
     private static final Map<String, NumericMapping> reverse = new HashMap<>(values().length);
     static {
@@ -629,14 +629,19 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
     public static NumericMapping get(String prop) {
       // not adding a check for null value because the recommender/validator should catch those.
-      return reverse.get(prop);
+      return reverse.get(prop.toLowerCase(Locale.ROOT));
     }
 
     public static NumericMapping get(JdbcSourceConnectorConfig config) {
-      if (config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG)) {
-        return NumericMapping.ONLY_PRECISION;
+      String newMappingConfig = config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG);
+      // We use 'null' as default to be able to check the old config if the new one is unset.
+      if (newMappingConfig != null) {
+        return get(config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG));
       }
-      return get(config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG));
+      if (config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG)) {
+        return NumericMapping.PRECISION_ONLY;
+      }
+      return NumericMapping.NONE;
     }
   }
 
@@ -651,7 +656,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       this.validValues = validValues;
     }
 
-    public static <E> EnumRecommender in(E[] enumerators) {
+    public static <E> EnumRecommender in(E... enumerators) {
       final List<String> canonicalValues = new ArrayList<>(enumerators.length);
       final Set<String> validValues = new HashSet<>(enumerators.length * 2);
       for (E e : enumerators) {
@@ -665,7 +670,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
     @Override
     public void ensureValid(String key, Object value) {
       // calling toString on itself because IDE complains if the Object is passed.
-      if (!validValues.contains(value.toString())) {
+      if (value != null && !validValues.contains(value.toString())) {
         throw new ConfigException(key, value, "Invalid enumerator");
       }
     }

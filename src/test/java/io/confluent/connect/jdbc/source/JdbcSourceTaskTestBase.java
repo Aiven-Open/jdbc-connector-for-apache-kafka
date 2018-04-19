@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
+
 public class JdbcSourceTaskTestBase {
 
   protected static String SINGLE_TABLE_NAME = "test";
@@ -92,7 +94,7 @@ public class JdbcSourceTaskTestBase {
     props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     props.put(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG, TOPIC_PREFIX);
     if (completeMapping) {
-      props.put(JdbcSourceTaskConfig.NUMERIC_MAPPING_CONFIG, "complete");
+      props.put(JdbcSourceTaskConfig.NUMERIC_MAPPING_CONFIG, NumericMapping.BEST_FIT.toString());
     } else {
       props.put(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG, "true");
     }
