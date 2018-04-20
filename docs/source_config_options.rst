@@ -27,13 +27,6 @@ Database
   * Default: null
   * Importance: high
 
-``table.whitelist``
-  List of tables to include in copying. If specified, table.blacklist may not be set.
-
-  * Type: list
-  * Default: ""
-  * Importance: medium
-
 ``connection.attempts``
   Maximum number of attempts to retrieve a valid JDBC connection.
 
@@ -41,12 +34,19 @@ Database
   * Default: 3
   * Importance: low
 
-``numeric.precision.mapping``
-  Whether or not to attempt mapping NUMERIC values by precision to integral types
+``connection.backoff.ms``
+  Backoff time in milliseconds between connection attempts.
 
-  * Type: boolean
-  * Default: false
+  * Type: long
+  * Default: 10000
   * Importance: low
+
+``table.whitelist``
+  List of tables to include in copying. If specified, table.blacklist may not be set.
+
+  * Type: list
+  * Default: ""
+  * Importance: medium
 
 ``table.blacklist``
   List of tables to exclude from copying. If specified, table.whitelist may not be set.
@@ -54,13 +54,6 @@ Database
   * Type: list
   * Default: ""
   * Importance: medium
-
-``connection.backoff.ms``
-  Backoff time in milliseconds between connection attempts.
-
-  * Type: long
-  * Default: 10000
-  * Importance: low
 
 ``schema.pattern``
   Schema pattern to fetch tables metadata from the database:
@@ -70,6 +63,21 @@ Database
   * Type: string
   * Default: null
   * Importance: medium
+
+``numeric.precision.mapping``
+  Whether or not to attempt mapping NUMERIC values by precision to integral types
+
+  * Type: boolean
+  * Default: false
+  * Importance: low
+
+``numeric.mapping``
+  Map NUMERIC values by precision and optionally scale to integral or decimal types
+
+  * Type: string
+  * Default: null
+  * Valid Values: [none, precision_only, best_fit]
+  * Importance: low
 
 Mode
 ^^^^

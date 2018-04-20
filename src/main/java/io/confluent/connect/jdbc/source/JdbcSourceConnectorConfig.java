@@ -94,10 +94,10 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String NUMERIC_MAPPING_CONFIG = "numeric.mapping";
   private static final String NUMERIC_MAPPING_DOC =
-          "Whether or not to attempt mapping NUMERIC values by precision to integral types";
+          "Map NUMERIC values by precision and optionally scale to integral or decimal types";
   public static final String NUMERIC_MAPPING_DEFAULT = null;
   private static final String NUMERIC_MAPPING_DISPLAY = "Map Numeric Values, Integral "
-      + "or Decimal By Precision";
+      + "or Decimal, By Precision and Scale";
 
   private static final EnumRecommender NUMERIC_MAPPING_RECOMMENDER =
       EnumRecommender.in(NumericMapping.values());
