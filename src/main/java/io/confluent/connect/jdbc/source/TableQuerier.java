@@ -24,6 +24,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
+
 /**
  * TableQuerier executes queries against a specific table. Implementations handle different types
  * of queries: periodic bulk loading, incremental loads using auto incrementing IDs, incremental
@@ -40,17 +42,16 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   protected final String name;
   protected final String query;
   protected final String topicPrefix;
+  protected final NumericMapping mapNumerics;
 
   // Mutable state
-
-  protected final boolean mapNumerics;
   protected long lastUpdate;
   protected PreparedStatement stmt;
   protected ResultSet resultSet;
   protected Schema schema;
 
   public TableQuerier(QueryMode mode, String nameOrQuery, String topicPrefix,
-                      String schemaPattern, boolean mapNumerics) {
+                      String schemaPattern, NumericMapping mapNumerics) {
     this.mode = mode;
     this.schemaPattern = schemaPattern;
     this.name = mode.equals(QueryMode.TABLE) ? nameOrQuery : null;

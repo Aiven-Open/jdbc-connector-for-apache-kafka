@@ -185,6 +185,52 @@ For incremental query modes that use timestamps, the source connector uses a con
 before you include it in the result. The additional wait allows transactions with earlier timestamps
 to complete and the related changes to be included in the result.
 
+Mapping Column Types
+~~~~~~~~~~~~~~~~~~~~
+
+The source connector has a few options for controlling how column types are mapped into
+Connect field types. By default, the connector maps SQL/JDBC types to the most accurate
+representation in Java, which is straightforward for many SQL types but maybe a bit unexpected for
+some types. For example, SQL's ``NUMERIC`` and ``DECIMAL`` types have very clear semantics
+controlled by the precision and scale, and the most accurate representation is Connect's ``Decimal``
+logical type that uses Java's ``BigDecimal`` representation. Unfortunately, Avro serializes Decimal
+types as raw bytes that may be difficult to consume.
+
+The source connector's ``numeric.mapping`` configuration will control this mapping. The default
+is ``none`` and has the behavior described above.
+
+However, the ``best_fit`` option is probably what most users expect, as it attempts to map
+``NUMERIC`` columns to Connect ``INT8``, ``INT16``, ``INT32``, ``INT64``, and ``FLOAT64``
+based upon the column's precision and scale values:
+
+============ ========== =================================
+Precision    Scale      Connect "best fit" primitive type
+============ ========== =================================
+1 to 2       -84 to 0   INT8
+3 to 4       -84 to 0   INT16
+5 to 9       -84 to 0   INT32
+10 to 18     -84 to 0   INT64
+1 to 18      positive   FLOAT64
+
+The ``precision_only`` option attempts to map ``NUMERIC`` columns to
+Connect ``INT8``, ``INT16``, ``INT32``, and ``INT64`` based only upon the column's precision,
+and where the scale is always 0.
+
+============ ========== =================================
+Precision    Scale      Connect "best fit" primitive type
+============ ========== =================================
+1 to 2       0          INT8
+3 to 4       0          INT16
+5 to 9       0          INT32
+10 to 18     0          INT64
+
+Any other combination of precision and scale for ``NUMERIC`` columns will always map to
+Connect's ``Decimal`` type.
+
+.. note:: The ``numeric.precision.mapping`` property is older and is now deprecated. When
+enabled it is exactly equivalent to ``numeric.mapping=precision_only``, and when not enabled it
+is exactly equivalent to ``numeric.mapping=none``.
+
 Configuration
 -------------
 
