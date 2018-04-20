@@ -88,7 +88,7 @@ public class DbDialectTest {
 
   @Test(expected = ConnectException.class)
   public void extractProtocolInvalidUrl() {
-    DbDialect.extractProtocolFromUrl("jdbc:protocol:somethingelse;field=value;");
+    DbDialect.extractProtocolFromUrl("jdbc:protocolinvalid;field=value;");
   }
 
   @Test(expected = ConnectException.class)
@@ -99,6 +99,11 @@ public class DbDialectTest {
   @Test
   public void extractProtocol() {
     assertEquals("protocol_test", DbDialect.extractProtocolFromUrl("jdbc:protocol_test://SERVER:21421;field=value"));
+  }
+
+  @Test
+  public void detectDerby() {
+    assertEquals(GenericDialect.class, DbDialect.fromConnectionString("jdbc:derby:sample").getClass());
   }
 
   @Test
