@@ -3,6 +3,20 @@
 Changelog
 =========
 
+Version 4.0.1
+-------------
+
+JDBC Source Connector
+~~~~~~~~~~~~~~~~~~~~~
+
+* `PR-351 <https://github.com/confluentinc/kafka-connect-jdbc/pull/351>`_ - CC-1366: close ResultSets and Statements during shutdown
+* `PR-319 <https://github.com/confluentinc/kafka-connect-jdbc/pull/319>`_ - get current timestamp on all DB2 versions - reopening from k1th/master
+
+JDBC Sink Connector
+~~~~~~~~~~~~~~~~~~~~~
+
+* `PR-319 <https://github.com/confluentinc/kafka-connect-jdbc/pull/319>`_ - get current timestamp on all DB2 versions - reopening from k1th/master
+
 Version 4.0.0
 -------------
 
