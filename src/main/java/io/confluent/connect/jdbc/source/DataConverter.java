@@ -211,6 +211,8 @@ public class DataConverter {
       case Types.NUMERIC:
         if (mapNumerics == NumericMapping.PRECISION_ONLY) {
           int precision = metadata.getPrecision(col);
+          int scale = metadata.getScale(col);
+          log.debug("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (metadata.getScale(col) == 0 && precision < 19) { // integer
             Schema schema;
             if (precision > 9) {
@@ -232,6 +234,7 @@ public class DataConverter {
         } else if (mapNumerics == NumericMapping.BEST_FIT) {
           int precision = metadata.getPrecision(col);
           int scale = metadata.getScale(col);
+          log.debug("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (precision < 19) { // fits in primitive data types.
             if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               Schema schema;
@@ -260,7 +263,9 @@ public class DataConverter {
         // fallthrough
 
       case Types.DECIMAL: {
+        int precision = metadata.getPrecision(col);
         int scale = metadata.getScale(col);
+        log.debug("DECIMAL with precision: '{}' and scale: '{}'", precision, scale);
         if (scale == NUMERIC_TYPE_SCALE_UNSET) { //NUMBER without precision defined for OracleDB
           scale = NUMERIC_TYPE_SCALE_HIGH;
         }
