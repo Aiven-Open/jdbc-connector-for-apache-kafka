@@ -28,6 +28,8 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -45,12 +47,21 @@ import static org.junit.Assert.assertTrue;
 // Tests conversion of data types and schemas. These use the types supported by Derby, which
 // might not cover everything in the SQL standards and definitely doesn't cover any non-standard
 // types, but should cover most of the JDBC types which is all we see anyway
+@RunWith(Parameterized.class)
 public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
+
+  @Parameterized.Parameters
+  public static Object[] mapping() {
+    return new Object[] { false, true };
+  }
+
+  @Parameterized.Parameter
+  public boolean extendedMapping;
 
   @Before
   public void setup() throws Exception {
     super.setup();
-    task.start(singleTableConfig());
+    task.start(singleTableConfig(extendedMapping));
   }
 
   @After
