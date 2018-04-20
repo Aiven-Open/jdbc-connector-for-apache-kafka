@@ -65,14 +65,14 @@ Database
   * Importance: medium
 
 ``numeric.precision.mapping``
-  Whether or not to attempt mapping NUMERIC values by precision to integral types
+  Whether or not to attempt mapping NUMERIC values by precision to integral types. This option is now deprecated. A future version may remove it completely. Please use ``numeric.mapping`` instead.
 
   * Type: boolean
   * Default: false
   * Importance: low
 
 ``numeric.mapping``
-  Map NUMERIC values by precision and optionally scale to integral or decimal types
+  Map NUMERIC values by precision and optionally scale to integral or decimal types. Use ``none`` if all NUMERIC columns are to be represented by Connect's DECIMAL logical type. Use ``best_fit`` if NUMERIC columns should be cast to Connect's INT8, INT16, INT32, INT64, or FLOAT64 based upon the column's precision and scale. Or use ``precision_only`` to map NUMERIC columns based only on the column's precision assuming that column's scale is 0. The ``none`` option is the default, but may lead to serialization issues with Avro since Connect's DECIMAL type is mapped to its binary representation, and ``best_fit`` will often be preferred since it maps to the most appropriate primitive type.
 
   * Type: string
   * Default: null
