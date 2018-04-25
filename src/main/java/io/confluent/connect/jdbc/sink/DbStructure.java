@@ -198,6 +198,39 @@ public class DbStructure {
         missingFields.add(field);
       }
     }
-    return missingFields;
+
+    if (missingFields.isEmpty()) {
+      return missingFields;
+    }
+
+    // check if the missing fields can be located by ignoring case
+    Set<String> columnNamesLowerCase = new HashSet<>();
+    for (String columnName: dbColumnNames) {
+      columnNamesLowerCase.add(columnName.toLowerCase());
+    }
+
+    if (columnNamesLowerCase.size() != dbColumnNames.size()) {
+      log.warn(
+          "Table has column names that differ only by case. Original columns={}",
+          dbColumnNames
+      );
+    }
+
+    final Set<SinkRecordField> missingFieldsIgnoreCase = new HashSet<>();
+    for (SinkRecordField missing: missingFields) {
+      if (!columnNamesLowerCase.contains(missing.name().toLowerCase())) {
+        missingFieldsIgnoreCase.add(missing);
+      }
+    }
+
+    if (missingFieldsIgnoreCase.size() > 0) {
+      log.info(
+          "Unable to find fields {} among column names {}",
+          missingFieldsIgnoreCase,
+          dbColumnNames
+      );
+    }
+
+    return missingFieldsIgnoreCase;
   }
 }
