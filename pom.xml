@@ -176,7 +176,7 @@
 
                             <dockerNamespace>confluentinc</dockerNamespace>
                             <dockerName>cp-kafka-connect</dockerName>
-                            <dockerTag>4.1.0</dockerTag>
+                            <dockerTag>${project.version}</dockerTag>
 
                             <componentTypes>
                                 <componentType>sink</componentType>
