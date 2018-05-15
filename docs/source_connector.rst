@@ -52,7 +52,7 @@ Load the predefined JDBC source connector.
           hdfs-sink
           s3-sink
 
-#.  Load the the ``jdbc-source`` connector:
+#.  Load the the ``jdbc-source`` connector. The ``test.db`` file must be in the same directory where Connect is started.
 
     .. sourcecode:: bash
 
