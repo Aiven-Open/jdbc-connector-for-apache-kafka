@@ -42,7 +42,8 @@ Database
 ``schema.pattern``
   Schema pattern to fetch tables metadata from the database:
 
-    * "" retrieves those without a schema,  * null (default) means that the schema name should not be used to narrow the search, all tables metadata would be fetched, regardless their schema.
+    * "" retrieves those without a schema,
+    * null (default) means that the schema name should not be used to narrow the search, all tables metadata would be fetched, regardless their schema.
 
   * Type: string
   * Default: null
