@@ -110,6 +110,7 @@ public class JdbcSourceConnectorConfigTest {
     assertBlacklistRecommendations();
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void testCachingRecommender() {
     final List<Object> results1 = Collections.singletonList((Object) "xyz");
@@ -175,6 +176,7 @@ public class JdbcSourceConnectorConfigTest {
     assertNull(cached.cachedValue(config2, expiry + 1L));
   }
 
+  @SuppressWarnings("unchecked")
   protected <T> void assertContains(Collection<T> actual, T... expected) {
     assertEquals(expected.length, actual.size());
     for (T e : expected) {
@@ -189,14 +191,17 @@ public class JdbcSourceConnectorConfigTest {
     return null;
   }
 
+  @SuppressWarnings("unchecked")
   protected <T> void assertRecommendedValues(ConfigValue value, T... recommendedValues) {
     assertContains(value.recommendedValues(), recommendedValues);
   }
 
+  @SuppressWarnings("unchecked")
   protected <T> void assertWhitelistRecommendations(T... recommendedValues) {
     assertContains(namedValue(results, JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG).recommendedValues(), recommendedValues);
   }
 
+  @SuppressWarnings("unchecked")
   protected <T> void assertBlacklistRecommendations(T... recommendedValues) {
     assertContains(namedValue(results, JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG).recommendedValues(), recommendedValues);
   }

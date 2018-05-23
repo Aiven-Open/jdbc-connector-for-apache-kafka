@@ -506,6 +506,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     TIMESTAMP_OFFSET
   }
 
+  @SuppressWarnings("unchecked")
   private <T> Map<T, Integer> countInts(List<SourceRecord> records, Field field, String fieldName) {
     Map<T, Integer> result = new HashMap<>();
     for (SourceRecord record : records) {

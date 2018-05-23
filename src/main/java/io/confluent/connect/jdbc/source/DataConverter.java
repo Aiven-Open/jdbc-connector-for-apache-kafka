@@ -82,6 +82,7 @@ public class DataConverter {
   }
 
 
+  @SuppressWarnings("fallthrough")
   private static void addFieldSchema(ResultSetMetaData metadata, int col,
                                      SchemaBuilder builder, NumericMapping mapNumerics)
       throws SQLException {
@@ -355,6 +356,7 @@ public class DataConverter {
     }
   }
 
+  @SuppressWarnings({"fallthrough", "deprecation"})
   private static void convertFieldValue(ResultSet resultSet, int col, int colType,
                                         Struct struct, String fieldName, NumericMapping mapNumerics)
       throws SQLException, IOException {
@@ -481,6 +483,7 @@ public class DataConverter {
         if (scale == NUMERIC_TYPE_SCALE_UNSET) {
           scale = NUMERIC_TYPE_SCALE_HIGH;
         }
+        //TODO: getBigDecimal(String columnLabel, int scale) is deprecated and should be replaced
         colValue = resultSet.getBigDecimal(col, scale);
         break;
       }
