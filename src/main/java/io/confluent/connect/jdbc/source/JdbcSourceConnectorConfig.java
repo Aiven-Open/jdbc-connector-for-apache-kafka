@@ -507,6 +507,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   private static class TableRecommender implements Recommender {
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<Object> validValues(String name, Map<String, Object> config) {
       String dbUrl = (String) config.get(CONNECTION_URL_CONFIG);
@@ -669,6 +670,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       this.validValues = validValues;
     }
 
+    @SafeVarargs
     public static <E> EnumRecommender in(E... enumerators) {
       final List<String> canonicalValues = new ArrayList<>(enumerators.length);
       final Set<String> validValues = new HashSet<>(enumerators.length * 2);

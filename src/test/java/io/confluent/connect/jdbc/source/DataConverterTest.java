@@ -158,6 +158,7 @@ public class DataConverterTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void testValueConversionOnNumeric() throws Exception {
     when(resultSet.getMetaData()).thenReturn(metadata);
     when(resultSet.getBigDecimal(1, scale)).thenReturn(BIG_DECIMAL);

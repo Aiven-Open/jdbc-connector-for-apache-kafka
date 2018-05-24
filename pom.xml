@@ -143,6 +143,17 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <inherited>true</inherited>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                        <arg>-Werror</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>io.confluent</groupId>
                 <version>0.10.0</version>
                 <artifactId>kafka-connect-maven-plugin</artifactId>
@@ -207,18 +218,7 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
-                <inherited>true</inherited>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.3</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/assembly/development.xml</descriptor>
