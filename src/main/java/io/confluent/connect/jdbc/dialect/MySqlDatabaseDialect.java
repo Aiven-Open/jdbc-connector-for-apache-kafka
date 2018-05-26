@@ -108,17 +108,11 @@ public class MySqlDatabaseDialect extends GenericDatabaseDialect {
       Collection<ColumnId> nonKeyColumns
   ) {
     //MySql doesn't support SQL 2003:merge so here how the upsert is handled
-    final Transform<ColumnId> transform = new Transform<ColumnId>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          ColumnId col
-      ) {
-        builder.appendIdentifierQuoted(col.name());
-        builder.append("=values(");
-        builder.appendIdentifierQuoted(col.name());
-        builder.append(")");
-      }
+    final Transform<ColumnId> transform = (builder, col) -> {
+      builder.appendIdentifierQuoted(col.name());
+      builder.append("=values(");
+      builder.appendIdentifierQuoted(col.name());
+      builder.append(")");
     };
 
     ExpressionBuilder builder = expressionBuilder();

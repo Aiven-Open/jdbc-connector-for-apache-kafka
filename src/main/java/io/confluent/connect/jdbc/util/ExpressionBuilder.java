@@ -20,6 +20,7 @@ import javax.xml.bind.DatatypeConverter;
 
 public class ExpressionBuilder {
 
+  @FunctionalInterface
   public interface Expressable {
     void appendTo(
         ExpressionBuilder builder,
@@ -27,6 +28,7 @@ public class ExpressionBuilder {
     );
   }
 
+  @FunctionalInterface
   public interface Transform<T> {
     void apply(
         ExpressionBuilder builder,
@@ -42,13 +44,20 @@ public class ExpressionBuilder {
 
     ExpressionBuilder of(Iterable<? extends T> objects);
 
-    ExpressionBuilder of(Iterable<? extends T> objects1, Iterable<? extends T> objects2);
+    default ExpressionBuilder of(Iterable<? extends T> objects1, Iterable<? extends T> objects2) {
+      of(objects1);
+      return of(objects2);
+    }
 
-    ExpressionBuilder of(
+    default ExpressionBuilder of(
         Iterable<? extends T> objects1,
         Iterable<? extends T> objects2,
         Iterable<? extends T> objects3
-    );
+    ) {
+      of(objects1);
+      of(objects2);
+      return of(objects3);
+    }
   }
 
   /**
@@ -57,15 +66,7 @@ public class ExpressionBuilder {
    * @return the transform; never null
    */
   public static Transform<String> quote() {
-    return new Transform<String>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          String input
-      ) {
-        builder.appendIdentifierQuoted(input);
-      }
-    };
+    return (builder, input) -> builder.appendIdentifierQuoted(input);
   }
 
   /**
@@ -74,15 +75,7 @@ public class ExpressionBuilder {
    * @return the transform; never null
    */
   public static Transform<ColumnId> columnNames() {
-    return new Transform<ColumnId>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          ColumnId input
-      ) {
-        builder.appendIdentifierQuoted(input.name());
-      }
-    };
+    return (builder, input) -> builder.appendIdentifierQuoted(input.name());
   }
 
   /**
@@ -92,15 +85,9 @@ public class ExpressionBuilder {
    * @return the transform; never null
    */
   public static Transform<ColumnId> columnNamesWith(final String appended) {
-    return new Transform<ColumnId>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          ColumnId input
-      ) {
-        builder.appendIdentifierQuoted(input.name());
-        builder.append(appended);
-      }
+    return (builder, input) -> {
+      builder.appendIdentifierQuoted(input.name());
+      builder.append(appended);
     };
   }
 
@@ -111,15 +98,7 @@ public class ExpressionBuilder {
    * @return the transform; never null
    */
   public static Transform<ColumnId> placeholderInsteadOfColumnNames(final String str) {
-    return new Transform<ColumnId>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          ColumnId input
-      ) {
-        builder.append(str);
-      }
-    };
+    return (builder, input) -> builder.append(str);
   }
 
   /**
@@ -129,15 +108,9 @@ public class ExpressionBuilder {
    * @return the transform; never null
    */
   public static Transform<ColumnId> columnNamesWithPrefix(final String prefix) {
-    return new Transform<ColumnId>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          ColumnId input
-      ) {
-        builder.append(prefix);
-        builder.appendIdentifierQuoted(input.name());
-      }
+    return (builder, input) -> {
+      builder.append(prefix);
+      builder.appendIdentifierQuoted(input.name());
     };
   }
 
@@ -270,15 +243,7 @@ public class ExpressionBuilder {
 
     BasicListBuilder(String delimiter, Transform<T> transform) {
       this.delimiter = delimiter;
-      this.transform = transform != null ? transform : new Transform<T>() {
-        @Override
-        public void apply(
-            ExpressionBuilder builder,
-            T input
-        ) {
-          builder.append(input);
-        }
-      };
+      this.transform = transform != null ? transform : (builder, input) -> builder.append(input);
     }
 
     @Override
@@ -301,28 +266,6 @@ public class ExpressionBuilder {
         }
         append(obj, transform);
       }
-      return ExpressionBuilder.this;
-    }
-
-    @Override
-    public ExpressionBuilder of(
-        Iterable<? extends T> objects1,
-        Iterable<? extends T> objects2
-    ) {
-      of(objects1);
-      of(objects2);
-      return ExpressionBuilder.this;
-    }
-
-    @Override
-    public ExpressionBuilder of(
-        Iterable<? extends T> objects1,
-        Iterable<? extends T> objects2,
-        Iterable<? extends T> objects3
-    ) {
-      of(objects1);
-      of(objects2);
-      of(objects3);
       return ExpressionBuilder.this;
     }
   }

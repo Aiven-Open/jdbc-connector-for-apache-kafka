@@ -235,6 +235,12 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
       Collection<ColumnId> keyColumns,
       Collection<ColumnId> nonKeyColumns
   ) {
+    final Transform<ColumnId> transform = (builder, col) -> {
+      builder.appendIdentifierQuoted(col.name())
+             .append("=EXCLUDED.")
+             .appendIdentifierQuoted(col.name());
+    };
+
     ExpressionBuilder builder = expressionBuilder();
     builder.append("INSERT INTO ");
     builder.append(table);
@@ -253,17 +259,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
     builder.append(") DO UPDATE SET ");
     builder.appendList()
            .delimitedBy(",")
-           .transformedBy(new Transform<ColumnId>() {
-             @Override
-             public void apply(
-                 ExpressionBuilder builder,
-                 ColumnId col
-             ) {
-               builder.appendIdentifierQuoted(col.name())
-                      .append("=EXCLUDED.")
-                      .appendIdentifierQuoted(col.name());
-             }
-           })
+           .transformedBy(transform)
            .of(nonKeyColumns);
     return builder.toString();
   }

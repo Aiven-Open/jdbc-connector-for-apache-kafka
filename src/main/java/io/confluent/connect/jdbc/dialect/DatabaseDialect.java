@@ -421,8 +421,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @param schema the schema for the value; may be null only if the value is null
    * @param value the value to be bound to the variable; may be null
    * @throws SQLException if there is a problem binding the value into the statement
-   * @see #statementBinder(PreparedStatement, PrimaryKeyMode, SchemaPair, FieldsMetadata,
-   * InsertMode)
+   * @see #statementBinder
    */
   void bindField(
       PreparedStatement statement,
@@ -434,6 +433,7 @@ public interface DatabaseDialect extends ConnectionProvider {
   /**
    * A function to bind the values from a sink record into a prepared statement.
    */
+  @FunctionalInterface
   interface StatementBinder {
 
     /**
@@ -455,6 +455,7 @@ public interface DatabaseDialect extends ConnectionProvider {
       ColumnMapping mapping
   );
 
+  @FunctionalInterface
   interface ColumnConverter {
     /**
      * Get the column's value from the row at the current position in the result set, and convert it

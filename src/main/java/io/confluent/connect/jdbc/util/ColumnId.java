@@ -65,18 +65,6 @@ public class ColumnId implements Expressable {
     return alias;
   }
 
-  public ColumnId toUpperCase() {
-    return new ColumnId(tableId() != null ? tableId().toUpperCase() : null, name.toUpperCase(),
-                        alias.toUpperCase()
-    );
-  }
-
-  public ColumnId toLowerCase() {
-    return new ColumnId(tableId() != null ? tableId().toLowerCase() : null, name.toUpperCase(),
-                        alias.toUpperCase()
-    );
-  }
-
   @Override
   public void appendTo(ExpressionBuilder builder, boolean useQuotes) {
     if (tableId != null) {

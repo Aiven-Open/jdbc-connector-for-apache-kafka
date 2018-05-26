@@ -251,9 +251,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   protected JdbcDriverInfo createJdbcDriverInfo(Connection connection) throws SQLException {
     DatabaseMetaData metadata = connection.getMetaData();
-    return new JdbcDriverInfo(metadata.getJDBCMajorVersion(), metadata.getJDBCMinorVersion(),
-                              metadata.getDriverName(), metadata.getDatabaseProductName(),
-                              metadata.getDatabaseProductVersion()
+    return new JdbcDriverInfo(
+        metadata.getJDBCMajorVersion(),
+        metadata.getJDBCMinorVersion(),
+        metadata.getDriverName(),
+        metadata.getDatabaseProductName(),
+        metadata.getDatabaseProductVersion()
     );
   }
 
@@ -448,7 +451,8 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           return rs.getTimestamp(1, cal);
         } else {
           throw new ConnectException(
-              "Unable to get current time from DB using " + this + " and query '" + query + "'");
+              "Unable to get current time from DB using " + this + " and query '" + query + "'"
+          );
         }
       }
     } catch (SQLException e) {
@@ -472,10 +476,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       TableId tableId
   ) throws SQLException {
     log.info("Checking {} dialect for existance of table {}", this, tableId);
-    try (ResultSet rs = connection.getMetaData().getTables(tableId.catalogName(),
-                                                           tableId.schemaName(),
-                                                           tableId.tableName(),
-                                                           new String[]{"TABLE"}
+    try (ResultSet rs = connection.getMetaData().getTables(
+        tableId.catalogName(),
+        tableId.schemaName(),
+        tableId.tableName(),
+        new String[]{"TABLE"}
     )) {
       final boolean exists = rs.next();
       log.info("Using {} dialect table {} {}", this, tableId, exists ? "present" : "absent");
@@ -509,12 +514,18 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     );
 
     // Get the primary keys of the table(s) ...
-    final Set<ColumnId> pkColumns = primaryKeyColumns(connection, catalogPattern, schemaPattern,
-                                                      tablePattern
+    final Set<ColumnId> pkColumns = primaryKeyColumns(
+        connection,
+        catalogPattern,
+        schemaPattern,
+        tablePattern
     );
     Map<ColumnId, ColumnDefinition> results = new HashMap<>();
-    try (ResultSet rs = connection.getMetaData().getColumns(catalogPattern, schemaPattern,
-                                                            tablePattern, columnPattern
+    try (ResultSet rs = connection.getMetaData().getColumns(
+        catalogPattern,
+        schemaPattern,
+        tablePattern,
+        columnPattern
     )) {
       final int rsColumnCount = rs.getMetaData().getColumnCount();
       while (rs.next()) {
@@ -563,11 +574,23 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           // Some DBMSes report pks as null
           nullability = Nullability.NOT_NULL;
         }
-        ColumnDefinition defn = columnDefinition(rs, columnId, jdbcType, typeName, typeClassName,
-                                                 nullability, Mutability.UNKNOWN, precision,
-                                                 scale != null ? scale.intValue() : 0, signed,
-                                                 displaySize, autoIncremented, caseSensitive,
-                                                 searchable, currency, isPrimaryKey
+        ColumnDefinition defn = columnDefinition(
+            rs,
+            columnId,
+            jdbcType,
+            typeName,
+            typeClassName,
+            nullability,
+            Mutability.UNKNOWN,
+            precision,
+            scale != null ? scale.intValue() : 0,
+            signed,
+            displaySize,
+            autoIncremented,
+            caseSensitive,
+            searchable,
+            currency,
+            isPrimaryKey
         );
         results.put(columnId, defn);
       }
@@ -605,7 +628,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     String name = rsMetadata.getColumnName(column);
     String alias = rsMetadata.getColumnLabel(column);
     ColumnId id = new ColumnId(tableId, name, alias);
-    Nullability nullability = Nullability.UNKNOWN;
+    Nullability nullability;
     switch (rsMetadata.isNullable(column)) {
       case ResultSetMetaData.columnNullable:
         nullability = Nullability.NULL;
@@ -626,15 +649,22 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     } else if (rsMetadata.isDefinitelyWritable(column)) {
       mutability = Mutability.WRITABLE;
     }
-    return new ColumnDefinition(id, rsMetadata.getColumnType(column),
-                                rsMetadata.getColumnTypeName(column),
-                                rsMetadata.getColumnClassName(column), nullability, mutability,
-                                rsMetadata.getPrecision(column), rsMetadata.getScale(column),
-                                rsMetadata.isSigned(column),
-                                rsMetadata.getColumnDisplaySize(column),
-                                rsMetadata.isAutoIncrement(column),
-                                rsMetadata.isCaseSensitive(column), rsMetadata.isSearchable(column),
-                                rsMetadata.isCurrency(column), false
+    return new ColumnDefinition(
+        id,
+        rsMetadata.getColumnType(column),
+        rsMetadata.getColumnTypeName(column),
+        rsMetadata.getColumnClassName(column),
+        nullability,
+        mutability,
+        rsMetadata.getPrecision(column),
+        rsMetadata.getScale(column),
+        rsMetadata.isSigned(column),
+        rsMetadata.getColumnDisplaySize(column),
+        rsMetadata.isAutoIncrement(column),
+        rsMetadata.isCaseSensitive(column),
+        rsMetadata.isSearchable(column),
+        rsMetadata.isCurrency(column),
+        false
     );
   }
 
@@ -741,15 +771,22 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       Boolean currency,
       Boolean isPrimaryKey
   ) {
-    return new ColumnDefinition(id, jdbcType, typeName, classNameForType, nullability, mutability,
-                                precision, scale,
-                                signedNumbers != null ? signedNumbers.booleanValue() : false,
-                                displaySize != null ? displaySize.intValue() : 0,
-                                autoIncremented != null ? autoIncremented.booleanValue() : false,
-                                caseSensitive != null ? caseSensitive.booleanValue() : false,
-                                searchable != null ? searchable.booleanValue() : false,
-                                currency != null ? currency.booleanValue() : false,
-                                isPrimaryKey != null ? isPrimaryKey.booleanValue() : false
+    return new ColumnDefinition(
+        id,
+        jdbcType,
+        typeName,
+        classNameForType,
+        nullability,
+        mutability,
+        precision,
+        scale,
+        signedNumbers != null ? signedNumbers.booleanValue() : false,
+        displaySize != null ? displaySize.intValue() : 0,
+        autoIncremented != null ? autoIncremented.booleanValue() : false,
+        caseSensitive != null ? caseSensitive.booleanValue() : false,
+        searchable != null ? searchable.booleanValue() : false,
+        currency != null ? currency.booleanValue() : false,
+        isPrimaryKey != null ? isPrimaryKey.booleanValue() : false
     );
   }
 
@@ -1065,6 +1102,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     );
   }
 
+  @SuppressWarnings("deprecation")
   protected ColumnConverter columnConverterFor(
       final ColumnMapping mapping,
       final ColumnDefinition defn,
@@ -1074,12 +1112,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     switch (mapping.columnDefn().type()) {
 
       case Types.BOOLEAN: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getBoolean(col);
-          }
-        };
+        return (rs) -> rs.getBoolean(col);
       }
 
       case Types.BIT: {
@@ -1088,101 +1121,51 @@ public class GenericDatabaseDialect implements DatabaseDialect {
          * TODO: Postgres handles this differently, returning a string "t" or "f". See the
          * elasticsearch-jdbc plugin for an example of how this is handled
          */
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getByte(col);
-          }
-        };
+        return (rs) -> rs.getByte(col);
       }
 
       // 8 bits int
       case Types.TINYINT: {
         if (defn.isSignedNumber()) {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet rs) throws SQLException {
-              return rs.getByte(col);
-            }
-          };
+          return (rs) -> rs.getByte(col);
         } else {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet rs) throws SQLException {
-              return rs.getShort(col);
-            }
-          };
+          return (rs) -> rs.getShort(col);
         }
       }
 
       // 16 bits int
       case Types.SMALLINT: {
         if (defn.isSignedNumber()) {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet rs) throws SQLException {
-              return rs.getShort(col);
-            }
-          };
+          return (rs) -> rs.getShort(col);
         } else {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet rs) throws SQLException {
-              return rs.getInt(col);
-            }
-          };
+          return (rs) -> rs.getInt(col);
         }
       }
 
       // 32 bits int
       case Types.INTEGER: {
         if (defn.isSignedNumber()) {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet rs) throws SQLException {
-              return rs.getInt(col);
-            }
-          };
+          return (rs) -> rs.getInt(col);
         } else {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet rs) throws SQLException {
-              return rs.getLong(col);
-            }
-          };
+          return (rs) -> rs.getLong(col);
         }
       }
 
       // 64 bits int
       case Types.BIGINT: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getLong(col);
-          }
-        };
+        return (rs) -> rs.getLong(col);
       }
 
       // REAL is a single precision floating point value, i.e. a Java float
       case Types.REAL: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getFloat(col);
-          }
-        };
+        return (rs) -> rs.getFloat(col);
       }
 
       // FLOAT is, confusingly, double precision and effectively the same as DOUBLE. See REAL
       // for single precision
       case Types.FLOAT:
       case Types.DOUBLE: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getDouble(col);
-          }
-        };
+        return (rs) -> rs.getDouble(col);
       }
 
       case Types.NUMERIC:
@@ -1192,33 +1175,13 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           log.trace("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (scale == 0 && precision < 19) { // integer
             if (precision > 9) {
-              return new ColumnConverter() {
-                @Override
-                public Object convert(ResultSet rs) throws SQLException {
-                  return rs.getLong(col);
-                }
-              };
+              return (rs) -> rs.getLong(col);
             } else if (precision > 4) {
-              return new ColumnConverter() {
-                @Override
-                public Object convert(ResultSet rs) throws SQLException {
-                  return rs.getInt(col);
-                }
-              };
+              return (rs) -> rs.getInt(col);
             } else if (precision > 2) {
-              return new ColumnConverter() {
-                @Override
-                public Object convert(ResultSet rs) throws SQLException {
-                  return rs.getShort(col);
-                }
-              };
+              return (rs) -> rs.getShort(col);
             } else {
-              return new ColumnConverter() {
-                @Override
-                public Object convert(ResultSet rs) throws SQLException {
-                  return rs.getByte(col);
-                }
-              };
+              return (rs) -> rs.getByte(col);
             }
           }
         } else if (mapNumerics == NumericMapping.BEST_FIT) {
@@ -1228,41 +1191,16 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           if (precision < 19) { // fits in primitive data types.
             if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               if (precision > 9) {
-                return new ColumnConverter() {
-                  @Override
-                  public Object convert(ResultSet rs) throws SQLException {
-                    return rs.getLong(col);
-                  }
-                };
+                return (rs) -> rs.getLong(col);
               } else if (precision > 4) {
-                return new ColumnConverter() {
-                  @Override
-                  public Object convert(ResultSet rs) throws SQLException {
-                    return rs.getInt(col);
-                  }
-                };
+                return (rs) -> rs.getInt(col);
               } else if (precision > 2) {
-                return new ColumnConverter() {
-                  @Override
-                  public Object convert(ResultSet rs) throws SQLException {
-                    return rs.getShort(col);
-                  }
-                };
+                return (rs) -> rs.getShort(col);
               } else {
-                return new ColumnConverter() {
-                  @Override
-                  public Object convert(ResultSet rs) throws SQLException {
-                    return rs.getByte(col);
-                  }
-                };
+                return (rs) -> rs.getByte(col);
               }
             } else if (scale > 0) { // floating point - use double in all cases
-              return new ColumnConverter() {
-                @Override
-                public Object convert(ResultSet rs) throws SQLException {
-                  return rs.getDouble(col);
-                }
-              };
+              return (rs) -> rs.getDouble(col);
             }
           }
         }
@@ -1272,151 +1210,103 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         final int precision = defn.precision();
         log.debug("DECIMAL with precision: '{}' and scale: '{}'", precision, defn.scale());
         final int scale = decimalScale(defn);
-        return new ColumnConverter() {
-          @Override
-          @SuppressWarnings("deprecation")
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getBigDecimal(col, scale);
-          }
-        };
+        return (rs) -> rs.getBigDecimal(col, scale);
       }
 
       case Types.CHAR:
       case Types.VARCHAR:
       case Types.LONGVARCHAR: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getString(col);
-          }
-        };
+        return (rs) -> rs.getString(col);
       }
 
       case Types.NCHAR:
       case Types.NVARCHAR:
       case Types.LONGNVARCHAR: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getNString(col);
-          }
-        };
+        return (rs) -> rs.getNString(col);
       }
 
       // Binary == fixed, VARBINARY and LONGVARBINARY == bytes
       case Types.BINARY:
       case Types.VARBINARY:
       case Types.LONGVARBINARY: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getBytes(col);
-          }
-        };
+        return (rs) -> rs.getBytes(col);
       }
 
       // Date is day + moth + year
       case Types.DATE: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getDate(col, DateTimeUtils.UTC_CALENDAR.get());
-          }
-        };
+        return (rs) -> rs.getDate(col, DateTimeUtils.UTC_CALENDAR.get());
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getTime(col, DateTimeUtils.UTC_CALENDAR.get());
-          }
-        };
+        return (rs) -> rs.getTime(col, DateTimeUtils.UTC_CALENDAR.get());
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            return rs.getTimestamp(col, DateTimeUtils.UTC_CALENDAR.get());
-          }
-        };
+        return (rs) -> rs.getTimestamp(col, DateTimeUtils.UTC_CALENDAR.get());
       }
 
       // Datalink is basically a URL -> string
       case Types.DATALINK: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            URL url = rs.getURL(col);
-            return (url != null ? url.toString() : null);
-          }
+        return (rs) -> {
+          URL url = rs.getURL(col);
+          return (url != null ? url.toString() : null);
         };
       }
 
       // BLOB == fixed
       case Types.BLOB: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException, IOException {
-            Blob blob = rs.getBlob(col);
-            if (blob == null) {
-              return null;
-            } else {
-              try {
-                if (blob.length() > Integer.MAX_VALUE) {
-                  throw new IOException("Can't process BLOBs longer than " + Integer.MAX_VALUE);
-                }
-                return blob.getBytes(1, (int) blob.length());
-              } finally {
-                if (isJdbc4) {
-                  free(blob);
-                }
+        return (rs) -> {
+          Blob blob = rs.getBlob(col);
+          if (blob == null) {
+            return null;
+          } else {
+            try {
+              if (blob.length() > Integer.MAX_VALUE) {
+                throw new IOException("Can't process BLOBs longer than " + Integer.MAX_VALUE);
+              }
+              return blob.getBytes(1, (int) blob.length());
+            } finally {
+              if (isJdbc4) {
+                free(blob);
               }
             }
           }
         };
       }
       case Types.CLOB:
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException, IOException {
-            Clob clob = rs.getClob(col);
-            if (clob == null) {
-              return null;
-            } else {
-              try {
-                if (clob.length() > Integer.MAX_VALUE) {
-                  throw new IOException("Can't process CLOBs longer than " + Integer.MAX_VALUE);
-                }
-                return clob.getSubString(1, (int) clob.length());
-              } finally {
-                if (isJdbc4) {
-                  free(clob);
-                }
+        return (rs) -> {
+          Clob clob = rs.getClob(col);
+          if (clob == null) {
+            return null;
+          } else {
+            try {
+              if (clob.length() > Integer.MAX_VALUE) {
+                throw new IOException("Can't process CLOBs longer than " + Integer.MAX_VALUE);
+              }
+              return clob.getSubString(1, (int) clob.length());
+            } finally {
+              if (isJdbc4) {
+                free(clob);
               }
             }
           }
         };
       case Types.NCLOB: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException, IOException {
-            Clob clob = rs.getNClob(col);
-            if (clob == null) {
-              return null;
-            } else {
-              try {
-                if (clob.length() > Integer.MAX_VALUE) {
-                  throw new IOException("Can't process NCLOBs longer than " + Integer.MAX_VALUE);
-                }
-                return clob.getSubString(1, (int) clob.length());
-              } finally {
-                if (isJdbc4) {
-                  free(clob);
-                }
+        return (rs) -> {
+          Clob clob = rs.getNClob(col);
+          if (clob == null) {
+            return null;
+          } else {
+            try {
+              if (clob.length() > Integer.MAX_VALUE) {
+                throw new IOException("Can't process NCLOBs longer than " + Integer.MAX_VALUE);
+              }
+              return clob.getSubString(1, (int) clob.length());
+            } finally {
+              if (isJdbc4) {
+                free(clob);
               }
             }
           }
@@ -1425,12 +1315,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
       // XML -> string
       case Types.SQLXML: {
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet rs) throws SQLException {
-            SQLXML xml = rs.getSQLXML(col);
-            return (xml != null ? xml.getString() : null);
-          }
+        return (rs) -> {
+          SQLXML xml = rs.getSQLXML(col);
+          return (xml != null ? xml.getString() : null);
         };
       }
 
@@ -1704,25 +1591,22 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   ) {
     final boolean newlines = fields.size() > 1;
 
+    final Transform<SinkRecordField> transform = (builder, field) -> {
+      if (newlines) {
+        builder.appendNewLine();
+      }
+      builder.append("ADD ");
+      writeColumnSpec(builder, field);
+    };
+
     ExpressionBuilder builder = expressionBuilder();
     builder.append("ALTER TABLE ");
     builder.append(table);
     builder.append(" ");
     builder.appendList()
            .delimitedBy(",")
-           .transformedBy(new Transform<SinkRecordField>() {
-             @Override
-             public void apply(
-                 ExpressionBuilder builder,
-                 SinkRecordField f
-             ) {
-               if (newlines) {
-                 builder.appendNewLine();
-               }
-               builder.append("ADD ");
-               writeColumnSpec(builder, f);
-             }
-           }).of(fields);
+           .transformedBy(transform)
+           .of(fields);
     return Collections.singletonList(builder.toString());
   }
 
@@ -1740,15 +1624,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       ExpressionBuilder builder,
       Collection<SinkRecordField> fields
   ) {
-    Transform<SinkRecordField> transform = new Transform<SinkRecordField>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          SinkRecordField field
-      ) {
-        builder.append(System.lineSeparator());
-        writeColumnSpec(builder, field);
-      }
+    Transform<SinkRecordField> transform = (b, field) -> {
+      b.append(System.lineSeparator());
+      writeColumnSpec(b, field);
     };
     builder.appendList().delimitedBy(",").transformedBy(transform).of(fields);
   }
@@ -1763,8 +1641,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     builder.append(sqlType);
     if (f.defaultValue() != null) {
       builder.append(" DEFAULT ");
-      formatColumnValue(builder, f.schemaName(), f.schemaParameters(), f.schemaType(),
-                        f.defaultValue()
+      formatColumnValue(
+          builder,
+          f.schemaName(),
+          f.schemaParameters(),
+          f.schemaType(),
+          f.defaultValue()
       );
     } else if (isColumnOptional(f)) {
       builder.append(" NULL");

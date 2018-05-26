@@ -166,15 +166,12 @@ public class OracleDatabaseDialect extends GenericDatabaseDialect {
       Collection<ColumnId> nonKeyColumns
   ) {
     // https://blogs.oracle.com/cmar/entry/using_merge_to_do_an
-    final Transform<ColumnId> transform = new Transform<ColumnId>() {
-      @Override
-      public void apply(
-          ExpressionBuilder builder,
-          ColumnId col
-      ) {
-        builder.append(table).append(".").appendIdentifierQuoted(col.name()).append("=incoming.")
-               .appendIdentifierQuoted(col.name());
-      }
+    final Transform<ColumnId> transform = (builder, col) -> {
+      builder.append(table)
+             .append(".")
+             .appendIdentifierQuoted(col.name())
+             .append("=incoming.")
+             .appendIdentifierQuoted(col.name());
     };
 
     ExpressionBuilder builder = expressionBuilder();

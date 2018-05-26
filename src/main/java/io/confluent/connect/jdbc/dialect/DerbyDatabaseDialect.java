@@ -117,6 +117,14 @@ public class DerbyDatabaseDialect extends GenericDatabaseDialect {
       Collection<ColumnId> nonKeyColumns
   ) {
     // http://lpar.ath0.com/2013/08/12/upsert-in-db2/
+    final Transform<ColumnId> transform = (builder, col) -> {
+      builder.append(table)
+             .append(".")
+             .appendIdentifierQuoted(col.name())
+             .append("=DAT.")
+             .appendIdentifierQuoted(col.name());
+    };
+
     ExpressionBuilder builder = expressionBuilder();
     builder.append("merge into ");
     builder.append(table);
@@ -133,37 +141,13 @@ public class DerbyDatabaseDialect extends GenericDatabaseDialect {
     builder.append(") on ");
     builder.appendList()
            .delimitedBy(" and ")
-           .transformedBy(new Transform<ColumnId>() {
-             @Override
-             public void apply(
-                 ExpressionBuilder builder,
-                 ColumnId col
-             ) {
-               builder.append(table)
-                      .append(".")
-                      .appendIdentifierQuoted(col.name())
-                      .append("=DAT.")
-                      .appendIdentifierQuoted(col.name());
-             }
-           })
+           .transformedBy(transform)
            .of(keyColumns);
     if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
       builder.append(" when matched then update set ");
       builder.appendList()
              .delimitedBy(", set ")
-             .transformedBy(new Transform<ColumnId>() {
-               @Override
-               public void apply(
-                   ExpressionBuilder builder,
-                   ColumnId col
-               ) {
-                 builder.append(table)
-                        .append(".")
-                        .appendIdentifierQuoted(col.name())
-                        .append("=DAT.")
-                        .appendIdentifierQuoted(col.name());
-               }
-             })
+             .transformedBy(transform)
              .of(nonKeyColumns);
     }
 

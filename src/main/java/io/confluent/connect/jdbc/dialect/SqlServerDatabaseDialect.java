@@ -30,7 +30,6 @@ import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBase
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import io.confluent.connect.jdbc.util.ColumnId;
 import io.confluent.connect.jdbc.util.ExpressionBuilder;
-import io.confluent.connect.jdbc.util.ExpressionBuilder.Transform;
 import io.confluent.connect.jdbc.util.IdentifierRules;
 import io.confluent.connect.jdbc.util.TableId;
 
@@ -160,35 +159,14 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
     builder.append(") AS incoming on (");
     builder.appendList()
            .delimitedBy(" and ")
-           .transformedBy(new Transform<ColumnId>() {
-             @Override
-             public void apply(
-                 ExpressionBuilder builder,
-                 ColumnId col
-             ) {
-               builder.append("target.")
-                      .appendIdentifierQuoted(col.name())
-                      .append("=incoming.")
-                      .appendIdentifierQuoted(col.name());
-             }
-           })
+           .transformedBy(this::transformAs)
            .of(keyColumns);
     builder.append(")");
     if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
       builder.append(" when matched then update set ");
       builder.appendList()
              .delimitedBy(",")
-             .transformedBy(new Transform<ColumnId>() {
-               @Override
-               public void apply(
-                   ExpressionBuilder builder,
-                   ColumnId col
-               ) {
-                 builder.appendIdentifierQuoted(col.name())
-                        .append("=incoming.")
-                        .appendIdentifierQuoted(col.name());
-               }
-             })
+             .transformedBy(this::transformUpdate)
              .of(nonKeyColumns);
     }
     builder.append(" when not matched then insert (");
@@ -203,5 +181,18 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
            .of(nonKeyColumns, keyColumns);
     builder.append(");");
     return builder.toString();
+  }
+
+  private void transformAs(ExpressionBuilder builder, ColumnId col) {
+    builder.append("target.")
+           .appendIdentifierQuoted(col.name())
+           .append("=incoming.")
+           .appendIdentifierQuoted(col.name());
+  }
+
+  private void transformUpdate(ExpressionBuilder builder, ColumnId col) {
+    builder.appendIdentifierQuoted(col.name())
+           .append("=incoming.")
+           .appendIdentifierQuoted(col.name());
   }
 }

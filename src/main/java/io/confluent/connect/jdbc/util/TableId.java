@@ -50,18 +50,6 @@ public class TableId implements Comparable<TableId>, Expressable {
     return tableName;
   }
 
-  public TableId toUpperCase() {
-    return new TableId(catalogName() != null ? catalogName().toUpperCase() : null,
-                       schemaName() != null ? schemaName().toUpperCase() : null,
-                       tableName() != null ? tableName().toUpperCase() : null);
-  }
-
-  public TableId toLowerCase() {
-    return new TableId(catalogName() != null ? catalogName().toLowerCase() : null,
-                       schemaName() != null ? schemaName().toLowerCase() : null,
-                       tableName() != null ? tableName().toLowerCase() : null);
-  }
-
   @Override
   public void appendTo(ExpressionBuilder builder, boolean useQuotes) {
     if (catalogName != null) {
@@ -87,8 +75,8 @@ public class TableId implements Comparable<TableId>, Expressable {
     }
     if (obj instanceof TableId) {
       TableId that = (TableId) obj;
-      return Objects.equals(this.catalogName, that.catalogName) && Objects.equals(this.schemaName,
-                                                                                  that.schemaName)
+      return Objects.equals(this.catalogName, that.catalogName)
+             && Objects.equals(this.schemaName, that.schemaName)
              && Objects.equals(this.tableName, that.tableName);
     }
     return false;
