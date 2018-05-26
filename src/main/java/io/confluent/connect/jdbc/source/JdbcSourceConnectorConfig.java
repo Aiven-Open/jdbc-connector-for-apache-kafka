@@ -119,12 +119,13 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String DIALECT_NAME_CONFIG = "dialect.name";
   private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
-  public static final String DIALECT_NAME_DEFAULT = null;
+  public static final String DIALECT_NAME_DEFAULT = "";
   private static final String DIALECT_NAME_DOC =
       "The name of the database dialect that should be used for this connector. By default this "
       + "is empty, and the connector automatically determines the dialect based upon the "
       + "JDBC connection URL. Use this if you want to override that behavior and use a "
-      + "specific dialect.";
+      + "specific dialect. All properly-packaged dialects in the JDBC connector plugin "
+      + "can be used.";
 
   public static final String MODE_CONFIG = "mode";
   private static final String MODE_DOC =

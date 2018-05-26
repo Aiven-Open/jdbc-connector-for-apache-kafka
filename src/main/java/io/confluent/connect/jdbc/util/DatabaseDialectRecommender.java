@@ -16,9 +16,9 @@
 
 package io.confluent.connect.jdbc.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialects;
 
@@ -29,9 +29,13 @@ public class DatabaseDialectRecommender implements ConfigDef.Recommender, Config
 
   public static final DatabaseDialectRecommender INSTANCE = new DatabaseDialectRecommender();
 
-  private static final List<Object> DIALECT_NAMES = DatabaseDialects.registeredDialectNames()
-                                                                    .stream()
-                                                                    .collect(Collectors.toList());
+  private static final List<Object> DIALECT_NAMES;
+
+  static {
+    DIALECT_NAMES = new ArrayList<>();
+    DIALECT_NAMES.add("");
+    DIALECT_NAMES.addAll(DatabaseDialects.registeredDialectNames());
+  }
 
   public List<Object> validValues(String var1, Map<String, Object> var2) {
     return DIALECT_NAMES;
@@ -46,5 +50,10 @@ public class DatabaseDialectRecommender implements ConfigDef.Recommender, Config
     if (value != null && !DIALECT_NAMES.contains(value.toString())) {
       throw new ConfigException(key, value, "Invalid enumerator");
     }
+  }
+
+  @Override
+  public String toString() {
+    return DIALECT_NAMES.toString();
   }
 }
