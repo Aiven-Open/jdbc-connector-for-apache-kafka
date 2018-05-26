@@ -27,11 +27,13 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.JdbcUrlInfo;
 
@@ -131,6 +133,39 @@ public class DatabaseDialects {
     return bestMatch.create(config);
   }
 
+  /**
+   * Get the dialect with the specified name. Note that the DatabaseDialect needs to be
+   * {@link DatabaseDialect#close() closed}.
+   *
+   * @param dialectName the dialect name
+   * @param config      the connector configuration used to create the dialect; may not be null
+   * @return the {@link DatabaseDialect} instance with the greatest score; never null, but possibly
+   *     the {@link DatabaseDialect default DatabaseDialect}
+   * @throws ConnectException if the dialect could not be found
+   */
+  public static DatabaseDialect create(
+      String dialectName,
+      AbstractConfig config
+  ) throws ConnectException {
+    LOG.debug("Looking for named dialect '{}'", dialectName);
+    Set<String> dialectNames = new HashSet<>();
+    for (DatabaseDialectProvider provider : REGISTRY.values()) {
+      dialectNames.add(provider.dialectName());
+      if (provider.dialectName().equals(dialectName)) {
+        return provider.create(config);
+      }
+    }
+    for (DatabaseDialectProvider provider : REGISTRY.values()) {
+      if (provider.dialectName().equalsIgnoreCase(dialectName)) {
+        return provider.create(config);
+      }
+    }
+    throw new ConnectException(
+        "Unable to find dialect with name '" + dialectName + "' in the available dialects: "
+        + dialectNames
+    );
+  }
+
   static JdbcUrlInfo extractJdbcUrlInfo(final String url) {
     Matcher matcher = PROTOCOL_PATTERN.matcher(url);
     if (matcher.matches()) {
@@ -146,6 +181,18 @@ public class DatabaseDialects {
    */
   public static Collection<DatabaseDialectProvider> registeredDialectProviders() {
     return new HashSet<>(REGISTRY.values());
+  }
+
+  /**
+   * Return the names of all of the available dialects.
+   *
+   * @return the dialect names; never null
+   */
+  public static Collection<String> registeredDialectNames() {
+    return REGISTRY.values()
+                   .stream()
+                   .map(DatabaseDialectProvider::dialectName)
+                   .collect(Collectors.toSet());
   }
 
   static class JdbcUrlDetails implements JdbcUrlInfo {

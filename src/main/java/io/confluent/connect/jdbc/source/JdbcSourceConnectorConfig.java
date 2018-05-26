@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.dialect.DatabaseDialects;
+import io.confluent.connect.jdbc.util.DatabaseDialectRecommender;
 import io.confluent.connect.jdbc.util.TableId;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
@@ -115,6 +116,15 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   private static final EnumRecommender NUMERIC_MAPPING_RECOMMENDER =
       EnumRecommender.in(NumericMapping.values());
+
+  public static final String DIALECT_NAME_CONFIG = "dialect.name";
+  private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
+  public static final String DIALECT_NAME_DEFAULT = null;
+  private static final String DIALECT_NAME_DOC =
+      "The name of the database dialect that should be used for this connector. By default this "
+      + "is empty, and the connector automatically determines the dialect based upon the "
+      + "JDBC connection URL. Use this if you want to override that behavior and use a "
+      + "specific dialect.";
 
   public static final String MODE_CONFIG = "mode";
   private static final String MODE_DOC =
@@ -382,7 +392,19 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         ++orderInGroup,
         Width.SHORT,
         NUMERIC_MAPPING_DISPLAY,
-        NUMERIC_MAPPING_RECOMMENDER);
+        NUMERIC_MAPPING_RECOMMENDER
+    ).define(
+        DIALECT_NAME_CONFIG,
+        Type.STRING,
+        DIALECT_NAME_DEFAULT,
+        DatabaseDialectRecommender.INSTANCE,
+        Importance.LOW,
+        DIALECT_NAME_DOC,
+        DATABASE_GROUP,
+        ++orderInGroup,
+        Width.LONG,
+        DIALECT_NAME_DISPLAY,
+        DatabaseDialectRecommender.INSTANCE);
   }
 
   private static final void addModeOptions(ConfigDef config) {

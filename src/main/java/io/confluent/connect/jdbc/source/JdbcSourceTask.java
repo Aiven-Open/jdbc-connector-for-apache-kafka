@@ -83,7 +83,14 @@ public class JdbcSourceTask extends SourceTask {
     final String url = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     final int maxConnAttempts = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
     final long retryBackoff = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
-    dialect = DatabaseDialects.findBestFor(url, config);
+
+    final String dialectName = config.getString(JdbcSourceConnectorConfig.DIALECT_NAME_CONFIG);
+    if (dialectName != null && !dialectName.trim().isEmpty()) {
+      dialect = DatabaseDialects.create(dialectName, config);
+    } else {
+      dialect = DatabaseDialects.findBestFor(url, config);
+    }
+
     cachedConnectionProvider = new CachedConnectionProvider(dialect, maxConnAttempts, retryBackoff);
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
