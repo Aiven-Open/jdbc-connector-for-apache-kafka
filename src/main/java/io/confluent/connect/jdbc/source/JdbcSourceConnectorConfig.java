@@ -541,7 +541,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
       try (Connection db = dialect.getConnection()) {
         List<Object> result = new LinkedList<>();
-        for (TableId id : dialect.tableNames(db)) {
+        for (TableId id : dialect.tableIds(db)) {
           // Just add the unqualified table name
           result.add(id.tableName());
         }

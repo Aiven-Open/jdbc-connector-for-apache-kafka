@@ -19,6 +19,9 @@ package io.confluent.connect.jdbc.util;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The rules for how identifiers are parsed and quoted.
+ */
 public class IdentifierRules {
 
   public static final String UNSUPPORTED_QUOTE = " ";
@@ -33,10 +36,25 @@ public class IdentifierRules {
   private final String trailingQuoteString;
   private final String identifierDelimiter;
 
+  /**
+   * Create new identifier rules using the supplied quote string for both leading and trailing
+   * quotes, and the '{@link #DEFAULT_ID_DELIM}' character for identifier delimiters.
+   *
+   * @param quoteString the string used for leading and trailing quotes; may be null if {@link
+   *                    #DEFAULT_QUOTE} is to be used
+   */
   public IdentifierRules(String quoteString) {
     this(DEFAULT_ID_DELIM, quoteString, quoteString);
   }
 
+  /**
+   * Create new identifier rules using the supplied parameters.
+   *
+   * @param delimiter   the delimiter used within fully qualified names; may be null if {@link
+   *                    #DEFAULT_ID_DELIM} is to be used
+   * @param quoteString the string used for leading and trailing quotes; may be null if {@link
+   *                    #DEFAULT_QUOTE} is to be used
+   */
   public IdentifierRules(
       String delimiter,
       String quoteString
@@ -44,6 +62,16 @@ public class IdentifierRules {
     this(delimiter, quoteString, quoteString);
   }
 
+  /**
+   * Create new identifier rules using the supplied parameters.
+   *
+   * @param identifierDelimiter the delimiter used within fully qualified names; may be null if
+   *                            {@link #DEFAULT_ID_DELIM} is to be used
+   * @param leadingQuoteString  the string used for leading quotes; may be null if {@link
+   *                            #DEFAULT_QUOTE} is to be used
+   * @param trailingQuoteString the string used for leading quotes; may be null if {@link
+   *                            #DEFAULT_QUOTE} is to be used
+   */
   public IdentifierRules(
       String identifierDelimiter,
       String leadingQuoteString,
@@ -54,22 +82,48 @@ public class IdentifierRules {
     this.identifierDelimiter = identifierDelimiter != null ? identifierDelimiter : DEFAULT_ID_DELIM;
   }
 
+  /**
+   * Get the delimiter that is used to delineate segments within fully-qualified identifiers.
+   *
+   * @return the identifier delimiter; never null
+   */
   public String identifierDelimiter() {
     return identifierDelimiter;
   }
 
+  /**
+   * Get the string used as a leading quote.
+   *
+   * @return the leading quote string; never null
+   */
   public String leadingQuoteString() {
     return leadingQuoteString;
   }
 
+  /**
+   * Get the string used as a trailing quote.
+   *
+   * @return the trailing quote string; never null
+   */
   public String trailingQuoteString() {
     return trailingQuoteString;
   }
 
+  /**
+   * Get an expression builder that uses these identifier rules.
+   *
+   * @return the new expression builder; never null
+   */
   public ExpressionBuilder expressionBuilder() {
     return new ExpressionBuilder(this);
   }
 
+  /**
+   * Parse the unqualified or fully qualified name into its segments.
+   *
+   * @param fqn the unqualified or fully-qualified name; may not be null
+   * @return the segments in the supplied name; never null, but possibly empty
+   */
   public List<String> parseQualifiedIdentifier(String fqn) {
     String orig = fqn;
     String delim = identifierDelimiter();

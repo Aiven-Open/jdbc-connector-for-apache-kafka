@@ -97,12 +97,6 @@ public abstract class DatabaseDialectProvider {
   public static final int NO_MATCH_SCORE = 0;
 
   /**
-   * The minimum score that should be returned by the {@link #score(JdbcUrlInfo)} method to signal
-   * that the DatabaseDialect instance can be used with a connection.
-   */
-  public static final int MINIMUM_MATCHING_SCORE = 1;
-
-  /**
    * The "average" score that should be returned by the {@link #score(JdbcUrlInfo)} method to signal
    * that the DatabaseDialect instance can be used with a connection and .
    */
@@ -119,8 +113,8 @@ public abstract class DatabaseDialectProvider {
    * connection will be used.
    *
    * @param jdbcInfo the information about the JDBC connection URL; may not be null
-   * @return the score; may be less than {@link #MINIMUM_MATCHING_SCORE} if the dialect does not
-   *     apply, or greater than or equal to {@link #MINIMUM_MATCHING_SCORE} if the DatabaseDialect
+   * @return the score; may be {@link #NO_MATCH_SCORE} if the dialect does not
+   *     apply, or greater than or equal to {@link #NO_MATCH_SCORE} if the DatabaseDialect
    *     can be used with this connection.
    */
   public abstract int score(JdbcUrlInfo jdbcInfo);

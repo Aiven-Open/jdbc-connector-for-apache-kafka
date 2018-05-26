@@ -119,7 +119,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
   @Test
   public void testGetTablesEmpty() throws Exception {
     newDialectFor(TABLE_TYPES, null);
-    assertEquals(Collections.emptyList(), dialect.tableNames(conn));
+    assertEquals(Collections.emptyList(), dialect.tableIds(conn));
   }
 
   @Test
@@ -127,7 +127,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     newDialectFor(TABLE_TYPES, null);
     db.createTable("test", "id", "INT");
     TableId test = new TableId(null, "APP", "test");
-    assertEquals(Arrays.asList(test), dialect.tableNames(conn));
+    assertEquals(Arrays.asList(test), dialect.tableIds(conn));
   }
 
   @Test
@@ -136,14 +136,14 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     newDialectFor(types, null);
     db.createTable("test", "id", "INT");
     TableId test = new TableId(null, "APP", "test");
-    assertEquals(Arrays.asList(test), dialect.tableNames(conn));
+    assertEquals(Arrays.asList(test), dialect.tableIds(conn));
   }
 
   @Test
   public void testNotFindTablesWithUnknownTableType() throws Exception {
     newDialectFor(Collections.singleton("view"), null);
     db.createTable("test", "id", "INT");
-    assertEquals(Arrays.asList(), dialect.tableNames(conn));
+    assertEquals(Arrays.asList(), dialect.tableIds(conn));
   }
 
   @Test
@@ -156,7 +156,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     TableId foo = new TableId(null, "APP", "foo");
     TableId zab = new TableId(null, "APP", "zab");
     assertEquals(new HashSet<>(Arrays.asList(test, foo, zab)),
-                 new HashSet<>(dialect.tableNames(conn)));
+                 new HashSet<>(dialect.tableIds(conn)));
   }
 
   @Test
@@ -208,7 +208,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
       TableId... expectedTableIds
   ) throws Exception {
     newDialectFor(tableTypes, schemaPattern);
-    Collection<TableId> ids = dialect.tableNames(db.getConnection());
+    Collection<TableId> ids = dialect.tableIds(db.getConnection());
     for (TableId expectedTableId : expectedTableIds) {
       assertTrue(ids.contains(expectedTableId));
     }

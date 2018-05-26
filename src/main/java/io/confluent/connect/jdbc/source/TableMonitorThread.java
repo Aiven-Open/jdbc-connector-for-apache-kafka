@@ -115,7 +115,7 @@ public class TableMonitorThread extends Thread {
   private synchronized boolean updateTables() {
     final List<TableId> tables;
     try {
-      tables = dialect.tableNames(connectionProvider.getConnection());
+      tables = dialect.tableIds(connectionProvider.getConnection());
       log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
     } catch (SQLException e) {
       log.error(

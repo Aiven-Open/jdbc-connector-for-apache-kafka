@@ -79,7 +79,7 @@ public class SqliteHelperTest {
     DatabaseDialect dialect = new SqliteDatabaseDialect(config);
 
     final Map<String, TableDefinition> tables = new HashMap<>();
-    for (TableId tableId : dialect.tableNames(sqliteHelper.connection)) {
+    for (TableId tableId : dialect.tableIds(sqliteHelper.connection)) {
       tables.put(tableId.tableName(), dialect.describeTable(sqliteHelper.connection, tableId));
     }
 

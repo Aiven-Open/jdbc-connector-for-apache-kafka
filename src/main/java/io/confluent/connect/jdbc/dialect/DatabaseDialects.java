@@ -81,7 +81,7 @@ public class DatabaseDialects {
           while (dialectIterator.hasNext()) {
             try {
               DatabaseDialectProvider provider = dialectIterator.next();
-              register(provider);
+              REGISTRY.put(provider.getClass().getName(), provider);
               count.incrementAndGet();
               LOG.debug("Found '{}' provider {}", provider, provider.getClass());
             } catch (Throwable t) {
@@ -95,15 +95,6 @@ public class DatabaseDialects {
       }
     });
     LOG.debug("Registered {} source dialects", count.get());
-  }
-
-  /**
-   * Register a {@link DatabaseDialectProvider} of {@link DatabaseDialect}s.
-   *
-   * @param provider the dialect provider; may not be null
-   */
-  public static void register(DatabaseDialectProvider provider) {
-    REGISTRY.put(provider.getClass().getName(), provider);
   }
 
   /**
@@ -124,7 +115,7 @@ public class DatabaseDialects {
   ) throws ConnectException {
     final JdbcUrlInfo info = extractJdbcUrlInfo(jdbcUrl);
     LOG.debug("Finding best dialect for {}", info);
-    int bestScore = DatabaseDialectProvider.MINIMUM_MATCHING_SCORE - 1;
+    int bestScore = DatabaseDialectProvider.NO_MATCH_SCORE;
 
     // Now find the dialect with the highest score ...
     DatabaseDialectProvider bestMatch = null;

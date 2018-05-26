@@ -16,13 +16,6 @@
 
 package io.confluent.connect.jdbc.dialect;
 
-import org.apache.kafka.connect.data.Field;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.sink.SinkRecord;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,9 +42,16 @@ import io.confluent.connect.jdbc.util.IdentifierRules;
 import io.confluent.connect.jdbc.util.TableDefinition;
 import io.confluent.connect.jdbc.util.TableId;
 
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.sink.SinkRecord;
+
 /**
  * A component that is used to map datatypes and queries for JDBC sources. Every dialect should be
- * threadsafe and all methods should be free of side effects.
+ * thread-safe and all methods should be free of side effects.
  *
  * <h2>Customizing DBMS-specific Behavior</h2> The {@link GenericDatabaseDialect} implementation is
  * intended to be general enough to work with most DBMS sources with common JDBC and SQL types.
@@ -129,13 +129,13 @@ public interface DatabaseDialect extends ConnectionProvider {
   /**
    * Create a new prepared statement using the specified database connection.
    *
-   * @param db    the database connection; may not be null
-   * @param query the query expression for the prepared statement; may not be null
+   * @param connection the database connection; may not be null
+   * @param query      the query expression for the prepared statement; may not be null
    * @return a new prepared statement; never null
    * @throws SQLException if there is an error with the database connection
    */
   PreparedStatement createPreparedStatement(
-      Connection db,
+      Connection connection,
       String query
   ) throws SQLException;
 
@@ -167,26 +167,24 @@ public interface DatabaseDialect extends ConnectionProvider {
   /**
    * Return current time at the database
    *
-   * @param conn database connection
-   * @param cal  calendar
+   * @param connection database connection
+   * @param cal        calendar
    * @return the current time at the database
    * @throws SQLException if there is an error with the database connection
    */
   Timestamp currentTimeOnDB(
-      Connection conn,
+      Connection connection,
       Calendar cal
   ) throws SQLException, ConnectException;
 
   /**
-   * Get a list of non-system table names in the database.
+   * Get a list of identifiers of the non-system tables in the database.
    *
-   * @param conn database connection
+   * @param connection database connection
    * @return a list of tables; never null
    * @throws SQLException if there is an error with the database connection
    */
-  List<TableId> tableNames(
-      Connection conn
-  ) throws SQLException;
+  List<TableId> tableIds(Connection connection) throws SQLException;
 
   /**
    * Determine if the specified table exists in the database.
@@ -196,10 +194,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @return true if the table exists, or false otherwise
    * @throws SQLException if there is an error accessing the metadata
    */
-  boolean tableExists(
-      Connection connection,
-      TableId tableId
-  ) throws SQLException;
+  boolean tableExists(Connection connection, TableId tableId) throws SQLException;
 
   /**
    * Create the definition for the columns described by the database metadata using the current
@@ -256,10 +251,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @return the table definition; null if the table does not exist
    * @throws SQLException if there is an error accessing the metadata
    */
-  TableDefinition describeTable(
-      Connection connection,
-      TableId tableId
-  ) throws SQLException;
+  TableDefinition describeTable(Connection connection, TableId tableId) throws SQLException;
 
   /**
    * Create the definition for the columns in the result set returned when querying the table. This
@@ -298,10 +290,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @param builder the schema builder; may not be null
    * @return the name of the field, or null if no field was added
    */
-  String addFieldToSchema(
-      ColumnDefinition column,
-      SchemaBuilder builder
-  );
+  String addFieldToSchema(ColumnDefinition column, SchemaBuilder builder);
 
   /**
    * Apply the supplied DDL statements using the given connection. This gives the dialect the
@@ -367,14 +356,11 @@ public interface DatabaseDialect extends ConnectionProvider {
   /**
    * Build the DROP TABLE statement expression for the given table.
    *
-   * @param table  the identifier of the table; may not be null
+   * @param table   the identifier of the table; may not be null
    * @param options the options; may be null
    * @return the DROP TABLE statement; may not be null
    */
-  String buildDropTableStatement(
-      TableId table,
-      DropOptions options
-  );
+  String buildDropTableStatement(TableId table, DropOptions options);
 
   /**
    * Build the CREATE TABLE statement expression for the given table and its columns.
@@ -383,15 +369,16 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @param fields the information about the fields in the sink records; may not be null
    * @return the CREATE TABLE statement; may not be null
    */
-  String buildCreateTableStatement(
-      TableId table,
-      Collection<SinkRecordField> fields
-  );
+  String buildCreateTableStatement(TableId table, Collection<SinkRecordField> fields);
 
-  List<String> buildAlterTable(
-      TableId table,
-      Collection<SinkRecordField> fields
-  );
+  /**
+   * Build the ALTER TABLE statement expression for the given table and its columns.
+   *
+   * @param table  the identifier of the table; may not be null
+   * @param fields the information about the fields in the sink records; may not be null
+   * @return the ALTER TABLE statement; may not be null
+   */
+  List<String> buildAlterTable(TableId table, Collection<SinkRecordField> fields);
 
   /**
    * Create a component that can bind record values into the
@@ -417,9 +404,9 @@ public interface DatabaseDialect extends ConnectionProvider {
    * statement.
    *
    * @param statement the prepared statement; may not be null
-   * @param index the 1-based index of the variable within the prepared statement
-   * @param schema the schema for the value; may be null only if the value is null
-   * @param value the value to be bound to the variable; may be null
+   * @param index     the 1-based index of the variable within the prepared statement
+   * @param schema    the schema for the value; may be null only if the value is null
+   * @param value     the value to be bound to the variable; may be null
    * @throws SQLException if there is a problem binding the value into the statement
    * @see #statementBinder
    */
@@ -451,12 +438,14 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @param mapping the column definition and the corresponding {@link Field}; may not be null
    * @return the column converter function; or null if the column should be ignored
    */
-  ColumnConverter createColumnConverter(
-      ColumnMapping mapping
-  );
+  ColumnConverter createColumnConverter(ColumnMapping mapping);
 
+  /**
+   * A function that obtains a column value from the current row of the specified result set.
+   */
   @FunctionalInterface
   interface ColumnConverter {
+
     /**
      * Get the column's value from the row at the current position in the result set, and convert it
      * to a value that should be included in the corresponding {@link Field} in the {@link Struct}

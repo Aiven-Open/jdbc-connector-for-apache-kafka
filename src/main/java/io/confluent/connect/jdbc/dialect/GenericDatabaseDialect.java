@@ -155,14 +155,14 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     this.config = config;
     this.defaultIdentifierRules = defaultIdentifierRules;
     this.jdbcUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
-    if (!(config instanceof JdbcSinkConfig)) {
-      catalogPattern = config.getString(JdbcSourceTaskConfig.CATALOG_PATTERN_CONFIG);
-      schemaPattern = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
-      tableTypes = new HashSet<>(config.getList(JdbcSourceTaskConfig.TABLE_TYPE_CONFIG));
-    } else {
+    if (config instanceof JdbcSinkConfig) {
       catalogPattern = JdbcSourceTaskConfig.CATALOG_PATTERN_DEFAULT;
       schemaPattern = JdbcSourceTaskConfig.SCHEMA_PATTERN_DEFAULT;
       tableTypes = new HashSet<>(Arrays.asList(JdbcSourceTaskConfig.TABLE_TYPE_DEFAULT));
+    } else {
+      catalogPattern = config.getString(JdbcSourceTaskConfig.CATALOG_PATTERN_CONFIG);
+      schemaPattern = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
+      tableTypes = new HashSet<>(config.getList(JdbcSourceTaskConfig.TABLE_TYPE_CONFIG));
     }
     if (config instanceof JdbcSourceConnectorConfig) {
       mapNumerics = ((JdbcSourceConnectorConfig)config).numericMapping();
@@ -194,14 +194,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   @Override
   public void close() {
-    while (!connections.isEmpty()) {
-      Connection conn = connections.poll();
-      if (conn != null) {
-        try {
-          conn.close();
-        } catch (SQLException e) {
-          log.warn("Error while closing connection to {}", jdbcDriverInfo, e);
-        }
+    for (Connection conn = connections.poll(); conn != null; conn = connections.poll()) {
+      try {
+        conn.close();
+      } catch (SQLException e) {
+        log.warn("Error while closing connection to {}", jdbcDriverInfo, e);
       }
     }
   }
@@ -315,9 +312,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   }
 
   @Override
-  public List<TableId> tableNames(
-      Connection conn
-  ) throws SQLException {
+  public List<TableId> tableIds(Connection conn) throws SQLException {
     DatabaseMetaData metadata = conn.getMetaData();
     String[] tableTypes = tableTypes(metadata, this.tableTypes);
 

@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Set;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
-import io.confluent.connect.jdbc.dialect.GenericDatabaseDialect;
 import io.confluent.connect.jdbc.util.ConnectionProvider;
 import io.confluent.connect.jdbc.util.ExpressionBuilder;
 import io.confluent.connect.jdbc.util.TableId;
@@ -203,7 +202,7 @@ public class TableMonitorThreadTest {
       throws
       SQLException {
     EasyMock.expect(connectionProvider.getConnection()).andReturn(connection);
-    EasyMock.expect(dialect.tableNames(EasyMock.eq(connection))).andAnswer(
+    EasyMock.expect(dialect.tableIds(EasyMock.eq(connection))).andAnswer(
         new IAnswer<List<TableId>>() {
           @Override
           public List<TableId> answer() throws Throwable {
