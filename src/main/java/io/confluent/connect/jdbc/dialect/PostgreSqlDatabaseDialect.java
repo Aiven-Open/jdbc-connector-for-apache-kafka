@@ -82,37 +82,26 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
         // this as well as lengths larger than 8.
         boolean optional = columnDefn.isOptional();
         int numBits = columnDefn.precision();
+        Schema schema;
         if (numBits <= 1) {
-          if (optional) {
-            builder.field(fieldName, Schema.OPTIONAL_BOOLEAN_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.BOOLEAN_SCHEMA);
-          }
+          schema = optional ? Schema.OPTIONAL_BOOLEAN_SCHEMA : Schema.BOOLEAN_SCHEMA;
         } else if (numBits <= 8) {
           // For consistency with what the connector did before ...
-          if (optional) {
-            builder.field(fieldName, Schema.OPTIONAL_INT8_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.INT8_SCHEMA);
-          }
+          schema = optional ? Schema.OPTIONAL_INT8_SCHEMA : Schema.INT8_SCHEMA;
         } else {
-          if (optional) {
-            builder.field(fieldName, Schema.OPTIONAL_BYTES_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.BYTES_SCHEMA);
-          }
+          schema = optional ? Schema.OPTIONAL_BYTES_SCHEMA : Schema.BYTES_SCHEMA;
         }
+        builder.field(fieldName, schema);
         return fieldName;
       }
       case Types.OTHER: {
         // Some of these types will have fixed size, but we drop this from the schema conversion
         // since only fixed byte arrays can have a fixed size
         if (isJsonType(columnDefn)) {
-          if (columnDefn.isOptional()) {
-            builder.field(fieldName, Schema.OPTIONAL_STRING_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.STRING_SCHEMA);
-          }
+          builder.field(
+              fieldName,
+              columnDefn.isOptional() ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA
+          );
           return fieldName;
         }
         break;
@@ -139,16 +128,16 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
         // this as well as lengths larger than 8.
         final int numBits = columnDefn.precision();
         if (numBits <= 1) {
-          return (rs) -> rs.getBoolean(col);
+          return rs -> rs.getBoolean(col);
         } else if (numBits <= 8) {
           // Do this for consistency with earlier versions of the connector
-          return (rs) -> rs.getByte(col);
+          return rs -> rs.getByte(col);
         }
-        return (rs) -> rs.getBytes(col);
+        return rs -> rs.getBytes(col);
       }
       case Types.OTHER: {
         if (isJsonType(columnDefn)) {
-          return (rs) -> rs.getString(col);
+          return rs -> rs.getString(col);
         }
         break;
       }

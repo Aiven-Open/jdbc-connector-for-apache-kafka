@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.dialect.DatabaseDialect.StatementBinder;
@@ -152,7 +153,8 @@ public class BufferedRecords {
         case UPSERT:
         case UPDATE:
           log.trace(
-              config.insertMode + " records:{} resulting in in totalUpdateCount:{}",
+              "{} records:{} resulting in in totalUpdateCount:{}",
+              config.insertMode,
               records.size(),
               totalUpdateCount
           );
@@ -163,8 +165,8 @@ public class BufferedRecords {
     }
     if (successNoInfo) {
       log.info(
-          config.insertMode
-          + " records:{} , but no count of the number of rows it affected is available",
+          "{} records:{} , but no count of the number of rows it affected is available",
+          config.insertMode,
           records.size()
       );
     }
@@ -197,11 +199,19 @@ public class BufferedRecords {
               tableId
           ));
         }
-        return dbDialect.buildUpsertQueryStatement(
-            tableId,
-            asColumns(fieldsMetadata.keyFieldNames),
-            asColumns(fieldsMetadata.nonKeyFieldNames)
-        );
+        try {
+          return dbDialect.buildUpsertQueryStatement(
+              tableId,
+              asColumns(fieldsMetadata.keyFieldNames),
+              asColumns(fieldsMetadata.nonKeyFieldNames)
+          );
+        } catch (UnsupportedOperationException e) {
+          throw new ConnectException(String.format(
+              "Write to table '%s' in UPSERT mode is not supported with the %s dialect.",
+              tableId,
+              dbDialect.name()
+          ));
+        }
       case UPDATE:
         return dbDialect.buildUpdateStatement(
             tableId,
@@ -214,13 +224,8 @@ public class BufferedRecords {
   }
 
   private Collection<ColumnId> asColumns(Collection<String> names) {
-    Collection<ColumnId> ids = new ArrayList<>();
-    for (String name : names) {
-      ids.add(new ColumnId(
-          tableId,
-          name
-      ));
-    }
-    return ids;
+    return names.stream()
+                .map(name -> new ColumnId(tableId, name))
+                .collect(Collectors.toList());
   }
 }

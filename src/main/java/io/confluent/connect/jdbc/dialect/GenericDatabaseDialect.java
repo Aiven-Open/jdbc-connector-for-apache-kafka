@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
@@ -172,6 +173,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   }
 
   @Override
+  public String name() {
+    return getClass().getSimpleName().replace("DatabaseDialect", "");
+  }
+
+  @Override
   public Connection getConnection() throws SQLException {
     // These config names are the same for both source and sink configs ...
     String username = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
@@ -194,10 +200,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   @Override
   public void close() {
-    for (Connection conn = connections.poll(); conn != null; conn = connections.poll()) {
+    Connection conn;
+    while ((conn = connections.poll()) != null) {
       try {
         conn.close();
-      } catch (SQLException e) {
+      } catch (Throwable e) {
         log.warn("Error while closing connection to {}", jdbcDriverInfo, e);
       }
     }
@@ -215,9 +222,10 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     String query = checkConnectionQuery();
     if (query != null) {
       try (Statement statement = connection.createStatement()) {
-        boolean hasResultSet = statement.execute(query);
-        if (hasResultSet) {
-          statement.getResultSet().close();
+        if (statement.execute(query)) {
+          try (ResultSet rs = statement.getResultSet()) {
+            // do nothing with the result set
+          }
         }
       }
     }
@@ -368,7 +376,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     Set<String> uppercaseTypes = new HashSet<>();
     for (String type : types) {
       if (type != null) {
-        uppercaseTypes.add(type.toUpperCase());
+        uppercaseTypes.add(type.toUpperCase(Locale.ROOT));
       }
     }
     // Now find out the available table types ...
@@ -376,7 +384,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     try (ResultSet rs = metadata.getTableTypes()) {
       while (rs.next()) {
         String tableType = rs.getString(1);
-        if (tableType != null && uppercaseTypes.contains(tableType.toUpperCase())) {
+        if (tableType != null && uppercaseTypes.contains(tableType.toUpperCase(Locale.ROOT))) {
           matchingTableTypes.add(tableType);
         }
       }
@@ -387,11 +395,6 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   @Override
   public IdentifierRules identifierRules() {
     if (identifierRules.get() == null) {
-      if (defaultIdentifierRules != null && connections.peek() == null) {
-        // We've not yet established a connection to the database, so in this case
-        // just return the default rules ...
-        return defaultIdentifierRules;
-      }
       // Otherwise try to get the actual quote string and separator from the database, since
       // many databases allow them to be changed
       try (Connection connection = getConnection()) {
@@ -841,94 +844,54 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       }
 
       case Types.BOOLEAN: {
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_BOOLEAN_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.BOOLEAN_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_BOOLEAN_SCHEMA : Schema.BOOLEAN_SCHEMA);
         break;
       }
 
       // ints <= 8 bits
       case Types.BIT: {
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_INT8_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.INT8_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_INT8_SCHEMA : Schema.INT8_SCHEMA);
         break;
       }
 
       case Types.TINYINT: {
-        if (optional) {
-          if (columnDefn.isSignedNumber()) {
-            builder.field(fieldName, Schema.OPTIONAL_INT8_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.OPTIONAL_INT16_SCHEMA);
-          }
+        if (columnDefn.isSignedNumber()) {
+          builder.field(fieldName, optional ? Schema.OPTIONAL_INT8_SCHEMA : Schema.INT8_SCHEMA);
         } else {
-          if (columnDefn.isSignedNumber()) {
-            builder.field(fieldName, Schema.INT8_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.INT16_SCHEMA);
-          }
+          builder.field(fieldName, optional ? Schema.OPTIONAL_INT16_SCHEMA : Schema.INT16_SCHEMA);
         }
         break;
       }
 
       // 16 bit ints
       case Types.SMALLINT: {
-        if (optional) {
-          if (columnDefn.isSignedNumber()) {
-            builder.field(fieldName, Schema.OPTIONAL_INT16_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.OPTIONAL_INT32_SCHEMA);
-          }
+        if (columnDefn.isSignedNumber()) {
+          builder.field(fieldName, optional ? Schema.OPTIONAL_INT16_SCHEMA : Schema.INT16_SCHEMA);
         } else {
-          if (columnDefn.isSignedNumber()) {
-            builder.field(fieldName, Schema.INT16_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.INT32_SCHEMA);
-          }
+          builder.field(fieldName, optional ? Schema.OPTIONAL_INT32_SCHEMA : Schema.INT32_SCHEMA);
         }
         break;
       }
 
       // 32 bit ints
       case Types.INTEGER: {
-        if (optional) {
-          if (columnDefn.isSignedNumber()) {
-            builder.field(fieldName, Schema.OPTIONAL_INT32_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.OPTIONAL_INT64_SCHEMA);
-          }
+        if (columnDefn.isSignedNumber()) {
+          builder.field(fieldName, optional ? Schema.OPTIONAL_INT32_SCHEMA : Schema.INT32_SCHEMA);
         } else {
-          if (columnDefn.isSignedNumber()) {
-            builder.field(fieldName, Schema.INT32_SCHEMA);
-          } else {
-            builder.field(fieldName, Schema.INT64_SCHEMA);
-          }
+          builder.field(fieldName, optional ? Schema.OPTIONAL_INT64_SCHEMA : Schema.INT64_SCHEMA);
         }
         break;
       }
 
       // 64 bit ints
       case Types.BIGINT: {
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_INT64_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.INT64_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_INT64_SCHEMA : Schema.INT64_SCHEMA);
         break;
       }
 
       // REAL is a single precision floating point value, i.e. a Java float
       case Types.REAL: {
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_FLOAT32_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.FLOAT32_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_FLOAT32_SCHEMA : Schema.FLOAT32_SCHEMA);
         break;
       }
 
@@ -936,11 +899,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       // for single precision
       case Types.FLOAT:
       case Types.DOUBLE: {
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_FLOAT64_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.FLOAT64_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_FLOAT64_SCHEMA : Schema.FLOAT64_SCHEMA);
         break;
       }
 
@@ -1009,11 +968,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       case Types.SQLXML: {
         // Some of these types will have fixed size, but we drop this from the schema conversion
         // since only fixed byte arrays can have a fixed size
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_STRING_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.STRING_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA);
         break;
       }
 
@@ -1023,11 +978,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       case Types.BLOB:
       case Types.VARBINARY:
       case Types.LONGVARBINARY: {
-        if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_BYTES_SCHEMA);
-        } else {
-          builder.field(fieldName, Schema.BYTES_SCHEMA);
-        }
+        builder.field(fieldName, optional ? Schema.OPTIONAL_BYTES_SCHEMA : Schema.BYTES_SCHEMA);
         break;
       }
 
@@ -1107,7 +1058,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     switch (mapping.columnDefn().type()) {
 
       case Types.BOOLEAN: {
-        return (rs) -> rs.getBoolean(col);
+        return rs -> rs.getBoolean(col);
       }
 
       case Types.BIT: {
@@ -1116,51 +1067,51 @@ public class GenericDatabaseDialect implements DatabaseDialect {
          * TODO: Postgres handles this differently, returning a string "t" or "f". See the
          * elasticsearch-jdbc plugin for an example of how this is handled
          */
-        return (rs) -> rs.getByte(col);
+        return rs -> rs.getByte(col);
       }
 
       // 8 bits int
       case Types.TINYINT: {
         if (defn.isSignedNumber()) {
-          return (rs) -> rs.getByte(col);
+          return rs -> rs.getByte(col);
         } else {
-          return (rs) -> rs.getShort(col);
+          return rs -> rs.getShort(col);
         }
       }
 
       // 16 bits int
       case Types.SMALLINT: {
         if (defn.isSignedNumber()) {
-          return (rs) -> rs.getShort(col);
+          return rs -> rs.getShort(col);
         } else {
-          return (rs) -> rs.getInt(col);
+          return rs -> rs.getInt(col);
         }
       }
 
       // 32 bits int
       case Types.INTEGER: {
         if (defn.isSignedNumber()) {
-          return (rs) -> rs.getInt(col);
+          return rs -> rs.getInt(col);
         } else {
-          return (rs) -> rs.getLong(col);
+          return rs -> rs.getLong(col);
         }
       }
 
       // 64 bits int
       case Types.BIGINT: {
-        return (rs) -> rs.getLong(col);
+        return rs -> rs.getLong(col);
       }
 
       // REAL is a single precision floating point value, i.e. a Java float
       case Types.REAL: {
-        return (rs) -> rs.getFloat(col);
+        return rs -> rs.getFloat(col);
       }
 
       // FLOAT is, confusingly, double precision and effectively the same as DOUBLE. See REAL
       // for single precision
       case Types.FLOAT:
       case Types.DOUBLE: {
-        return (rs) -> rs.getDouble(col);
+        return rs -> rs.getDouble(col);
       }
 
       case Types.NUMERIC:
@@ -1170,13 +1121,13 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           log.trace("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (scale == 0 && precision < 19) { // integer
             if (precision > 9) {
-              return (rs) -> rs.getLong(col);
+              return rs -> rs.getLong(col);
             } else if (precision > 4) {
-              return (rs) -> rs.getInt(col);
+              return rs -> rs.getInt(col);
             } else if (precision > 2) {
-              return (rs) -> rs.getShort(col);
+              return rs -> rs.getShort(col);
             } else {
-              return (rs) -> rs.getByte(col);
+              return rs -> rs.getByte(col);
             }
           }
         } else if (mapNumerics == NumericMapping.BEST_FIT) {
@@ -1186,16 +1137,16 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           if (precision < 19) { // fits in primitive data types.
             if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               if (precision > 9) {
-                return (rs) -> rs.getLong(col);
+                return rs -> rs.getLong(col);
               } else if (precision > 4) {
-                return (rs) -> rs.getInt(col);
+                return rs -> rs.getInt(col);
               } else if (precision > 2) {
-                return (rs) -> rs.getShort(col);
+                return rs -> rs.getShort(col);
               } else {
-                return (rs) -> rs.getByte(col);
+                return rs -> rs.getByte(col);
               }
             } else if (scale > 0) { // floating point - use double in all cases
-              return (rs) -> rs.getDouble(col);
+              return rs -> rs.getDouble(col);
             }
           }
         }
@@ -1205,46 +1156,46 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         final int precision = defn.precision();
         log.debug("DECIMAL with precision: '{}' and scale: '{}'", precision, defn.scale());
         final int scale = decimalScale(defn);
-        return (rs) -> rs.getBigDecimal(col, scale);
+        return rs -> rs.getBigDecimal(col, scale);
       }
 
       case Types.CHAR:
       case Types.VARCHAR:
       case Types.LONGVARCHAR: {
-        return (rs) -> rs.getString(col);
+        return rs -> rs.getString(col);
       }
 
       case Types.NCHAR:
       case Types.NVARCHAR:
       case Types.LONGNVARCHAR: {
-        return (rs) -> rs.getNString(col);
+        return rs -> rs.getNString(col);
       }
 
       // Binary == fixed, VARBINARY and LONGVARBINARY == bytes
       case Types.BINARY:
       case Types.VARBINARY:
       case Types.LONGVARBINARY: {
-        return (rs) -> rs.getBytes(col);
+        return rs -> rs.getBytes(col);
       }
 
       // Date is day + moth + year
       case Types.DATE: {
-        return (rs) -> rs.getDate(col, DateTimeUtils.UTC_CALENDAR.get());
+        return rs -> rs.getDate(col, DateTimeUtils.UTC_CALENDAR.get());
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        return (rs) -> rs.getTime(col, DateTimeUtils.UTC_CALENDAR.get());
+        return rs -> rs.getTime(col, DateTimeUtils.UTC_CALENDAR.get());
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        return (rs) -> rs.getTimestamp(col, DateTimeUtils.UTC_CALENDAR.get());
+        return rs -> rs.getTimestamp(col, DateTimeUtils.UTC_CALENDAR.get());
       }
 
       // Datalink is basically a URL -> string
       case Types.DATALINK: {
-        return (rs) -> {
+        return rs -> {
           URL url = rs.getURL(col);
           return (url != null ? url.toString() : null);
         };
@@ -1252,7 +1203,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
       // BLOB == fixed
       case Types.BLOB: {
-        return (rs) -> {
+        return rs -> {
           Blob blob = rs.getBlob(col);
           if (blob == null) {
             return null;
@@ -1271,7 +1222,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         };
       }
       case Types.CLOB:
-        return (rs) -> {
+        return rs -> {
           Clob clob = rs.getClob(col);
           if (clob == null) {
             return null;
@@ -1289,7 +1240,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           }
         };
       case Types.NCLOB: {
-        return (rs) -> {
+        return rs -> {
           Clob clob = rs.getNClob(col);
           if (clob == null) {
             return null;
@@ -1310,9 +1261,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
       // XML -> string
       case Types.SQLXML: {
-        return (rs) -> {
+        return rs -> {
           SQLXML xml = rs.getSQLXML(col);
-          return (xml != null ? xml.getString() : null);
+          return xml != null ? xml.getString() : null;
         };
       }
 
@@ -1722,6 +1673,6 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   @Override
   public String toString() {
-    return getClass().getSimpleName().replace("DatabaseDialect", "");
+    return name();
   }
 }

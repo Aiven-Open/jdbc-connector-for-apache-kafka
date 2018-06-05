@@ -108,7 +108,11 @@ public class JdbcSinkTask extends SinkTask {
       writer.closeQuietly();
     } finally {
       try {
-        dialect.close();
+        if (dialect != null) {
+          dialect.close();
+        }
+      } catch (Throwable t) {
+        log.warn("Error while closing the {} dialect: ", dialect, t);
       } finally {
         dialect = null;
       }

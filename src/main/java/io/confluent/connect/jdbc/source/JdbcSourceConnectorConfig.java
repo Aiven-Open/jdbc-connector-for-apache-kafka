@@ -191,7 +191,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "Schema pattern to fetch table metadata from the database:\n"
       + "  * \"\" retrieves those without a schema,"
       + "  * null (default) means that the schema name should not be used to narrow the search,"
-      + " so that all table metadata would be fetched, regardless their schema.";
+      + " so that all table metadata would be fetched, regardless of their schema.";
   private static final String SCHEMA_PATTERN_DISPLAY = "Schema pattern";
   public static final String SCHEMA_PATTERN_DEFAULT = null;
 
@@ -200,7 +200,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       "Catalog pattern to fetch table metadata from the database:\n"
       + "  * \"\" retrieves those without a catalog,"
       + "  * null (default) means that the catalog name should not be used to narrow the search"
-      + " so that all table metadata would be fetched, regardless their catalog.";
+      + " so that all table metadata would be fetched, regardless of their catalog.";
   private static final String CATALOG_PATTERN_DISPLAY = "Schema pattern";
   public static final String CATALOG_PATTERN_DEFAULT = null;
 

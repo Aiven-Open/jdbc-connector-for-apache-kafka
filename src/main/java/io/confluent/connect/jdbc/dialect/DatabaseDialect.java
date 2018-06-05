@@ -109,13 +109,13 @@ import org.apache.kafka.connect.sink.SinkRecord;
  * <h2>Packaging and Deploying</h2> The dialect framework uses Java's {@link
  * java.util.ServiceLoader} mechanism to find and automatically register all {@link
  * DatabaseDialectProvider} implementations on the classpath. Don't forget to include in your JAR
- * file a {@code META-INF/services/io.confluent.connect.jdbc.dialect .DatabaseDialectProvider} file
+ * file a {@code META-INF/services/io.confluent.connect.jdbc.dialect.DatabaseDialectProvider} file
  * that contains the fully-qualified name of your implementation class (or one class per line if
  * providing multiple implementations).
  *
  * <p>If the Dialect implementation is included in this project, the class and the service provider
  * file will automatically be included in the JDBC Source connector's JAR file. However, it is also
- * possible to create an implementation outside of this project and to package the dialect (s) and
+ * possible to create an implementation outside of this project and to package the dialect(s) and
  * service provider file in a JAR file, and to then include that JAR file inside the JDBC
  * Connector's plugin directory within a Connect installation.
  *
@@ -125,6 +125,13 @@ import org.apache.kafka.connect.sink.SinkRecord;
  * the service provider file and your JAR is included in the JDBC connector's plugin directory.
  */
 public interface DatabaseDialect extends ConnectionProvider {
+
+  /**
+   * Return the name of the dialect.
+   *
+   * @return the dialect's name; never null
+   */
+  String name();
 
   /**
    * Create a new prepared statement using the specified database connection.
@@ -346,6 +353,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    * @param nonKeyColumns the identifiers of the other columns in the table; may not be null but may
    *                      be empty
    * @return the upsert/merge statement; may not be null
+   * @throws UnsupportedOperationException if the dialect does not support upserts
    */
   String buildUpsertQueryStatement(
       TableId table,
@@ -381,7 +389,7 @@ public interface DatabaseDialect extends ConnectionProvider {
   List<String> buildAlterTable(TableId table, Collection<SinkRecordField> fields);
 
   /**
-   * Create a component that can bind record values into the
+   * Create a component that can bind record values into the supplied prepared statement.
    *
    * @param statement      the prepared statement
    * @param pkMode         the primary key mode; may not be null

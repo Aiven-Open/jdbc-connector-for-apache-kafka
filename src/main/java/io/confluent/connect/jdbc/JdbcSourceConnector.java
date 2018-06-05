@@ -174,6 +174,8 @@ public class JdbcSourceConnector extends SourceConnector {
           if (dialect != null) {
             dialect.close();
           }
+        } catch (Throwable t) {
+          log.warn("Error while closing the {} dialect: ", dialect, t);
         } finally {
           dialect = null;
         }

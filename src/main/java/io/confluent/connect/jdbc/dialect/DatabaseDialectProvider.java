@@ -105,7 +105,7 @@ public abstract class DatabaseDialectProvider {
   /**
    * The score for a dialect that is an excellent match.
    */
-  public static final int PERFECT_MATCHING_SCORE = 1000;
+  public static final int PERFECT_MATCHING_SCORE = 100;
 
   /**
    * Return the score describing how well this {@link DatabaseDialect} instance works with the given

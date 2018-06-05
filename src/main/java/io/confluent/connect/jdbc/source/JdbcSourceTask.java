@@ -229,6 +229,8 @@ public class JdbcSourceTask extends SourceTask {
         if (dialect != null) {
           dialect.close();
         }
+      } catch (Throwable t) {
+        log.warn("Error while closing the {} dialect: ", dialect, t);
       } finally {
         dialect = null;
       }
