@@ -98,7 +98,7 @@ public abstract class DatabaseDialectProvider {
 
   /**
    * The "average" score that should be returned by the {@link #score(JdbcUrlInfo)} method to signal
-   * that the DatabaseDialect instance can be used with a connection and .
+   * that the DatabaseDialect instance can be used with a connection.
    */
   public static final int AVERAGE_MATCHING_SCORE = 10;
 

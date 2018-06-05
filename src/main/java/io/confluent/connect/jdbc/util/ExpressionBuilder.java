@@ -243,7 +243,7 @@ public class ExpressionBuilder {
 
     BasicListBuilder(String delimiter, Transform<T> transform) {
       this.delimiter = delimiter;
-      this.transform = transform != null ? transform : (builder, input) -> builder.append(input);
+      this.transform = transform != null ? transform : ExpressionBuilder::append;
     }
 
     @Override

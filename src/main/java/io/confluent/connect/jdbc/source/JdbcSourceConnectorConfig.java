@@ -359,7 +359,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Importance.MEDIUM,
         CATALOG_PATTERN_DOC,
         DATABASE_GROUP,
-        6,
+        ++orderInGroup,
         Width.SHORT,
         CATALOG_PATTERN_DISPLAY
     ).define(

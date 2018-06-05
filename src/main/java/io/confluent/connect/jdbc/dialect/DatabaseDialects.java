@@ -61,7 +61,7 @@ public class DatabaseDialects {
    *
    * <p>The subprotocol will be in group 1, and the subname will be in group 2.
    */
-  private static final Pattern PROTOCOL_PATTERN = Pattern.compile("jdbc:([^:]+):(.*)?");
+  private static final Pattern PROTOCOL_PATTERN = Pattern.compile("jdbc:([^:]+):(.*)");
   private static final Logger LOG = LoggerFactory.getLogger(DatabaseDialects.class);
   // Sort lexicographically to maintain order
   private static final ConcurrentMap<String, DatabaseDialectProvider> REGISTRY = new
@@ -77,7 +77,9 @@ public class DatabaseDialects {
     AccessController.doPrivileged(new PrivilegedAction<Void>() {
       public Void run() {
         ServiceLoader<DatabaseDialectProvider> loadedDialects = ServiceLoader.load(
-            DatabaseDialectProvider.class);
+            DatabaseDialectProvider.class
+        );
+        // Always use ServiceLoader.iterator() to get lazy loading (see JavaDocs)
         Iterator<DatabaseDialectProvider> dialectIterator = loadedDialects.iterator();
         try {
           while (dialectIterator.hasNext()) {

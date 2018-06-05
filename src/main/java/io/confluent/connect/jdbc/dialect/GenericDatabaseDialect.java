@@ -270,6 +270,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
    *
    * <p>By default this method does nothing and returns the {@link Properties} object supplied as a
    * parameter, but subclasses can override it to add/remove properties used to create new
+   * connections.
    *
    * @param properties the properties that will be passed to the {@link DriverManager}'s {@link
    *                   DriverManager#getConnection(String, Properties) getConnection(...) method};
@@ -465,7 +466,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
    * @return the query string; never null or empty
    */
   protected String currentTimestampDatabaseQuery() {
-    return "SELECT CURRENT_TIMESTAMP;";
+    return "SELECT CURRENT_TIMESTAMP";
   }
 
   @Override
@@ -473,7 +474,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       Connection connection,
       TableId tableId
   ) throws SQLException {
-    log.info("Checking {} dialect for existance of table {}", this, tableId);
+    log.info("Checking {} dialect for existence of table {}", this, tableId);
     try (ResultSet rs = connection.getMetaData().getTables(
         tableId.catalogName(),
         tableId.schemaName(),
@@ -536,9 +537,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         final int jdbcType = rs.getInt(5);
         final String typeName = rs.getString(6);
         final int precision = rs.getInt(7);
-        final Integer scale = rs.getInt(9);
+        final int scale = rs.getInt(9);
         final String typeClassName = null;
-        Nullability nullability = Nullability.UNKNOWN;
+        Nullability nullability;
         final int nullableValue = rs.getInt(11);
         switch (nullableValue) {
           case DatabaseMetaData.columnNoNulls:
@@ -581,7 +582,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
             nullability,
             Mutability.UNKNOWN,
             precision,
-            scale != null ? scale.intValue() : 0,
+            scale,
             signed,
             displaySize,
             autoIncremented,
@@ -839,7 +840,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     int scale = columnDefn.scale();
     switch (sqlType) {
       case Types.NULL: {
-        log.warn("JDBC type {} not currently supported for column '{}'", sqlType, fieldName);
+        log.warn("JDBC type 'NULL' not currently supported for column '{}'", fieldName);
         return null;
       }
 
