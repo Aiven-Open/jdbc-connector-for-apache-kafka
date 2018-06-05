@@ -105,7 +105,7 @@ public abstract class DatabaseDialectProvider {
   /**
    * The score for a dialect that is an excellent match.
    */
-  public static final int PERFECT_MATCHING_SCORE = 100;
+  public static final int EXCELLENT_MATCHING_SCORE = 100;
 
   /**
    * Return the score describing how well this {@link DatabaseDialect} instance works with the given
@@ -143,7 +143,7 @@ public abstract class DatabaseDialectProvider {
 
   /**
    * An abstract base class for a provider that will return a
-   * {@link DatabaseDialectProvider#PERFECT_MATCHING_SCORE}
+   * {@link DatabaseDialectProvider#EXCELLENT_MATCHING_SCORE}
    * if any of the supplied JDBC subprotocols match the subprotocol from the JDBC connection URL, or
    * {@link DatabaseDialectProvider#NO_MATCH_SCORE} otherwise.
    */
@@ -170,7 +170,7 @@ public abstract class DatabaseDialectProvider {
       if (urlInfo != null) {
         for (String subprotocol : subprotocols) {
           if (subprotocol.equalsIgnoreCase(urlInfo.subprotocol())) {
-            return PERFECT_MATCHING_SCORE;
+            return EXCELLENT_MATCHING_SCORE;
           }
         }
         // If still no match, see if the URL's subprotocol and subname start with the specified ...
@@ -178,7 +178,7 @@ public abstract class DatabaseDialectProvider {
         combined = combined.toLowerCase(Locale.getDefault());
         for (String subprotocol : subprotocols) {
           if (combined.startsWith(subprotocol.toLowerCase(Locale.getDefault()))) {
-            return PERFECT_MATCHING_SCORE;
+            return EXCELLENT_MATCHING_SCORE;
           }
         }
       }
