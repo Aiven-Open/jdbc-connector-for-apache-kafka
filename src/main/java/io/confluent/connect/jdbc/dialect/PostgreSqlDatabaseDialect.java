@@ -24,9 +24,6 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
 
@@ -134,45 +131,24 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
   ) {
     // First handle any PostgreSQL-specific types
     ColumnDefinition columnDefn = mapping.columnDefn();
+    int col = mapping.columnNumber();
     switch (columnDefn.type()) {
       case Types.BIT: {
         // PostgreSQL allows variable length bit strings, but when length is 1 then the driver
         // returns a 't' or 'f' string value to represent the boolean value, so we need to handle
         // this as well as lengths larger than 8.
-        final int col = mapping.columnNumber();
         final int numBits = columnDefn.precision();
         if (numBits <= 1) {
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet resultSet) throws SQLException, IOException {
-              return "t".equals(resultSet.getString(col)) ? Boolean.TRUE : Boolean.FALSE;
-            }
-          };
+          return (rs) -> rs.getBoolean(col);
         } else if (numBits <= 8) {
           // Do this for consistency with earlier versions of the connector
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet resultSet) throws SQLException, IOException {
-              return resultSet.getByte(col);
-            }
-          };
+          return (rs) -> rs.getByte(col);
         }
-        return new ColumnConverter() {
-          @Override
-          public Object convert(ResultSet resultSet) throws SQLException, IOException {
-            return resultSet.getBytes(col);
-          }
-        };
+        return (rs) -> rs.getBytes(col);
       }
       case Types.OTHER: {
         if (isJsonType(columnDefn)) {
-          final int col = mapping.columnNumber();
-          return new ColumnConverter() {
-            @Override
-            public Object convert(ResultSet resultSet) throws SQLException, IOException {
-              return resultSet.getString(col);
-            }
-          };
+          return (rs) -> rs.getString(col);
         }
         break;
       }
