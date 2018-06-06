@@ -16,8 +16,6 @@
 
 package io.confluent.connect.jdbc.util;
 
-import javax.xml.bind.DatatypeConverter;
-
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.dialect.DropOptions;
 
@@ -349,7 +347,7 @@ public class ExpressionBuilder {
    * @return this builder to enable methods to be chained; never null
    */
   public ExpressionBuilder appendBinaryLiteral(byte[] value) {
-    return append("x'").append(DatatypeConverter.printHexBinary(value)).append("'");
+    return append("x'").append(BytesUtil.toHex(value)).append("'");
   }
 
   /**

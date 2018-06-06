@@ -21,7 +21,6 @@ import org.apache.derby.jdbc.EmbeddedDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Blob;
@@ -29,6 +28,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import io.confluent.connect.jdbc.util.BytesUtil;
 
 /**
  * Embedded Derby server useful for testing against a real JDBC database.
@@ -250,9 +251,9 @@ public class EmbeddedDerby {
     } else if (value instanceof Blob) {
       Blob blob = ((Blob) value);
       byte[] blobData = blob.getBytes(1, (int) blob.length());
-      return "CAST(X'" + DatatypeConverter.printHexBinary(blobData) + "' AS BLOB)";
+      return "CAST(X'" + BytesUtil.toHex(blobData) + "' AS BLOB)";
     } else if (value instanceof byte[]) {
-      return "X'" + DatatypeConverter.printHexBinary((byte[]) value) + "'";
+      return "X'" + BytesUtil.toHex((byte[]) value) + "'";
     } else {
       return value.toString();
     }
