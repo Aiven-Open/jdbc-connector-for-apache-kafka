@@ -18,6 +18,7 @@ package io.confluent.connect.jdbc;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.easymock.EasyMock;
+import org.easymock.Mock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,24 +36,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.source.EmbeddedDerby;
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.source.JdbcSourceTask;
 import io.confluent.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.JdbcUtils;
+import io.confluent.connect.jdbc.util.ExpressionBuilder;
+import io.confluent.connect.jdbc.util.TableId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JdbcSourceConnector.class, JdbcUtils.class})
+@PrepareForTest({JdbcSourceConnector.class, DatabaseDialect.class})
 @PowerMockIgnore("javax.management.*")
 public class JdbcSourceConnectorTest {
 
   private JdbcSourceConnector connector;
   private EmbeddedDerby db;
   private Map<String, String> connProps;
+
+  @Mock
+  private DatabaseDialect dialect;
 
   @Before
   public void setup() {
@@ -98,19 +104,23 @@ public class JdbcSourceConnectorTest {
   @Test
   public void testStartStop() throws Exception {
     CachedConnectionProvider mockCachedConnectionProvider = PowerMock.createMock(CachedConnectionProvider.class);
-    PowerMock.expectNew(CachedConnectionProvider.class, db.getUrl(), null, null,
-      JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT, JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT).andReturn(mockCachedConnectionProvider);
+    PowerMock.expectNew(
+        CachedConnectionProvider.class,
+        EasyMock.anyObject(DatabaseDialect.class),
+        EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT),
+        EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT))
+             .andReturn(mockCachedConnectionProvider);
 
     // Should request a connection, then should close it on stop(). The background thread may also
     // request connections any time it performs updates.
     Connection conn = PowerMock.createMock(Connection.class);
-    EasyMock.expect(mockCachedConnectionProvider.getValidConnection()).andReturn(conn).anyTimes();
+    EasyMock.expect(mockCachedConnectionProvider.getConnection()).andReturn(conn).anyTimes();
 
     // Since we're just testing start/stop, we don't worry about the value here but need to stub
     // something since the background thread will be started and try to lookup metadata.
     EasyMock.expect(conn.getMetaData()).andStubThrow(new SQLException());
     // Close will be invoked both for the SQLExeption and when the connector is stopped
-    mockCachedConnectionProvider.closeQuietly();
+    mockCachedConnectionProvider.close();
     PowerMock.expectLastCall().times(2);
 
     PowerMock.replayAll();
@@ -130,7 +140,7 @@ public class JdbcSourceConnectorTest {
     List<Map<String, String>> configs = connector.taskConfigs(10);
     assertEquals(1, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
-    assertEquals("test", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
     connector.stop();
   }
@@ -147,11 +157,11 @@ public class JdbcSourceConnectorTest {
     assertEquals(3, configs.size());
     assertTaskConfigsHaveParentConfigs(configs);
 
-    assertEquals("test1,test2", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test1","test2"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-    assertEquals("test3", configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test3"), configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(1).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-    assertEquals("test4", configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+    assertEquals(tables("test4"), configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
     assertNull(configs.get(2).get(JdbcSourceTaskConfig.QUERY_CONFIG));
 
     connector.stop();
@@ -183,27 +193,20 @@ public class JdbcSourceConnectorTest {
     connector.start(connProps);
   }
 
-  @Test
-  public void testSchemaPatternUsedForConfigValidation() throws Exception {
-    connProps.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "SOME_SCHEMA");
-
-    PowerMock.mockStatic(JdbcUtils.class);
-    EasyMock.expect(JdbcUtils.getTables(EasyMock.anyObject(Connection.class), EasyMock.eq("SOME_SCHEMA"),
-            EasyMock.eq(JdbcUtils.DEFAULT_TABLE_TYPES)))
-      .andReturn(new ArrayList<String>())
-      .atLeastOnce();
-
-    PowerMock.replayAll();
-
-    connector.validate(connProps);
-
-    PowerMock.verifyAll();
-  }
-
   private void assertTaskConfigsHaveParentConfigs(List<Map<String, String>> configs) {
     for (Map<String, String> config : configs) {
       assertEquals(this.db.getUrl(),
                    config.get(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
     }
+  }
+
+  private String tables(String... names) {
+    List<TableId> tableIds = new ArrayList<>();
+    for (String name : names) {
+      tableIds.add(new TableId(null, "APP", name));
+    }
+    ExpressionBuilder builder = ExpressionBuilder.create();
+    builder.appendList().delimitedBy(",").of(tableIds);
+    return builder.toString();
   }
 }

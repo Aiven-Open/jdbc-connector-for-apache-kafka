@@ -22,30 +22,28 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.metadata.DbTable;
-import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
-import io.confluent.connect.jdbc.sink.metadata.TableMetadataLoadingCache;
+import io.confluent.connect.jdbc.util.TableDefinition;
+import io.confluent.connect.jdbc.util.TableDefinitions;
+import io.confluent.connect.jdbc.util.TableId;
 
 public class DbStructure {
   private static final Logger log = LoggerFactory.getLogger(DbStructure.class);
 
-  private final TableMetadataLoadingCache tableMetadataLoadingCache
-      = new TableMetadataLoadingCache();
+  private final DatabaseDialect dbDialect;
+  private final TableDefinitions tableDefns;
 
-  private final DbDialect dbDialect;
-
-  public DbStructure(DbDialect dbDialect) {
+  public DbStructure(DatabaseDialect dbDialect) {
     this.dbDialect = dbDialect;
+    this.tableDefns = new TableDefinitions(dbDialect);
   }
 
   /**
@@ -55,22 +53,26 @@ public class DbStructure {
   public boolean createOrAmendIfNecessary(
       final JdbcSinkConfig config,
       final Connection connection,
-      final String tableName,
+      final TableId tableId,
       final FieldsMetadata fieldsMetadata
   ) throws SQLException {
-    if (tableMetadataLoadingCache.get(connection, tableName) == null) {
+    if (tableDefns.get(connection, tableId) == null) {
+      // Table does not yet exist, so attempt to create it ...
       try {
-        create(config, connection, tableName, fieldsMetadata);
+        create(config, connection, tableId, fieldsMetadata);
       } catch (SQLException sqle) {
         log.warn("Create failed, will attempt amend if table already exists", sqle);
-        if (DbMetadataQueries.doesTableExist(connection, tableName)) {
-          tableMetadataLoadingCache.refresh(connection, tableName);
-        } else {
+        try {
+          TableDefinition newDefn = tableDefns.refresh(connection, tableId);
+          if (newDefn == null) {
+            throw sqle;
+          }
+        } catch (SQLException e) {
           throw sqle;
         }
       }
     }
-    return amendIfNecessary(config, connection, tableName, fieldsMetadata, config.maxRetries);
+    return amendIfNecessary(config, connection, tableId, fieldsMetadata, config.maxRetries);
   }
 
   /**
@@ -79,21 +81,16 @@ public class DbStructure {
   void create(
       final JdbcSinkConfig config,
       final Connection connection,
-      final String tableName,
+      final TableId tableId,
       final FieldsMetadata fieldsMetadata
   ) throws SQLException {
     if (!config.autoCreate) {
       throw new ConnectException(
-          String.format("Table %s is missing and auto-creation is disabled", tableName)
+          String.format("Table %s is missing and auto-creation is disabled", tableId)
       );
     }
-    final String sql = dbDialect.getCreateQuery(tableName, fieldsMetadata.allFields.values());
-    log.info("Creating table:{} with SQL: {}", tableName, sql);
-    try (Statement statement = connection.createStatement()) {
-      statement.executeUpdate(sql);
-      connection.commit();
-    }
-    tableMetadataLoadingCache.refresh(connection, tableName);
+    String sql = dbDialect.buildCreateTableStatement(tableId, fieldsMetadata.allFields.values());
+    dbDialect.applyDdlStatements(connection, Collections.singletonList(sql));
   }
 
   /**
@@ -103,7 +100,7 @@ public class DbStructure {
   boolean amendIfNecessary(
       final JdbcSinkConfig config,
       final Connection connection,
-      final String tableName,
+      final TableId tableId,
       final FieldsMetadata fieldsMetadata,
       final int maxRetries
   ) throws SQLException {
@@ -112,8 +109,7 @@ public class DbStructure {
     //   a case we check for here.
     //   We also don't check if the data types for columns that do line-up are compatible.
 
-    final DbTable tableMetadata = tableMetadataLoadingCache.get(connection, tableName);
-    final Map<String, DbTableColumn> dbColumns = tableMetadata.columns;
+    final TableDefinition tableDefn = tableDefns.get(connection, tableId);
 
     // FIXME: SQLite JDBC driver seems to not always return the PK column names?
     //    if (!tableMetadata.getPrimaryKeyColumnNames().equals(fieldsMetadata.keyFieldNames)) {
@@ -125,7 +121,7 @@ public class DbStructure {
 
     final Set<SinkRecordField> missingFields = missingFields(
         fieldsMetadata.allFields.values(),
-        dbColumns.keySet()
+        tableDefn.columnNames()
     );
 
     if (missingFields.isEmpty()) {
@@ -144,47 +140,44 @@ public class DbStructure {
     if (!config.autoEvolve) {
       throw new ConnectException(String.format(
           "Table %s is missing fields (%s) and auto-evolution is disabled",
-          tableName,
+          tableId,
           missingFields
       ));
     }
 
-    final List<String> amendTableQueries = dbDialect.getAlterTable(tableName, missingFields);
+    final List<String> amendTableQueries = dbDialect.buildAlterTable(tableId, missingFields);
     log.info(
         "Amending table to add missing fields:{} maxRetries:{} with SQL: {}",
         missingFields,
         maxRetries,
         amendTableQueries
     );
-    try (Statement statement = connection.createStatement()) {
-      for (String amendTableQuery : amendTableQueries) {
-        statement.executeUpdate(amendTableQuery);
-      }
-      connection.commit();
+    try {
+      dbDialect.applyDdlStatements(connection, amendTableQueries);
     } catch (SQLException sqle) {
       if (maxRetries <= 0) {
         throw new ConnectException(
             String.format(
                 "Failed to amend table '%s' to add missing fields: %s",
-                tableName,
+                tableId,
                 missingFields
             ),
             sqle
         );
       }
       log.warn("Amend failed, re-attempting", sqle);
-      tableMetadataLoadingCache.refresh(connection, tableName);
+      tableDefns.refresh(connection, tableId);
       // Perhaps there was a race with other tasks to add the columns
       return amendIfNecessary(
           config,
           connection,
-          tableName,
+          tableId,
           fieldsMetadata,
           maxRetries - 1
       );
     }
 
-    tableMetadataLoadingCache.refresh(connection, tableName);
+    tableDefns.refresh(connection, tableId);
     return true;
   }
 

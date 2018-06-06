@@ -63,5 +63,4 @@ public class DbStructureTest {
   static SinkRecordField field(String name) {
     return new SinkRecordField(Schema.STRING_SCHEMA, name, false);
   }
-
 }

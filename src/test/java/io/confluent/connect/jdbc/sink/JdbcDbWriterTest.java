@@ -38,19 +38,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import io.confluent.connect.jdbc.sink.dialect.DbDialect;
-import io.confluent.connect.jdbc.sink.dialect.SqliteDialect;
-import io.confluent.connect.jdbc.sink.metadata.DbTable;
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.SqliteDatabaseDialect;
+import io.confluent.connect.jdbc.util.TableDefinition;
+import io.confluent.connect.jdbc.util.TableId;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class JdbcDbWriterTest {
 
   private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
   private JdbcDbWriter writer = null;
+  private DatabaseDialect dialect;
 
   @Before
   public void setUp() throws IOException, SQLException {
@@ -66,14 +69,15 @@ public class JdbcDbWriterTest {
 
   private JdbcDbWriter newWriter(Map<String, String> props) {
     final JdbcSinkConfig config = new JdbcSinkConfig(props);
-    final DbDialect dbDialect = new SqliteDialect();
-    final DbStructure dbStructure = new DbStructure(dbDialect);
-    return new JdbcDbWriter(config, dbDialect, dbStructure);
+    dialect = new SqliteDatabaseDialect(config);
+    final DbStructure dbStructure = new DbStructure(dialect);
+    return new JdbcDbWriter(config, dialect, dbStructure);
   }
 
   @Test
   public void autoCreateWithAutoEvolve() throws SQLException {
     String topic = "books";
+    TableId tableId = new TableId(null, null, topic);
 
     Map<String, String> props = new HashMap<>();
     props.put("connection.url", sqliteHelper.sqliteUri());
@@ -87,27 +91,29 @@ public class JdbcDbWriterTest {
     Schema keySchema = Schema.INT64_SCHEMA;
 
     Schema valueSchema1 = SchemaBuilder.struct()
-        .field("author", Schema.STRING_SCHEMA)
-        .field("title", Schema.STRING_SCHEMA)
-        .build();
+                                       .field("author", Schema.STRING_SCHEMA)
+                                       .field("title", Schema.STRING_SCHEMA)
+                                       .build();
 
     Struct valueStruct1 = new Struct(valueSchema1)
         .put("author", "Tom Robbins")
         .put("title", "Villa Incognito");
 
-    writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 1L, valueSchema1, valueStruct1, 0)));
+    writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 1L, valueSchema1,
+                                                      valueStruct1, 0)));
 
-    DbTable metadata = DbMetadataQueries.getTableMetadata(writer.cachedConnectionProvider.getValidConnection(), topic);
-    assertTrue(metadata.columns.get("id").isPrimaryKey);
+    TableDefinition metadata = dialect.describeTable(writer.cachedConnectionProvider.getConnection(),
+                                                     tableId);
+    assertTrue(metadata.definitionForColumn("id").isPrimaryKey());
     for (Field field : valueSchema1.fields()) {
-      assertTrue(metadata.columns.containsKey(field.name()));
+      assertNotNull(metadata.definitionForColumn(field.name()));
     }
 
     Schema valueSchema2 = SchemaBuilder.struct()
-        .field("author", Schema.STRING_SCHEMA)
-        .field("title", Schema.STRING_SCHEMA)
-        .field("year", Schema.OPTIONAL_INT32_SCHEMA) // new field
-        .field("review", SchemaBuilder.string().defaultValue("").build()); // new field
+                                       .field("author", Schema.STRING_SCHEMA)
+                                       .field("title", Schema.STRING_SCHEMA)
+                                       .field("year", Schema.OPTIONAL_INT32_SCHEMA) // new field
+                                       .field("review", SchemaBuilder.string().defaultValue("").build()); // new field
 
     Struct valueStruct2 = new Struct(valueSchema2)
         .put("author", "Tom Robbins")
@@ -116,10 +122,10 @@ public class JdbcDbWriterTest {
 
     writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 2L, valueSchema2, valueStruct2, 0)));
 
-    DbTable refreshedMetadata = DbMetadataQueries.getTableMetadata(sqliteHelper.connection, topic);
-    assertTrue(metadata.columns.get("id").isPrimaryKey);
+    TableDefinition refreshedMetadata = dialect.describeTable(sqliteHelper.connection, tableId);
+    assertTrue(refreshedMetadata.definitionForColumn("id").isPrimaryKey());
     for (Field field : valueSchema2.fields()) {
-      assertTrue(refreshedMetadata.columns.containsKey(field.name()));
+      assertNotNull(refreshedMetadata.definitionForColumn(field.name()));
     }
   }
 

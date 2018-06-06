@@ -26,12 +26,16 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.confluent.connect.jdbc.sink.metadata.DbTable;
-import io.confluent.connect.jdbc.sink.metadata.DbTableColumn;
-import io.confluent.connect.jdbc.util.JdbcUtils;
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.SqliteDatabaseDialect;
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
+import io.confluent.connect.jdbc.util.ColumnDefinition;
+import io.confluent.connect.jdbc.util.TableDefinition;
+import io.confluent.connect.jdbc.util.TableId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class SqliteHelperTest {
@@ -69,9 +73,14 @@ public class SqliteHelperTest {
     sqliteHelper.createTable(createProducts);
     sqliteHelper.createTable(createNonPkTable);
 
-    final Map<String, DbTable> tables = new HashMap<>();
-    for (String tableName : JdbcUtils.getTables(sqliteHelper.connection, null)) {
-      tables.put(tableName, DbMetadataQueries.getTableMetadata(sqliteHelper.connection, tableName));
+    Map<String, String> connProps = new HashMap<>();
+    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, sqliteHelper.sqliteUri());
+    JdbcSinkConfig config = new JdbcSinkConfig(connProps);
+    DatabaseDialect dialect = new SqliteDatabaseDialect(config);
+
+    final Map<String, TableDefinition> tables = new HashMap<>();
+    for (TableId tableId : dialect.tableIds(sqliteHelper.connection)) {
+      tables.put(tableId.tableName(), dialect.describeTable(sqliteHelper.connection, tableId));
     }
 
     assertEquals(tables.size(), 3);
@@ -79,56 +88,55 @@ public class SqliteHelperTest {
     assertTrue(tables.containsKey("products"));
     assertTrue(tables.containsKey("nonPk"));
 
-    DbTable nonPk = tables.get("nonPk");
+    TableDefinition nonPk = tables.get("nonPk");
+    assertEquals(2, nonPk.columnCount());
 
-    Map<String, DbTableColumn> columns = nonPk.columns;
-    assertEquals(columns.size(), 2);
-    assertTrue(columns.containsKey("id"));
-    assertTrue(columns.get("id").allowsNull);
-    assertFalse(columns.get("id").isPrimaryKey);
-    assertEquals(columns.get("id").sqlType, Types.FLOAT);
-    assertTrue(columns.containsKey("response"));
-    assertTrue(columns.get("response").allowsNull);
-    assertFalse(columns.get("response").isPrimaryKey);
-    assertEquals(columns.get("response").sqlType, Types.VARCHAR);
+    ColumnDefinition colDefn = nonPk.definitionForColumn("id");
+    assertTrue(colDefn.isOptional());
+    assertFalse(colDefn.isPrimaryKey());
+    assertEquals(Types.FLOAT, colDefn.type());
 
-    DbTable employees = tables.get("employees");
-    columns = employees.columns;
-    assertEquals(columns.size(), 4);
-    assertTrue(columns.containsKey("employee_id"));
-    assertFalse(columns.get("employee_id").allowsNull);
-    assertTrue(columns.get("employee_id").isPrimaryKey);
-    assertEquals(columns.get("employee_id").sqlType, Types.INTEGER);
-    assertTrue(columns.containsKey("last_name"));
-    assertFalse(columns.get("last_name").allowsNull);
-    assertFalse(columns.get("last_name").isPrimaryKey);
-    assertEquals(columns.get("last_name").sqlType, Types.VARCHAR);
-    assertTrue(columns.containsKey("first_name"));
-    assertTrue(columns.get("first_name").allowsNull);
-    assertFalse(columns.get("first_name").isPrimaryKey);
-    assertEquals(columns.get("first_name").sqlType, Types.VARCHAR);
-    assertTrue(columns.containsKey("hire_date"));
-    assertTrue(columns.get("hire_date").allowsNull);
-    assertFalse(columns.get("hire_date").isPrimaryKey);
+    colDefn = nonPk.definitionForColumn("response");
+    assertTrue(colDefn.isOptional());
+    assertFalse(colDefn.isPrimaryKey());
+    assertEquals(Types.VARCHAR, colDefn.type());
+
+    TableDefinition employees = tables.get("employees");
+    assertEquals(4, employees.columnCount());
+
+    assertNotNull(employees.definitionForColumn("employee_id"));
+    assertFalse(employees.definitionForColumn("employee_id").isOptional());
+    assertTrue(employees.definitionForColumn("employee_id").isPrimaryKey());
+    assertEquals(Types.INTEGER, employees.definitionForColumn("employee_id").type());
+    assertNotNull(employees.definitionForColumn("last_name"));
+    assertFalse(employees.definitionForColumn("last_name").isOptional());
+    assertFalse(employees.definitionForColumn("last_name").isPrimaryKey());
+    assertEquals(Types.VARCHAR, employees.definitionForColumn("last_name").type());
+    assertNotNull(employees.definitionForColumn("first_name"));
+    assertTrue(employees.definitionForColumn("first_name").isOptional());
+    assertFalse(employees.definitionForColumn("first_name").isPrimaryKey());
+    assertEquals(Types.VARCHAR, employees.definitionForColumn("first_name").type());
+    assertNotNull(employees.definitionForColumn("hire_date"));
+    assertTrue(employees.definitionForColumn("hire_date").isOptional());
+    assertFalse(employees.definitionForColumn("hire_date").isPrimaryKey());
     // sqlite returns VARCHAR for DATE. why?!
+    assertEquals(Types.VARCHAR, employees.definitionForColumn("hire_date").type());
     // assertEquals(columns.get("hire_date").getSqlType(), Types.DATE);
 
-    DbTable products = tables.get("products");
-    columns = products.columns;
-    assertEquals(columns.size(), 3);
-    assertTrue(columns.containsKey("product_id"));
-    assertFalse(columns.get("product_id").allowsNull);
-    assertTrue(columns.get("product_id").isPrimaryKey);
-    assertEquals(columns.get("product_id").sqlType, Types.INTEGER);
+    TableDefinition products = tables.get("products");
+    assertEquals(4, employees.columnCount());
 
-    assertTrue(columns.containsKey("product_name"));
-    assertFalse(columns.get("product_name").allowsNull);
-    assertFalse(columns.get("product_name").isPrimaryKey);
-    assertEquals(columns.get("product_name").sqlType, Types.VARCHAR);
-
-    assertTrue(columns.containsKey("quantity"));
-    assertFalse(columns.get("quantity").allowsNull);
-    assertFalse(columns.get("quantity").isPrimaryKey);
-    assertEquals(columns.get("quantity").sqlType, Types.INTEGER);
+    assertNotNull(products.definitionForColumn("product_id"));
+    assertFalse(products.definitionForColumn("product_id").isOptional());
+    assertTrue(products.definitionForColumn("product_id").isPrimaryKey());
+    assertEquals(Types.INTEGER, products.definitionForColumn("product_id").type());
+    assertNotNull(products.definitionForColumn("product_name"));
+    assertFalse(products.definitionForColumn("product_name").isOptional());
+    assertFalse(products.definitionForColumn("product_name").isPrimaryKey());
+    assertEquals(Types.VARCHAR, products.definitionForColumn("product_name").type());
+    assertNotNull(products.definitionForColumn("quantity"));
+    assertFalse(products.definitionForColumn("quantity").isOptional());
+    assertFalse(products.definitionForColumn("quantity").isPrimaryKey());
+    assertEquals(Types.INTEGER, products.definitionForColumn("quantity").type());
   }
 }

@@ -29,8 +29,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.confluent.connect.jdbc.util.CachedConnectionProvider;
-import io.confluent.connect.jdbc.util.JdbcUtils;
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.util.ConnectionProvider;
+import io.confluent.connect.jdbc.util.TableId;
 
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this
@@ -39,34 +40,30 @@ import io.confluent.connect.jdbc.util.JdbcUtils;
 public class TableMonitorThread extends Thread {
   private static final Logger log = LoggerFactory.getLogger(TableMonitorThread.class);
 
-  private final CachedConnectionProvider cachedConnectionProvider;
-  private final String schemaPattern;
+  private final DatabaseDialect dialect;
+  private final ConnectionProvider connectionProvider;
   private final ConnectorContext context;
   private final CountDownLatch shutdownLatch;
   private final long pollMs;
   private Set<String> whitelist;
   private Set<String> blacklist;
-  private List<String> tables;
-  private Set<String> tableTypes;
+  private List<TableId> tables;
 
-  public TableMonitorThread(
-      CachedConnectionProvider cachedConnectionProvider,
+  public TableMonitorThread(DatabaseDialect dialect,
+      ConnectionProvider connectionProvider,
       ConnectorContext context,
-      String schemaPattern,
       long pollMs,
       Set<String> whitelist,
-      Set<String> blacklist,
-      Set<String> tableTypes
+      Set<String> blacklist
   ) {
-    this.cachedConnectionProvider = cachedConnectionProvider;
-    this.schemaPattern = schemaPattern;
+    this.dialect = dialect;
+    this.connectionProvider = connectionProvider;
     this.context = context;
     this.shutdownLatch = new CountDownLatch(1);
     this.pollMs = pollMs;
     this.whitelist = whitelist;
     this.blacklist = blacklist;
     this.tables = null;
-    this.tableTypes = tableTypes;
   }
 
   @Override
@@ -92,7 +89,7 @@ public class TableMonitorThread extends Thread {
     }
   }
 
-  public synchronized List<String> tables() {
+  public synchronized List<TableId> tables() {
     //TODO: Timeout should probably be user-configurable or class-level constant
     final long timeout = 10000L;
     long started = System.currentTimeMillis();
@@ -116,13 +113,9 @@ public class TableMonitorThread extends Thread {
   }
 
   private synchronized boolean updateTables() {
-    final List<String> tables;
+    final List<TableId> tables;
     try {
-      tables = JdbcUtils.getTables(
-          cachedConnectionProvider.getValidConnection(),
-          schemaPattern,
-          tableTypes
-      );
+      tables = dialect.tableIds(connectionProvider.getConnection());
       log.debug("Got the following tables: " + Arrays.toString(tables.toArray()));
     } catch (SQLException e) {
       log.error(
@@ -130,32 +123,42 @@ public class TableMonitorThread extends Thread {
           + " interval",
           e
       );
-      cachedConnectionProvider.closeQuietly();
+      connectionProvider.close();
       return false;
     }
 
-    final List<String> filteredTables;
+    final List<TableId> filteredTables = new ArrayList<>(tables.size());
     if (whitelist != null) {
-      filteredTables = new ArrayList<>(tables.size());
-      for (String table : tables) {
-        if (whitelist.contains(table)) {
+      for (TableId table : tables) {
+        String fqn1 = dialect.expressionBuilder().append(table, false).toString();
+        String fqn2 = dialect.expressionBuilder().append(table, true).toString();
+        if (whitelist.contains(fqn1) || whitelist.contains(fqn2)
+            || whitelist.contains(table.tableName())) {
           filteredTables.add(table);
         }
       }
     } else if (blacklist != null) {
-      filteredTables = new ArrayList<>(tables.size());
-      for (String table : tables) {
-        if (!blacklist.contains(table)) {
+      for (TableId table : tables) {
+        String fqn1 = dialect.expressionBuilder().append(table, false).toString();
+        String fqn2 = dialect.expressionBuilder().append(table, true).toString();
+        if (!(blacklist.contains(fqn1) || blacklist.contains(fqn2)
+              || blacklist.contains(table.tableName()))) {
           filteredTables.add(table);
         }
       }
     } else {
-      filteredTables = tables;
+      filteredTables.addAll(tables);
     }
 
     if (!filteredTables.equals(this.tables)) {
-      log.debug("After filtering we got tables: " + Arrays.toString(filteredTables.toArray()));
-      List<String> previousTables = this.tables;
+      log.debug(
+          "After filtering the tables are: {}",
+          dialect.expressionBuilder()
+                 .appendList()
+                 .delimitedBy(",")
+                 .of(filteredTables)
+      );
+      List<TableId> previousTables = this.tables;
       this.tables = filteredTables;
       notifyAll();
       // Only return true if the table list wasn't previously null, i.e. if this was not the

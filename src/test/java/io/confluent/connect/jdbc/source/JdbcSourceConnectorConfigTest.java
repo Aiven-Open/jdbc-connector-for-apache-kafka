@@ -15,8 +15,6 @@
  **/
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachedRecommenderValues;
-import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachingRecommender;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigValue;
@@ -36,6 +34,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachedRecommenderValues;
+import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig.CachingRecommender;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -57,9 +58,9 @@ public class JdbcSourceConnectorConfigTest {
 
   @Before
   public void setup() throws Exception {
-    props = new HashMap<>();
     configDef = null;
     results = null;
+    props = new HashMap<>();
 
     db = new EmbeddedDerby();
     db.createTable("some_table", "id", "INT");
@@ -178,10 +179,10 @@ public class JdbcSourceConnectorConfigTest {
 
   @SuppressWarnings("unchecked")
   protected <T> void assertContains(Collection<T> actual, T... expected) {
-    assertEquals(expected.length, actual.size());
     for (T e : expected) {
       assertTrue(actual.contains(e));
     }
+    assertEquals(expected.length, actual.size());
   }
 
   protected ConfigValue namedValue(List<ConfigValue> values, String name) {
