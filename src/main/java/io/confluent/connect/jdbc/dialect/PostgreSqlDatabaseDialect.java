@@ -24,6 +24,10 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
 
@@ -67,6 +71,25 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
   public PostgreSqlDatabaseDialect(AbstractConfig config) {
     super(config, new IdentifierRules(".", "\"", "\""));
   }
+
+  /**
+   * Perform any operations on a {@link PreparedStatement} before it is used. This is called from
+   * the {@link #createPreparedStatement(Connection, String)} method after the statement is
+   * created but before it is returned/used.
+   *
+   * <p>This method sets the {@link PreparedStatement#setFetchDirection(int) fetch direction}
+   * to {@link ResultSet#FETCH_FORWARD forward} as an optimization for the driver to allow it to
+   * scroll more efficiently through the result set and prevent out of memory errors.
+   *
+   * @param stmt the prepared statement; never null
+   * @throws SQLException the error that might result from initialization
+   */
+  @Override
+  protected void initializePreparedStatement(PreparedStatement stmt) throws SQLException {
+    log.trace("Initializing PreparedStatement fetch direction to FETCH_FORWARD for '{}'", stmt);
+    stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+  }
+
 
   @Override
   public String addFieldToSchema(

@@ -117,7 +117,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     }
   }
 
-  private final Logger log = LoggerFactory.getLogger(GenericDatabaseDialect.class);
+  protected final Logger log = LoggerFactory.getLogger(getClass());
   protected final AbstractConfig config;
 
   /**
@@ -287,9 +287,24 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       Connection db,
       String query
   ) throws SQLException {
+    log.trace("Creating a PreparedStatement '{}'", query);
     PreparedStatement stmt = db.prepareStatement(query);
-    stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+    initializePreparedStatement(stmt);
     return stmt;
+  }
+
+  /**
+   * Perform any operations on a {@link PreparedStatement} before it is used. This is called from
+   * the {@link #createPreparedStatement(Connection, String)} method after the statement is
+   * created but before it is returned/used.
+   *
+   * <p>By default this method does nothing.
+   *
+   * @param stmt the prepared statement; never null
+   * @throws SQLException the error that might result from initialization
+   */
+  protected void initializePreparedStatement(PreparedStatement stmt) throws SQLException {
+    // do nothing
   }
 
   @Override
