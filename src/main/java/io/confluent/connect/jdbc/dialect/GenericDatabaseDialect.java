@@ -508,7 +508,11 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       String tablePattern,
       String columnPattern
   ) throws SQLException {
-    return describeColumns(connection, catalogPattern, schemaPattern, tablePattern, columnPattern);
+    //if the table pattern is fqn, then just use the actual table name
+    TableId tableId = parseTableIdentifier(tablePattern);
+    String catalog = tableId.catalogName() != null ? tableId.catalogName() : catalogPattern;
+    String schema = tableId.schemaName() != null ? tableId.schemaName() : schemaPattern;
+    return describeColumns(connection, catalog , schema, tableId.tableName(), columnPattern);
   }
 
   @Override
