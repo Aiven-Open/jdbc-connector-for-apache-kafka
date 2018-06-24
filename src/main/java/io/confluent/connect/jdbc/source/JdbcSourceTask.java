@@ -126,6 +126,7 @@ public class JdbcSourceTask extends SourceTask {
           throw new ConnectException("Unknown query mode: " + queryMode);
       }
       offsets = context.offsetStorageReader().offsets(partitions);
+      log.debug("the offsets for partitions {} are {}", partitions, offsets);
     }
 
     String incrementingColumn
@@ -164,6 +165,7 @@ public class JdbcSourceTask extends SourceTask {
           throw new ConnectException("Unexpected query mode: " + queryMode);
       }
       Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
+      log.debug("The offsets for partition {} is {} ", partition, offset);
 
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
 
