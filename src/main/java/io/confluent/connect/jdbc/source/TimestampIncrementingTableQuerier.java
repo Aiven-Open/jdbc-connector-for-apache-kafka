@@ -68,6 +68,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
   private long timestampDelay;
   private TimestampIncrementingOffset offset;
   private TimestampIncrementingCriteria criteria;
+  private final Map<String, String> partition;
+  private final String topic;
 
   public TimestampIncrementingTableQuerier(DatabaseDialect dialect, QueryMode mode, String name,
                                            String topicPrefix,
@@ -86,6 +88,21 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
       if (timestampColumn != null && !timestampColumn.isEmpty()) {
         timestampColumns.add(new ColumnId(tableId, timestampColumn));
       }
+    }
+
+    switch (mode) {
+      case TABLE:
+        String tableName = tableId.tableName();
+        topic = topicPrefix + tableName;// backward compatible
+        partition = OffsetProtocols.sourcePartitionForProtocolV1(tableId);
+        break;
+      case QUERY:
+        partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+            JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+        topic = topicPrefix;
+        break;
+      default:
+        throw new ConnectException("Unexpected query mode: " + mode);
     }
   }
 
@@ -163,26 +180,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
         log.warn("Ignoring record due to SQL error:", e);
       }
     }
-
     offset = criteria.extractValues(schemaMapping.schema(), record, offset);
-
-    // TODO: Key?
-    final String topic;
-    final Map<String, String> partition;
-    switch (mode) {
-      case TABLE:
-        String name = tableId.tableName(); // backward compatible
-        partition = Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, name);
-        topic = topicPrefix + name;
-        break;
-      case QUERY:
-        partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
-                                             JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
-        topic = topicPrefix;
-        break;
-      default:
-        throw new ConnectException("Unexpected query mode: " + mode);
-    }
     return new SourceRecord(partition, offset.toMap(), topic, record.schema(), record);
   }
 

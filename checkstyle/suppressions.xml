@@ -19,7 +19,7 @@
               files="(DataConverter|FieldsMetadata|JdbcSourceTask|GenericDatabaseDialect).java"/>
 
     <suppress checks="MethodLength"
-              files="(DataConverter|GenericDatabaseDialect).java"/>
+              files="(DataConverter|GenericDatabaseDialect|JdbcSourceTask).java"/>
 
     <suppress checks="ParameterNumber"
               files="(ColumnDefinition|GenericDatabaseDialect).java"/>
