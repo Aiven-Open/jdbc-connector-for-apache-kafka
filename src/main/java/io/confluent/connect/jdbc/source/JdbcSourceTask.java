@@ -28,7 +28,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +44,7 @@ import io.confluent.connect.jdbc.dialect.DatabaseDialects;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 import io.confluent.connect.jdbc.util.ColumnDefinition;
 import io.confluent.connect.jdbc.util.ColumnId;
+import io.confluent.connect.jdbc.util.TableId;
 import io.confluent.connect.jdbc.util.Version;
 
 /**
@@ -105,6 +108,8 @@ public class JdbcSourceTask extends SourceTask {
                                  ? Collections.singletonList(query) : tables;
 
     String mode = config.getString(JdbcSourceTaskConfig.MODE_CONFIG);
+    //used only in table mode
+    Map<String, List<Map<String, String>>> partitionsByTableFqn = new HashMap<>();
     Map<Map<String, String>, Map<String, Object>> offsets = null;
     if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)
         || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)
@@ -113,9 +118,11 @@ public class JdbcSourceTask extends SourceTask {
       switch (queryMode) {
         case TABLE:
           for (String table : tables) {
-            Map<String, String> partition =
-                Collections.singletonMap(JdbcSourceConnectorConstants.TABLE_NAME_KEY, table);
-            partitions.add(partition);
+            // Find possible partition maps for different offset protocols
+            // We need to search by all offset protocol partition keys to support compatibility
+            List<Map<String, String>> tablePartitions = possibleTablePartitions(table);
+            partitions.addAll(tablePartitions);
+            partitionsByTableFqn.put(table, tablePartitions);
           }
           break;
         case QUERY:
@@ -126,6 +133,7 @@ public class JdbcSourceTask extends SourceTask {
           throw new ConnectException("Unknown query mode: " + queryMode);
       }
       offsets = context.offsetStorageReader().offsets(partitions);
+      log.trace("The partition offsets are {}", offsets);
     }
 
     String incrementingColumn
@@ -138,6 +146,7 @@ public class JdbcSourceTask extends SourceTask {
         = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
 
     for (String tableOrQuery : tablesOrQuery) {
+      final List<Map<String, String>> tablePartitionsToCheck;
       final Map<String, String> partition;
       switch (queryMode) {
         case TABLE:
@@ -149,21 +158,32 @@ public class JdbcSourceTask extends SourceTask {
                 timestampColumns
             );
           }
-          partition = Collections.singletonMap(
-              JdbcSourceConnectorConstants.TABLE_NAME_KEY,
-              tableOrQuery
-          );
+          tablePartitionsToCheck = partitionsByTableFqn.get(tableOrQuery);
           break;
         case QUERY:
           partition = Collections.singletonMap(
               JdbcSourceConnectorConstants.QUERY_NAME_KEY,
               JdbcSourceConnectorConstants.QUERY_NAME_VALUE
           );
+          tablePartitionsToCheck = Collections.singletonList(partition);
           break;
         default:
           throw new ConnectException("Unexpected query mode: " + queryMode);
       }
-      Map<String, Object> offset = offsets == null ? null : offsets.get(partition);
+
+      // The partition map varies by offset protocol. Since we don't know which protocol each
+      // table's offsets are keyed by, we need to use the different possible partitions
+      // (newest protocol version first) to find the actual offsets for each table.
+      Map<String, Object> offset = null;
+      if (offsets != null) {
+        for (Map<String, String> toCheckPartition : tablePartitionsToCheck) {
+          offset = offsets.get(toCheckPartition);
+          if (offset != null) {
+            log.debug("Found offset {} for partition {}", offsets, toCheckPartition);
+            break;
+          }
+        }
+      }
 
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
 
@@ -214,6 +234,16 @@ public class JdbcSourceTask extends SourceTask {
     }
 
     running.set(true);
+  }
+
+  //This method returns a list of possible partition maps for different offset protocols
+  //This helps with the upgrades
+  private List<Map<String, String>> possibleTablePartitions(String table) {
+    TableId tableId = dialect.parseTableIdentifier(table);
+    return Arrays.asList(
+        OffsetProtocols.sourcePartitionForProtocolV1(tableId),
+        OffsetProtocols.sourcePartitionForProtocolV0(tableId)
+    );
   }
 
   @Override

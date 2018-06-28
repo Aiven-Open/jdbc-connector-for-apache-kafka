@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -34,8 +35,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.confluent.connect.jdbc.util.DateTimeUtils;
 
 import static org.junit.Assert.assertEquals;
 
@@ -88,7 +87,11 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test(expected = ConnectException.class)
   public void testIncrementingInvalidColumn() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
+
 
     PowerMock.replayAll();
 
@@ -102,7 +105,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test(expected = ConnectException.class)
   public void testTimestampInvalidColumn() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -116,7 +122,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testManualIncrementing() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION, 
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -138,7 +147,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testAutoincrement() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -163,7 +175,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testTimestamp() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -189,7 +204,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testMultiColumnTimestamp() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
     // Manage these manually so we can verify the emitted values
@@ -212,7 +230,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testTimestampWithDelay() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -247,7 +268,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testTimestampAndIncrementing() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -272,7 +296,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testMultiColumnTimestampAndIncrementing() throws Exception {
-    expectInitializeNoOffsets(Arrays.asList(SINGLE_TABLE_PARTITION));
+    expectInitializeNoOffsets(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION,
+        SINGLE_TABLE_PARTITION)
+    );
 
     PowerMock.replayAll();
 
@@ -295,15 +322,42 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testManualIncrementingRestoreOffset() throws Exception {
+  public void testManualIncrementingRestoreNoVersionOffset() throws Exception {
     TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
-    expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
+    testManualIncrementingRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testManualIncrementingRestoreVersionOneOffset() throws Exception {
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
+    testManualIncrementingRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testManualIncrementingRestoreOffsetsWithMultipleProtocol() throws Exception {
+    TimestampIncrementingOffset oldOffset = new TimestampIncrementingOffset(null, 0L);
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
+    Map<Map<String, String>, Map<String, Object>> offsets = new HashMap<>();
+    offsets.put(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap());
+    offsets.put(SINGLE_TABLE_PARTITION, oldOffset.toMap());
+    //we want to always use the offset with the latest protocol found
+    testManualIncrementingRestoreOffset(offsets);
+  }
+
+  private void testManualIncrementingRestoreOffset(
+      Map<Map<String, String>, Map<String, Object>> offsets) throws Exception {
+    expectInitialize(
+        Arrays.asList(SINGLE_TABLE_PARTITION_WITH_VERSION, SINGLE_TABLE_PARTITION),
+        offsets
+    );
 
     PowerMock.replayAll();
 
-    db.createTable(SINGLE_TABLE_NAME,
-                   "id", "INT NOT NULL");
+    db.createTable(SINGLE_TABLE_NAME, "id", "INT NOT NULL");
     db.insert(SINGLE_TABLE_NAME, "id", 1);
     db.insert(SINGLE_TABLE_NAME, "id", 2);
     db.insert(SINGLE_TABLE_NAME, "id", 3);
@@ -317,10 +371,39 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testAutoincrementRestoreOffset() throws Exception {
+  public void testAutoincrementRestoreNoVersionOffset() throws Exception {
     TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
-    expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
+    testAutoincrementRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testAutoincrementRestoreVersionOneOffset() throws Exception {
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
+    testAutoincrementRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testAutoincrementRestoreOffsetsWithMultipleProtocol() throws Exception {
+    TimestampIncrementingOffset oldOffset = new TimestampIncrementingOffset(null, 0L);
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(null, 1L);
+    Map<Map<String, String>, Map<String, Object>> offsets = new HashMap<>();
+    offsets.put(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap());
+    offsets.put(SINGLE_TABLE_PARTITION, oldOffset.toMap());
+    //we want to always use the offset with the latest protocol found
+    testAutoincrementRestoreOffset(offsets);
+  }
+
+  private void testAutoincrementRestoreOffset(
+      Map<Map<String, String>, Map<String, Object>> offsets) throws Exception {
+
+    expectInitialize(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION, SINGLE_TABLE_PARTITION),
+        offsets
+    );
 
     PowerMock.replayAll();
 
@@ -342,10 +425,39 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testTimestampRestoreOffset() throws Exception {
+  public void testTimestampRestoreNoVersionOffset() throws Exception {
     TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), null);
-    expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
+    testTimestampRestoreOffset(Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
+  }
+
+  @Test
+  public void testTimestampRestoreVersionOneOffset() throws Exception {
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), null);
+    testTimestampRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testTimestampRestoreOffsetsWithMultipleProtocol() throws Exception {
+    TimestampIncrementingOffset oldOffset = new TimestampIncrementingOffset(
+        new Timestamp(8L),
+        null
+    );
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), null);
+    Map<Map<String, String>, Map<String, Object>> offsets = new HashMap<>();
+    offsets.put(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap());
+    offsets.put(SINGLE_TABLE_PARTITION, oldOffset.toMap());
+    //we want to always use the offset with the latest protocol found
+    testTimestampRestoreOffset(offsets);
+  }
+
+  private void testTimestampRestoreOffset(
+      Map<Map<String, String>, Map<String, Object>> offsets) throws Exception {
+    expectInitialize(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION, SINGLE_TABLE_PARTITION),
+        offsets
+    );
 
     PowerMock.replayAll();
 
@@ -367,10 +479,38 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
   }
 
   @Test
-  public void testTimestampAndIncrementingRestoreOffset() throws Exception {
+  public void testTimestampAndIncrementingRestoreNoVersionOffset() throws Exception {
     TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), 3L);
-    expectInitialize(Arrays.asList(SINGLE_TABLE_PARTITION),
-                     Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap()));
+    testTimestampAndIncrementingRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testTimestampAndIncrementingRestoreVersionOneOffset() throws Exception {
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), 3L);
+    testTimestampAndIncrementingRestoreOffset(
+        Collections.singletonMap(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap())
+    );
+  }
+
+  @Test
+  public void testTimestampAndIncrementingRestoreOffsetsWithMultipleProtocol() throws Exception {
+    TimestampIncrementingOffset oldOffset = new TimestampIncrementingOffset(new Timestamp(10L), 2L);
+    TimestampIncrementingOffset offset = new TimestampIncrementingOffset(new Timestamp(10L), 3L);
+    Map<Map<String, String>, Map<String, Object>> offsets = new HashMap<>();
+    offsets.put(SINGLE_TABLE_PARTITION_WITH_VERSION, offset.toMap());
+    offsets.put(SINGLE_TABLE_PARTITION, oldOffset.toMap());
+    //we want to always use the offset with the latest protocol found
+    testTimestampAndIncrementingRestoreOffset(offsets);
+  }
+
+  private void testTimestampAndIncrementingRestoreOffset(
+      Map<Map<String, String>, Map<String, Object>> offsets) throws Exception {
+    expectInitialize(Arrays.asList(
+        SINGLE_TABLE_PARTITION_WITH_VERSION, SINGLE_TABLE_PARTITION),
+        offsets
+    );
 
     PowerMock.replayAll();
 
@@ -392,6 +532,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     PowerMock.verifyAll();
   }
+
 
   @Test
   public void testCustomQueryBulk() throws Exception {
