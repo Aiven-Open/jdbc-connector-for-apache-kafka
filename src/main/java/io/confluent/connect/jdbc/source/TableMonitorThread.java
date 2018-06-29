@@ -16,6 +16,9 @@
 
 package io.confluent.connect.jdbc.source;
 
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.util.ConnectionProvider;
+import io.confluent.connect.jdbc.util.TableId;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
@@ -30,10 +33,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import io.confluent.connect.jdbc.dialect.DatabaseDialect;
-import io.confluent.connect.jdbc.util.ConnectionProvider;
-import io.confluent.connect.jdbc.util.TableId;
 
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this
@@ -50,6 +49,7 @@ public class TableMonitorThread extends Thread {
   private Set<String> whitelist;
   private Set<String> blacklist;
   private List<TableId> tables;
+  private Map<String, List<TableId>> duplicates;
   private final String configErrorMsg;
 
   public TableMonitorThread(DatabaseDialect dialect,
@@ -68,14 +68,21 @@ public class TableMonitorThread extends Thread {
     this.blacklist = blacklist;
     this.tables = null;
 
+    String configText;
     if (whitelist != null) {
-      configErrorMsg = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "'";
+      configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "'";
     } else if (blacklist != null) {
-      configErrorMsg = "'" + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
+      configText = "'" + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
     } else {
-      configErrorMsg = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "' or '"
+      configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "' or '"
           + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
     }
+    configErrorMsg = "The connector uses the unqualified table name as the topic name and has "
+        + "detected duplicate unqualified table names. This could lead to mixed data types in the "
+        + "topic and downstream processing errors. To prevent such processing errors, the JDBC "
+        + "Source connector fails to start when it detects duplicate table name configurations. "
+        + "Update the connector's " + configText + " config to include exactly "
+        + "one table in each of the tables listed below.\n\t";
   }
 
   @Override
@@ -116,6 +123,10 @@ public class TableMonitorThread extends Thread {
     }
     if (tables == null) {
       throw new ConnectException("Tables could not be updated quickly enough.");
+    }
+    if (!duplicates.isEmpty()) {
+      log.info("The filtered tables are {} ", tables);
+      throw new ConnectException(configErrorMsg + duplicates);
     }
     return tables;
   }
@@ -162,24 +173,6 @@ public class TableMonitorThread extends Thread {
       filteredTables.addAll(tables);
     }
 
-    Map<String, List<TableId>> duplicates = filteredTables.stream()
-        .collect(Collectors.groupingBy(TableId::tableName))
-        .entrySet().stream()
-        .filter(entry -> entry.getValue().size() > 1)
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-    if (!duplicates.isEmpty()) {
-      log.info("The filtered tables are {} ", filteredTables);
-      log.error("Connector uses unqualified table name as the topic name and has detected "
-          + "duplicate unqualified table names. This could lead to mixed data type and "
-          + "subsequently errors during the processing. Hence to prevent processing errors, "
-          + "JDBC Source connector fails fast fr such configurations. To be able to start the "
-          + "connector, update connector's {} config to include exactly one table in each of the "
-          + "below listed tables.\n {} ", configErrorMsg, duplicates);
-      // this will force the connector to fail configuration as it doesn't have any table to process
-      filteredTables.clear();
-    }
-
     if (!filteredTables.equals(this.tables)) {
       log.debug(
           "After filtering the tables are: {}",
@@ -188,6 +181,12 @@ public class TableMonitorThread extends Thread {
                  .delimitedBy(",")
                  .of(filteredTables)
       );
+      Map<String, List<TableId>> duplicates = filteredTables.stream()
+          .collect(Collectors.groupingBy(TableId::tableName))
+          .entrySet().stream()
+          .filter(entry -> entry.getValue().size() > 1)
+          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+      this.duplicates = duplicates;
       List<TableId> previousTables = this.tables;
       this.tables = filteredTables;
       notifyAll();
