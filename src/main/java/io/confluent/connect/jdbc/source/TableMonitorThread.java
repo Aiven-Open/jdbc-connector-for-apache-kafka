@@ -125,8 +125,7 @@ public class TableMonitorThread extends Thread {
       throw new ConnectException("Tables could not be updated quickly enough.");
     }
     if (!duplicates.isEmpty()) {
-      log.info("The filtered tables are {} ", tables);
-      throw new ConnectException(configErrorMsg + duplicates);
+      throw new ConnectException(configErrorMsg + duplicates.values());
     }
     return tables;
   }
@@ -174,7 +173,7 @@ public class TableMonitorThread extends Thread {
     }
 
     if (!filteredTables.equals(this.tables)) {
-      log.debug(
+      log.info(
           "After filtering the tables are: {}",
           dialect.expressionBuilder()
                  .appendList()
