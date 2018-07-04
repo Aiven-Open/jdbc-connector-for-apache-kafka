@@ -50,7 +50,6 @@ public class TableMonitorThread extends Thread {
   private Set<String> blacklist;
   private List<TableId> tables;
   private Map<String, List<TableId>> duplicates;
-  private final String configErrorMsg;
 
   public TableMonitorThread(DatabaseDialect dialect,
       ConnectionProvider connectionProvider,
@@ -68,21 +67,6 @@ public class TableMonitorThread extends Thread {
     this.blacklist = blacklist;
     this.tables = null;
 
-    String configText;
-    if (whitelist != null) {
-      configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "'";
-    } else if (blacklist != null) {
-      configText = "'" + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
-    } else {
-      configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "' or '"
-          + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
-    }
-    configErrorMsg = "The connector uses the unqualified table name as the topic name and has "
-        + "detected duplicate unqualified table names. This could lead to mixed data types in the "
-        + "topic and downstream processing errors. To prevent such processing errors, the JDBC "
-        + "Source connector fails to start when it detects duplicate table name configurations. "
-        + "Update the connector's " + configText + " config to include exactly "
-        + "one table in each of the tables listed below.\n\t";
   }
 
   @Override
@@ -125,7 +109,22 @@ public class TableMonitorThread extends Thread {
       throw new ConnectException("Tables could not be updated quickly enough.");
     }
     if (!duplicates.isEmpty()) {
-      throw new ConnectException(configErrorMsg + duplicates.values());
+      String configText;
+      if (whitelist != null) {
+        configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "'";
+      } else if (blacklist != null) {
+        configText = "'" + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
+      } else {
+        configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "' or '"
+            + JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG + "'";
+      }
+      String msg = "The connector uses the unqualified table name as the topic name and has "
+          + "detected duplicate unqualified table names. This could lead to mixed data types in "
+          + "the topic and downstream processing errors. To prevent such processing errors, the "
+          + "JDBC Source connector fails to start when it detects duplicate table name "
+          + "configurations. Update the connector's " + configText + " config to include exactly "
+          + "one table in each of the tables listed below.\n\t";
+      throw new ConnectException(msg + duplicates.values());
     }
     return tables;
   }
