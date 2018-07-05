@@ -51,7 +51,7 @@
 
     <properties>
         <confluent.version>3.2.4-SNAPSHOT</confluent.version>
-        <kafka.version>0.10.2.2-SNAPSHOT</kafka.version>
+        <kafka.version>0.10.2.3-SNAPSHOT</kafka.version>
         <junit.version>4.12</junit.version>
         <easymock.version>3.0</easymock.version>
         <powermock.version>1.6.2</powermock.version>
