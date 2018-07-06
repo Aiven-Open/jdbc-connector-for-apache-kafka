@@ -53,10 +53,15 @@ public class TableMonitorThreadTest {
   private final static TableId BAR = new TableId(null, null, "bar");
   private final static TableId BAZ = new TableId(null, null, "baz");
 
+  private final static TableId DUP1 = new TableId(null, "dup1", "dup");
+  private final static TableId DUP2 = new TableId(null, "dup2", "dup");
+
   private static final List<TableId> LIST_EMPTY = Collections.emptyList();
   private static final List<TableId> LIST_FOO = Collections.singletonList(FOO);
   private static final List<TableId> LIST_FOO_BAR = Arrays.asList(FOO, BAR);
   private static final List<TableId> LIST_FOO_BAR_BAZ = Arrays.asList(FOO, BAR, BAZ);
+  private static final List<TableId> LIST_DUP_ONLY = Arrays.asList(DUP1, DUP2);
+  private static final List<TableId> LIST_DUP_WITH_ALL = Arrays.asList(DUP1, FOO, DUP2, BAR, BAZ);
 
   private static final List<String> FIRST_TOPIC_LIST = Arrays.asList("foo");
   private static final List<String> VIEW_TOPIC_LIST = Arrays.asList("");
@@ -171,6 +176,78 @@ public class TableMonitorThreadTest {
     EasyMock.verify(connectionProvider);
   }
 
+  @Test(expected = ConnectException.class)
+  public void testDuplicates() throws Exception {
+    EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
+    tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
+        POLL_INTERVAL, null, null);
+    expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
+    EasyMock.replay(connectionProvider, dialect);
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    tableMonitorThread.tables();
+    EasyMock.verify(connectionProvider, dialect);
+  }
+
+  @Test(expected = ConnectException.class)
+  public void testDuplicateWithUnqualifiedWhitelist() throws Exception {
+    Set<String> whitelist = new HashSet<>(Arrays.asList("dup"));
+    EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
+    tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
+        POLL_INTERVAL, whitelist, null);
+    expectTableNames(LIST_DUP_ONLY, shutdownThread());
+    EasyMock.replay(connectionProvider, dialect);
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    tableMonitorThread.tables();
+    EasyMock.verify(connectionProvider, dialect);
+  }
+
+  @Test(expected = ConnectException.class)
+  public void testDuplicateWithUnqualifiedBlacklist() throws Exception {
+    Set<String> blacklist = new HashSet<>(Arrays.asList("foo"));
+    EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
+    tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
+        POLL_INTERVAL, null, blacklist);
+    expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
+    EasyMock.replay(connectionProvider, dialect);
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    tableMonitorThread.tables();
+    EasyMock.verify(connectionProvider, dialect);
+  }
+
+  @Test
+  public void testDuplicateWithQualifiedWhitelist() throws Exception {
+    Set<String> whitelist = new HashSet<>(Arrays.asList("dup1.dup", "foo"));
+    EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
+    tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
+        POLL_INTERVAL, whitelist, null);
+    expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
+    EasyMock.replay(connectionProvider, dialect);
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    checkTableIds(DUP1, FOO);
+    EasyMock.verify(connectionProvider, dialect);
+  }
+
+  @Test
+  public void testDuplicateWithQualifiedBlacklist() throws Exception {
+    Set<String> blacklist = new HashSet<>(Arrays.asList("dup1.dup", "foo"));
+    EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
+    tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
+        POLL_INTERVAL, null, blacklist);
+    expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
+    EasyMock.replay(connectionProvider, dialect);
+
+    tableMonitorThread.start();
+    tableMonitorThread.join();
+    checkTableIds(DUP2, BAR, BAZ);
+    EasyMock.verify(connectionProvider, dialect);
+  }
   private interface Op {
     void execute();
   }
@@ -196,6 +273,10 @@ public class TableMonitorThreadTest {
         assertEquals(expectedTableIds, tableMonitorThread.tables());
       }
     };
+  }
+
+  protected void checkTableIds(final TableId...expectedTables) {
+    assertEquals(Arrays.asList(expectedTables), tableMonitorThread.tables());
   }
 
   protected void expectTableNames(final List<TableId> expectedTableIds, final Op...operations)
