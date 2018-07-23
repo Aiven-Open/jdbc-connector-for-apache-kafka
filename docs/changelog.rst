@@ -3,6 +3,22 @@
 Changelog
 =========
 
+Version 4.1.1
+-------------
+
+JDBC Source Connector
+~~~~~~~~~~~~~~~~~~~~~
+
+* `PR-392 <https://github.com/confluentinc/kafka-connect-jdbc/pull/392>`_ - CC-918 Add Kafka Connect Maven plugin to build
+* `PR-396 <https://github.com/confluentinc/kafka-connect-jdbc/pull/396>`_ - CC-1843: Add config option for extended handling of numeric data type
+
+JDBC Sink Connector
+~~~~~~~~~~~~~~~~~~~
+
+* `PR-392 <https://github.com/confluentinc/kafka-connect-jdbc/pull/392>`_ - CC-918 Add Kafka Connect Maven plugin to build
+* `PR-399 <https://github.com/confluentinc/kafka-connect-jdbc/pull/399>`_ - CC-1852: Be less restrictive in JDBC URL validation
+* `PR-400 <https://github.com/confluentinc/kafka-connect-jdbc/pull/400>`_ - CC-1878: Allow for case differences while finding missing columns
+
 Version 4.1.0
 -------------
 
