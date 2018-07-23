@@ -3,6 +3,11 @@
 Changelog
 =========
 
+Version 4.1.2
+-------------
+
+No changes
+
 Version 4.1.1
 -------------
 
