@@ -3,8 +3,34 @@
 Changelog
 =========
 
+Version 5.0.0
+-------------
+
+JDBC Source Connector
+~~~~~~~~~~~~~~~~~~~~~
+
+* `PR-438 <https://github.com/confluentinc/kafka-connect-jdbc/pull/438>`_ - Fail if the filtered tables list has duplicates based on unqualified table name
+* `PR-436 <https://github.com/confluentinc/kafka-connect-jdbc/pull/436>`_ - CC-2116: Fix offsets compatibility
+* `PR-431 <https://github.com/confluentinc/kafka-connect-jdbc/pull/431>`_ - CC-2220: Parse to get the actual table name to avoid double prefixing
+* `PR-428 <https://github.com/confluentinc/kafka-connect-jdbc/pull/428>`_ - CC-2139: Moved the call to set the fetch direction out of generic dialect
+* `PR-333 <https://github.com/confluentinc/kafka-connect-jdbc/pull/333>`_ - CC-1193: Refactored with a new dialect framework for DBMS-specific behavior
+* `PR-416 <https://github.com/confluentinc/kafka-connect-jdbc/pull/416>`_ - CC-2043: Update pom.xml to target Java 8
+
+JDBC Sink Connector
+~~~~~~~~~~~~~~~~~~~
+
+* `PR-431 <https://github.com/confluentinc/kafka-connect-jdbc/pull/431>`_ - CC-2220: Parse to get the actual table name to avoid double prefixing
+* `PR-428 <https://github.com/confluentinc/kafka-connect-jdbc/pull/428>`_ - CC-2139: Moved the call to set the fetch direction out of generic dialect
+* `PR-333 <https://github.com/confluentinc/kafka-connect-jdbc/pull/333>`_ - CC-1193: Refactored with a new dialect framework for DBMS-specific behavior
+* `PR-416 <https://github.com/confluentinc/kafka-connect-jdbc/pull/416>`_ - CC-2043: Update pom.xml to target Java 8
+
+Version 4.1.2
+-------------
+No changes
+
 Version 4.1.1
 -------------
+No changes
 
 JDBC Source Connector
 ~~~~~~~~~~~~~~~~~~~~~
