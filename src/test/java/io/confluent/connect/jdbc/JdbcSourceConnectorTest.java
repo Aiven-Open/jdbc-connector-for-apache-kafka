@@ -121,7 +121,7 @@ public class JdbcSourceConnectorTest {
     EasyMock.expect(conn.getMetaData()).andStubThrow(new SQLException());
     // Close will be invoked both for the SQLExeption and when the connector is stopped
     mockCachedConnectionProvider.close();
-    PowerMock.expectLastCall().times(2);
+    PowerMock.expectLastCall().atLeastOnce();
 
     PowerMock.replayAll();
 
