@@ -108,32 +108,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
 
   @Override
   protected void createPreparedStatement(Connection db) throws SQLException {
-    // Default when unspecified uses an autoincrementing column
-    if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
-      // Find the first auto-incremented column ...
-      for (ColumnDefinition defn : dialect.describeColumns(
-          db,
-          tableId.catalogName(),
-          tableId.schemaName(),
-          tableId.tableName(),
-          null).values()) {
-        if (defn.isAutoIncrement()) {
-          incrementingColumnName = defn.id().name();
-          break;
-        }
-      }
-    }
-    // If still not found, query the table and use the result set metadata.
-    // This doesn't work if the table is empty.
-    if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
-      log.debug("Falling back to describe '{}' table by querying {}", tableId, db);
-      for (ColumnDefinition defn : dialect.describeColumnsByQuerying(db, tableId).values()) {
-        if (defn.isAutoIncrement()) {
-          incrementingColumnName = defn.id().name();
-          break;
-        }
-      }
-    }
+    findDefaultAutoIncrementingColumn(db);
 
     ColumnId incrementingColumn = null;
     if (incrementingColumnName != null && !incrementingColumnName.isEmpty()) {
@@ -160,6 +135,35 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
     String queryString = builder.toString();
     log.debug("{} prepared SQL query: {}", this, queryString);
     stmt = dialect.createPreparedStatement(db, queryString);
+  }
+
+  private void findDefaultAutoIncrementingColumn(Connection db) throws SQLException {
+    // Default when unspecified uses an autoincrementing column
+    if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
+      // Find the first auto-incremented column ...
+      for (ColumnDefinition defn : dialect.describeColumns(
+          db,
+          tableId.catalogName(),
+          tableId.schemaName(),
+          tableId.tableName(),
+          null).values()) {
+        if (defn.isAutoIncrement()) {
+          incrementingColumnName = defn.id().name();
+          break;
+        }
+      }
+    }
+    // If still not found, query the table and use the result set metadata.
+    // This doesn't work if the table is empty.
+    if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
+      log.debug("Falling back to describe '{}' table by querying {}", tableId, db);
+      for (ColumnDefinition defn : dialect.describeColumnsByQuerying(db, tableId).values()) {
+        if (defn.isAutoIncrement()) {
+          incrementingColumnName = defn.id().name();
+          break;
+        }
+      }
+    }
   }
 
   @Override
