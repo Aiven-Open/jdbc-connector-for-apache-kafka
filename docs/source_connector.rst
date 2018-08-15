@@ -11,8 +11,10 @@ The database is monitored for new or deleted tables and adapts automatically. Wh
 from a table, the connector can load only new or modified rows by specifying which columns should
 be used to detect new or modified data.
 
-There are a number of ways for a Java streams application to deserialize
-and ingest data. For a full code example, see `connect-streams-pipeline <https://github.com/confluentinc/quickstart-demos/tree/master/connect-streams-pipeline>`_.
+.. include:: ../../../includes/connect-streams-pipeline-link.rst
+   :start-line: 2
+   :end-line: 6
+
 
 Quick Start
 -----------
