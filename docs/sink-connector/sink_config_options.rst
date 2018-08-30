@@ -3,7 +3,10 @@
 JDBC Sink Configuration Options
 -------------------------------
 
-.. include:: includes/db_connection_security.rst
+.. contents:: Contents
+    :local:
+
+.. include:: ../includes/db_connection_security.rst
 
 Connection
 ^^^^^^^^^^
@@ -66,6 +69,8 @@ Writes
   * Default: 3000
   * Valid Values: [0,...]
   * Importance: medium
+
+.. _sink-pk-config-options:
 
 Data Mapping
 ^^^^^^^^^^^^
