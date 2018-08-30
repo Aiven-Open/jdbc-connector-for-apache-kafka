@@ -19,11 +19,6 @@ be used to detect new or modified data.
    :start-line: 2
    :end-line: 6
 
-Install JDBC Source Connector
------------------------------
-
-.. include:: ../../../../includes/connector-native-install.rst
-
 Quick Start
 -----------
 
@@ -366,5 +361,6 @@ topic.
 
 .. toctree::
         :maxdepth: 1
+        :hidden:
 
         source_config_options
