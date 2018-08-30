@@ -11,11 +11,6 @@ Auto-creation of tables, and limited auto-evolution is also supported.
         :local:
         :depth: 1
 
-Install JDBC Sink Connector
----------------------------
-
-.. include:: ../../../../includes/connector-native-install.rst
-
 Quick Start
 -----------
 
@@ -220,5 +215,6 @@ Auto-creation or auto-evolution is not supported for databases not mentioned her
 
 .. toctree::
         :maxdepth: 1
+        :hidden:
 
         sink_config_options
