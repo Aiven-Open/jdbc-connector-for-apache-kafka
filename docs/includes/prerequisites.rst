@@ -2,7 +2,7 @@
 
 **Prerequisites:**
 
-- :ref:`Confluent Platform <installation>` is installed and services are running by using the Confluent CLI. This quick start assumes that you are using the Confluent CLI, but standalone installations are also supported. By default ZooKeeper, Kafka, Schema Registry, Kafka Connect REST API, and Kafka Connect are started with the ``confluent start`` command. For more information, see :ref:`installation_archive`.
+- :ref:`Confluent Platform <installation>` is installed and services are running by using the Confluent CLI. This quick start assumes that you are using the Confluent CLI, but standalone installations are also supported. By default ZooKeeper, Kafka, Schema Registry, Kafka Connect REST API, and Kafka Connect are started with the ``confluent start`` command. For more information, see :ref:`installing_cp`.
 - `SQLite <https://sqlite.org/download.html>`_ is installed. You can also use another database. If you are using another database, be sure to adjust the ``connection.url`` setting. |CP| includes JDBC drivers for SQLite and PostgreSQL, but if you're using a different database you must also verify that the JDBC driver is available on the Kafka Connect process's ``CLASSPATH``.
 - Kafka and Schema Registry are running locally on the default ports.
 
