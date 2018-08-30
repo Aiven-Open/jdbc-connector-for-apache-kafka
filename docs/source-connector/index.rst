@@ -1,5 +1,5 @@
-JDBC Source Connector
-=====================
+|kconnect-long| JDBC Source Connector
+=====================================
 
 The JDBC source connector allows you to import data from any relational database with a
 JDBC driver into Kafka topics. By using JDBC, this connector can support a wide variety of
@@ -11,10 +11,18 @@ The database is monitored for new or deleted tables and adapts automatically. Wh
 from a table, the connector can load only new or modified rows by specifying which columns should
 be used to detect new or modified data.
 
-.. include:: ../../../includes/connect-streams-pipeline-link.rst
+.. contents::
+    :local:
+    :depth: 1
+
+.. include:: ../../../../includes/connect-streams-pipeline-link.rst
    :start-line: 2
    :end-line: 6
 
+Install JDBC Source Connector
+-----------------------------
+
+.. include:: ../../../../includes/connector-native-install.rst
 
 Quick Start
 -----------
@@ -23,11 +31,11 @@ To see the basic functionality of the connector, you'll copy a single table from
 database. In this quick start, you can assume each entry in the table is assigned a unique ID
 and is not modified after creation.
 
-.. include:: includes/prerequisites.rst
+.. include:: ../includes/prerequisites.rst
     :start-line: 2
     :end-line: 8
 
-.. include:: includes/prerequisites.rst
+.. include:: ../includes/prerequisites.rst
     :start-line: 11
     :end-line: 45
 
@@ -144,8 +152,9 @@ location on the next iteration (or in case of a crash). The source connector use
 functionality to only get updated rows from a table (or from the output of a custom query) on each
 iteration. Several modes are supported, each of which differs in how modified rows are detected.
 
+-----------------------
 Incremental Query Modes
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 Each incremental query mode tracks a set of columns for each row, which it uses to keep track of
 which rows have been processed and which rows are new or have been updated. The ``mode`` setting
@@ -188,10 +197,11 @@ indexes on those columns to efficiently perform the queries.
 For incremental query modes that use timestamps, the source connector uses a configuration
 ``timestamp.delay.interval.ms`` to control the waiting period after a row with certain timestamp appears
 before you include it in the result. The additional wait allows transactions with earlier timestamps
-to complete and the related changes to be included in the result.
+to complete and the related changes to be included in the result. For more information, see :ref:`jdbc-source-configs`.
 
+--------------------
 Mapping Column Types
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 The source connector has a few options for controlling how column types are mapped into
 Connect field types. By default, the connector maps SQL/JDBC types to the most accurate
@@ -216,6 +226,7 @@ Precision    Scale      Connect "best fit" primitive type
 5 to 9       -84 to 0   INT32
 10 to 18     -84 to 0   INT64
 1 to 18      positive   FLOAT64
+============ ========== =================================
 
 The ``precision_only`` option attempts to map ``NUMERIC`` columns to
 Connect ``INT8``, ``INT16``, ``INT32``, and ``INT64`` based only upon the column's precision,
@@ -228,13 +239,14 @@ Precision    Scale      Connect "best fit" primitive type
 3 to 4       0          INT16
 5 to 9       0          INT32
 10 to 18     0          INT64
+============ ========== =================================
 
 Any other combination of precision and scale for ``NUMERIC`` columns will always map to
 Connect's ``Decimal`` type.
 
 .. note:: The ``numeric.precision.mapping`` property is older and is now deprecated. When
-enabled it is exactly equivalent to ``numeric.mapping=precision_only``, and when not enabled it
-is exactly equivalent to ``numeric.mapping=none``.
+          enabled it is exactly equivalent to ``numeric.mapping=precision_only``, and when not enabled it
+          is exactly equivalent to ``numeric.mapping=none``.
 
 Configuration
 -------------
@@ -242,10 +254,11 @@ Configuration
 The source connector gives you quite a bit of flexibility in the databases you can import data from
 and how that data is imported. This section first describes how to access databases whose drivers
 are not included with Confluent Platform, then gives a few example configuration files that cover
-common scenarios, then provides an exhaustive description of the available configuration options.
+common scenarios, then provides an :ref:`exhaustive description of the available configuration options <jdbc-source-configs>`.
 
+------------
 JDBC Drivers
-~~~~~~~~~~~~
+------------
 
 The source connector implements the data copying functionality on the generic JDBC APIs, but relies
 on JDBC drivers to handle the database-specific implementation of those APIs. Confluent Platform
@@ -268,10 +281,11 @@ would add the JDBC driver for the Firebird database, located in ``/usr/local/fir
 you to use JDBC connection URLs like
 ``jdbc:firebirdsql:localhost/3050:/var/lib/firebird/example.db``.
 
+--------
 Examples
-~~~~~~~~
+--------
 
-The full set of configuration options are listed in the next section, but here are a few
+The full set of configuration options are listed in :ref:`jdbc-source-configs`, but here are a few
 template configurations that cover some common usage scenarios.
 
 Use a whitelist to limit changes to a subset of tables in a MySQL database, using ``id`` and
@@ -349,3 +363,8 @@ backward, forward and full to ensure that the Hive schema is able to query the w
 topic. As some compatible schema change will be treated as incompatible schema change, those
 changes will not work as the resulting Hive schema will not be able to query the whole data for a
 topic.
+
+.. toctree::
+        :maxdepth: 1
+
+        source_config_options

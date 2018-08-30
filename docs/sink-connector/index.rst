@@ -1,5 +1,5 @@
-JDBC Sink Connector
-===================
+|kconnect-long| JDBC Sink Connector
+===================================
 
 The JDBC sink connector allows you to export data from Kafka topics to any relational database with a JDBC driver.
 By using JDBC, this connector can support a wide variety of databases without requiring a dedicated connector for each one.
@@ -7,16 +7,25 @@ The connector polls data from Kafka to write to the database based on the topics
 It is possible to achieve idempotent writes with upserts.
 Auto-creation of tables, and limited auto-evolution is also supported.
 
+.. contents:: Contents
+        :local:
+        :depth: 1
+
+Install JDBC Sink Connector
+---------------------------
+
+.. include:: ../../../../includes/connector-native-install.rst
+
 Quick Start
 -----------
 
-.. include:: includes/prerequisites.rst
+To see the basic functionality of the connector, we'll be copying Avro data from a single topic to a local SQLite database.
+
+.. include:: ../includes/prerequisites.rst
         :start-line: 2
         :end-line: 8
 
-To see the basic functionality of the connector, we'll be copying Avro data from a single topic to a local SQLite database.
-
-.. include:: includes/prerequisites.rst
+.. include:: ../includes/prerequisites.rst
     :start-line: 11
     :end-line: 45
 
@@ -109,16 +118,18 @@ Produce a Record in SQLite
 Features
 --------
 
+------------
 Data mapping
-^^^^^^^^^^^^
+------------
 
 The sink connector requires knowledge of schemas, so you should use a suitable converter e.g. the Avro converter that comes with the schema registry, or the JSON converter with schemas enabled.
 Kafka record keys if present can be primitive types or a Connect struct, and the record value must be a Connect struct.
 Fields being selected from Connect structs must be of primitive types.
 If the data in the topic is not of a compatible format, implementing a custom ``Converter`` may be necessary.
 
+------------
 Key handling
-^^^^^^^^^^^^
+------------
 
 The default is for primary keys to not be extracted with ``pk.mode`` set to `none`,
 which is not suitable for advanced usage such as upsert semantics and when the connector is responsible for auto-creating the destination table.
@@ -126,8 +137,9 @@ There are different modes that enable to use fields from the Kafka record key, t
 
 Refer to :ref:`primary key configuration options <sink-pk-config-options>` for further detail.
 
+-----------------
 Idempotent writes
-^^^^^^^^^^^^^^^^^
+-----------------
 
 The default ``insert.mode`` is `insert`. If it is configured as `upsert`, the connector will use upsert semantics rather than plain `INSERT` statements.
 Upsert semantics refer to atomically adding a new row or updating the existing row if there is a primary key constraint violation, which provides idempotence.
@@ -150,14 +162,15 @@ SQL Server      `MERGE ..`
 Other           *not supported*
 ===========     ================================================
 
+-------------------------------
 Auto-creation and Auto-evoluton
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
 .. tip:: Make sure the JDBC user has the appropriate permissions for DDL.
 
 If ``auto.create`` is enabled, the connector can `CREATE` the destination table if it is found to be missing.
 The creation takes place online with records being consumed from the topic, since the connector uses the record schema as a basis for the table definition.
-Primary keys are specified based on the key configuration settings.
+Primary keys are specified based on the key :ref:`configuration settings <sink-config-options>`.
 
 If ``auto.evolve`` is enabled, the connector can perform limited auto-evolution by issuing `ALTER` on the destination table when it encounters a record for which a column is found to be missing.
 Since data-type changes and removal of columns can be dangerous, the connector does not attempt to perform such evolutions on the table.
@@ -201,4 +214,11 @@ Auto-creation or auto-evolution is not supported for databases not mentioned her
 
 .. important::
     For backwards-compatible table schema evolution, new fields in record schemas must be optional or have a default value.
-    If you need to delete a field, the table schema should be manually altered to either drop the corresponding column, assign it a default value, or make it nullable.
+    If you need to delete a field, the table schema should be manually altered to either drop the corresponding column, assign
+    it a default value, or make it nullable.
+
+
+.. toctree::
+        :maxdepth: 1
+
+        sink_config_options
