@@ -58,6 +58,7 @@
         <confluent.version>${project.version}</confluent.version>
         <derby.version>10.11.1.1</derby.version>
         <commons-io.version>2.4</commons-io.version>
+        <kafka.connect.maven.plugin.version>0.11.1</kafka.connect.maven.plugin.version>
         <sqlite-jdbc.version>3.8.11.2</sqlite-jdbc.version>
         <postgresql.version>9.4-1206-jdbc41</postgresql.version>
         <licenses.name>Apache License 2.0</licenses.name>
@@ -151,6 +152,70 @@
                     <source>1.7</source>
                     <target>1.7</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.confluent</groupId>
+                <version>${kafka.connect.maven.plugin.version}</version>
+                <artifactId>kafka-connect-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>kafka-connect</goal>
+                        </goals>
+                        <configuration>
+                            <title>Kafka Connect JDBC</title>
+                            <documentationUrl>https://docs.confluent.io/${project.version}/connect/connect-jdbc/docs/index.html</documentationUrl>
+                            <description>
+                                The JDBC source connector allows you to import data from any relational database with a JDBC driver into Kafka topics. By using JDBC, this connector can support a wide variety of databases without requiring custom code for each one.
+
+                                Data is loaded by periodically executing a SQL query and creating an output record for each row in the result set. By default, all tables in a database are copied, each to its own output topic. The database is monitored for new or deleted tables and adapts automatically. When copying data from a table, the connector can load only new or modified rows by specifying which columns should be used to detect new or modified data.
+
+                                The JDBC sink connector allows you to export data from Kafka topics to any relational database with a JDBC driver. By using JDBC, this connector can support a wide variety of databases without requiring a dedicated connector for each one. The connector polls data from Kafka to write to the database based on the topics subscription. It is possible to achieve idempotent writes with upserts. Auto-creation of tables, and limited auto-evolution is also supported.
+                            </description>
+                            <logo>logos/jdbc.jpg</logo>
+
+                            <supportProviderName>Confluent, Inc.</supportProviderName>
+                            <supportSummary>Confluent supports the JDBC sink and source connectors alongside community members as part of its Confluent Platform open source offering.</supportSummary>
+                            <supportUrl>https://docs.confluent.io/current/</supportUrl>
+                            <supportLogo>logos/confluent.png</supportLogo>
+
+                            <ownerUsername>confluentinc</ownerUsername>
+                            <ownerType>organization</ownerType>
+                            <ownerName>Confluent, Inc.</ownerName>
+                            <ownerUrl>https://confluent.io/</ownerUrl>
+                            <ownerLogo>logos/confluent.png</ownerLogo>
+
+                            <dockerNamespace>confluentinc</dockerNamespace>
+                            <dockerName>cp-kafka-connect</dockerName>
+                            <dockerTag>${project.version}</dockerTag>
+
+                            <componentTypes>
+                                <componentType>sink</componentType>
+                                <componentType>source</componentType>
+                            </componentTypes>
+
+                            <tags>
+                                <tag>jdbc</tag>
+                                <tag>database</tag>
+                                <tag>dbms</tag>
+                                <tag>rdbms</tag>
+                                <tag>sql</tag>
+                                <tag>mysql</tag>
+                                <tag>postgresql</tag>
+                                <tag>oracle</tag>
+                                <tag>sql server</tag>
+                                <tag>db2</tag>
+                                <tag>sybase</tag>
+                                <tag>vertica</tag>
+                                <tag>sap hana</tag>
+                                <tag>derby</tag>
+                                <tag>sqlite</tag>
+                            </tags>
+
+                            <confluentControlCenterIntegration>true</confluentControlCenterIntegration>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
