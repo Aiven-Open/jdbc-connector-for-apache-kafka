@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.util.TimeZone;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -70,12 +71,14 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
   private TimestampIncrementingCriteria criteria;
   private final Map<String, String> partition;
   private final String topic;
+  private final TimeZone timeZone;
 
   public TimestampIncrementingTableQuerier(DatabaseDialect dialect, QueryMode mode, String name,
                                            String topicPrefix,
                                            List<String> timestampColumnNames,
                                            String incrementingColumnName,
-                                           Map<String, Object> offsetMap, Long timestampDelay) {
+                                           Map<String, Object> offsetMap, Long timestampDelay,
+                                           TimeZone timeZone) {
     super(dialect, mode, name, topicPrefix);
     this.incrementingColumnName = incrementingColumnName;
     this.timestampColumnNames = timestampColumnNames != null
@@ -104,6 +107,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
       default:
         throw new ConnectException("Unexpected query mode: " + mode);
     }
+
+    this.timeZone = timeZone;
   }
 
   @Override
@@ -197,7 +202,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
   public Timestamp endTimetampValue()  throws SQLException {
     final long currentDbTime = dialect.currentTimeOnDB(
         stmt.getConnection(),
-        DateTimeUtils.UTC_CALENDAR.get()
+        DateTimeUtils.getTimeZoneCalendar(timeZone)
     ).getTime();
     return new Timestamp(currentDbTime - timestampDelay);
   }

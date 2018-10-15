@@ -16,6 +16,9 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.TimeZone;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -239,6 +242,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
       + " from the last time we fetched until current time minus the delay.";
   public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
   private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
+
+  public static final String DB_TIMEZONE_CONFIG = "db.timezone";
+  public static final String DB_TIMEZONE_DEFAULT = "UTC";
+  private static final String DB_TIMEZONE_CONFIG_DOC =
+      "Alternative TimeZone of the database, to be used by JDBC driver instead of UTC (default)"
+          + "when instantiating PreparedStatements.";
+  private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB time zone";
+
 
   public static final String DATABASE_GROUP = "Database";
   public static final String MODE_GROUP = "Mode";
@@ -537,7 +548,17 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         CONNECTOR_GROUP,
         ++orderInGroup,
         Width.MEDIUM,
-        TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
+        TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY
+    ).define(
+        DB_TIMEZONE_CONFIG,
+        Type.STRING,
+        DB_TIMEZONE_DEFAULT,
+        Importance.HIGH,
+        DB_TIMEZONE_CONFIG_DOC,
+        CONNECTOR_GROUP,
+        ++orderInGroup,
+        Width.MEDIUM,
+        DB_TIMEZONE_CONFIG_DISPLAY);
   }
 
   public static final ConfigDef CONFIG_DEF = baseConfigDef();
@@ -758,6 +779,12 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public NumericMapping numericMapping() {
     return NumericMapping.get(this);
+  }
+
+  public TimeZone timeZone() {
+    String dbTimeZone = getString(JdbcSourceTaskConfig.DB_TIMEZONE_CONFIG);
+    return dbTimeZone == null ? TimeZone.getTimeZone(ZoneOffset.UTC) :
+        TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
   }
 
   public static void main(String[] args) {

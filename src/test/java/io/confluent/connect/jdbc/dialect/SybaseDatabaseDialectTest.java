@@ -14,6 +14,9 @@
 
 package io.confluent.connect.jdbc.dialect;
 
+import java.time.ZoneOffset;
+import java.util.Calendar;
+import java.util.TimeZone;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
@@ -237,9 +240,12 @@ public class SybaseDatabaseDialectTest extends BaseDialectTest<SybaseDatabaseDia
     verifyBindField(++index, Schema.BYTES_SCHEMA, ByteBuffer.wrap(new byte[]{42})).setBytes(index, new byte[]{42});
     verifyBindField(++index, Schema.STRING_SCHEMA, "yep").setString(index, "yep");
     verifyBindField(++index, Decimal.schema(0), new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)).setBigDecimal(index, new BigDecimal(2));
-    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0)).setDate(index, new java.sql.Date
-        (0), DateTimeUtils.UTC_CALENDAR.get());
-    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setTime(index, new java.sql.Time(1000), DateTimeUtils.UTC_CALENDAR.get());
-    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setTimestamp(index, new java.sql.Timestamp(100), DateTimeUtils.UTC_CALENDAR.get());
+    Calendar utcCalendar = DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC));
+    verifyBindField(++index, Date.SCHEMA, new java.util.Date(0))
+        .setDate(index, new java.sql.Date(0), utcCalendar);
+    verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000))
+        .setTime(index, new java.sql.Time(1000), utcCalendar);
+    verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100))
+        .setTimestamp(index, new java.sql.Timestamp(100), utcCalendar);
   }
 }
