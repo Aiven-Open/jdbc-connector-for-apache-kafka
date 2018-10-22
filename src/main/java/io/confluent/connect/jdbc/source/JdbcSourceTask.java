@@ -93,6 +93,7 @@ public class JdbcSourceTask extends SourceTask {
     } else {
       dialect = DatabaseDialects.findBestFor(url, config);
     }
+    log.debug("Using dialect {}", dialect.name());
 
     cachedConnectionProvider = new CachedConnectionProvider(dialect, maxConnAttempts, retryBackoff);
 
@@ -117,6 +118,7 @@ public class JdbcSourceTask extends SourceTask {
       List<Map<String, String>> partitions = new ArrayList<>(tables.size());
       switch (queryMode) {
         case TABLE:
+          log.trace("Starting in TABLE mode");
           for (String table : tables) {
             // Find possible partition maps for different offset protocols
             // We need to search by all offset protocol partition keys to support compatibility
@@ -126,6 +128,7 @@ public class JdbcSourceTask extends SourceTask {
           }
           break;
         case QUERY:
+          log.trace("Starting in QUERY mode");
           partitions.add(Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
                                                   JdbcSourceConnectorConstants.QUERY_NAME_VALUE));
           break;

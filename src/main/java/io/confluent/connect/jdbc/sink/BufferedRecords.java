@@ -128,6 +128,7 @@ public class BufferedRecords {
 
   public List<SinkRecord> flush() throws SQLException {
     if (records.isEmpty()) {
+      log.debug("Records is empty");
       return new ArrayList<>();
     }
     for (SinkRecord record : records) {
@@ -152,7 +153,7 @@ public class BufferedRecords {
           ));
         case UPSERT:
         case UPDATE:
-          log.trace(
+          log.debug(
               "{} records:{} resulting in in totalUpdateCount:{}",
               config.insertMode,
               records.size(),
@@ -177,6 +178,7 @@ public class BufferedRecords {
   }
 
   public void close() throws SQLException {
+    log.info("Closing BufferedRecords with preparedStatement: {}", preparedStatement);
     if (preparedStatement != null) {
       preparedStatement.close();
       preparedStatement = null;

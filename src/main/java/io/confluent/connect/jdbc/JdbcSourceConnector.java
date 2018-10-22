@@ -67,6 +67,7 @@ public class JdbcSourceConnector extends SourceConnector {
 
   @Override
   public void start(Map<String, String> properties) throws ConnectException {
+    log.info("Starting JDBC Source Connector");
     try {
       configProperties = properties;
       config = new JdbcSourceConnectorConfig(configProperties);
@@ -141,6 +142,7 @@ public class JdbcSourceConnector extends SourceConnector {
       Map<String, String> taskProps = new HashMap<>(configProperties);
       taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG, "");
       taskConfigs.add(taskProps);
+      log.trace("Task configs with no query");
       return taskConfigs;
     } else {
       List<TableId> currentTables = tableMonitorThread.tables();
@@ -154,6 +156,7 @@ public class JdbcSourceConnector extends SourceConnector {
         taskProps.put(JdbcSourceTaskConfig.TABLES_CONFIG, builder.toString());
         taskConfigs.add(taskProps);
       }
+      log.trace("Task configs with query: {}, tables: {}", taskConfigs, currentTables.toArray());
       return taskConfigs;
     }
   }
