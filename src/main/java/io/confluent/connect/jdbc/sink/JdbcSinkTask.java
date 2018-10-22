@@ -42,7 +42,7 @@ public class JdbcSinkTask extends SinkTask {
 
   @Override
   public void start(final Map<String, String> props) {
-    log.info("Starting task");
+    log.info("Starting JDBC Sink task");
     config = new JdbcSinkConfig(props);
     initWriter();
     remainingRetries = config.maxRetries;
@@ -66,7 +66,7 @@ public class JdbcSinkTask extends SinkTask {
     }
     final SinkRecord first = records.iterator().next();
     final int recordsCount = records.size();
-    log.trace(
+    log.debug(
         "Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the "
         + "database...",
         recordsCount, first.topic(), first.kafkaPartition(), first.kafkaOffset()

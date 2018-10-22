@@ -90,6 +90,7 @@ public class DbStructure {
       );
     }
     String sql = dbDialect.buildCreateTableStatement(tableId, fieldsMetadata.allFields.values());
+    log.info("Creating table with sql: {}", sql);
     dbDialect.applyDdlStatements(connection, Collections.singletonList(sql));
   }
 
@@ -188,6 +189,7 @@ public class DbStructure {
     final Set<SinkRecordField> missingFields = new HashSet<>();
     for (SinkRecordField field : fields) {
       if (!dbColumnNames.contains(field.name())) {
+        log.debug("Found missing field: {}", field);
         missingFields.add(field);
       }
     }
