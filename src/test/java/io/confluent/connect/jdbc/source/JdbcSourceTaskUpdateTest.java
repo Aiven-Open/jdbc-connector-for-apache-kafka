@@ -16,16 +16,27 @@
 
 package io.confluent.connect.jdbc.source;
 
-import io.confluent.connect.jdbc.util.DateTimeUtils;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.sql.Timestamp;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -33,9 +44,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.sql.Timestamp;
-
-import static org.junit.Assert.assertEquals;
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 
 // Tests of polling that return data updates, i.e. verifies the different behaviors for getting
 // incremental data updates from the database
@@ -338,6 +347,26 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     verifyIncrementingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
     PowerMock.verifyAll();
+  }
+
+  @Test
+  public void testTimestampInInvalidTimezone() throws Exception {
+    String invalidTimeZoneID = "Europe/Invalid";
+    // Manage these manually so we can verify the emitted values
+    db.createTable(SINGLE_TABLE_NAME,
+        "modified", "TIMESTAMP NOT NULL",
+        "id", "INT NOT NULL");
+
+    try {
+      startTask("modified", "id", null, 0L, invalidTimeZoneID);
+      fail("A ConfigException should have been thrown");
+    } catch (ConnectException e) {
+      assertTrue(e.getCause() instanceof ConfigException);
+      ConfigException configException = (ConfigException) e.getCause();
+      assertThat(configException.getMessage(),
+          equalTo(
+              "Invalid value Europe/Invalid for configuration db.timezone: Invalid time zone identifier"));
+    }
   }
 
   @Test

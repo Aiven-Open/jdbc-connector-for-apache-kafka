@@ -16,9 +16,28 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.confluent.connect.jdbc.dialect.DatabaseDialect;
+import io.confluent.connect.jdbc.dialect.DatabaseDialects;
+import io.confluent.connect.jdbc.util.DatabaseDialectRecommender;
+import io.confluent.connect.jdbc.util.TableId;
+import io.confluent.connect.jdbc.util.TimeZoneValidator;
+
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -29,25 +48,6 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
-import io.confluent.connect.jdbc.dialect.DatabaseDialect;
-import io.confluent.connect.jdbc.dialect.DatabaseDialects;
-import io.confluent.connect.jdbc.util.DatabaseDialectRecommender;
-import io.confluent.connect.jdbc.util.TableId;
 
 public class JdbcSourceConnectorConfig extends AbstractConfig {
 
@@ -553,7 +553,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         DB_TIMEZONE_CONFIG,
         Type.STRING,
         DB_TIMEZONE_DEFAULT,
-        Importance.HIGH,
+        TimeZoneValidator.INSTANCE,
+        Importance.MEDIUM,
         DB_TIMEZONE_CONFIG_DOC,
         CONNECTOR_GROUP,
         ++orderInGroup,
@@ -783,8 +784,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public TimeZone timeZone() {
     String dbTimeZone = getString(JdbcSourceTaskConfig.DB_TIMEZONE_CONFIG);
-    return dbTimeZone == null ? TimeZone.getTimeZone(ZoneOffset.UTC) :
-        TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
+    return TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
   }
 
   public static void main(String[] args) {
