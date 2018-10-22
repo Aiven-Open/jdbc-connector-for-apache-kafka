@@ -130,7 +130,7 @@ public class TableMonitorThread extends Thread {
   }
 
   public void shutdown() {
-    log.info("Shutting down TableMonitorThread");
+    log.info("Shutting down thread monitoring tables.");
     shutdownLatch.countDown();
   }
 
