@@ -243,9 +243,10 @@ public class JdbcUtils {
     String dbProduct = conn.getMetaData().getDatabaseProductName();
     if ("Oracle".equals(dbProduct)) {
       query = "select CURRENT_TIMESTAMP from dual";
-    } else if ("Apache Derby".equals(dbProduct)
-        || (dbProduct != null && dbProduct.startsWith("DB2"))) {
+    } else if ("Apache Derby".equals(dbProduct)) {
       query = "values(CURRENT_TIMESTAMP)";
+    } else if (dbProduct != null && dbProduct.startsWith("DB2")) {
+      query = "select CURRENT_TIMESTAMP from sysibm.sysdummy1";
     } else {
       query = "select CURRENT_TIMESTAMP;";
     }
