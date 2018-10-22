@@ -191,6 +191,8 @@ public class JdbcUtils {
       query = "select CURRENT_TIMESTAMP from dual";
     else if ("Apache Derby".equals(dbProduct))
       query = "values(CURRENT_TIMESTAMP)";
+    else if (dbProduct != null && dbProduct.startsWith("DB2"))
+      query = "select CURRENT_TIMESTAMP from sysibm.sysdummy1";
     else
       query = "select CURRENT_TIMESTAMP;";
 
