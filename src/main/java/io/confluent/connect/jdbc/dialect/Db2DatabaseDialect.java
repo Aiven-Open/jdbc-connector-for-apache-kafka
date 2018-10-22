@@ -62,7 +62,7 @@ public class Db2DatabaseDialect extends GenericDatabaseDialect {
 
   @Override
   protected String currentTimestampDatabaseQuery() {
-    return "values(CURRENT_TIMESTAMP)";
+    return "SELECT CURRENT_TIMESTAMP(12) FROM SYSIBM.SYSDUMMY1;";
   }
 
   @Override
