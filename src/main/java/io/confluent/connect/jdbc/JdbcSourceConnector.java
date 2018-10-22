@@ -67,7 +67,7 @@ public class JdbcSourceConnector extends SourceConnector {
 
   @Override
   public void start(Map<String, String> properties) throws ConnectException {
-    log.info("Starting JDBC Source");
+    log.info("Starting JDBC Source Connector");
     try {
       configProperties = properties;
       config = new JdbcSourceConnectorConfig(configProperties);
