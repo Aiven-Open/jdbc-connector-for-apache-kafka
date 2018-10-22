@@ -242,6 +242,7 @@ public class TimestampIncrementingCriteria {
       throw new ConnectException(
           "Invalid type for incrementing column: " + incrementingColumnSchema.type());
     }
+    log.trace("Extracted incrementing column value: {}", extractedId);
     return extractedId;
   }
 
