@@ -141,15 +141,18 @@ public class PreparedStatementBinderTest {
     verify(statement, times(1)).setBytes(index++, valueStruct.getBytes("bytes"));
     verify(statement, times(1)).setBigDecimal(index++, (BigDecimal) valueStruct.get("decimal"));
     Calendar utcCalendar = DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC));
-    verify(statement, times(1))
-        .setDate(index++, new java.sql.Date(((java.util.Date) valueStruct.get("date")).getTime()),
-            utcCalendar);
-    verify(statement, times(1))
-        .setTime(index++, new java.sql.Time(((java.util.Date) valueStruct.get("time")).getTime()),
-            utcCalendar);
-    verify(statement, times(1)).setTimestamp(index++,
-        new java.sql.Timestamp(((java.util.Date) valueStruct.get("timestamp")).getTime()),
-        utcCalendar);
+    verify(
+        statement,
+        times(1)
+    ).setDate(index++, new java.sql.Date(((java.util.Date) valueStruct.get("date")).getTime()), utcCalendar);
+    verify(
+        statement,
+        times(1)
+    ).setTime(index++, new java.sql.Time(((java.util.Date) valueStruct.get("time")).getTime()), utcCalendar);
+    verify(
+        statement,
+        times(1)
+    ).setTimestamp(index++, new java.sql.Timestamp(((java.util.Date) valueStruct.get("timestamp")).getTime()), utcCalendar);
     // last field is optional and is null-valued in struct
     verify(statement, times(1)).setObject(index++, null);
   }

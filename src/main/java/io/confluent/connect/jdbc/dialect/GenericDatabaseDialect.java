@@ -1655,8 +1655,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           builder.appendStringQuoted(DateTimeUtils.formatTime((java.util.Date) value, timeZone));
           return;
         case org.apache.kafka.connect.data.Timestamp.LOGICAL_NAME:
-          builder
-              .appendStringQuoted(DateTimeUtils.formatTimestamp((java.util.Date) value, timeZone));
+          builder.appendStringQuoted(
+              DateTimeUtils.formatTimestamp((java.util.Date) value, timeZone)
+          );
           return;
         default:
           // fall through to regular types

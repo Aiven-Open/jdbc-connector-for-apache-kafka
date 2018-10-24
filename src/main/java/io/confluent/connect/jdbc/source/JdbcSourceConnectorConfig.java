@@ -246,8 +246,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String DB_TIMEZONE_CONFIG = "db.timezone";
   public static final String DB_TIMEZONE_DEFAULT = "UTC";
   private static final String DB_TIMEZONE_CONFIG_DOC =
-      "Alternative TimeZone of the database, to be used by JDBC driver instead of UTC (default)"
-          + "when instantiating PreparedStatements.";
+      "Name of the JDBC timezone that should be used in the connector when "
+      + "querying with time-based criteria. Defaults to UTC.";
   private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB time zone";
 
 

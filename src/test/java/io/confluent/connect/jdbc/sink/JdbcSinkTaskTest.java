@@ -126,8 +126,10 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
                 assertEquals(struct.getInt64("long").longValue(), rs.getLong("long"));
                 assertEquals(struct.getFloat32("float"), rs.getFloat("float"), 0.01);
                 assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
-                java.sql.Timestamp dbTimestamp = rs.getTimestamp("modified",
-                    DateTimeUtils.getTimeZoneCalendar(timeZone));
+                java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                    "modified",
+                    DateTimeUtils.getTimeZoneCalendar(timeZone)
+                );
                 assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
               }
             }
@@ -193,8 +195,10 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
                 rs.getShort("float");
                 assertTrue(rs.wasNull());
                 assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
-                java.sql.Timestamp dbTimestamp = rs.getTimestamp("modified",
-                    DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC)));
+                java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                    "modified",
+                    DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC))
+                );
                 assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
               }
             }

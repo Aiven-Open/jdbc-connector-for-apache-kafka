@@ -196,8 +196,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.createTable(SINGLE_TABLE_NAME,
                    "modified", "TIMESTAMP NOT NULL",
                    "id", "INT");
-    db.insert(SINGLE_TABLE_NAME, "modified",
-            DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE), "id", 1);
+    db.insert(SINGLE_TABLE_NAME,
+        "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
+        "id", 1);
 
     startTask("modified", null, null);
     verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
@@ -307,8 +308,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.createTable(SINGLE_TABLE_NAME,
                    "modified", "TIMESTAMP NOT NULL",
                    "id", "INT NOT NULL");
-    db.insert(SINGLE_TABLE_NAME, "modified",
-            DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE), "id", 1);
+    db.insert(SINGLE_TABLE_NAME,
+        "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
+        "id", 1);
 
     startTask("modified", "id", null);
     verifyIncrementingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
@@ -383,8 +385,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                    "modified", "TIMESTAMP",
                    "created", "TIMESTAMP NOT NULL",
                    "id", "INT NOT NULL");
-    db.insert(SINGLE_TABLE_NAME, "created",
-            DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE), "id", 1);
+    db.insert(SINGLE_TABLE_NAME,
+        "created", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
+        "id", 1);
 
     startTask("modified, created", "id", null);
     verifyIncrementingAndMultiTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
@@ -392,8 +395,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     db.insert(SINGLE_TABLE_NAME, "created",
             DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE), "id", 3);
     db.insert(SINGLE_TABLE_NAME,
-            "modified", DateTimeUtils.formatTimestamp(new Timestamp(11L), UTC_TIME_ZONE),
-            "created", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE), "id", 1);
+        "modified", DateTimeUtils.formatTimestamp(new Timestamp(11L), UTC_TIME_ZONE),
+        "created", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
+        "id", 1);
 
     verifyPoll(2, "id", Arrays.asList(3, 1), false, true, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
@@ -545,12 +549,15 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                    "modified", "TIMESTAMP NOT NULL",
                    "id", "INT");
     // id=2 will be ignored since it has the same timestamp as the initial offset.
-    db.insert(SINGLE_TABLE_NAME, "modified",
-            DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE), "id", 2);
-    db.insert(SINGLE_TABLE_NAME, "modified",
-            DateTimeUtils.formatTimestamp(new Timestamp(11L), UTC_TIME_ZONE), "id", 3);
-    db.insert(SINGLE_TABLE_NAME, "modified",
-            DateTimeUtils.formatTimestamp(new Timestamp(12L), UTC_TIME_ZONE), "id", 4);
+    db.insert(SINGLE_TABLE_NAME,
+        "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
+        "id", 2);
+    db.insert(SINGLE_TABLE_NAME,
+        "modified", DateTimeUtils.formatTimestamp(new Timestamp(11L), UTC_TIME_ZONE),
+        "id", 3);
+    db.insert(SINGLE_TABLE_NAME,
+        "modified", DateTimeUtils.formatTimestamp(new Timestamp(12L), UTC_TIME_ZONE),
+        "id", 4);
 
     startTask("modified", null, null);
 
@@ -712,7 +719,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     startTask(timestampColumn, incrementingColumn, query, 0L, "UTC");
   }
 
-  private void startTask(String timestampColumn, String incrementingColumn, String query, Long delay, String timeZone) {
+  private void startTask(String timestampColumn, String incrementingColumn,
+                         String query, Long delay, String timeZone) {
     String mode = null;
     if (timestampColumn != null && incrementingColumn != null) {
       mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
