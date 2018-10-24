@@ -28,8 +28,11 @@ import java.util.Map;
 import io.confluent.connect.jdbc.dialect.DatabaseDialect;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 import io.confluent.connect.jdbc.util.TableId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcDbWriter {
+  private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
   private final JdbcSinkConfig config;
   private final DatabaseDialect dbDialect;
@@ -44,6 +47,7 @@ public class JdbcDbWriter {
     this.cachedConnectionProvider = new CachedConnectionProvider(this.dbDialect) {
       @Override
       protected void onConnect(Connection connection) throws SQLException {
+        log.info("JdbcDbWriter Connected");
         connection.setAutoCommit(false);
       }
     };
