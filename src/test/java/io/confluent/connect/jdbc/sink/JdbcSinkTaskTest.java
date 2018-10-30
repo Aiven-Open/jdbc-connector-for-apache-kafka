@@ -16,9 +16,26 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import static org.easymock.EasyMock.expectLastCall;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -28,18 +45,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import io.confluent.connect.jdbc.util.DateTimeUtils;
 
 public class JdbcSinkTaskTest extends EasyMockSupport {
   private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
@@ -54,6 +60,7 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
       .field("long", Schema.OPTIONAL_INT64_SCHEMA)
       .field("float", Schema.OPTIONAL_FLOAT32_SCHEMA)
       .field("double", Schema.OPTIONAL_FLOAT64_SCHEMA)
+      .field("modified", Timestamp.SCHEMA)
       .build();
 
   @Before
@@ -73,6 +80,9 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
     props.put("auto.create", "true");
     props.put("pk.mode", "kafka");
     props.put("pk.fields", "kafka_topic,kafka_partition,kafka_offset");
+    String timeZoneID = "America/Los_Angeles";
+    TimeZone timeZone = TimeZone.getTimeZone(timeZoneID);
+    props.put("db.timezone", timeZoneID);
 
     JdbcSinkTask task = new JdbcSinkTask();
     task.initialize(mock(SinkTaskContext.class));
@@ -88,7 +98,8 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
         .put("long", 12425436L)
         .put("float", (float) 2356.3)
         .put("double", -2436546.56457)
-        .put("age", 21);
+        .put("age", 21)
+        .put("modified", new Date(1474661402123L));
 
     final String topic = "atopic";
 
@@ -115,6 +126,11 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
                 assertEquals(struct.getInt64("long").longValue(), rs.getLong("long"));
                 assertEquals(struct.getFloat32("float"), rs.getFloat("float"), 0.01);
                 assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
+                java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                    "modified",
+                    DateTimeUtils.getTimeZoneCalendar(timeZone)
+                );
+                assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
               }
             }
         )
@@ -144,7 +160,8 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
         "    long INTEGER," +
         "    float NUMERIC," +
         "    double NUMERIC," +
-        "    bytes BLOB, " +
+        "    bytes BLOB," +
+        "    modified DATETIME, "+
         "PRIMARY KEY (firstName, lastName));"
     );
 
@@ -157,7 +174,8 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
         .put("byte", (byte) -72)
         .put("long", 8594L)
         .put("double", 3256677.56457d)
-        .put("age", 28);
+        .put("age", 28)
+        .put("modified", new Date(1474661402123L));
 
     task.put(Collections.singleton(new SinkRecord(topic, 1, null, null, SCHEMA, struct, 43)));
 
@@ -177,6 +195,11 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
                 rs.getShort("float");
                 assertTrue(rs.wasNull());
                 assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
+                java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                    "modified",
+                    DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC))
+                );
+                assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
               }
             }
         )

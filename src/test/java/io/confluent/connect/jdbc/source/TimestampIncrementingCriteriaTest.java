@@ -14,6 +14,8 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.time.ZoneOffset;
+import java.util.TimeZone;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -47,13 +49,14 @@ public class TimestampIncrementingCriteriaTest {
   private TimestampIncrementingCriteria criteriaIncTs;
   private Schema schema;
   private Struct record;
+  private TimeZone utcTimeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
 
   @Before
   public void beforeEach() {
-    criteria = new TimestampIncrementingCriteria(null, null);
-    criteriaInc = new TimestampIncrementingCriteria(INCREMENTING_COLUMN, null);
-    criteriaTs = new TimestampIncrementingCriteria(null, TS_COLUMNS);
-    criteriaIncTs = new TimestampIncrementingCriteria(INCREMENTING_COLUMN, TS_COLUMNS);
+    criteria = new TimestampIncrementingCriteria(null, null, utcTimeZone);
+    criteriaInc = new TimestampIncrementingCriteria(INCREMENTING_COLUMN, null, utcTimeZone);
+    criteriaTs = new TimestampIncrementingCriteria(null, TS_COLUMNS, utcTimeZone);
+    criteriaIncTs = new TimestampIncrementingCriteria(INCREMENTING_COLUMN, TS_COLUMNS, utcTimeZone);
   }
 
   protected void assertExtractedOffset(long expected, Schema schema, Struct record) {

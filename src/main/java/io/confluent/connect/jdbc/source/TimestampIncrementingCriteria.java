@@ -14,6 +14,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import java.util.TimeZone;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -69,15 +70,18 @@ public class TimestampIncrementingCriteria {
   protected final Logger log = LoggerFactory.getLogger(getClass());
   protected final List<ColumnId> timestampColumns;
   protected final ColumnId incrementingColumn;
+  protected final TimeZone timeZone;
 
 
   public TimestampIncrementingCriteria(
       ColumnId incrementingColumn,
-      List<ColumnId> timestampColumns
+      List<ColumnId> timestampColumns,
+      TimeZone timeZone
   ) {
     this.timestampColumns =
         timestampColumns != null ? timestampColumns : Collections.<ColumnId>emptyList();
     this.incrementingColumn = incrementingColumn;
+    this.timeZone = timeZone;
   }
 
   protected boolean hasTimestampColumns() {
@@ -131,14 +135,14 @@ public class TimestampIncrementingCriteria {
     Timestamp beginTime = values.beginTimetampValue();
     Timestamp endTime = values.endTimetampValue();
     Long incOffset = values.lastIncrementedValue();
-    stmt.setTimestamp(1, endTime, DateTimeUtils.UTC_CALENDAR.get());
-    stmt.setTimestamp(2, beginTime, DateTimeUtils.UTC_CALENDAR.get());
+    stmt.setTimestamp(1, endTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
+    stmt.setTimestamp(2, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
     stmt.setLong(3, incOffset);
-    stmt.setTimestamp(4, beginTime, DateTimeUtils.UTC_CALENDAR.get());
+    stmt.setTimestamp(4, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
     log.debug(
         "Executing prepared statement with start time value = {} end time = {} and incrementing"
-        + " value = {}", DateTimeUtils.formatUtcTimestamp(beginTime),
-        DateTimeUtils.formatUtcTimestamp(endTime), incOffset
+        + " value = {}", DateTimeUtils.formatTimestamp(beginTime, timeZone),
+        DateTimeUtils.formatTimestamp(endTime, timeZone), incOffset
     );
   }
 
@@ -157,10 +161,11 @@ public class TimestampIncrementingCriteria {
   ) throws SQLException {
     Timestamp beginTime = values.beginTimetampValue();
     Timestamp endTime = values.endTimetampValue();
-    stmt.setTimestamp(1, beginTime, DateTimeUtils.UTC_CALENDAR.get());
-    stmt.setTimestamp(2, endTime, DateTimeUtils.UTC_CALENDAR.get());
+    stmt.setTimestamp(1, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
+    stmt.setTimestamp(2, endTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
     log.debug("Executing prepared statement with timestamp value = {} end time = {}",
-              DateTimeUtils.formatUtcTimestamp(beginTime), DateTimeUtils.formatUtcTimestamp(endTime)
+        DateTimeUtils.formatTimestamp(beginTime, timeZone),
+        DateTimeUtils.formatTimestamp(endTime, timeZone)
     );
   }
 

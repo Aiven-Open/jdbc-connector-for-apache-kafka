@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.sink;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,10 +24,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import io.confluent.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.confluent.connect.jdbc.util.DatabaseDialectRecommender;
 import io.confluent.connect.jdbc.util.StringUtils;
+import io.confluent.connect.jdbc.util.TimeZoneValidator;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -187,6 +190,13 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "specific dialect. All properly-packaged dialects in the JDBC connector plugin "
       + "can be used.";
 
+  public static final String DB_TIMEZONE_CONFIG = "db.timezone";
+  public static final String DB_TIMEZONE_DEFAULT = "UTC";
+  private static final String DB_TIMEZONE_CONFIG_DOC =
+      "Name of the JDBC timezone that should be used in the connector when "
+      + "inserting time-based values. Defaults to UTC.";
+  private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB Time Zone";
+
   public static final ConfigDef CONFIG_DEF = new ConfigDef()
         // Connection
         .define(
@@ -303,6 +313,17 @@ public class JdbcSinkConfig extends AbstractConfig {
             4,
             ConfigDef.Width.LONG,
             FIELDS_WHITELIST_DISPLAY
+        ).define(
+          DB_TIMEZONE_CONFIG,
+          ConfigDef.Type.STRING,
+          DB_TIMEZONE_DEFAULT,
+          TimeZoneValidator.INSTANCE,
+          ConfigDef.Importance.MEDIUM,
+          DB_TIMEZONE_CONFIG_DOC,
+          DATAMAPPING_GROUP,
+          5,
+          ConfigDef.Width.MEDIUM,
+          DB_TIMEZONE_CONFIG_DISPLAY
         )
         // DDL
         .define(
@@ -365,6 +386,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final List<String> pkFields;
   public final Set<String> fieldsWhitelist;
   public final String dialectName;
+  public final TimeZone timeZone;
 
   public JdbcSinkConfig(Map<?, ?> props) {
     super(CONFIG_DEF, props);
@@ -382,6 +404,8 @@ public class JdbcSinkConfig extends AbstractConfig {
     pkFields = getList(PK_FIELDS);
     dialectName = getString(DIALECT_NAME_CONFIG);
     fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
+    String dbTimeZone = getString(DB_TIMEZONE_CONFIG);
+    timeZone = TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
   }
 
   private String getPasswordValue(String key) {

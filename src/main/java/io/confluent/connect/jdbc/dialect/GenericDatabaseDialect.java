@@ -16,6 +16,8 @@
 
 package io.confluent.connect.jdbc.dialect;
 
+import java.time.ZoneOffset;
+import java.util.TimeZone;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.data.Date;
@@ -132,6 +134,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   private final AtomicReference<IdentifierRules> identifierRules = new AtomicReference<>();
   private final Queue<Connection> connections = new ConcurrentLinkedQueue<>();
   private volatile JdbcDriverInfo jdbcDriverInfo;
+  private final TimeZone timeZone;
 
   /**
    * Create a new dialect instance with the given connector configuration.
@@ -169,6 +172,14 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       mapNumerics = ((JdbcSourceConnectorConfig)config).numericMapping();
     } else {
       mapNumerics = NumericMapping.NONE;
+    }
+
+    if (config instanceof JdbcSourceConnectorConfig) {
+      timeZone = ((JdbcSourceConnectorConfig) config).timeZone();
+    } else if (config instanceof JdbcSinkConfig) {
+      timeZone = ((JdbcSinkConfig) config).timeZone;
+    } else {
+      timeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
     }
   }
 
@@ -813,7 +824,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       ColumnId incrementingColumn,
       List<ColumnId> timestampColumns
   ) {
-    return new TimestampIncrementingCriteria(incrementingColumn, timestampColumns);
+    return new TimestampIncrementingCriteria(incrementingColumn, timestampColumns, timeZone);
   }
 
   /**
@@ -1198,19 +1209,19 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         return rs -> rs.getBytes(col);
       }
 
-      // Date is day + moth + year
+      // Date is day + month + year
       case Types.DATE: {
-        return rs -> rs.getDate(col, DateTimeUtils.UTC_CALENDAR.get());
+        return rs -> rs.getDate(col, DateTimeUtils.getTimeZoneCalendar(timeZone));
       }
 
       // Time is a time of day -- hour, minute, seconds, nanoseconds
       case Types.TIME: {
-        return rs -> rs.getTime(col, DateTimeUtils.UTC_CALENDAR.get());
+        return rs -> rs.getTime(col, DateTimeUtils.getTimeZoneCalendar(timeZone));
       }
 
       // Timestamp is a date + time
       case Types.TIMESTAMP: {
-        return rs -> rs.getTimestamp(col, DateTimeUtils.UTC_CALENDAR.get());
+        return rs -> rs.getTimestamp(col, DateTimeUtils.getTimeZoneCalendar(timeZone));
       }
 
       // Datalink is basically a URL -> string
@@ -1479,7 +1490,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           statement.setDate(
               index,
               new java.sql.Date(((java.util.Date) value).getTime()),
-              DateTimeUtils.UTC_CALENDAR.get()
+              DateTimeUtils.getTimeZoneCalendar(timeZone)
           );
           return true;
         case Decimal.LOGICAL_NAME:
@@ -1489,14 +1500,14 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           statement.setTime(
               index,
               new java.sql.Time(((java.util.Date) value).getTime()),
-              DateTimeUtils.UTC_CALENDAR.get()
+              DateTimeUtils.getTimeZoneCalendar(timeZone)
           );
           return true;
         case org.apache.kafka.connect.data.Timestamp.LOGICAL_NAME:
           statement.setTimestamp(
               index,
               new java.sql.Timestamp(((java.util.Date) value).getTime()),
-              DateTimeUtils.UTC_CALENDAR.get()
+              DateTimeUtils.getTimeZoneCalendar(timeZone)
           );
           return true;
         default:
@@ -1638,13 +1649,15 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           builder.append(value);
           return;
         case Date.LOGICAL_NAME:
-          builder.appendStringQuoted(DateTimeUtils.formatUtcDate((java.util.Date) value));
+          builder.appendStringQuoted(DateTimeUtils.formatDate((java.util.Date) value, timeZone));
           return;
         case Time.LOGICAL_NAME:
-          builder.appendStringQuoted(DateTimeUtils.formatUtcTime((java.util.Date) value));
+          builder.appendStringQuoted(DateTimeUtils.formatTime((java.util.Date) value, timeZone));
           return;
         case org.apache.kafka.connect.data.Timestamp.LOGICAL_NAME:
-          builder.appendStringQuoted(DateTimeUtils.formatUtcTimestamp((java.util.Date) value));
+          builder.appendStringQuoted(
+              DateTimeUtils.formatTimestamp((java.util.Date) value, timeZone)
+          );
           return;
         default:
           // fall through to regular types
