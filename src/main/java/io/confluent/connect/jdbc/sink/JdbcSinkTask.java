@@ -112,7 +112,7 @@ public class JdbcSinkTask extends SinkTask {
           dialect.close();
         }
       } catch (Throwable t) {
-        log.warn("Error while closing the {} dialect: ", dialect, t);
+        log.warn("Error while closing the {} dialect: ", dialect.name(), t);
       } finally {
         dialect = null;
       }
