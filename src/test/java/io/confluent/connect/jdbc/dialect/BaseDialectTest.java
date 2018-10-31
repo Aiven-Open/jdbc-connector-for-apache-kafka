@@ -372,6 +372,11 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
   }
 
+  protected void assertSanitizedUrl(String url, String expectedSanitizedUrl) {
+    assertEquals(expectedSanitizedUrl, dialect.sanitizedUrl(url));
+  }
+
+
   protected PreparedStatement verifyBindField(int index, Schema schema, Object value)
       throws SQLException {
     PreparedStatement statement = mock(PreparedStatement.class);

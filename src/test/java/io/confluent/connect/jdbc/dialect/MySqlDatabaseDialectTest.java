@@ -196,4 +196,34 @@ public class MySqlDatabaseDialectTest extends BaseDialectTest<MySqlDatabaseDiale
                                               columns(customers, "age", "firstName", "lastName"));
     assertEquals(expected, sql);
   }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInHosts() {
+    assertSanitizedUrl(
+        "mysqlx://sandy:secret@(host=myhost1,port=1111)/db?key1=value1",
+        "mysqlx://sandy:****@(host=myhost1,port=1111)/db?key1=value1"
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:mysql://[(host=myhost1,port=1111,user=sandy,password=secret),"
+        + "(password=secret,host=myhost2,port=2222,user=finn,password=secret)]/db",
+        "jdbc:mysql://[(host=myhost1,port=1111,user=sandy,password=****),"
+        + "(password=****,host=myhost2,port=2222,user=finn,password=****)]/db"
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:mysql://(host=myhost1,port=1111),(host=myhost2,port=2222)/"
+        + "db?password=secret&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=secret&other=value",
+        "jdbc:mysql://(host=myhost1,port=1111),(host=myhost2,port=2222)/"
+        + "db?password=****&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=****&other=value"
+    );
+  }
 }

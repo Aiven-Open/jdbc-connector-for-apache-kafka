@@ -217,4 +217,24 @@ public class Db2DatabaseDialectTest extends BaseDialectTest<Db2DatabaseDialect> 
         actor, columns(actor, "actor_id"), columns(actor));
     assertEquals(expected, sql);
   }
+
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:user=dbadm;other=dbadm;"
+        + "traceLevel=all",
+        "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:user=dbadm;other=dbadm;"
+        + "traceLevel=all"
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:user=dbadm;password=dbadm;"
+        + "traceLevel=all",
+        "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:user=dbadm;password=****;"
+        + "traceLevel=all"
+    );
+  }
 }

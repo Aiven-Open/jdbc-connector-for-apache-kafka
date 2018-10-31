@@ -166,4 +166,11 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
                                                 columns(customer, "name", "salary", "address")));
   }
 
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:postgresql://localhost/test?user=fred&password=secret&ssl=true",
+        "jdbc:postgresql://localhost/test?user=fred&password=****&ssl=true"
+    );
+  }
 }

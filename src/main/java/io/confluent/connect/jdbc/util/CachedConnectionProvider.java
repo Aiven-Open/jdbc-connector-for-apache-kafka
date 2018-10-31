@@ -122,6 +122,11 @@ public class CachedConnectionProvider implements ConnectionProvider {
     }
   }
 
+  @Override
+  public String identifier() {
+    return provider.identifier();
+  }
+
   protected void onConnect(Connection connection) throws SQLException {
   }
 

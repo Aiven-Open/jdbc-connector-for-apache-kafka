@@ -1691,6 +1691,22 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     ));
   }
 
+  /**
+   * Return the sanitized form of the supplied JDBC URL, which masks any secrets or credentials.
+   *
+   * @param url the JDBC URL; may not be null
+   * @return the sanitized URL; never null
+   */
+  protected String sanitizedUrl(String url) {
+    // Only replace standard URL-type properties ...
+    return url.replaceAll("(?i)([?&]password=)[^&]*", "$1****");
+  }
+
+  @Override
+  public String identifier() {
+    return name() + " database " + sanitizedUrl(jdbcUrl);
+  }
+
   @Override
   public String toString() {
     return name();
