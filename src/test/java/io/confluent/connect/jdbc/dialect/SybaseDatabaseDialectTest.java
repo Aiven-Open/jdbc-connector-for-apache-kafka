@@ -257,4 +257,23 @@ public class SybaseDatabaseDialectTest extends BaseDialectTest<SybaseDatabaseDia
       new java.util.Date(100)
     ).setTimestamp(index, new java.sql.Timestamp(100), utcCalendar);
   }
+
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:jtds:sybase://something?key1=value1&key2=value2&key3=value3&&other=value",
+        "jdbc:jtds:sybase://something?key1=value1&key2=value2&key3=value3&&other=value"
+
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:jtds:sybase://something?password=secret&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=secret&other=value",
+        "jdbc:jtds:sybase://something?password=****&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=****&other=value"
+    );
+  }
 }

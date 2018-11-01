@@ -259,7 +259,6 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     ColumnId bar = new ColumnId(test, "bar");
     Map<ColumnId, ColumnDefinition> defns = dialect
         .describeColumns(db.getConnection(), "test", null);
-    System.out.println("defns = " + defns);
     assertTrue(defns.get(id).isAutoIncrement());
     assertFalse(defns.get(bar).isAutoIncrement());
     assertFalse(defns.get(id).isOptional());
@@ -379,5 +378,24 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     verifyWriteColumnSpec("\"foo\" DUMMY NOT NULL", new SinkRecordField(Schema.INT32_SCHEMA, "foo", false));
     verifyWriteColumnSpec("\"foo\" DUMMY NOT NULL", new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "foo", true));
     verifyWriteColumnSpec("\"foo\" DUMMY NULL", new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "foo", false));
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:acme:db/foo:100?key1=value1&key2=value2&key3=value3&&other=value",
+        "jdbc:acme:db/foo:100?key1=value1&key2=value2&key3=value3&&other=value"
+
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:acme:db/foo:100?password=secret&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=secret&other=value",
+        "jdbc:acme:db/foo:100?password=****&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=****&other=value"
+    );
   }
 }

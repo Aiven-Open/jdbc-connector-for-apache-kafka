@@ -168,4 +168,22 @@ public class SapHanaDatabaseDialectTest extends BaseDialectTest<SapHanaDatabaseD
                                           columns(tableA, "col2", "col3", "col4")));
   }
 
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:sap://something?key1=value1&key2=value2&key3=value3&&other=value",
+        "jdbc:sap://something?key1=value1&key2=value2&key3=value3&&other=value"
+
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:sap://something?password=secret&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=secret&other=value",
+        "jdbc:sap://something?password=****&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=****&other=value"
+    );
+  }
 }

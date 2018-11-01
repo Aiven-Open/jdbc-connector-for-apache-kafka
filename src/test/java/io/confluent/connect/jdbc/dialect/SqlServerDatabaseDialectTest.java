@@ -190,4 +190,30 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
         dialect.buildUpsertQueryStatement(book, columns(book, "author", "title"),
                                           columns(book, "ISBN", "year", "pages")));
   }
+
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:sqlserver://;servername=server_name;"
+        + "integratedSecurity=true;authenticationScheme=JavaKerberos",
+        "jdbc:sqlserver://;servername=server_name;"
+        + "integratedSecurity=true;authenticationScheme=JavaKerberos"
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:sqlserver://;servername=server_name;password=secret;keyStoreSecret=secret;"
+        + "gsscredential=secret;integratedSecurity=true;authenticationScheme=JavaKerberos",
+        "jdbc:sqlserver://;servername=server_name;password=****;keyStoreSecret=****;"
+        + "gsscredential=****;integratedSecurity=true;authenticationScheme=JavaKerberos"
+    );
+    assertSanitizedUrl(
+        "jdbc:sqlserver://;password=secret;servername=server_name;keyStoreSecret=secret;"
+        + "gsscredential=secret;integratedSecurity=true;authenticationScheme=JavaKerberos",
+        "jdbc:sqlserver://;password=****;servername=server_name;keyStoreSecret=****;"
+        + "gsscredential=****;integratedSecurity=true;authenticationScheme=JavaKerberos"
+    );
+  }
 }

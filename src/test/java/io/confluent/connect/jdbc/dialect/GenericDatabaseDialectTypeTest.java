@@ -14,7 +14,6 @@
 
 package io.confluent.connect.jdbc.dialect;
 
-import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.Arrays;
 
