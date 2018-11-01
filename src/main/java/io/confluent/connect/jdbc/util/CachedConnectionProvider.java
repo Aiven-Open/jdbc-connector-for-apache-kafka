@@ -35,6 +35,7 @@ public class CachedConnectionProvider implements ConnectionProvider {
   private final int maxConnectionAttempts;
   private final long connectionRetryBackoff;
 
+  private int count = 0;
   private Connection connection;
 
   public CachedConnectionProvider(
@@ -83,7 +84,8 @@ public class CachedConnectionProvider implements ConnectionProvider {
     int attempts = 0;
     while (attempts < maxConnectionAttempts) {
       try {
-        log.debug("Attempting to connect to {}", provider);
+        ++count;
+        log.debug("Attempting to connect #{} to {}", count, provider);
         connection = provider.getConnection();
         onConnect(connection);
         return;
@@ -109,6 +111,7 @@ public class CachedConnectionProvider implements ConnectionProvider {
   public synchronized void close() {
     if (connection != null) {
       try {
+        log.info("Closing connection #{} to {}", count, provider);
         connection.close();
       } catch (SQLException sqle) {
         log.warn("Ignoring error closing connection", sqle);

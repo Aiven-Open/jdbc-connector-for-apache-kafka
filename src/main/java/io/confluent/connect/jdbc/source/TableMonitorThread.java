@@ -71,6 +71,7 @@ public class TableMonitorThread extends Thread {
 
   @Override
   public void run() {
+    log.info("Starting thread to monitor tables.");
     while (shutdownLatch.getCount() > 0) {
       try {
         if (updateTables()) {
@@ -82,6 +83,7 @@ public class TableMonitorThread extends Thread {
       }
 
       try {
+        log.debug("Waiting {} ms to check for changed.", pollMs);
         boolean shuttingDown = shutdownLatch.await(pollMs, TimeUnit.MILLISECONDS);
         if (shuttingDown) {
           return;
