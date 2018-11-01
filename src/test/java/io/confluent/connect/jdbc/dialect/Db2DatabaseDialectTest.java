@@ -236,5 +236,11 @@ public class Db2DatabaseDialectTest extends BaseDialectTest<Db2DatabaseDialect> 
         "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:user=dbadm;password=****;"
         + "traceLevel=all"
     );
+    assertSanitizedUrl(
+        "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:password=dbadm;user=dbadm;"
+        + "traceLevel=all",
+        "jdbc:db2://sysmvs1.stl.ibm.com:5021/STLEC1:password=****;user=dbadm;"
+        + "traceLevel=all"
+    );
   }
 }

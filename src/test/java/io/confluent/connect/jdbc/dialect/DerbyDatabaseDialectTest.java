@@ -235,5 +235,9 @@ public class DerbyDatabaseDialectTest extends BaseDialectTest<DerbyDatabaseDiale
         "jdbc:derby:sample;user=jill;password=toFetchAPail",
         "jdbc:derby:sample;user=jill;password=****"
     );
+    assertSanitizedUrl(
+        "jdbc:derby:sample;password=toFetchAPail;user=jill",
+        "jdbc:derby:sample;password=****;user=jill"
+    );
   }
 }
