@@ -162,4 +162,10 @@ public class DerbyDatabaseDialect extends GenericDatabaseDialect {
     return builder.toString();
   }
 
+  @Override
+  protected String sanitizedUrl(String url) {
+    // Derby has semicolon delimited property name-value pairs
+    return super.sanitizedUrl(url)
+                .replaceAll("(?i)(;password=)[^;]*", "$1****");
+  }
 }

@@ -152,4 +152,22 @@ public class VerticaDatabaseDialectTest extends BaseDialectTest<VerticaDatabaseD
                           "ALTER TABLE \"myTable\" ADD \"newcol2\" INT DEFAULT 42");
   }
 
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:vertica://something?key1=value1&key2=value2&key3=value3&&other=value",
+        "jdbc:vertica://something?key1=value1&key2=value2&key3=value3&&other=value"
+
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:vertica://something?password=secret&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=secret&other=value",
+        "jdbc:vertica://something?password=****&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=****&other=value"
+    );
+  }
 }

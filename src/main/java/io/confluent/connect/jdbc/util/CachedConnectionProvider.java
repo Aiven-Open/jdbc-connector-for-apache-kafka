@@ -85,7 +85,7 @@ public class CachedConnectionProvider implements ConnectionProvider {
     while (attempts < maxConnectionAttempts) {
       try {
         ++count;
-        log.debug("Attempting to connect #{} to {}", count, provider);
+        log.info("Attempting to open connection #{} to {}", count, provider);
         connection = provider.getConnection();
         onConnect(connection);
         return;
@@ -120,6 +120,11 @@ public class CachedConnectionProvider implements ConnectionProvider {
         provider.close();
       }
     }
+  }
+
+  @Override
+  public String identifier() {
+    return provider.identifier();
   }
 
   protected void onConnect(Connection connection) throws SQLException {

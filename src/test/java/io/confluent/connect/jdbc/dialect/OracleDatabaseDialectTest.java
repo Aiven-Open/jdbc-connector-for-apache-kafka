@@ -182,4 +182,25 @@ public class OracleDatabaseDialectTest extends BaseDialectTest<OracleDatabaseDia
     assertEquals(expected, actual);
   }
 
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInHosts() {
+    assertSanitizedUrl(
+        "jdbc:oracle:thin:sandy/secret@myhost:1111/db?key1=value1",
+        "jdbc:oracle:thin:sandy/****@myhost:1111/db?key1=value1"
+    );
+    assertSanitizedUrl(
+        "jdbc:oracle:oci8:sandy/secret@host=myhost1,port=1111/db?key1=value1",
+        "jdbc:oracle:oci8:sandy/****@host=myhost1,port=1111/db?key1=value1"
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:oracle:thin:@myhost:1111/db?password=secret&key1=value1&"
+        + "key2=value2&key3=value3&user=smith&password=secret&other=value",
+        "jdbc:oracle:thin:@myhost:1111/db?password=****&key1=value1&"
+        + "key2=value2&key3=value3&user=smith&password=****&other=value"
+    );
+  }
 }

@@ -242,4 +242,23 @@ public class SybaseDatabaseDialectTest extends BaseDialectTest<SybaseDatabaseDia
     verifyBindField(++index, Time.SCHEMA, new java.util.Date(1000)).setTime(index, new java.sql.Time(1000), DateTimeUtils.UTC_CALENDAR.get());
     verifyBindField(++index, Timestamp.SCHEMA, new java.util.Date(100)).setTimestamp(index, new java.sql.Timestamp(100), DateTimeUtils.UTC_CALENDAR.get());
   }
+
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:jtds:sybase://something?key1=value1&key2=value2&key3=value3&&other=value",
+        "jdbc:jtds:sybase://something?key1=value1&key2=value2&key3=value3&&other=value"
+
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:jtds:sybase://something?password=secret&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=secret&other=value",
+        "jdbc:jtds:sybase://something?password=****&key1=value1&key2=value2&key3=value3&"
+        + "user=smith&password=****&other=value"
+    );
+  }
 }

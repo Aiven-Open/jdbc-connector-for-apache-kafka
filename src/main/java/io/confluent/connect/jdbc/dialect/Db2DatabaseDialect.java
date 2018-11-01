@@ -161,4 +161,11 @@ public class Db2DatabaseDialect extends GenericDatabaseDialect {
     builder.append(")");
     return builder.toString();
   }
+
+  @Override
+  protected String sanitizedUrl(String url) {
+    // DB2 has semicolon delimited property name-value pairs
+    return super.sanitizedUrl(url)
+                .replaceAll("(?i)([:;]password=)[^;]*", "$1****");
+  }
 }
