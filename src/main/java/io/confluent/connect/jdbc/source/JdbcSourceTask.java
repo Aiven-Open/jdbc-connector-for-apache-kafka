@@ -78,6 +78,7 @@ public class JdbcSourceTask extends SourceTask {
 
   @Override
   public void start(Map<String, String> properties) {
+    log.info("Starting JDBC source task");
     try {
       config = new JdbcSourceTaskConfig(properties);
     } catch (ConfigException e) {
@@ -94,7 +95,7 @@ public class JdbcSourceTask extends SourceTask {
     } else {
       dialect = DatabaseDialects.findBestFor(url, config);
     }
-    log.debug("Using dialect {}", dialect.name());
+    log.info("Using JDBC dialect {}", dialect.name());
 
     cachedConnectionProvider = new CachedConnectionProvider(dialect, maxConnAttempts, retryBackoff);
 
@@ -184,7 +185,7 @@ public class JdbcSourceTask extends SourceTask {
         for (Map<String, String> toCheckPartition : tablePartitionsToCheck) {
           offset = offsets.get(toCheckPartition);
           if (offset != null) {
-            log.debug("Found offset {} for partition {}", offsets, toCheckPartition);
+            log.info("Found offset {} for partition {}", offsets, toCheckPartition);
             break;
           }
         }
@@ -242,6 +243,7 @@ public class JdbcSourceTask extends SourceTask {
     }
 
     running.set(true);
+    log.info("Started JDBC source task");
   }
 
   //This method returns a list of possible partition maps for different offset protocols
@@ -256,11 +258,20 @@ public class JdbcSourceTask extends SourceTask {
 
   @Override
   public void stop() throws ConnectException {
+    log.info("Stopping JDBC source task");
+    running.set(false);
+    // All resources are closed at the end of 'poll()' when no longer running or
+    // if there is an error
+  }
+
+  protected void closeResources() {
+    log.info("Closing resources for JDBC source task");
     try {
-      running.set(false);
       if (cachedConnectionProvider != null) {
         cachedConnectionProvider.close();
       }
+    } catch (Throwable t) {
+      log.warn("Error while closing the connections", t);
     } finally {
       cachedConnectionProvider = null;
       try {
@@ -324,6 +335,8 @@ public class JdbcSourceTask extends SourceTask {
         return null;
       } catch (Throwable t) {
         resetAndRequeueHead(querier);
+        // This task has failed, so close any resources (may be reopened if needed) before throwing
+        closeResources();
         throw t;
       }
     }
@@ -333,6 +346,7 @@ public class JdbcSourceTask extends SourceTask {
     if (querier != null) {
       resetAndRequeueHead(querier);
     }
+    closeResources();
     return null;
   }
 

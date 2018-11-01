@@ -23,11 +23,13 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -86,9 +88,13 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
   protected List<ColumnId> columnsAtoD;
   protected List<SinkRecordField> sinkRecordFields;
   protected T dialect;
+  protected int defaultLoginTimeout;
 
   @Before
   public void setup() throws Exception {
+    defaultLoginTimeout = DriverManager.getLoginTimeout();
+    DriverManager.setLoginTimeout(1);
+
     dialect = createDialect();
 
     // Set up some data ...
@@ -120,6 +126,11 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     SinkRecordField f7 = new SinkRecordField(optionalTsWithDefault, "c7", false);
     SinkRecordField f8 = new SinkRecordField(optionalDecimal, "c8", false);
     sinkRecordFields = Arrays.asList(f1, f2, f3, f4, f5, f6, f7, f8);
+  }
+
+  @After
+  public void teardown() throws Exception {
+    DriverManager.setLoginTimeout(defaultLoginTimeout);
   }
 
   /**
