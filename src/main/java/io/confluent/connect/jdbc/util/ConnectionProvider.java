@@ -51,4 +51,14 @@ public interface ConnectionProvider extends AutoCloseable {
    * Close this connection provider.
    */
   void close();
+
+  /**
+   * Get the publicly viewable identifier for this connection provider and / or the database.
+   * The resulting value should not contain any secrets or passwords.
+   *
+   * @return the identifier; never null
+   */
+  default String identifier() {
+    return toString();
+  }
 }

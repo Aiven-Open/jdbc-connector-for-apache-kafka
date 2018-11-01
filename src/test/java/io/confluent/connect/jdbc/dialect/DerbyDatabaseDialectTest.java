@@ -220,4 +220,24 @@ public class DerbyDatabaseDialectTest extends BaseDialectTest<DerbyDatabaseDiale
         actor, columns(actor, "actor_id"), columns(actor));
     assertEquals(expected, sql);
   }
+
+  @Test
+  public void shouldSanitizeUrlWithoutCredentialsInProperties() {
+    assertSanitizedUrl(
+        "jdbc:derby:sample;user=jill;other=toFetchAPail",
+        "jdbc:derby:sample;user=jill;other=toFetchAPail"
+    );
+  }
+
+  @Test
+  public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
+    assertSanitizedUrl(
+        "jdbc:derby:sample;user=jill;password=toFetchAPail",
+        "jdbc:derby:sample;user=jill;password=****"
+    );
+    assertSanitizedUrl(
+        "jdbc:derby:sample;password=toFetchAPail;user=jill",
+        "jdbc:derby:sample;password=****;user=jill"
+    );
+  }
 }

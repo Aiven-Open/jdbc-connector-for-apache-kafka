@@ -253,7 +253,6 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
       List<String> actual
   ) {
     // TODO: Remove
-    System.out.println(actual);
     assertEquals(expected.length, actual.size());
     for (int i = 0; i != expected.length; ++i) {
       assertEquals(expected[i], actual.get(i));
@@ -370,6 +369,10 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
   public void bindFieldMapUnsupported() throws SQLException {
     Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
     dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
+  }
+
+  protected void assertSanitizedUrl(String url, String expectedSanitizedUrl) {
+    assertEquals(expectedSanitizedUrl, dialect.sanitizedUrl(url));
   }
 
   protected PreparedStatement verifyBindField(int index, Schema schema, Object value)

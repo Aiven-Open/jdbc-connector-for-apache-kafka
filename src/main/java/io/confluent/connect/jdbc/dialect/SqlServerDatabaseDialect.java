@@ -195,4 +195,14 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
            .append("=incoming.")
            .appendIdentifierQuoted(col.name());
   }
+
+  @Override
+  protected String sanitizedUrl(String url) {
+    // SQL Server has semicolon delimited property name-value pairs, and several properties
+    // that contain secrets
+    return super.sanitizedUrl(url)
+                .replaceAll("(?i)(;password=)[^;]*", "$1****")
+                .replaceAll("(?i)(;keyStoreSecret=)[^;]*", "$1****")
+                .replaceAll("(?i)(;gsscredential=)[^;]*", "$1****");
+  }
 }
