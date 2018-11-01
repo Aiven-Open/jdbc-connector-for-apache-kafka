@@ -259,7 +259,6 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     ColumnId bar = new ColumnId(test, "bar");
     Map<ColumnId, ColumnDefinition> defns = dialect
         .describeColumns(db.getConnection(), "test", null);
-    System.out.println("defns = " + defns);
     assertTrue(defns.get(id).isAutoIncrement());
     assertFalse(defns.get(bar).isAutoIncrement());
     assertFalse(defns.get(id).isOptional());

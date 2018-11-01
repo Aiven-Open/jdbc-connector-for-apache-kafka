@@ -253,7 +253,6 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
       List<String> actual
   ) {
     // TODO: Remove
-    System.out.println(actual);
     assertEquals(expected.length, actual.size());
     for (int i = 0; i != expected.length; ++i) {
       assertEquals(expected[i], actual.get(i));
