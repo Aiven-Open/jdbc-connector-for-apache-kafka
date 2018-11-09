@@ -24,6 +24,9 @@ https://github.com/confluentinc/kafka-connect-jdbc/wiki/FAQ
 - Source Code: https://github.com/confluentinc/kafka-connect-jdbc
 - Issue Tracker: https://github.com/confluentinc/kafka-connect-jdbc/issues
 
+# Information
+
+For more information, check the documentation for the JDBC connector on the [confluent.io](https://docs.confluent.io/current/connect/kafka-connect-jdbc/index.html) website. Questions related to the connector can be asked on [Community Slack](https://launchpass.com/confluentcommunity) or the [Confluent Platform Google Group](https://groups.google.com/forum/#!topic/confluent-platform/).
 
 # License
 
