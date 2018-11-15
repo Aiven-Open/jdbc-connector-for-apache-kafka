@@ -22,16 +22,21 @@ import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.util.ColumnDefinition;
 import io.confluent.connect.jdbc.util.ColumnId;
 import io.confluent.connect.jdbc.util.ExpressionBuilder;
 import io.confluent.connect.jdbc.util.IdentifierRules;
 import io.confluent.connect.jdbc.util.TableId;
+import io.confluent.connect.jdbc.util.ColumnDefinition.Mutability;
+import io.confluent.connect.jdbc.util.ColumnDefinition.Nullability;
 
 /**
  * A {@link DatabaseDialect} for SQL Server.
@@ -181,6 +186,57 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
            .of(nonKeyColumns, keyColumns);
     builder.append(");");
     return builder.toString();
+  }
+
+  @Override
+  protected ColumnDefinition columnDefinition(
+      ResultSet resultSet,
+      ColumnId id,
+      int jdbcType,
+      String typeName,
+      String classNameForType,
+      Nullability nullability,
+      Mutability mutability,
+      int precision,
+      int scale,
+      Boolean signedNumbers,
+      Integer displaySize,
+      Boolean autoIncremented,
+      Boolean caseSensitive,
+      Boolean searchable,
+      Boolean currency,
+      Boolean isPrimaryKey
+  ) {
+    try {
+      String isAutoIncremented = resultSet.getString(22);
+
+      if ("yes".equalsIgnoreCase(isAutoIncremented)) {
+        autoIncremented = Boolean.TRUE;
+      } else if ("no".equalsIgnoreCase(isAutoIncremented)) {
+        autoIncremented = Boolean.FALSE;
+      }
+    } catch (SQLException e) {
+      log.warn("Unable to get auto incrementing column information", e);
+    }
+
+    return super.columnDefinition(
+      resultSet,
+      id,
+      jdbcType,
+      typeName,
+      classNameForType,
+      nullability,
+      mutability,
+      precision,
+      scale,
+      signedNumbers,
+      displaySize,
+      autoIncremented,
+      caseSensitive,
+      searchable,
+      currency,
+      isPrimaryKey
+    );
   }
 
   private void transformAs(ExpressionBuilder builder, ColumnId col) {

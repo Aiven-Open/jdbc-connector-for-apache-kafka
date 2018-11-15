@@ -22,5 +22,5 @@
               files="(DataConverter|GenericDatabaseDialect|JdbcSourceTask).java"/>
 
     <suppress checks="ParameterNumber"
-              files="(ColumnDefinition|GenericDatabaseDialect).java"/>
+              files="(ColumnDefinition|GenericDatabaseDialect|SqlServerDatabaseDialect).java"/>
 </suppressions>
