@@ -146,7 +146,7 @@ public class Db2DatabaseDialect extends GenericDatabaseDialect {
     if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
       builder.append(" when matched then update set ");
       builder.appendList()
-             .delimitedBy(", set ")
+             .delimitedBy(", ")
              .transformedBy(transform)
              .of(nonKeyColumns);
     }
