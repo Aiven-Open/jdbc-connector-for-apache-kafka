@@ -116,7 +116,7 @@ public class DerbyDatabaseDialect extends GenericDatabaseDialect {
       Collection<ColumnId> keyColumns,
       Collection<ColumnId> nonKeyColumns
   ) {
-    // http://lpar.ath0.com/2013/08/12/upsert-in-db2/
+    // https://db.apache.org/derby/docs/10.11/ref/rrefsqljmerge.html
     final Transform<ColumnId> transform = (builder, col) -> {
       builder.append(table)
              .append(".")
@@ -146,7 +146,7 @@ public class DerbyDatabaseDialect extends GenericDatabaseDialect {
     if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
       builder.append(" when matched then update set ");
       builder.appendList()
-             .delimitedBy(", set ")
+             .delimitedBy(", ")
              .transformedBy(transform)
              .of(nonKeyColumns);
     }
