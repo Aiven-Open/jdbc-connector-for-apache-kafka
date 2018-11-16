@@ -46,4 +46,8 @@ public class SchemaPair {
   public int hashCode() {
     return Objects.hash(keySchema, valueSchema);
   }
+
+  public String toString() {
+    return String.format("<SchemaPair: %s, %s>", keySchema, valueSchema);
+  }
 }

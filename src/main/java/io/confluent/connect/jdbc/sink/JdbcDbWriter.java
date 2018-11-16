@@ -66,7 +66,10 @@ public class JdbcDbWriter {
       }
       buffer.add(record);
     }
-    for (BufferedRecords buffer : bufferByTable.values()) {
+    for (Map.Entry<TableId, BufferedRecords> entry : bufferByTable.entrySet()) {
+      TableId tableId = entry.getKey();
+      BufferedRecords buffer = entry.getValue();
+      log.debug("Flushing records in JDBC Writer for table ID: {}", tableId);
       buffer.flush();
       buffer.close();
     }
