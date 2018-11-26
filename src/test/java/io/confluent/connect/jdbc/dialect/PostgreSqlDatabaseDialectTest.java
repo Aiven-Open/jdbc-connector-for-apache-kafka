@@ -44,7 +44,7 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     assertPrimitiveMapping(Type.FLOAT32, "REAL");
     assertPrimitiveMapping(Type.FLOAT64, "DOUBLE PRECISION");
     assertPrimitiveMapping(Type.BOOLEAN, "BOOLEAN");
-    assertPrimitiveMapping(Type.BYTES, "BLOB");
+    assertPrimitiveMapping(Type.BYTES, "BYTEA");
     assertPrimitiveMapping(Type.STRING, "TEXT");
   }
 
@@ -66,7 +66,7 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     verifyDataTypeMapping("DOUBLE PRECISION", Schema.FLOAT64_SCHEMA);
     verifyDataTypeMapping("BOOLEAN", Schema.BOOLEAN_SCHEMA);
     verifyDataTypeMapping("TEXT", Schema.STRING_SCHEMA);
-    verifyDataTypeMapping("BLOB", Schema.BYTES_SCHEMA);
+    verifyDataTypeMapping("BYTEA", Schema.BYTES_SCHEMA);
     verifyDataTypeMapping("DECIMAL", Decimal.schema(0));
     verifyDataTypeMapping("DATE", Date.SCHEMA);
     verifyDataTypeMapping("TIME", Time.SCHEMA);
