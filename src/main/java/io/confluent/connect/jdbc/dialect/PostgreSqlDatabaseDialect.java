@@ -211,7 +211,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
       case STRING:
         return "TEXT";
       case BYTES:
-        return "BLOB";
+        return "BYTEA";
       default:
         return super.getSqlType(field);
     }
