@@ -2,3 +2,7 @@
 
 %:
 	dh $@ --with javahelper
+
+override_jh_manifest:
+	# Disable jh_manifest target, which is unnecessary and fails against Scala 2.12.
+	# Refer to the "rules" file in kafka-packaging for more details.
