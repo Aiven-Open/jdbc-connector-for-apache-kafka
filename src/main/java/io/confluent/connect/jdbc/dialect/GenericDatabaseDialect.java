@@ -859,7 +859,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     int scale = columnDefn.scale();
     switch (sqlType) {
       case Types.NULL: {
-        log.warn("JDBC type 'NULL' not currently supported for column '{}'", fieldName);
+        log.debug("JDBC type 'NULL' not currently supported for column '{}'", fieldName);
         return null;
       }
 
