@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--~
+  ~ Copyright 2019 Aiven Oy
   ~ Copyright 2015 Confluent Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,21 +21,16 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>io.confluent</groupId>
-        <artifactId>common</artifactId>
-        <version>5.2.0-SNAPSHOT</version>
-    </parent>
-
-    <groupId>io.confluent</groupId>
+    <groupId>io.aiven</groupId>
     <artifactId>kafka-connect-jdbc</artifactId>
+    <version>6.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>kafka-connect-jdbc</name>
     <organization>
-        <name>Confluent, Inc.</name>
-        <url>http://confluent.io</url>
+        <name>Aiven Oy</name>
+        <url>https://aiven.io</url>
     </organization>
-    <url>http://confluent.io</url>
+    <url>https://aiven.io</url>
     <description>
        A Kafka Connect JDBC connector for copying data between databases and Kafka.
     </description>
@@ -48,40 +44,52 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git://github.com/confluentinc/kafka-connect-jdbc.git</connection>
-        <developerConnection>scm:git:git@github.com:confluentinc/kafka-connect-jdbc.git</developerConnection>
-        <url>https://github.com/confluentinc/kafka-connect-jdbc</url>
+        <connection>scm:git:git://github.com/aiven/oss-kafka-connect-jdbc.git</connection>
+        <developerConnection>scm:git:git@github.com:aiven/oss-kafka-connect-jdbc.git</developerConnection>
+        <url>https://github.com/aiven/oss-kafka-connect-jdbc</url>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
-        <confluent.version>${project.version}</confluent.version>
+        <!-- jacoco prepare-agent needs argLine defined to set this variable.
+         If we don't have a default set then Maven gets angry. -->
+        <argLine></argLine>
+
+        <java.version>8</java.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
+
+        <required.maven.version>3.2</required.maven.version>
+
+        <checkstyle.version>8.5</checkstyle.version>
+
+        <maven-surefire-and-failsafe-plugin.version>2.21.0</maven-surefire-and-failsafe-plugin.version>
+
         <derby.version>10.11.1.1</derby.version>
-        <commons-io.version>2.4</commons-io.version>
-        <kafka.connect.maven.plugin.version>0.11.1</kafka.connect.maven.plugin.version>
         <sqlite-jdbc.version>3.25.2</sqlite-jdbc.version>
         <postgresql.version>9.4-1206-jdbc41</postgresql.version>
         <jtds.driver.version>1.3.1</jtds.driver.version>
-        <licenses.name>Apache License 2.0</licenses.name>
-        <licenses.version>${project.version}</licenses.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
-        <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
+        <kafka.version>2.2.0</kafka.version>
+        <junit.version>4.12</junit.version>
+        <easymock.version>4.0.1</easymock.version>
+        <powermock.version>2.0.0</powermock.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <mockito.version>2.23.0</mockito.version>
+        <mockito-all.version>1.10.19</mockito-all.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>confluent</id>
-            <name>Confluent</name>
-            <url>${confluent.maven.repo}</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
+            <version>${kafka.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
         </dependency>
 
          <!-- JDBC drivers, only included in runtime so they get packaged -->
@@ -107,21 +115,25 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
+            <version>${easymock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
+            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-easymock</artifactId>
+            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -131,19 +143,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
+            <version>${mockito-all.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -153,80 +161,20 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
                 <inherited>true</inherited>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
-                        <arg>-Werror</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>io.confluent</groupId>
-                <version>${kafka.connect.maven.plugin.version}</version>
-                <artifactId>kafka-connect-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>kafka-connect</goal>
-                        </goals>
-                        <configuration>
-                            <title>Kafka Connect JDBC</title>
-                            <documentationUrl>https://docs.confluent.io/${project.version}/connect/connect-jdbc/docs/index.html</documentationUrl>
-                            <description>
-                                The JDBC source connector allows you to import data from any relational database with a JDBC driver into Kafka topics. By using JDBC, this connector can support a wide variety of databases without requiring custom code for each one.
-
-                                Data is loaded by periodically executing a SQL query and creating an output record for each row in the result set. By default, all tables in a database are copied, each to its own output topic. The database is monitored for new or deleted tables and adapts automatically. When copying data from a table, the connector can load only new or modified rows by specifying which columns should be used to detect new or modified data.
-
-                                The JDBC sink connector allows you to export data from Kafka topics to any relational database with a JDBC driver. By using JDBC, this connector can support a wide variety of databases without requiring a dedicated connector for each one. The connector polls data from Kafka to write to the database based on the topics subscription. It is possible to achieve idempotent writes with upserts. Auto-creation of tables, and limited auto-evolution is also supported.
-                            </description>
-                            <logo>logos/jdbc.jpg</logo>
-
-                            <supportProviderName>Confluent, Inc.</supportProviderName>
-                            <supportSummary>Confluent supports the JDBC sink and source connectors alongside community members as part of its Confluent Platform open source offering.</supportSummary>
-                            <supportUrl>https://docs.confluent.io/current/</supportUrl>
-                            <supportLogo>logos/confluent.png</supportLogo>
-
-                            <ownerUsername>confluentinc</ownerUsername>
-                            <ownerType>organization</ownerType>
-                            <ownerName>Confluent, Inc.</ownerName>
-                            <ownerUrl>https://confluent.io/</ownerUrl>
-                            <ownerLogo>logos/confluent.png</ownerLogo>
-
-                            <dockerNamespace>confluentinc</dockerNamespace>
-                            <dockerName>cp-kafka-connect</dockerName>
-                            <dockerTag>${project.version}</dockerTag>
-
-                            <componentTypes>
-                                <componentType>sink</componentType>
-                                <componentType>source</componentType>
-                            </componentTypes>
-
-                            <tags>
-                                <tag>jdbc</tag>
-                                <tag>database</tag>
-                                <tag>dbms</tag>
-                                <tag>rdbms</tag>
-                                <tag>sql</tag>
-                                <tag>mysql</tag>
-                                <tag>postgresql</tag>
-                                <tag>oracle</tag>
-                                <tag>sql server</tag>
-                                <tag>db2</tag>
-                                <tag>sybase</tag>
-                                <tag>vertica</tag>
-                                <tag>sap hana</tag>
-                                <tag>derby</tag>
-                                <tag>sqlite</tag>
-                            </tags>
-
-                            <confluentControlCenterIntegration>true</confluentControlCenterIntegration>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.0.0</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/assembly/development.xml</descriptor>
@@ -245,17 +193,136 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-and-failsafe-plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} -Djava.awt.headless=true</argLine>
+                    <excludedGroups>io.aiven.common.utils.IntegrationTest</excludedGroups>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-surefire-and-failsafe-plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} -Djava.awt.headless=true</argLine>
+                    <groups>io.aiven.common.utils.IntegrationTest</groups>
+                    <!-- by default failsafe only includes class names that start or end in IT,
+                         we use regular test class names with @Category and the group above -->
+                    <includes>
+                        <!-- defaults copied from maven-surefire-plugin -->
+                        <include>**/Test*.java</include>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*TestCase.java</include>
+                        <!-- maven-failsafe-plugin defaults -->
+                        <include>**/IT*.java</include>
+                        <include>**/*IT.java</include>
+                        <include>**/*ITCase.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.2</version>
+                <executions>
+                    <execution>
+                        <id>pre-unit-test</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                    <configLocation>checkstyle/checkstyle.xml</configLocation>
+                    <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
+                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>false</failsOnError>
+                    <failOnViolation>true</failOnViolation>
+                    <includeResources>false</includeResources>
+                    <includeTestResources>false</includeTestResources>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>validate</id>
                         <phase>validate</phase>
-                        <configuration>
-                            <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
-                        </configuration>
                         <goals>
                             <goal>check</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.0.0-M1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>${required.maven.version}</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -267,196 +334,4 @@
             </resource>
         </resources>
     </build>
-
-    <profiles>
-        <profile>
-            <id>rpm</id>
-            <build>
-            <plugins>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>rpm-maven-plugin</artifactId>
-                    <version>2.1.5</version>
-                    <executions>
-                        <execution>
-                            <id>generate-rpm</id>
-                            <goals>
-                                <goal>rpm</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                        <configuration>
-                            <group>Applications/Internet</group>
-                            <packager>Confluent Packaging</packager>
-                            <license>${licenses.name}</license>
-                            <needarch>noarch</needarch>
-                            <targetOS>linux</targetOS>
-                            <requires>
-                                <require>confluent-common = ${project.version}</require>
-                            </requires>
-                            <mappings>
-                                <mapping>
-                                    <directory>/usr/share/java/${project.artifactId}</directory>
-                                    <sources>
-                                        <source>
-                                            <location>${project.package.home}/share/java/${project.artifactId}</location>
-                                        </source>
-                                    </sources>
-                                </mapping>
-                                <mapping>
-                                    <configuration>true</configuration>
-                                    <directory>/etc/${project.artifactId}</directory>
-                                    <sources>
-                                        <source>
-                                            <location>${project.package.home}/etc/${project.artifactId}</location>
-                                        </source>
-                                    </sources>
-                                </mapping>
-                                <mapping>
-                                    <documentation>true</documentation>
-                                    <directory>/usr/share/doc/${project.artifactId}</directory>
-                                    <sources>
-                                        <source>
-                                            <location>${project.package.home}/share/doc/${project.artifactId}</location>
-                                        </source>
-                                    </sources>
-                                </mapping>
-                            </mappings>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>standalone</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/assembly/standalone.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>licenses-package</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
-                        <executions>
-                            <execution>
-                                <id>create-licenses</id>
-                                <configuration>
-                                    <mainClass>io.confluent.licenses.LicenseFinder</mainClass>
-                                    <arguments>
-                                        <!-- Note use of development instead of package so we pick up all dependencies. -->
-                                        <argument>-i ${project.build.directory}/${project.build.finalName}-package/share/java/kafka-connect-jdbc</argument>
-                                        <argument>-o ${project.basedir}/licenses</argument>
-                                        <argument>-f</argument>
-                                        <argument>-h ${project.build.directory}/${project.build.finalName}-package/share/doc/kafka-connect-jdbc/licenses.html</argument>
-                                        <argument>-l ${project.build.directory}/${project.build.finalName}-package/share/doc/kafka-connect-jdbc/licenses</argument>
-                                        <argument>-n ${project.build.directory}/${project.build.finalName}-package/share/doc/kafka-connect-jdbc/notices</argument>
-                                        <argument>-t ${project.name}</argument>
-                                        <argument>-x licenses-${licenses.version}.jar</argument>
-                                    </arguments>
-                                </configuration>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>java</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <includeProjectDependencies>true</includeProjectDependencies>
-                            <includePluginDependencies>true</includePluginDependencies>
-                            <executableDependency>
-                                <groupId>io.confluent</groupId>
-                                <artifactId>licenses</artifactId>
-                            </executableDependency>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>io.confluent</groupId>
-                                <artifactId>licenses</artifactId>
-                                <version>${licenses.version}</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-	<profile>
-        <id>licenses-source</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
-                        <executions>
-                            <execution>
-                                <id>create-licenses</id>
-                                <configuration>
-                                    <mainClass>io.confluent.licenses.LicenseFinder</mainClass>
-                                    <arguments>
-                                        <!-- Note use of development instead of package so we pick up all dependencies. -->
-                                        <argument>-i ${project.build.directory}/${project.build.finalName}-development/share/java/kafka-connect-jdbc</argument>
-                                        <argument>-o ${project.basedir}/licenses</argument>
-                                        <argument>-f</argument>
-                                        <argument>-h ${project.basedir}/licenses.html</argument>
-                                        <argument>-l ${project.basedir}/licenses</argument>
-                                        <argument>-n ${project.basedir}/notices</argument>
-                                        <argument>-t ${project.name}</argument>
-                                        <argument>-x licenses-${licenses.version}.jar</argument>
-                                    </arguments>
-                                </configuration>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>java</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <includeProjectDependencies>true</includeProjectDependencies>
-                            <includePluginDependencies>true</includePluginDependencies>
-                            <executableDependency>
-                                <groupId>io.confluent</groupId>
-                                <artifactId>licenses</artifactId>
-                            </executableDependency>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>io.confluent</groupId>
-                                <artifactId>licenses</artifactId>
-                                <version>${licenses.version}</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>.</directory>
-                                    <includes>
-                                        <include>licenses.html</include>
-                                        <directory>licenses/*.*</directory>
-                                        <directory>notices/*.*</directory>
-                                    </includes>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
