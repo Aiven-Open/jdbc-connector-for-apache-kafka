@@ -15,8 +15,14 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.time.ZoneOffset;
 
+import com.google.common.io.Resources;
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
 import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 import io.aiven.connect.jdbc.util.ColumnId;
@@ -52,6 +58,8 @@ import java.util.TimeZone;
 import java.util.concurrent.ThreadLocalRandom;
 
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -59,6 +67,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+@RunWith(Parameterized.class)
 public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
 
   protected static final GregorianCalendar EPOCH_PLUS_TEN_THOUSAND_DAYS;
@@ -77,6 +86,17 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     MARCH_15_2001_MIDNIGHT = new GregorianCalendar(2001, Calendar.MARCH, 15, 0, 0, 0);
     MARCH_15_2001_MIDNIGHT.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> quoteIdentifiers() {
+    return Arrays.asList(new Object[][] {
+        { null, true }, { true, true }, { false, false }
+    });
+  }
+  @Parameterized.Parameter(0)
+  public /* NOT private */ Boolean quoteIdentifiers;
+  @Parameterized.Parameter(1)
+  public /* NOT private */ Boolean quoteIdentifiersExpectedBehavior;
 
   protected TableId tableId;
   protected ColumnId columnPK1;
@@ -157,6 +177,11 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
     connProps.putAll(propertiesFromPairs(propertyPairs));
     connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, url);
+    if (quoteIdentifiers == null) {
+      // no-op
+    } else {
+      connProps.put(JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG, quoteIdentifiers.toString());
+    }
     return new JdbcSourceConnectorConfig(connProps);
   }
 
@@ -250,14 +275,11 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     return props;
   }
 
-  protected void assertStatements(
-      String[] expected,
-      List<String> actual
-  ) {
+  protected void assertStatements(final String[] expected, final List<String> actual) {
     // TODO: Remove
     assertEquals(expected.length, actual.size());
     for (int i = 0; i != expected.length; ++i) {
-      assertEquals(expected[i], actual.get(i));
+      assertQueryEquals(expected[i], actual.get(i));
     }
   }
 
@@ -278,20 +300,20 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     assertEquals(expected, dialect.getSqlType(field));
   }
 
-  protected void verifyCreateOneColNoPk(String expected) {
-    assertEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
+  protected void verifyCreateOneColNoPk(final String expected) {
+    assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
         new SinkRecordField(Schema.INT32_SCHEMA, "col1", false)
     )));
   }
 
   protected void verifyCreateOneColOnePk(String expected) {
-    assertEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
+    assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
         new SinkRecordField(Schema.INT32_SCHEMA, "pk1", true)
     )));
   }
 
   protected void verifyCreateThreeColTwoPk(String expected) {
-    assertEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
+    assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
         new SinkRecordField(Schema.INT32_SCHEMA, "pk1", true),
         new SinkRecordField(Schema.INT32_SCHEMA, "pk2", true),
         new SinkRecordField(Schema.INT32_SCHEMA, "col1", false)
@@ -393,10 +415,69 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     assertEquals(expectedSanitizedUrl, dialect.sanitizedUrl(url));
   }
 
+  protected void assertQueryEquals(final String expected, final String actual) {
+    assertEquals(expected, actual);
+  }
+
   protected PreparedStatement verifyBindField(int index, Schema schema, Object value)
       throws SQLException {
     PreparedStatement statement = mock(PreparedStatement.class);
     dialect.bindField(statement, index, schema, value);
     return verify(statement, times(1));
+  }
+
+  /**
+   * Read the content of a query located in a resource file specific
+   * for this test class and {@link BaseDialectTest#quoteIdentifiersExpectedBehavior},
+   * i.e. located at {@code {class_short_name}/{queryName}-[non]delimited.txt}.
+   *
+   * <p>Unix line feed <code>\n</code> will be replaced with the
+   * current system's.
+   *
+   * <p>{@code |<EOL>} will be removed from the output.
+   *
+   * @param queryName the resource file name without path.
+   * @return content of the resource file.
+   */
+  final String readQueryResourceForThisTest(final String queryName) {
+    final String filename = queryName + getQueryResourceDelimitedSuffix();
+    try {
+      final String resourceName = Paths.get(
+          "io.aiven.connect.jdbc.dialect", getClass().getSimpleName(), filename).toString();
+      final URL url = Resources.getResource(resourceName);
+      final String content = Resources.toString(url, StandardCharsets.UTF_8);
+      return content
+          .replace("\n", System.lineSeparator())
+          .replace("|<EOL>", "");
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Read the content of a query located in a resource file specific
+   * for this test class and {@link BaseDialectTest#quoteIdentifiersExpectedBehavior},
+   * i.e. located at {@code {class_short_name}/{queryName}-[non]delimited.txt}.
+   *
+   * <p>The content is read as an array of strings.
+   *
+   * @param queryName the resource file name without path.
+   * @return content of the resource file (array of strings).
+   */
+  final String[] readQueryResourceLinesForThisTest(final String queryName) {
+    final String filename = queryName + getQueryResourceDelimitedSuffix();
+    try {
+      final String resourceName = Paths.get(
+          "io.aiven.connect.jdbc.dialect", getClass().getSimpleName(), filename).toString();
+      final URL url = Resources.getResource(resourceName);
+      final String content = Resources.toString(url, StandardCharsets.UTF_8);
+      return content.split("\n");
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private String getQueryResourceDelimitedSuffix() {
+    return quoteIdentifiersExpectedBehavior ? "-quoted.txt" : "-nonquoted.txt";
   }
 }

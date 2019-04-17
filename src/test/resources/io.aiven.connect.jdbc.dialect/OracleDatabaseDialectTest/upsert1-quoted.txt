@@ -1,0 +1,1 @@
+merge into "ARTICLE" using (select ? "title", ? "author", ? "body" FROM dual) incoming on("ARTICLE"."title"=incoming."title" and "ARTICLE"."author"=incoming."author") when matched then update set "ARTICLE"."body"=incoming."body" when not matched then insert("ARTICLE"."body","ARTICLE"."title","ARTICLE"."author") values(incoming."body",incoming."title",incoming."author")

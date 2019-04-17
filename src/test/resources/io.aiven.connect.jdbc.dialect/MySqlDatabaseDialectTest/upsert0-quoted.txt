@@ -1,0 +1,1 @@
+insert into `myTable`(`id1`,`id2`,`columnA`,`columnB`,`columnC`,`columnD`) values(?,?,?,?,?,?) on duplicate key update `columnA`=values(`columnA`),`columnB`=values(`columnB`),`columnC`=values(`columnC`),`columnD`=values(`columnD`)

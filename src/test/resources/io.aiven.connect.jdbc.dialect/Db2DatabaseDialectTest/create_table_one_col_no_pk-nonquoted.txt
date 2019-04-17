@@ -1,0 +1,2 @@
+CREATE TABLE myTable (
+col1 INTEGER NOT NULL)

@@ -115,8 +115,8 @@ public class IdentifierRules {
    *
    * @return the new expression builder; never null
    */
-  public ExpressionBuilder expressionBuilder() {
-    return new ExpressionBuilder(this);
+  public ExpressionBuilder expressionBuilder(final boolean quoteIdentifiers) {
+    return new ExpressionBuilder(this, quoteIdentifiers);
   }
 
   /**

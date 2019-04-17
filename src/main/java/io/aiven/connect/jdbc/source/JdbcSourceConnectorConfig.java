@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc.source;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
 import io.aiven.connect.jdbc.util.DatabaseDialectRecommender;
@@ -407,7 +408,17 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         ++orderInGroup,
         Width.LONG,
         DIALECT_NAME_DISPLAY,
-        DatabaseDialectRecommender.INSTANCE);
+        DatabaseDialectRecommender.INSTANCE
+    ).define(
+        JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG,
+        JdbcConfig.SQL_QUOTE_IDENTIFIERS_TYPE,
+        JdbcConfig.SQL_QUOTE_IDENTIFIERS_DEFAULT,
+        Importance.MEDIUM,
+        JdbcConfig.SQL_QUOTE_IDENTIFIERS_DOC,
+        DATABASE_GROUP,
+        ++orderInGroup,
+        Width.SHORT,
+        JdbcConfig.SQL_QUOTE_IDENTIFIERS_DISPLAY);
   }
 
   private static final void addModeOptions(ConfigDef config) {

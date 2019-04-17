@@ -1,0 +1,1 @@
+INSERT OR REPLACE INTO myTable(id1,id2,columnA,columnB,columnC,columnD) VALUES(?,?,?,?,?,?)

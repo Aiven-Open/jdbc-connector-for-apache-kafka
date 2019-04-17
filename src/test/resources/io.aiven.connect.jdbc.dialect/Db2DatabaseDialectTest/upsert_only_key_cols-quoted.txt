@@ -1,0 +1,1 @@
+merge into "actor" using (values(?)) as DAT("actor_id") on "actor"."actor_id"=DAT."actor_id" when not matched then insert("actor"."actor_id") values(DAT."actor_id")

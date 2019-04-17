@@ -1,0 +1,1 @@
+INSERT INTO customers(age,firstName,lastName) VALUES(?,?,?)

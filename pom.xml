@@ -91,6 +91,11 @@
             <artifactId>commons-io</artifactId>
             <version>2.6</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>27.1-jre</version>
+        </dependency>
 
          <!-- JDBC drivers, only included in runtime so they get packaged -->
         <dependency>

@@ -1,0 +1,5 @@
+CREATE TABLE `myTable` (
+`pk1` INT NOT NULL,
+`pk2` INT NOT NULL,
+`col1` INT NOT NULL,
+PRIMARY KEY(`pk1`,`pk2`))

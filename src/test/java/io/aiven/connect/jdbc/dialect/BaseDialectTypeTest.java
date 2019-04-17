@@ -15,6 +15,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.source.ColumnMapping;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.HashMap;
@@ -24,7 +25,6 @@ import java.util.Map;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.TableId;
-import io.aiven.connect.jdbc.source.ColumnMapping;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
 
 import org.apache.kafka.connect.data.Field;

@@ -1,0 +1,1 @@
+IF EXISTS (SELECT 1 FROM sysobjects INNER JOIN sysusers ON sysobjects.uid=sysusers.uid WHERE sysusers.name='dbo' AND sysobjects.name='myTable' AND type='U') DROP TABLE dbName.dbo.myTable

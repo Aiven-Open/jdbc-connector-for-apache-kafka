@@ -1,0 +1,1 @@
+insert into `actor`(`actor_id`) values(?) on duplicate key update `actor_id`=values(`actor_id`)
