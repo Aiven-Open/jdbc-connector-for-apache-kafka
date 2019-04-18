@@ -1,0 +1,11 @@
+io.aiven.connect.jdbc.dialect.GenericDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.Db2DatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.DerbyDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.OracleDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.SqliteDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.PostgreSqlDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.MySqlDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.SqlServerDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.SapHanaDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.SybaseDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.VerticaDatabaseDialect$Provider

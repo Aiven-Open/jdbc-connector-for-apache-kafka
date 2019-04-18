@@ -1,4 +1,5 @@
 kafka-connect-jdbc
+Copyright (c) 2019 Aiven Oy
 Copyright (c) 2015 Confluent Inc.
 
 The following libraries are included in packaged versions of this project:
