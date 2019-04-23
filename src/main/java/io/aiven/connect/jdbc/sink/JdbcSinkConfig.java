@@ -18,11 +18,8 @@
 package io.aiven.connect.jdbc.sink;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
-import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
-import io.aiven.connect.jdbc.util.DatabaseDialectRecommender;
 import io.aiven.connect.jdbc.util.StringUtils;
 import io.aiven.connect.jdbc.util.TimeZoneValidator;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
@@ -30,7 +27,7 @@ import org.apache.kafka.common.config.types.Password;
 import java.time.ZoneId;
 import java.util.*;
 
-public class JdbcSinkConfig extends AbstractConfig {
+public class JdbcSinkConfig extends JdbcConfig {
 
   public enum InsertMode {
     INSERT,
@@ -53,19 +50,6 @@ public class JdbcSinkConfig extends AbstractConfig {
           "__connect_offset"
       )
   );
-
-  public static final String CONNECTION_URL = JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG;
-  private static final String CONNECTION_URL_DOC = "JDBC connection URL.";
-  private static final String CONNECTION_URL_DISPLAY = "JDBC URL";
-
-  public static final String CONNECTION_USER = JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG;
-  private static final String CONNECTION_USER_DOC = "JDBC connection user.";
-  private static final String CONNECTION_USER_DISPLAY = "JDBC User";
-
-  public static final String CONNECTION_PASSWORD =
-      JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG;
-  private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
-  private static final String CONNECTION_PASSWORD_DISPLAY = "JDBC Password";
 
   public static final String TABLE_NAME_FORMAT = "table.name.format";
   private static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
@@ -174,16 +158,6 @@ public class JdbcSinkConfig extends AbstractConfig {
   private static final String DDL_GROUP = "DDL Support";
   private static final String RETRIES_GROUP = "Retries";
 
-  public static final String DIALECT_NAME_CONFIG = "dialect.name";
-  private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
-  public static final String DIALECT_NAME_DEFAULT = "";
-  private static final String DIALECT_NAME_DOC =
-      "The name of the database dialect that should be used for this connector. By default this "
-      + "is empty, and the connector automatically determines the dialect based upon the "
-      + "JDBC connection URL. Use this if you want to override that behavior and use a "
-      + "specific dialect. All properly-packaged dialects in the JDBC connector plugin "
-      + "can be used.";
-
   public static final String DB_TIMEZONE_CONFIG = "db.timezone";
   public static final String DB_TIMEZONE_DEFAULT = "UTC";
   private static final String DB_TIMEZONE_CONFIG_DOC =
@@ -191,66 +165,19 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "inserting time-based values. Defaults to UTC.";
   private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB Time Zone";
 
-  public static final ConfigDef CONFIG_DEF = new ConfigDef()
-        // Connection
-        .define(
-            CONNECTION_URL,
-            ConfigDef.Type.STRING,
-            ConfigDef.NO_DEFAULT_VALUE,
-            ConfigDef.Importance.HIGH,
-            CONNECTION_URL_DOC,
-            CONNECTION_GROUP,
-            1,
-            ConfigDef.Width.LONG,
-            CONNECTION_URL_DISPLAY
-        )
-        .define(
-            CONNECTION_USER,
-            ConfigDef.Type.STRING,
-            null,
-            ConfigDef.Importance.HIGH,
-            CONNECTION_USER_DOC,
-            CONNECTION_GROUP,
-            2,
-            ConfigDef.Width.MEDIUM,
-            CONNECTION_USER_DISPLAY
-        )
-        .define(
-            CONNECTION_PASSWORD,
-            ConfigDef.Type.PASSWORD,
-            null,
-            ConfigDef.Importance.HIGH,
-            CONNECTION_PASSWORD_DOC,
-            CONNECTION_GROUP,
-            3,
-            ConfigDef.Width.MEDIUM,
-            CONNECTION_PASSWORD_DISPLAY
-        )
-        .define(
-            DIALECT_NAME_CONFIG,
-            ConfigDef.Type.STRING,
-            DIALECT_NAME_DEFAULT,
-            DatabaseDialectRecommender.INSTANCE,
-            ConfigDef.Importance.LOW,
-            DIALECT_NAME_DOC,
-            CONNECTION_GROUP,
-            4,
-            ConfigDef.Width.LONG,
-            DIALECT_NAME_DISPLAY,
-            DatabaseDialectRecommender.INSTANCE
-        )
-        .define(
-            JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG,
-            JdbcConfig.SQL_QUOTE_IDENTIFIERS_TYPE,
-            JdbcConfig.SQL_QUOTE_IDENTIFIERS_DEFAULT,
-            ConfigDef.Importance.MEDIUM,
-            JdbcConfig.SQL_QUOTE_IDENTIFIERS_DOC,
-            CONNECTION_GROUP,
-            5,
-            ConfigDef.Width.SHORT,
-            JdbcConfig.SQL_QUOTE_IDENTIFIERS_DISPLAY
-        )
-        // Writes
+  public static final ConfigDef CONFIG_DEF = new ConfigDef();
+
+  static {
+    // Database
+    int orderInGroup = 0;
+    defineConnectionUrl(CONFIG_DEF, ++orderInGroup, Collections.emptyList());
+    defineConnectionUser(CONFIG_DEF, ++orderInGroup);
+    defineConnectionPassword(CONFIG_DEF, ++orderInGroup);
+    defineDialectName(CONFIG_DEF, ++orderInGroup);
+    defineSqlQuoteIdentifiers(CONFIG_DEF, ++orderInGroup);
+
+    // Writes
+    CONFIG_DEF
         .define(
             INSERT_MODE,
             ConfigDef.Type.STRING,
@@ -272,9 +199,10 @@ public class JdbcSinkConfig extends AbstractConfig {
             BATCH_SIZE_DOC, WRITES_GROUP,
             2,
             ConfigDef.Width.SHORT,
-            BATCH_SIZE_DISPLAY
-        )
-        // Data Mapping
+            BATCH_SIZE_DISPLAY);
+
+    // Data Mapping
+    CONFIG_DEF
         .define(
             TABLE_NAME_FORMAT,
             ConfigDef.Type.STRING,
@@ -318,19 +246,21 @@ public class JdbcSinkConfig extends AbstractConfig {
             4,
             ConfigDef.Width.LONG,
             FIELDS_WHITELIST_DISPLAY
-        ).define(
-          DB_TIMEZONE_CONFIG,
-          ConfigDef.Type.STRING,
-          DB_TIMEZONE_DEFAULT,
-          TimeZoneValidator.INSTANCE,
-          ConfigDef.Importance.MEDIUM,
-          DB_TIMEZONE_CONFIG_DOC,
-          DATAMAPPING_GROUP,
-          5,
-          ConfigDef.Width.MEDIUM,
-          DB_TIMEZONE_CONFIG_DISPLAY
         )
-        // DDL
+        .define(
+            DB_TIMEZONE_CONFIG,
+            ConfigDef.Type.STRING,
+            DB_TIMEZONE_DEFAULT,
+            TimeZoneValidator.INSTANCE,
+            ConfigDef.Importance.MEDIUM,
+            DB_TIMEZONE_CONFIG_DOC,
+            DATAMAPPING_GROUP,
+            5,
+            ConfigDef.Width.MEDIUM,
+            DB_TIMEZONE_CONFIG_DISPLAY);
+
+    // DDL
+    CONFIG_DEF
         .define(
             AUTO_CREATE,
             ConfigDef.Type.BOOLEAN,
@@ -349,9 +279,10 @@ public class JdbcSinkConfig extends AbstractConfig {
             AUTO_EVOLVE_DOC, DDL_GROUP,
             2,
             ConfigDef.Width.SHORT,
-            AUTO_EVOLVE_DISPLAY
-        )
-        // Retries
+            AUTO_EVOLVE_DISPLAY);
+
+    // Retries
+    CONFIG_DEF
         .define(
             MAX_RETRIES,
             ConfigDef.Type.INT,
@@ -374,12 +305,9 @@ public class JdbcSinkConfig extends AbstractConfig {
             RETRIES_GROUP,
             2,
             ConfigDef.Width.SHORT,
-            RETRY_BACKOFF_MS_DISPLAY
-        );
+            RETRY_BACKOFF_MS_DISPLAY);
+  }
 
-  public final String connectionUrl;
-  public final String connectionUser;
-  public final String connectionPassword;
   public final String tableNameFormat;
   public final int batchSize;
   public final int maxRetries;
@@ -390,14 +318,10 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final PrimaryKeyMode pkMode;
   public final List<String> pkFields;
   public final Set<String> fieldsWhitelist;
-  public final String dialectName;
   public final TimeZone timeZone;
 
   public JdbcSinkConfig(Map<?, ?> props) {
     super(CONFIG_DEF, props);
-    connectionUrl = getString(CONNECTION_URL);
-    connectionUser = getString(CONNECTION_USER);
-    connectionPassword = getPasswordValue(CONNECTION_PASSWORD);
     tableNameFormat = getString(TABLE_NAME_FORMAT).trim();
     batchSize = getInt(BATCH_SIZE);
     maxRetries = getInt(MAX_RETRIES);
@@ -407,7 +331,6 @@ public class JdbcSinkConfig extends AbstractConfig {
     insertMode = InsertMode.valueOf(getString(INSERT_MODE).toUpperCase());
     pkMode = PrimaryKeyMode.valueOf(getString(PK_MODE).toUpperCase());
     pkFields = getList(PK_FIELDS);
-    dialectName = getString(DIALECT_NAME_CONFIG);
     fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
     String dbTimeZone = getString(DB_TIMEZONE_CONFIG);
     timeZone = TimeZone.getTimeZone(ZoneId.of(dbTimeZone));

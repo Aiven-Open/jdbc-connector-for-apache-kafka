@@ -15,8 +15,8 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
@@ -72,7 +72,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
   public void setup() throws Exception {
     db = new EmbeddedDerby();
     connProps = new HashMap<>();
-    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
     connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
     newDialectFor(null, null);
@@ -94,7 +94,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     return new GenericDatabaseDialect(sourceConfigWithUrl(db.getUrl()));
   }
 
-  protected GenericDatabaseDialect createDialect(AbstractConfig config) {
+  protected GenericDatabaseDialect createDialect(JdbcConfig config) {
     return new GenericDatabaseDialect(config);
   }
 

@@ -15,7 +15,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
-import org.apache.kafka.common.config.AbstractConfig;
+import io.aiven.connect.jdbc.config.JdbcConfig;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 
@@ -30,7 +30,7 @@ public class MockDatabaseDialect extends GenericDatabaseDialect {
     }
 
     @Override
-    public DatabaseDialect create(AbstractConfig config) {
+    public DatabaseDialect create(JdbcConfig config) {
       return new MockDatabaseDialect(config);
     }
   }
@@ -40,7 +40,7 @@ public class MockDatabaseDialect extends GenericDatabaseDialect {
    *
    * @param config the connector configuration; may not be null
    */
-  public MockDatabaseDialect(AbstractConfig config) {
+  public MockDatabaseDialect(JdbcConfig config) {
     super(config);
   }
 }

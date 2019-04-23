@@ -21,6 +21,7 @@ import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
@@ -58,9 +59,9 @@ public class PreparedStatementBinderTest {
   @Before
   public void beforeEach() {
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSinkConfig.CONNECTION_URL, "jdbc:bogus:something");
-    props.put(JdbcSinkConfig.CONNECTION_USER, "sa");
-    props.put(JdbcSinkConfig.CONNECTION_PASSWORD, "password");
+    props.put(JdbcConfig.CONNECTION_URL_CONFIG, "jdbc:bogus:something");
+    props.put(JdbcConfig.CONNECTION_USER_CONFIG, "sa");
+    props.put(JdbcConfig.CONNECTION_PASSWORD_CONFIG, "password");
     JdbcSinkConfig config = new JdbcSinkConfig(props);
     dialect = new GenericDatabaseDialect(config);
   }

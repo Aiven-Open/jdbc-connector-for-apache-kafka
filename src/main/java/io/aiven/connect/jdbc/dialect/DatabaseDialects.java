@@ -17,8 +17,8 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.JdbcUrlInfo;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +111,7 @@ public class DatabaseDialects {
    */
   public static DatabaseDialect findBestFor(
       String jdbcUrl,
-      AbstractConfig config
+      JdbcConfig config
   ) throws ConnectException {
     final JdbcUrlInfo info = extractJdbcUrlInfo(jdbcUrl);
     LOG.debug("Finding best dialect for {}", info);
@@ -143,7 +143,7 @@ public class DatabaseDialects {
    */
   public static DatabaseDialect create(
       String dialectName,
-      AbstractConfig config
+      JdbcConfig config
   ) throws ConnectException {
     LOG.debug("Looking for named dialect '{}'", dialectName);
     Set<String> dialectNames = new HashSet<>();

@@ -49,10 +49,12 @@ public class JdbcSinkTask extends SinkTask {
   }
 
   void initWriter() {
-    if (config.dialectName != null && !config.dialectName.trim().isEmpty()) {
-      dialect = DatabaseDialects.create(config.dialectName, config);
+    final String dialectName = config.getDialectName();
+    if (dialectName != null && !dialectName.trim().isEmpty()) {
+      dialect = DatabaseDialects.create(dialectName, config);
     } else {
-      dialect = DatabaseDialects.findBestFor(config.connectionUrl, config);
+      final String connectionUrl = config.getConnectionUrl();
+      dialect = DatabaseDialects.findBestFor(connectionUrl, config);
     }
     final DbStructure dbStructure = new DbStructure(dialect);
     log.info("Initializing writer using SQL dialect: {}", dialect.getClass().getSimpleName());

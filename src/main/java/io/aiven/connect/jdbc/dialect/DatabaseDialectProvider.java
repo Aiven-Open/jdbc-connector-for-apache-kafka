@@ -17,7 +17,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
-import org.apache.kafka.common.config.AbstractConfig;
+import io.aiven.connect.jdbc.config.JdbcConfig;
 
 import java.sql.Connection;
 import java.util.*;
@@ -29,7 +29,7 @@ import java.util.*;
  * <p>The {@link DatabaseDialects} class uses Java's Service Provider API to discover and register
  * all {@link DatabaseDialectProvider} classes that are on the classpath. All of these registered
  * providers are then consulted any time someone attempts to
- * {@link DatabaseDialects#findBestFor(String, AbstractConfig) find the best dialect} for a given
+ * {@link DatabaseDialects#findBestFor(String, JdbcConfig) find the best dialect} for a given
  * URL and JDBC source or sink connector configuration. The dialect providers compute a score
  * for the URL, and the dialect provider with the highest score is then used to create a new
  * {@link DatabaseDialect} instance.
@@ -122,7 +122,7 @@ public abstract class DatabaseDialectProvider {
    * @param config the connector configuration
    * @return the dialect instance; never null
    */
-  public abstract DatabaseDialect create(AbstractConfig config);
+  public abstract DatabaseDialect create(JdbcConfig config);
 
   /**
    * Return the name of the dialect.

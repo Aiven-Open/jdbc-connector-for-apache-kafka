@@ -15,6 +15,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.source.ColumnMapping;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -162,7 +163,7 @@ public abstract class BaseDialectTypeTest<T extends GenericDatabaseDialect> {
     connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
     connProps.putAll(propertiesFromPairs(propertyPairs));
-    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, url);
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, url);
     connProps.put(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG, numMapping.toString());
     return new JdbcSourceConnectorConfig(connProps);
   }

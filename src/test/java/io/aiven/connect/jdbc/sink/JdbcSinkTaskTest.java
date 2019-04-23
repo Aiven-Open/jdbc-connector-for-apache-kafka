@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -233,7 +234,7 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
     task.initialize(ctx);
 
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSinkConfig.CONNECTION_URL, "stub");
+    props.put(JdbcConfig.CONNECTION_URL_CONFIG, "stub");
     props.put(JdbcSinkConfig.MAX_RETRIES, String.valueOf(maxRetries));
     props.put(JdbcSinkConfig.RETRY_BACKOFF_MS, String.valueOf(retryBackoffMs));
     task.start(props);

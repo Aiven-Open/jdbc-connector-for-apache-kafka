@@ -71,15 +71,15 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
     }
 
-    final String url = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
     final int maxConnAttempts = config.getInt(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG);
     final long retryBackoff = config.getLong(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_CONFIG);
 
-    final String dialectName = config.getString(JdbcSourceConnectorConfig.DIALECT_NAME_CONFIG);
+    final String dialectName = config.getDialectName();
     if (dialectName != null && !dialectName.trim().isEmpty()) {
       dialect = DatabaseDialects.create(dialectName, config);
     } else {
-      dialect = DatabaseDialects.findBestFor(url, config);
+      final String connectionUrl = config.getConnectionUrl();
+      dialect = DatabaseDialects.findBestFor(connectionUrl, config);
     }
     log.info("Using JDBC dialect {}", dialect.name());
 

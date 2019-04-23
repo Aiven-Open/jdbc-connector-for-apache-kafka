@@ -15,6 +15,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
 
@@ -115,7 +116,7 @@ public class DatabaseDialectsTest {
       String url
   ) {
     Map<String, String> props = new HashMap<>();
-    props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, url);
+    props.put(JdbcConfig.CONNECTION_URL_CONFIG, url);
     props.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "prefix");
     props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     JdbcSourceConnectorConfig config = new JdbcSourceConnectorConfig(props);

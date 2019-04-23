@@ -70,7 +70,7 @@ public class JdbcSourceConnector extends SourceConnector {
                                  e);
     }
 
-    final String dbUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    final String dbUrl = config.getConnectionUrl();
     final int maxConnectionAttempts = config.getInt(
         JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_CONFIG
     );
