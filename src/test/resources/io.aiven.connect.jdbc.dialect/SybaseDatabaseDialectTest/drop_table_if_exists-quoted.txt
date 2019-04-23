@@ -1,0 +1,1 @@
+IF EXISTS (SELECT 1 FROM sysobjects WHERE name='myTable' AND type='U') DROP TABLE "myTable"

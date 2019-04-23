@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.FixedScoreProvider;
 import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
 import io.aiven.connect.jdbc.sink.PreparedStatementBinder;
@@ -96,6 +97,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   private final Queue<Connection> connections = new ConcurrentLinkedQueue<>();
   private volatile JdbcDriverInfo jdbcDriverInfo;
   private final TimeZone timeZone;
+  private final boolean quoteIdentifiers;
 
   /**
    * Create a new dialect instance with the given connector configuration.
@@ -142,6 +144,8 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     } else {
       timeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
     }
+
+    quoteIdentifiers = config.getBoolean(JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG);
   }
 
   @Override
@@ -412,7 +416,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   @Override
   public ExpressionBuilder expressionBuilder() {
-    return identifierRules().expressionBuilder();
+    return identifierRules().expressionBuilder(quoteIdentifiers);
   }
 
   /**
@@ -1496,7 +1500,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       builder.append("PRIMARY KEY(");
       builder.appendList()
              .delimitedBy(",")
-             .transformedBy(ExpressionBuilder.quote())
+             .transformedBy(ExpressionBuilder.identifiers())
              .of(pkFieldNames);
       builder.append(")");
     }
@@ -1573,7 +1577,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       ExpressionBuilder builder,
       SinkRecordField f
   ) {
-    builder.appendIdentifierQuoted(f.name());
+    builder.appendIdentifier(f.name());
     builder.append(" ");
     String sqlType = getSqlType(f);
     builder.append(sqlType);

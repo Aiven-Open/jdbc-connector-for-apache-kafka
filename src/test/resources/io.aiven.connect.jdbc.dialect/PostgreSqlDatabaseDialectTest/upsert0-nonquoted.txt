@@ -1,0 +1,1 @@
+INSERT INTO myTable (id1,id2,columnA,columnB,columnC,columnD) VALUES (?,?,?,?,?,?) ON CONFLICT (id1,id2) DO UPDATE SET columnA=EXCLUDED.columnA,columnB=EXCLUDED.columnB,columnC=EXCLUDED.columnC,columnD=EXCLUDED.columnD

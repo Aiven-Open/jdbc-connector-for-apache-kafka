@@ -25,15 +25,12 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-
 public class VerticaDatabaseDialectTest extends BaseDialectTest<VerticaDatabaseDialect> {
 
   @Override
   protected VerticaDatabaseDialect createDialect() {
     return new VerticaDatabaseDialect(sourceConfigWithUrl("jdbc:vertica://something"));
   }
-
 
   @Test
   public void shouldMapPrimitiveSchemaTypeToSqlTypes() {
@@ -91,28 +88,16 @@ public class VerticaDatabaseDialectTest extends BaseDialectTest<VerticaDatabaseD
 
   @Test
   public void shouldBuildCreateQueryStatement() {
-    String expected =
-        "CREATE TABLE \"myTable\" (\n" + "\"c1\" INT NOT NULL,\n" + "\"c2\" INT NOT NULL,\n" +
-        "\"c3\" VARCHAR(1024) NOT NULL,\n" + "\"c4\" VARCHAR(1024) NULL,\n" +
-        "\"c5\" DATE DEFAULT '2001-03-15',\n" + "\"c6\" TIME DEFAULT '00:00:00.000',\n" +
-        "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c8\" DECIMAL(18,4) NULL,\n" +
-        "PRIMARY KEY(\"c1\"))";
-    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("create_table");
+    final String actual = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildAlterTableStatement() {
-    List<String> statements = dialect.buildAlterTable(tableId, sinkRecordFields);
-    String[] sql = {"ALTER TABLE \"myTable\" ADD \"c1\" INT NOT NULL",
-                    "ALTER TABLE \"myTable\" ADD \"c2\" INT NOT NULL",
-                    "ALTER TABLE \"myTable\" ADD \"c3\" VARCHAR(1024) NOT NULL",
-                    "ALTER TABLE \"myTable\" ADD \"c4\" VARCHAR(1024) NULL",
-                    "ALTER TABLE \"myTable\" ADD \"c5\" DATE DEFAULT '2001-03-15'",
-                    "ALTER TABLE \"myTable\" ADD \"c6\" TIME DEFAULT '00:00:00.000'",
-                    "ALTER TABLE \"myTable\" ADD \"c7\" TIMESTAMP DEFAULT '2001-03-15 " +
-                    "00:00:00.000'", "ALTER TABLE \"myTable\" ADD \"c8\" DECIMAL(18,4) NULL"};
-    assertStatements(sql, statements);
+    final String[] expected = readQueryResourceLinesForThisTest("alter_table");
+    final List<String> actual = dialect.buildAlterTable(tableId, sinkRecordFields);
+    assertStatements(expected, actual);
   }
 
   @Test(expected = UnsupportedOperationException.class)
@@ -120,37 +105,34 @@ public class VerticaDatabaseDialectTest extends BaseDialectTest<VerticaDatabaseD
     dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
   }
 
-
   @Test
   public void createOneColNoPk() {
-    verifyCreateOneColNoPk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"col1\" INT NOT NULL)");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_no_pk");
+    verifyCreateOneColNoPk(expected);
   }
 
   @Test
   public void createOneColOnePk() {
-    verifyCreateOneColOnePk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"pk1\" INT NOT NULL," +
-        System.lineSeparator() + "PRIMARY KEY(\"pk1\"))");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_one_pk");
+    verifyCreateOneColOnePk(expected);
   }
 
   @Test
   public void createThreeColTwoPk() {
-    verifyCreateThreeColTwoPk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"pk1\" INT NOT NULL," +
-        System.lineSeparator() + "\"pk2\" INT NOT NULL," + System.lineSeparator() +
-        "\"col1\" INT NOT NULL," + System.lineSeparator() + "PRIMARY KEY(\"pk1\",\"pk2\"))");
+    final String expected = readQueryResourceForThisTest("create_table_three_cols_two_pks");
+    verifyCreateThreeColTwoPk(expected);
   }
 
   @Test
   public void alterAddOneCol() {
-    verifyAlterAddOneCol("ALTER TABLE \"myTable\" ADD \"newcol1\" INT NULL");
+    final String[] expected = readQueryResourceLinesForThisTest("alter_add_one_col");
+    verifyAlterAddOneCol(expected);
   }
 
   @Test
   public void alterAddTwoCol() {
-    verifyAlterAddTwoCols("ALTER TABLE \"myTable\" ADD \"newcol1\" INT NULL",
-                          "ALTER TABLE \"myTable\" ADD \"newcol2\" INT DEFAULT 42");
+    final String[] expected = readQueryResourceLinesForThisTest("alter_add_two_cols");
+    verifyAlterAddTwoCols(expected);
   }
 
   @Test

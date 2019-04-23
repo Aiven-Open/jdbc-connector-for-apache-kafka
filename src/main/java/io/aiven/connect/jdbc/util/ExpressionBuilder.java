@@ -154,12 +154,13 @@ public class ExpressionBuilder {
   }
 
   /**
-   * Get a {@link Transform} that will surround the inputs with quotes.
+   * Get a {@link Transform} that will treat the inputs as identifiers and
+   * quote them according to the builder's configuration.
    *
    * @return the transform; never null
    */
-  public static Transform<String> quote() {
-    return (builder, input) -> builder.appendIdentifierQuoted(input);
+  public static Transform<String> identifiers() {
+    return (builder, input) -> builder.appendIdentifier(input);
   }
 
   /**
@@ -168,7 +169,7 @@ public class ExpressionBuilder {
    * @return the transform; never null
    */
   public static Transform<ColumnId> columnNames() {
-    return (builder, input) -> builder.appendIdentifierQuoted(input.name());
+    return (builder, input) -> builder.appendIdentifier(input.name());
   }
 
   /**
@@ -179,7 +180,7 @@ public class ExpressionBuilder {
    */
   public static Transform<ColumnId> columnNamesWith(final String appended) {
     return (builder, input) -> {
-      builder.appendIdentifierQuoted(input.name());
+      builder.appendIdentifier(input.name());
       builder.append(appended);
     };
   }
@@ -203,7 +204,7 @@ public class ExpressionBuilder {
   public static Transform<ColumnId> columnNamesWithPrefix(final String prefix) {
     return (builder, input) -> {
       builder.append(prefix);
-      builder.appendIdentifierQuoted(input.name());
+      builder.appendIdentifier(input.name());
     };
   }
 
@@ -218,12 +219,13 @@ public class ExpressionBuilder {
 
   private final IdentifierRules rules;
   private final StringBuilder sb = new StringBuilder();
+  private final boolean quoteIdentifiers;
 
   /**
    * Create a new expression builder with the default {@link IdentifierRules}.
    */
   public ExpressionBuilder() {
-    this(null);
+    this(null, true);
   }
 
   /**
@@ -231,22 +233,9 @@ public class ExpressionBuilder {
    *
    * @param rules the rules; may be null if the default rules are to be used
    */
-  public ExpressionBuilder(IdentifierRules rules) {
+  public ExpressionBuilder(IdentifierRules rules, final boolean quoteIdentifiers) {
     this.rules = rules != null ? rules : IdentifierRules.DEFAULT;
-  }
-
-  /**
-   * Return a new ExpressionBuilder that escapes quotes with the specified prefix.
-   * This builder remains unaffected.
-   *
-   * @param prefix the prefix
-   * @return the new ExpressionBuilder, or this builder if the prefix is null or empty
-   */
-  public ExpressionBuilder escapeQuotesWith(String prefix) {
-    if (prefix == null || prefix.isEmpty()) {
-      return this;
-    }
-    return new ExpressionBuilder(this.rules.escapeQuotesWith(prefix));
+    this.quoteIdentifiers = quoteIdentifiers;
   }
 
   /**
@@ -306,7 +295,9 @@ public class ExpressionBuilder {
   }
 
   /**
-   * Append to this builder's expression the identifier.
+   * Append the identifier to this builder's expression.
+   *
+   * <p>This method allows to override the builder's set identifier quoting behavior.
    *
    * @param name the name to be appended
    * @param quoted true if the name should be quoted, or false otherwise
@@ -327,16 +318,21 @@ public class ExpressionBuilder {
   }
 
   /**
-   * Append to this builder's expression the specified identifier, surrounded by the leading and
-   * trailing quotes.
+   * Append the identifier to this builder's expression.
+   *
+   * <p>This method uses the builder's configured identifier quoting behavior.
    *
    * @param name the name to be appended
    * @return this builder to enable methods to be chained; never null
    */
-  public ExpressionBuilder appendIdentifierQuoted(String name) {
-    appendLeadingQuote();
+  public ExpressionBuilder appendIdentifier(String name) {
+    if (quoteIdentifiers) {
+      appendLeadingQuote();
+    }
     sb.append(name);
-    appendTrailingQuote();
+    if (quoteIdentifiers) {
+      appendTrailingQuote();
+    }
     return this;
   }
 
@@ -384,16 +380,16 @@ public class ExpressionBuilder {
   }
 
   /**
-   * Append to this builder's expression the specified object surrounded by quotes. If the object
-   * is {@link Expressable}, then this builder delegates to the object's
-   * {@link Expressable#appendTo(ExpressionBuilder, boolean)} method. Otherwise, the string
-   * representation of the object is appended to the expression.
+   * Append to this builder's expression the specified object surrounded by quotes according to
+   * the configuration. If the object is {@link Expressable}, then this builder delegates to
+   * the object's {@link Expressable#appendTo(ExpressionBuilder, boolean)} method.
+   * Otherwise, the string representation of the object is appended to the expression.
    *
    * @param obj the object to be appended
    * @return this builder to enable methods to be chained; never null
    */
   public ExpressionBuilder append(Object obj) {
-    return append(obj, true);
+    return append(obj, quoteIdentifiers);
   }
 
   /**

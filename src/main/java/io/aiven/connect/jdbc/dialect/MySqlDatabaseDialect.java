@@ -130,9 +130,9 @@ public class MySqlDatabaseDialect extends GenericDatabaseDialect {
   ) {
     //MySql doesn't support SQL 2003:merge so here how the upsert is handled
     final ExpressionBuilder.Transform<ColumnId> transform = (builder, col) -> {
-      builder.appendIdentifierQuoted(col.name());
+      builder.appendIdentifier(col.name());
       builder.append("=values(");
-      builder.appendIdentifierQuoted(col.name());
+      builder.appendIdentifier(col.name());
       builder.append(")");
     };
 

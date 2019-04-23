@@ -1,0 +1,2 @@
+CREATE TABLE myTable (
+col1 int NOT NULL)

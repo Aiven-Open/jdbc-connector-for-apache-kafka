@@ -235,15 +235,15 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
 
   private void transformAs(ExpressionBuilder builder, ColumnId col) {
     builder.append("target.")
-           .appendIdentifierQuoted(col.name())
+           .appendIdentifier(col.name())
            .append("=incoming.")
-           .appendIdentifierQuoted(col.name());
+           .appendIdentifier(col.name());
   }
 
   private void transformUpdate(ExpressionBuilder builder, ColumnId col) {
-    builder.appendIdentifierQuoted(col.name())
+    builder.appendIdentifier(col.name())
            .append("=incoming.")
-           .appendIdentifierQuoted(col.name());
+           .appendIdentifier(col.name());
   }
 
   @Override

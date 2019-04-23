@@ -26,8 +26,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-
 public class OracleDatabaseDialectTest extends BaseDialectTest<OracleDatabaseDialect> {
 
   @Override
@@ -91,95 +89,67 @@ public class OracleDatabaseDialectTest extends BaseDialectTest<OracleDatabaseDia
 
   @Test
   public void shouldBuildCreateQueryStatement() {
-    String expected = "CREATE TABLE \"myTable\" (\n" + "\"c1\" NUMBER(10,0) NOT NULL,\n" +
-                      "\"c2\" NUMBER(19,0) NOT NULL,\n" + "\"c3\" CLOB NOT NULL,\n" +
-                      "\"c4\" CLOB NULL,\n" + "\"c5\" DATE DEFAULT '2001-03-15',\n" +
-                      "\"c6\" DATE DEFAULT '00:00:00.000',\n" +
-                      "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" +
-                      "\"c8\" NUMBER(*,4) NULL,\n" + "PRIMARY KEY(\"c1\"))";
-    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("create_table");
+    final String actual = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildAlterTableStatement() {
-    List<String> statements = dialect.buildAlterTable(tableId, sinkRecordFields);
-    String[] sql = {"ALTER TABLE \"myTable\" ADD(\n" + "\"c1\" NUMBER(10,0) NOT NULL,\n" +
-                    "\"c2\" NUMBER(19,0) NOT NULL,\n" + "\"c3\" CLOB NOT NULL,\n" +
-                    "\"c4\" CLOB NULL,\n" + "\"c5\" DATE DEFAULT '2001-03-15',\n" +
-                    "\"c6\" DATE DEFAULT '00:00:00.000',\n" +
-                    "\"c7\" TIMESTAMP DEFAULT '2001-03-15 00:00:00.000',\n" +
-                    "\"c8\" NUMBER(*,4) NULL)"};
-    assertStatements(sql, statements);
+    final String[] expected = {
+        readQueryResourceForThisTest("alter_table")
+    };
+    final List<String> actual = dialect.buildAlterTable(tableId, sinkRecordFields);
+    assertStatements(expected, actual);
   }
 
   @Test
   public void shouldBuildUpsertStatement() {
-    String expected = "merge into \"myTable\" using (select ? \"id1\", ? \"id2\", ? \"columnA\", " +
-                      "? \"columnB\", ? \"columnC\", ? \"columnD\" FROM dual) incoming on" +
-                      "(\"myTable\".\"id1\"=incoming.\"id1\" and \"myTable\".\"id2\"=incoming" +
-                      ".\"id2\") when matched then update set \"myTable\".\"columnA\"=incoming" +
-                      ".\"columnA\",\"myTable\".\"columnB\"=incoming.\"columnB\",\"myTable\"" +
-                      ".\"columnC\"=incoming.\"columnC\",\"myTable\".\"columnD\"=incoming" +
-                      ".\"columnD\" when not matched then insert(\"myTable\".\"columnA\"," +
-                      "\"myTable\".\"columnB\",\"myTable\".\"columnC\",\"myTable\".\"columnD\"," +
-                      "\"myTable\".\"id1\",\"myTable\".\"id2\") values(incoming.\"columnA\"," +
-                      "incoming.\"columnB\",incoming.\"columnC\",incoming.\"columnD\",incoming" +
-                      ".\"id1\",incoming.\"id2\")";
-    String sql = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("upsert0");
+    final String actual = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void createOneColNoPk() {
-    verifyCreateOneColNoPk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"col1\" NUMBER(10,0) NOT NULL)");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_no_pk");
+    verifyCreateOneColNoPk(expected);
   }
 
   @Test
   public void createOneColOnePk() {
-    verifyCreateOneColOnePk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"pk1\" NUMBER(10,0) NOT NULL," +
-        System.lineSeparator() + "PRIMARY KEY(\"pk1\"))");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_one_pk");
+    verifyCreateOneColOnePk(expected);
   }
 
   @Test
   public void createThreeColTwoPk() {
-    verifyCreateThreeColTwoPk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"pk1\" NUMBER(10,0) NOT NULL," +
-        System.lineSeparator() + "\"pk2\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
-        "\"col1\" NUMBER(10,0) NOT NULL," + System.lineSeparator() +
-        "PRIMARY KEY(\"pk1\",\"pk2\"))");
+    final String expected = readQueryResourceForThisTest("create_table_three_cols_two_pks");
+    verifyCreateThreeColTwoPk(expected);
   }
 
   @Test
   public void alterAddOneCol() {
-    verifyAlterAddOneCol(
-        "ALTER TABLE \"myTable\" ADD(" + System.lineSeparator() + "\"newcol1\" NUMBER(10,0) NULL)");
+    final String expected = readQueryResourceForThisTest("alter_add_one_col");
+    verifyAlterAddOneCol(expected);
   }
 
   @Test
   public void alterAddTwoCol() {
-    verifyAlterAddTwoCols(
-        "ALTER TABLE \"myTable\" ADD(" + System.lineSeparator() +
-        "\"newcol1\" NUMBER(10,0) NULL," +
-        System.lineSeparator() + "\"newcol2\" NUMBER(10,0) DEFAULT 42)");
+    final String expected = readQueryResourceForThisTest("alter_add_two_cols");
+    verifyAlterAddTwoCols(expected);
   }
 
   @Test
   public void upsert() {
-    TableId article = tableId("ARTICLE");
-    String expected = "merge into \"ARTICLE\" " +
-                      "using (select ? \"title\", ? \"author\", ? \"body\" FROM dual) incoming on" +
-                      "(\"ARTICLE\".\"title\"=incoming.\"title\" and \"ARTICLE\"" +
-                      ".\"author\"=incoming.\"author\") " +
-                      "when matched then update set \"ARTICLE\".\"body\"=incoming.\"body\" " +
-                      "when not matched then insert(\"ARTICLE\".\"body\",\"ARTICLE\".\"title\"," +
-                      "\"ARTICLE\".\"author\") " +
-                      "values(incoming.\"body\",incoming.\"title\",incoming.\"author\")";
-    String actual = dialect.buildUpsertQueryStatement(article, columns(article, "title", "author"),
-                                                      columns(article, "body"));
-    assertEquals(expected, actual);
+    final String expected = readQueryResourceForThisTest("upsert1");
+    final TableId article = tableId("ARTICLE");
+    final String actual = dialect.buildUpsertQueryStatement(
+        article,
+        columns(article, "title", "author"),
+        columns(article, "body")
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test

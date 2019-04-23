@@ -156,7 +156,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    *
    * @return the builder; never null
    * @see #identifierRules()
-   * @see IdentifierRules#expressionBuilder()
+   * @see IdentifierRules#expressionBuilder(boolean)
    */
   ExpressionBuilder expressionBuilder();
 
@@ -235,9 +235,7 @@ public interface DatabaseDialect extends ConnectionProvider {
    *     result set; never null
    * @throws SQLException if there is an error accessing the result set metadata
    */
-  Map<ColumnId, ColumnDefinition> describeColumns(
-      ResultSetMetaData rsMetadata
-  ) throws SQLException;
+  Map<ColumnId, ColumnDefinition> describeColumns(ResultSetMetaData rsMetadata) throws SQLException;
 
   /**
    * Get the definition of the specified table.

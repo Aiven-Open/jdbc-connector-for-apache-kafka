@@ -1,0 +1,1 @@
+INSERT INTO "Customer" ("id","name","salary","address") VALUES (?,?,?,?) ON CONFLICT ("id") DO UPDATE SET "name"=EXCLUDED."name","salary"=EXCLUDED."salary","address"=EXCLUDED."address"

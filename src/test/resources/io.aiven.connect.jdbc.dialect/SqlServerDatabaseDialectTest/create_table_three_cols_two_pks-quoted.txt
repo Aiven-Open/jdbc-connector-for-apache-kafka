@@ -1,0 +1,5 @@
+CREATE TABLE [myTable] (
+[pk1] int NOT NULL,
+[pk2] int NOT NULL,
+[col1] int NOT NULL,
+PRIMARY KEY([pk1],[pk2]))

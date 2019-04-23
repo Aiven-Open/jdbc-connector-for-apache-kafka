@@ -26,8 +26,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-
 public class MySqlDatabaseDialectTest extends BaseDialectTest<MySqlDatabaseDialect> {
 
   @Override
@@ -91,110 +89,103 @@ public class MySqlDatabaseDialectTest extends BaseDialectTest<MySqlDatabaseDiale
 
   @Test
   public void shouldBuildCreateQueryStatement() {
-    String expected =
-        "CREATE TABLE `myTable` (\n" + "`c1` INT NOT NULL,\n" + "`c2` BIGINT NOT NULL,\n" +
-        "`c3` VARCHAR(256) NOT NULL,\n" + "`c4` VARCHAR(256) NULL,\n" +
-        "`c5` DATE DEFAULT '2001-03-15',\n" + "`c6` TIME(3) DEFAULT '00:00:00.000',\n" +
-        "`c7` DATETIME(3) DEFAULT '2001-03-15 00:00:00.000',\n" + "`c8` DECIMAL(65,4) NULL,\n" +
-        "PRIMARY KEY(`c1`))";
-    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("create_table");
+    final String actual = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildAlterTableStatement() {
-    List<String> statements = dialect.buildAlterTable(tableId, sinkRecordFields);
-    String[] sql = {
-        "ALTER TABLE `myTable` \n" + "ADD `c1` INT NOT NULL,\n" + "ADD `c2` BIGINT NOT NULL,\n" +
-        "ADD `c3` VARCHAR(256) NOT NULL,\n" + "ADD `c4` VARCHAR(256) NULL,\n" +
-        "ADD `c5` DATE DEFAULT '2001-03-15',\n" + "ADD `c6` TIME(3) DEFAULT '00:00:00.000',\n" +
-        "ADD `c7` DATETIME(3) DEFAULT '2001-03-15 00:00:00.000',\n" +
-        "ADD `c8` DECIMAL(65,4) NULL"};
-    assertStatements(sql, statements);
+    final String[] expected = {
+        readQueryResourceForThisTest("alter_table")
+    };
+    final List<String> actual = dialect.buildAlterTable(tableId, sinkRecordFields);
+    assertStatements(expected, actual);
   }
 
   @Test
   public void shouldBuildUpsertStatement() {
-    String expected = "insert into `myTable`(`id1`,`id2`,`columnA`,`columnB`,`columnC`,`columnD`)" +
-                      " values(?,?,?,?,?,?) on duplicate key update `columnA`=values(`columnA`)," +
-                      "`columnB`=values(`columnB`),`columnC`=values(`columnC`),`columnD`=values" +
-                      "(`columnD`)";
-    String sql = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("upsert0");
+    final String actual = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void createOneColNoPk() {
-    verifyCreateOneColNoPk(
-        "CREATE TABLE `myTable` (" + System.lineSeparator() + "`col1` INT NOT NULL)");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_no_pk");
+    verifyCreateOneColNoPk(expected);
   }
 
   @Test
   public void createOneColOnePk() {
-    verifyCreateOneColOnePk(
-        "CREATE TABLE `myTable` (" + System.lineSeparator() + "`pk1` INT NOT NULL," +
-        System.lineSeparator() + "PRIMARY KEY(`pk1`))");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_one_pk");
+    verifyCreateOneColOnePk(expected);
   }
 
   @Test
   public void createThreeColTwoPk() {
-    verifyCreateThreeColTwoPk(
-        "CREATE TABLE `myTable` (" + System.lineSeparator() + "`pk1` INT NOT NULL," +
-        System.lineSeparator() + "`pk2` INT NOT NULL," + System.lineSeparator() +
-        "`col1` INT NOT NULL," + System.lineSeparator() + "PRIMARY KEY(`pk1`,`pk2`))");
+    final String expected = readQueryResourceForThisTest("create_table_three_cols_two_pks");
+    verifyCreateThreeColTwoPk(expected);
   }
 
   @Test
   public void alterAddOneCol() {
-    verifyAlterAddOneCol("ALTER TABLE `myTable` ADD `newcol1` INT NULL");
+    final String expected = readQueryResourceForThisTest("alter_add_one_col");
+    verifyAlterAddOneCol(expected);
   }
 
   @Test
   public void alterAddTwoCol() {
-    verifyAlterAddTwoCols(
-        "ALTER TABLE `myTable` " + System.lineSeparator() + "ADD `newcol1` INT NULL," +
-        System.lineSeparator() + "ADD `newcol2` INT DEFAULT 42");
+    final String expected = readQueryResourceForThisTest("alter_add_two_cols");
+    verifyAlterAddTwoCols(expected);
   }
 
   @Test
   public void upsert() {
-    TableId actor = tableId("actor");
-    String expected = "insert into `actor`(`actor_id`,`first_name`,`last_name`,`score`) " +
-                      "values(?,?,?,?) on duplicate key update `first_name`=values(`first_name`)," +
-                      "`last_name`=values(`last_name`),`score`=values(`score`)";
-    String sql = dialect.buildUpsertQueryStatement(actor, columns(actor, "actor_id"),
-                                                   columns(actor, "first_name", "last_name",
-                                                           "score"));
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("upsert1");
+    final TableId actor = tableId("actor");
+    final String actual = dialect.buildUpsertQueryStatement(
+        actor,
+        columns(actor, "actor_id"),
+        columns(actor, "first_name", "last_name", "score")
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void upsertOnlyKeyCols() {
-    TableId actor = tableId("actor");
-    String expected = "insert into `actor`(`actor_id`) " +
-                      "values(?) on duplicate key update `actor_id`=values(`actor_id`)";
-    String sql = dialect
-        .buildUpsertQueryStatement(actor, columns(actor, "actor_id"), columns(actor));
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("upsert_only_key_cols");
+    final TableId actor = tableId("actor");
+    final String actual = dialect.buildUpsertQueryStatement(
+        actor,
+        columns(actor, "actor_id"),
+        columns(actor)
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void insert() {
-    TableId customers = tableId("customers");
-    String expected = "INSERT INTO `customers`(`age`,`firstName`,`lastName`) VALUES(?,?,?)";
-    String sql = dialect.buildInsertStatement(customers, columns(customers),
-                                              columns(customers, "age", "firstName", "lastName"));
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("insert");
+    final TableId customers = tableId("customers");
+    final String actual = dialect.buildInsertStatement(
+        customers,
+        columns(customers),
+        columns(customers, "age", "firstName", "lastName")
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void update() {
-    TableId customers = tableId("customers");
-    String expected =
-        "UPDATE `customers` SET `age` = ?, `firstName` = ?, `lastName` = ? WHERE " + "`id` = ?";
-    String sql = dialect.buildUpdateStatement(customers, columns(customers, "id"),
-                                              columns(customers, "age", "firstName", "lastName"));
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("update");
+    final TableId customers = tableId("customers");
+    final String actual = dialect.buildUpdateStatement(
+        customers,
+        columns(customers, "id"),
+        columns(customers, "age", "firstName", "lastName")
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test

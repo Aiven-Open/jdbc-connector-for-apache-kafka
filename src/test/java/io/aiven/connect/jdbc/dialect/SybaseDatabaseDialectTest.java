@@ -15,8 +15,6 @@
 
 package io.aiven.connect.jdbc.dialect;
 
-import static org.junit.Assert.assertEquals;
-
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
@@ -43,7 +41,6 @@ public class SybaseDatabaseDialectTest extends BaseDialectTest<SybaseDatabaseDia
   protected SybaseDatabaseDialect createDialect() {
     return new SybaseDatabaseDialect(sourceConfigWithUrl("jdbc:jtds:sybase://something"));
   }
-
 
   @Test
   public void shouldMapPrimitiveSchemaTypeToSqlTypes() {
@@ -101,128 +98,101 @@ public class SybaseDatabaseDialectTest extends BaseDialectTest<SybaseDatabaseDia
 
   @Test
   public void shouldBuildCreateTableStatement() {
-    String expected =
-        "CREATE TABLE \"myTable\" (\n" + "\"c1\" int NOT NULL,\n" + "\"c2\" bigint NOT NULL,\n" +
-        "\"c3\" text NOT NULL,\n" + "\"c4\" text NULL,\n" +
-        "\"c5\" date DEFAULT '2001-03-15',\n" + "\"c6\" time DEFAULT '00:00:00.000',\n" +
-        "\"c7\" datetime DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c8\" decimal(38,4) NULL,\n" +
-        "PRIMARY KEY(\"c1\"))";
-    String sql = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("create_table");
+    final String actual = dialect.buildCreateTableStatement(tableId, sinkRecordFields);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildDropTableStatement() {
-    String expected = "DROP TABLE \"myTable\"";
-    String sql = dialect.buildDropTableStatement(tableId, new DropOptions().setIfExists(false));
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("drop_table");
+    final String actual = dialect.buildDropTableStatement(tableId, new DropOptions().setIfExists(false));
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildDropTableStatementWithIfExistsClause() {
-    String expected = "IF EXISTS (SELECT 1 FROM sysobjects WHERE name='myTable' AND type='U') "
-                      + "DROP TABLE \"myTable\"";
-    String sql = dialect.buildDropTableStatement(tableId, new DropOptions().setIfExists(true));
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("drop_table_if_exists");
+    final String actual = dialect.buildDropTableStatement(tableId, new DropOptions().setIfExists(true));
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildDropTableStatementWithIfExistsClauseAndSchemaNameInTableId() {
+    final String expected = readQueryResourceForThisTest("drop_table_with_schema_if_exists");
     tableId = new TableId("dbName","dbo", "myTable");
-    String expected = "IF EXISTS (SELECT 1 FROM sysobjects INNER JOIN sysusers ON sysobjects.uid"
-                      + "=sysusers.uid WHERE sysusers.name='dbo' AND sysobjects.name='myTable'"
-                      + " AND type='U') DROP TABLE \"dbName\".\"dbo\".\"myTable\"";
-    String sql = dialect.buildDropTableStatement(tableId, new DropOptions().setIfExists(true));
-    assertEquals(expected, sql);
+    final String actual = dialect.buildDropTableStatement(tableId, new DropOptions().setIfExists(true));
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void shouldBuildAlterTableStatement() {
-    List<String> statements = dialect.buildAlterTable(tableId, sinkRecordFields);
-    String[] sql = {
-        "ALTER TABLE \"myTable\" ADD\n" + "\"c1\" int NOT NULL,\n" + "\"c2\" bigint NOT NULL,\n" +
-        "\"c3\" text NOT NULL,\n" + "\"c4\" text NULL,\n" +
-        "\"c5\" date DEFAULT '2001-03-15',\n" + "\"c6\" time DEFAULT '00:00:00.000',\n" +
-        "\"c7\" datetime DEFAULT '2001-03-15 00:00:00.000',\n" + "\"c8\" decimal(38,4) NULL"};
-    assertStatements(sql, statements);
+    final String[] expected = {
+        readQueryResourceForThisTest("alter_table")
+    };
+    List<String> actual = dialect.buildAlterTable(tableId, sinkRecordFields);
+    assertStatements(expected, actual);
   }
 
   @Test
   public void shouldBuildUpsertStatement() {
-    String expected = "merge into \"myTable\" with (HOLDLOCK) AS target using (select ? AS \"id1\", ?" +
-                      " AS \"id2\", ? AS \"columnA\", ? AS \"columnB\", ? AS \"columnC\", ? AS \"columnD\")" +
-                      " AS incoming on (target.\"id1\"=incoming.\"id1\" and target.\"id2\"=incoming" +
-                      ".\"id2\") when matched then update set \"columnA\"=incoming.\"columnA\"," +
-                      "\"columnB\"=incoming.\"columnB\",\"columnC\"=incoming.\"columnC\"," +
-                      "\"columnD\"=incoming.\"columnD\" when not matched then insert (\"columnA\", " +
-                      "\"columnB\", \"columnC\", \"columnD\", \"id1\", \"id2\") values (incoming.\"columnA\"," +
-                      "incoming.\"columnB\",incoming.\"columnC\",incoming.\"columnD\",incoming.\"id1\"," +
-                      "incoming.\"id2\");";
-    String sql = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
-    assertEquals(expected, sql);
+    final String expected = readQueryResourceForThisTest("upsert0");
+    final String actual = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void createOneColNoPk() {
-    verifyCreateOneColNoPk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"col1\" int NOT NULL)");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_no_pk");
+    verifyCreateOneColNoPk(expected);
   }
 
   @Test
   public void createOneColOnePk() {
-    verifyCreateOneColOnePk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"pk1\" int NOT NULL," +
-        System.lineSeparator() + "PRIMARY KEY(\"pk1\"))");
+    final String expected = readQueryResourceForThisTest("create_table_one_col_one_pk");
+    verifyCreateOneColOnePk(expected);
   }
 
   @Test
   public void createThreeColTwoPk() {
-    verifyCreateThreeColTwoPk(
-        "CREATE TABLE \"myTable\" (" + System.lineSeparator() + "\"pk1\" int NOT NULL," +
-        System.lineSeparator() + "\"pk2\" int NOT NULL," + System.lineSeparator() +
-        "\"col1\" int NOT NULL," + System.lineSeparator() + "PRIMARY KEY(\"pk1\",\"pk2\"))");
+    final String expected = readQueryResourceForThisTest("create_table_three_cols_two_pks");
+    verifyCreateThreeColTwoPk(expected);
   }
 
   @Test
   public void alterAddOneCol() {
-    verifyAlterAddOneCol(
-        "ALTER TABLE \"myTable\" ADD" + System.lineSeparator() + "\"newcol1\" int NULL");
+    final String expected = readQueryResourceForThisTest("alter_add_one_col");
+    verifyAlterAddOneCol(expected);
   }
 
   @Test
   public void alterAddTwoCol() {
-    verifyAlterAddTwoCols(
-        "ALTER TABLE \"myTable\" ADD" + System.lineSeparator() + "\"newcol1\" int NULL," +
-        System.lineSeparator() + "\"newcol2\" int DEFAULT 42");
+    final String expected = readQueryResourceForThisTest("alter_add_two_cols");
+    verifyAlterAddTwoCols(expected);
   }
 
   @Test
   public void upsert1() {
-    TableId customer = tableId("Customer");
-    assertEquals(
-        "merge into \"Customer\" with (HOLDLOCK) AS target using (select ? AS \"id\", ? AS \"name\", ? " +
-        "AS \"salary\", ? AS \"address\") AS incoming on (target.\"id\"=incoming.\"id\") when matched then update set " +
-        "\"name\"=incoming.\"name\",\"salary\"=incoming.\"salary\",\"address\"=incoming" +
-        ".\"address\" when not matched then insert " +
-        "(\"name\", \"salary\", \"address\", \"id\") values (incoming.\"name\",incoming" +
-        ".\"salary\",incoming.\"address\",incoming.\"id\");",
-        dialect.buildUpsertQueryStatement(customer, columns(customer, "id"),
-                                          columns(customer, "name", "salary", "address")));
+    final String expected = readQueryResourceForThisTest("upsert1");
+    final TableId customer = tableId("Customer");
+    final String actual = dialect.buildUpsertQueryStatement(
+        customer,
+        columns(customer, "id"),
+        columns(customer, "name", "salary", "address")
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test
   public void upsert2() {
-    TableId book = new TableId(null, null, "Book");
-    assertEquals(
-        "merge into \"Book\" with (HOLDLOCK) AS target using (select ? AS \"author\", ? AS \"title\", ?" +
-        " AS \"ISBN\", ? AS \"year\", ? AS \"pages\")" +
-        " AS incoming on (target.\"author\"=incoming.\"author\" and target.\"title\"=incoming.\"title\")" +
-        " when matched then update set \"ISBN\"=incoming.\"ISBN\",\"year\"=incoming.\"year\"," +
-        "\"pages\"=incoming.\"pages\" when not " +
-        "matched then insert (\"ISBN\", \"year\", \"pages\", \"author\", \"title\") values (incoming" +
-        ".\"ISBN\",incoming.\"year\"," + "incoming.\"pages\",incoming.\"author\",incoming.\"title\");",
-        dialect.buildUpsertQueryStatement(book, columns(book, "author", "title"),
-                                          columns(book, "ISBN", "year", "pages")));
+    final String expected = readQueryResourceForThisTest("upsert2");
+    final TableId book = new TableId(null, null, "Book");
+    final String actual = dialect.buildUpsertQueryStatement(
+        book,
+        columns(book, "author", "title"),
+        columns(book, "ISBN", "year", "pages")
+    );
+    assertQueryEquals(expected, actual);
   }
 
   @Test

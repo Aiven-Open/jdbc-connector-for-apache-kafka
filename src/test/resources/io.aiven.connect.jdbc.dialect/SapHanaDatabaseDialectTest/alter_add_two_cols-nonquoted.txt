@@ -1,0 +1,3 @@
+ALTER TABLE myTable ADD(
+newcol1 INTEGER NULL,
+newcol2 INTEGER DEFAULT 42)

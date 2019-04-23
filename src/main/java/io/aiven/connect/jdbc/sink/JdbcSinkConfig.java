@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc.sink;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.aiven.connect.jdbc.util.DatabaseDialectRecommender;
 import io.aiven.connect.jdbc.util.StringUtils;
@@ -237,6 +238,17 @@ public class JdbcSinkConfig extends AbstractConfig {
             ConfigDef.Width.LONG,
             DIALECT_NAME_DISPLAY,
             DatabaseDialectRecommender.INSTANCE
+        )
+        .define(
+            JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG,
+            JdbcConfig.SQL_QUOTE_IDENTIFIERS_TYPE,
+            JdbcConfig.SQL_QUOTE_IDENTIFIERS_DEFAULT,
+            ConfigDef.Importance.MEDIUM,
+            JdbcConfig.SQL_QUOTE_IDENTIFIERS_DOC,
+            CONNECTION_GROUP,
+            5,
+            ConfigDef.Width.SHORT,
+            JdbcConfig.SQL_QUOTE_IDENTIFIERS_DISPLAY
         )
         // Writes
         .define(

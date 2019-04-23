@@ -1,0 +1,10 @@
+CREATE TABLE "myTable" (
+"c1" int NOT NULL,
+"c2" bigint NOT NULL,
+"c3" text NOT NULL,
+"c4" text NULL,
+"c5" date DEFAULT '2001-03-15',
+"c6" time DEFAULT '00:00:00.000',
+"c7" datetime DEFAULT '2001-03-15 00:00:00.000',
+"c8" decimal(38,4) NULL,
+PRIMARY KEY("c1"))
