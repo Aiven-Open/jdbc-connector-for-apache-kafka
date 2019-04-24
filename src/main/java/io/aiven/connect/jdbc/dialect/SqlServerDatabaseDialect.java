@@ -17,242 +17,247 @@
 
 package io.aiven.connect.jdbc.dialect;
 
-import io.aiven.connect.jdbc.config.JdbcConfig;
-import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
-import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
-import io.aiven.connect.jdbc.util.*;
-import org.apache.kafka.connect.data.Date;
-import org.apache.kafka.connect.data.Decimal;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
+
+import io.aiven.connect.jdbc.config.JdbcConfig;
+import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
+import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
+import io.aiven.connect.jdbc.util.ColumnDefinition;
+import io.aiven.connect.jdbc.util.ColumnId;
+import io.aiven.connect.jdbc.util.ExpressionBuilder;
+import io.aiven.connect.jdbc.util.IdentifierRules;
+import io.aiven.connect.jdbc.util.TableId;
+
 /**
  * A {@link DatabaseDialect} for SQL Server.
  */
 public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
-  /**
-   * The provider for {@link SqlServerDatabaseDialect}.
-   */
-  public static class Provider extends SubprotocolBasedProvider {
-    public Provider() {
-      super(SqlServerDatabaseDialect.class.getSimpleName(), "microsoft:sqlserver", "sqlserver",
-            "jtds:sqlserver");
+    /**
+     * The provider for {@link SqlServerDatabaseDialect}.
+     */
+    public static class Provider extends SubprotocolBasedProvider {
+        public Provider() {
+            super(SqlServerDatabaseDialect.class.getSimpleName(), "microsoft:sqlserver", "sqlserver",
+                "jtds:sqlserver");
+        }
+
+        @Override
+        public DatabaseDialect create(final JdbcConfig config) {
+            return new SqlServerDatabaseDialect(config);
+        }
+    }
+
+    /**
+     * Create a new dialect instance with the given connector configuration.
+     *
+     * @param config the connector configuration; may not be null
+     */
+    public SqlServerDatabaseDialect(final JdbcConfig config) {
+        super(config, new IdentifierRules(".", "[", "]"));
     }
 
     @Override
-    public DatabaseDialect create(JdbcConfig config) {
-      return new SqlServerDatabaseDialect(config);
-    }
-  }
-
-  /**
-   * Create a new dialect instance with the given connector configuration.
-   *
-   * @param config the connector configuration; may not be null
-   */
-  public SqlServerDatabaseDialect(JdbcConfig config) {
-    super(config, new IdentifierRules(".", "[", "]"));
-  }
-
-  @Override
-  protected boolean useCatalog() {
-    // SQL Server uses JDBC's catalog to represent the database,
-    // and JDBC's schema to represent the owner (e.g., "dbo")
-    return true;
-  }
-
-  @Override
-  protected String getSqlType(SinkRecordField field) {
-    if (field.schemaName() != null) {
-      switch (field.schemaName()) {
-        case Decimal.LOGICAL_NAME:
-          return "decimal(38," + field.schemaParameters().get(Decimal.SCALE_FIELD) + ")";
-        case Date.LOGICAL_NAME:
-          return "date";
-        case Time.LOGICAL_NAME:
-          return "time";
-        case Timestamp.LOGICAL_NAME:
-          return "datetime2";
-        default:
-          // pass through to normal types
-      }
-    }
-    switch (field.schemaType()) {
-      case INT8:
-        return "tinyint";
-      case INT16:
-        return "smallint";
-      case INT32:
-        return "int";
-      case INT64:
-        return "bigint";
-      case FLOAT32:
-        return "real";
-      case FLOAT64:
-        return "float";
-      case BOOLEAN:
-        return "bit";
-      case STRING:
-        return "varchar(max)";
-      case BYTES:
-        return "varbinary(max)";
-      default:
-        return super.getSqlType(field);
-    }
-  }
-
-  @Override
-  public String buildDropTableStatement(
-      TableId table,
-      DropOptions options
-  ) {
-    ExpressionBuilder builder = expressionBuilder();
-
-    if (options.ifExists()) {
-      builder.append("IF OBJECT_ID('");
-      builder.append(table);
-      builder.append(", 'U') IS NOT NULL");
-    }
-    // SQL Server 2016 supports IF EXISTS
-    builder.append("DROP TABLE ");
-    builder.append(table);
-    if (options.cascade()) {
-      builder.append(" CASCADE");
-    }
-    return builder.toString();
-  }
-
-  @Override
-  public List<String> buildAlterTable(
-      TableId table,
-      Collection<SinkRecordField> fields
-  ) {
-    ExpressionBuilder builder = expressionBuilder();
-    builder.append("ALTER TABLE ");
-    builder.append(table);
-    builder.append(" ADD");
-    writeColumnsSpec(builder, fields);
-    return Collections.singletonList(builder.toString());
-  }
-
-  @Override
-  public String buildUpsertQueryStatement(
-      TableId table,
-      Collection<ColumnId> keyColumns,
-      Collection<ColumnId> nonKeyColumns
-  ) {
-    ExpressionBuilder builder = expressionBuilder();
-    builder.append("merge into ");
-    builder.append(table);
-    builder.append(" with (HOLDLOCK) AS target using (select ");
-    builder.appendList()
-           .delimitedBy(", ")
-           .transformedBy(ExpressionBuilder.columnNamesWithPrefix("? AS "))
-           .of(keyColumns, nonKeyColumns);
-    builder.append(") AS incoming on (");
-    builder.appendList()
-           .delimitedBy(" and ")
-           .transformedBy(this::transformAs)
-           .of(keyColumns);
-    builder.append(")");
-    if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
-      builder.append(" when matched then update set ");
-      builder.appendList()
-             .delimitedBy(",")
-             .transformedBy(this::transformUpdate)
-             .of(nonKeyColumns);
-    }
-    builder.append(" when not matched then insert (");
-    builder.appendList()
-           .delimitedBy(", ")
-           .transformedBy(ExpressionBuilder.columnNames())
-           .of(nonKeyColumns, keyColumns);
-    builder.append(") values (");
-    builder.appendList()
-           .delimitedBy(",")
-           .transformedBy(ExpressionBuilder.columnNamesWithPrefix("incoming."))
-           .of(nonKeyColumns, keyColumns);
-    builder.append(");");
-    return builder.toString();
-  }
-
-  @Override
-  protected ColumnDefinition columnDefinition(
-      ResultSet resultSet,
-      ColumnId id,
-      int jdbcType,
-      String typeName,
-      String classNameForType,
-      ColumnDefinition.Nullability nullability,
-      ColumnDefinition.Mutability mutability,
-      int precision,
-      int scale,
-      Boolean signedNumbers,
-      Integer displaySize,
-      Boolean autoIncremented,
-      Boolean caseSensitive,
-      Boolean searchable,
-      Boolean currency,
-      Boolean isPrimaryKey
-  ) {
-    try {
-      String isAutoIncremented = resultSet.getString(22);
-
-      if ("yes".equalsIgnoreCase(isAutoIncremented)) {
-        autoIncremented = Boolean.TRUE;
-      } else if ("no".equalsIgnoreCase(isAutoIncremented)) {
-        autoIncremented = Boolean.FALSE;
-      }
-    } catch (SQLException e) {
-      log.warn("Unable to get auto incrementing column information", e);
+    protected boolean useCatalog() {
+        // SQL Server uses JDBC's catalog to represent the database,
+        // and JDBC's schema to represent the owner (e.g., "dbo")
+        return true;
     }
 
-    return super.columnDefinition(
-      resultSet,
-      id,
-      jdbcType,
-      typeName,
-      classNameForType,
-      nullability,
-      mutability,
-      precision,
-      scale,
-      signedNumbers,
-      displaySize,
-      autoIncremented,
-      caseSensitive,
-      searchable,
-      currency,
-      isPrimaryKey
-    );
-  }
+    @Override
+    protected String getSqlType(final SinkRecordField field) {
+        if (field.schemaName() != null) {
+            switch (field.schemaName()) {
+                case Decimal.LOGICAL_NAME:
+                    return "decimal(38," + field.schemaParameters().get(Decimal.SCALE_FIELD) + ")";
+                case Date.LOGICAL_NAME:
+                    return "date";
+                case Time.LOGICAL_NAME:
+                    return "time";
+                case Timestamp.LOGICAL_NAME:
+                    return "datetime2";
+                default:
+                    // pass through to normal types
+            }
+        }
+        switch (field.schemaType()) {
+            case INT8:
+                return "tinyint";
+            case INT16:
+                return "smallint";
+            case INT32:
+                return "int";
+            case INT64:
+                return "bigint";
+            case FLOAT32:
+                return "real";
+            case FLOAT64:
+                return "float";
+            case BOOLEAN:
+                return "bit";
+            case STRING:
+                return "varchar(max)";
+            case BYTES:
+                return "varbinary(max)";
+            default:
+                return super.getSqlType(field);
+        }
+    }
 
-  private void transformAs(ExpressionBuilder builder, ColumnId col) {
-    builder.append("target.")
-           .appendIdentifier(col.name())
-           .append("=incoming.")
-           .appendIdentifier(col.name());
-  }
+    @Override
+    public String buildDropTableStatement(
+        final TableId table,
+        final DropOptions options
+    ) {
+        final ExpressionBuilder builder = expressionBuilder();
 
-  private void transformUpdate(ExpressionBuilder builder, ColumnId col) {
-    builder.appendIdentifier(col.name())
-           .append("=incoming.")
-           .appendIdentifier(col.name());
-  }
+        if (options.ifExists()) {
+            builder.append("IF OBJECT_ID('");
+            builder.append(table);
+            builder.append(", 'U') IS NOT NULL");
+        }
+        // SQL Server 2016 supports IF EXISTS
+        builder.append("DROP TABLE ");
+        builder.append(table);
+        if (options.cascade()) {
+            builder.append(" CASCADE");
+        }
+        return builder.toString();
+    }
 
-  @Override
-  protected String sanitizedUrl(String url) {
-    // SQL Server has semicolon delimited property name-value pairs, and several properties
-    // that contain secrets
-    return super.sanitizedUrl(url)
-                .replaceAll("(?i)(;password=)[^;]*", "$1****")
-                .replaceAll("(?i)(;keyStoreSecret=)[^;]*", "$1****")
-                .replaceAll("(?i)(;gsscredential=)[^;]*", "$1****");
-  }
+    @Override
+    public List<String> buildAlterTable(
+        final TableId table,
+        final Collection<SinkRecordField> fields
+    ) {
+        final ExpressionBuilder builder = expressionBuilder();
+        builder.append("ALTER TABLE ");
+        builder.append(table);
+        builder.append(" ADD");
+        writeColumnsSpec(builder, fields);
+        return Collections.singletonList(builder.toString());
+    }
+
+    @Override
+    public String buildUpsertQueryStatement(
+        final TableId table,
+        final Collection<ColumnId> keyColumns,
+        final Collection<ColumnId> nonKeyColumns
+    ) {
+        final ExpressionBuilder builder = expressionBuilder();
+        builder.append("merge into ");
+        builder.append(table);
+        builder.append(" with (HOLDLOCK) AS target using (select ");
+        builder.appendList()
+            .delimitedBy(", ")
+            .transformedBy(ExpressionBuilder.columnNamesWithPrefix("? AS "))
+            .of(keyColumns, nonKeyColumns);
+        builder.append(") AS incoming on (");
+        builder.appendList()
+            .delimitedBy(" and ")
+            .transformedBy(this::transformAs)
+            .of(keyColumns);
+        builder.append(")");
+        if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
+            builder.append(" when matched then update set ");
+            builder.appendList()
+                .delimitedBy(",")
+                .transformedBy(this::transformUpdate)
+                .of(nonKeyColumns);
+        }
+        builder.append(" when not matched then insert (");
+        builder.appendList()
+            .delimitedBy(", ")
+            .transformedBy(ExpressionBuilder.columnNames())
+            .of(nonKeyColumns, keyColumns);
+        builder.append(") values (");
+        builder.appendList()
+            .delimitedBy(",")
+            .transformedBy(ExpressionBuilder.columnNamesWithPrefix("incoming."))
+            .of(nonKeyColumns, keyColumns);
+        builder.append(");");
+        return builder.toString();
+    }
+
+    @Override
+    protected ColumnDefinition columnDefinition(
+        final ResultSet resultSet,
+        final ColumnId id,
+        final int jdbcType,
+        final String typeName,
+        final String classNameForType,
+        final ColumnDefinition.Nullability nullability,
+        final ColumnDefinition.Mutability mutability,
+        final int precision,
+        final int scale,
+        final Boolean signedNumbers,
+        final Integer displaySize,
+        Boolean autoIncremented,
+        final Boolean caseSensitive,
+        final Boolean searchable,
+        final Boolean currency,
+        final Boolean isPrimaryKey
+    ) {
+        try {
+            final String isAutoIncremented = resultSet.getString(22);
+
+            if ("yes".equalsIgnoreCase(isAutoIncremented)) {
+                autoIncremented = Boolean.TRUE;
+            } else if ("no".equalsIgnoreCase(isAutoIncremented)) {
+                autoIncremented = Boolean.FALSE;
+            }
+        } catch (final SQLException e) {
+            log.warn("Unable to get auto incrementing column information", e);
+        }
+
+        return super.columnDefinition(
+            resultSet,
+            id,
+            jdbcType,
+            typeName,
+            classNameForType,
+            nullability,
+            mutability,
+            precision,
+            scale,
+            signedNumbers,
+            displaySize,
+            autoIncremented,
+            caseSensitive,
+            searchable,
+            currency,
+            isPrimaryKey
+        );
+    }
+
+    private void transformAs(final ExpressionBuilder builder, final ColumnId col) {
+        builder.append("target.")
+            .appendIdentifier(col.name())
+            .append("=incoming.")
+            .appendIdentifier(col.name());
+    }
+
+    private void transformUpdate(final ExpressionBuilder builder, final ColumnId col) {
+        builder.appendIdentifier(col.name())
+            .append("=incoming.")
+            .appendIdentifier(col.name());
+    }
+
+    @Override
+    protected String sanitizedUrl(final String url) {
+        // SQL Server has semicolon delimited property name-value pairs, and several properties
+        // that contain secrets
+        return super.sanitizedUrl(url)
+            .replaceAll("(?i)(;password=)[^;]*", "$1****")
+            .replaceAll("(?i)(;keyStoreSecret=)[^;]*", "$1****")
+            .replaceAll("(?i)(;gsscredential=)[^;]*", "$1****");
+    }
 }

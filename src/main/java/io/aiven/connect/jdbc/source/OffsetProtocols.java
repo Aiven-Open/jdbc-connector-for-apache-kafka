@@ -17,45 +17,47 @@
 
 package io.aiven.connect.jdbc.source;
 
-import io.aiven.connect.jdbc.util.ExpressionBuilder;
-import io.aiven.connect.jdbc.util.TableId;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import io.aiven.connect.jdbc.util.ExpressionBuilder;
+import io.aiven.connect.jdbc.util.TableId;
 
 /**
  * Provides helper methods to get partition map for different protocol versions.
  */
 public class OffsetProtocols {
 
-  /**
-   * Provides the partition map for V1 protocol. The table name included is fully qualified
-   * and there is also an explicit protocol key.
-   * @param tableId the tableId that requires partition keys
-   * @return the partition map for V1 protocol
-   */
-  public static Map<String, String> sourcePartitionForProtocolV1(TableId tableId) {
-    String fqn = ExpressionBuilder.create().append(tableId, false).toString();
-    Map<String, String> partitionForV1 = new HashMap<>();
-    partitionForV1.put(JdbcSourceConnectorConstants.TABLE_NAME_KEY, fqn);
-    partitionForV1.put(
-        JdbcSourceConnectorConstants.OFFSET_PROTOCOL_VERSION_KEY,
-        JdbcSourceConnectorConstants.PROTOCOL_VERSION_ONE
-    );
-    return partitionForV1;
-  }
+    /**
+     * Provides the partition map for V1 protocol. The table name included is fully qualified
+     * and there is also an explicit protocol key.
+     *
+     * @param tableId the tableId that requires partition keys
+     * @return the partition map for V1 protocol
+     */
+    public static Map<String, String> sourcePartitionForProtocolV1(final TableId tableId) {
+        final String fqn = ExpressionBuilder.create().append(tableId, false).toString();
+        final Map<String, String> partitionForV1 = new HashMap<>();
+        partitionForV1.put(JdbcSourceConnectorConstants.TABLE_NAME_KEY, fqn);
+        partitionForV1.put(
+            JdbcSourceConnectorConstants.OFFSET_PROTOCOL_VERSION_KEY,
+            JdbcSourceConnectorConstants.PROTOCOL_VERSION_ONE
+        );
+        return partitionForV1;
+    }
 
-  /**
-   * Provides the partition map for V0 protocol. The table name included is unqualified
-   * and there is no explicit protocol key.
-   * @param tableId the tableId that requires partition keys
-   * @return the partition map for V0 protocol
-   */
-  public static Map<String, String> sourcePartitionForProtocolV0(TableId tableId) {
-    return Collections.singletonMap(
-        JdbcSourceConnectorConstants.TABLE_NAME_KEY,
-        tableId.tableName()
-    );
-  }
+    /**
+     * Provides the partition map for V0 protocol. The table name included is unqualified
+     * and there is no explicit protocol key.
+     *
+     * @param tableId the tableId that requires partition keys
+     * @return the partition map for V0 protocol
+     */
+    public static Map<String, String> sourcePartitionForProtocolV0(final TableId tableId) {
+        return Collections.singletonMap(
+            JdbcSourceConnectorConstants.TABLE_NAME_KEY,
+            tableId.tableName()
+        );
+    }
 }

@@ -17,78 +17,80 @@
 
 package io.aiven.connect.jdbc.sink;
 
-import io.aiven.connect.jdbc.dialect.DatabaseDialect;
-import io.aiven.connect.jdbc.util.CachedConnectionProvider;
-import io.aiven.connect.jdbc.util.TableId;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.sink.SinkRecord;
+
+import io.aiven.connect.jdbc.dialect.DatabaseDialect;
+import io.aiven.connect.jdbc.util.CachedConnectionProvider;
+import io.aiven.connect.jdbc.util.TableId;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JdbcDbWriter {
-  private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
+    private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
-  private final JdbcSinkConfig config;
-  private final DatabaseDialect dbDialect;
-  private final DbStructure dbStructure;
-  final CachedConnectionProvider cachedConnectionProvider;
+    private final JdbcSinkConfig config;
+    private final DatabaseDialect dbDialect;
+    private final DbStructure dbStructure;
+    final CachedConnectionProvider cachedConnectionProvider;
 
-  JdbcDbWriter(final JdbcSinkConfig config, DatabaseDialect dbDialect, DbStructure dbStructure) {
-    this.config = config;
-    this.dbDialect = dbDialect;
-    this.dbStructure = dbStructure;
+    JdbcDbWriter(final JdbcSinkConfig config, final DatabaseDialect dbDialect, final DbStructure dbStructure) {
+        this.config = config;
+        this.dbDialect = dbDialect;
+        this.dbStructure = dbStructure;
 
-    this.cachedConnectionProvider = new CachedConnectionProvider(this.dbDialect) {
-      @Override
-      protected void onConnect(Connection connection) throws SQLException {
-        log.info("JdbcDbWriter Connected");
-        connection.setAutoCommit(false);
-      }
-    };
-  }
-
-  void write(final Collection<SinkRecord> records) throws SQLException {
-    final Connection connection = cachedConnectionProvider.getConnection();
-
-    final Map<TableId, BufferedRecords> bufferByTable = new HashMap<>();
-    for (SinkRecord record : records) {
-      final TableId tableId = destinationTable(record.topic());
-      BufferedRecords buffer = bufferByTable.get(tableId);
-      if (buffer == null) {
-        buffer = new BufferedRecords(config, tableId, dbDialect, dbStructure, connection);
-        bufferByTable.put(tableId, buffer);
-      }
-      buffer.add(record);
+        this.cachedConnectionProvider = new CachedConnectionProvider(this.dbDialect) {
+            @Override
+            protected void onConnect(final Connection connection) throws SQLException {
+                log.info("JdbcDbWriter Connected");
+                connection.setAutoCommit(false);
+            }
+        };
     }
-    for (Map.Entry<TableId, BufferedRecords> entry : bufferByTable.entrySet()) {
-      TableId tableId = entry.getKey();
-      BufferedRecords buffer = entry.getValue();
-      log.debug("Flushing records in JDBC Writer for table ID: {}", tableId);
-      buffer.flush();
-      buffer.close();
-    }
-    connection.commit();
-  }
 
-  void closeQuietly() {
-    cachedConnectionProvider.close();
-  }
+    void write(final Collection<SinkRecord> records) throws SQLException {
+        final Connection connection = cachedConnectionProvider.getConnection();
 
-  TableId destinationTable(String topic) {
-    final String tableName = config.tableNameFormat.replace("${topic}", topic);
-    if (tableName.isEmpty()) {
-      throw new ConnectException(String.format(
-          "Destination table name for topic '%s' is empty using the format string '%s'",
-          topic,
-          config.tableNameFormat
-      ));
+        final Map<TableId, BufferedRecords> bufferByTable = new HashMap<>();
+        for (final SinkRecord record : records) {
+            final TableId tableId = destinationTable(record.topic());
+            BufferedRecords buffer = bufferByTable.get(tableId);
+            if (buffer == null) {
+                buffer = new BufferedRecords(config, tableId, dbDialect, dbStructure, connection);
+                bufferByTable.put(tableId, buffer);
+            }
+            buffer.add(record);
+        }
+        for (final Map.Entry<TableId, BufferedRecords> entry : bufferByTable.entrySet()) {
+            final TableId tableId = entry.getKey();
+            final BufferedRecords buffer = entry.getValue();
+            log.debug("Flushing records in JDBC Writer for table ID: {}", tableId);
+            buffer.flush();
+            buffer.close();
+        }
+        connection.commit();
     }
-    return dbDialect.parseTableIdentifier(tableName);
-  }
+
+    void closeQuietly() {
+        cachedConnectionProvider.close();
+    }
+
+    TableId destinationTable(final String topic) {
+        final String tableName = config.tableNameFormat.replace("${topic}", topic);
+        if (tableName.isEmpty()) {
+            throw new ConnectException(String.format(
+                "Destination table name for topic '%s' is empty using the format string '%s'",
+                topic,
+                config.tableNameFormat
+            ));
+        }
+        return dbDialect.parseTableIdentifier(tableName);
+    }
 }

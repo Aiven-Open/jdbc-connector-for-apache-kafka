@@ -17,10 +17,14 @@
 
 package io.aiven.connect.jdbc.dialect;
 
-import io.aiven.connect.jdbc.config.JdbcConfig;
-
 import java.sql.Connection;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+
+import io.aiven.connect.jdbc.config.JdbcConfig;
 
 /**
  * An abstract provider of {@link DatabaseDialect} instances, and used to {@link
@@ -44,162 +48,162 @@ import java.util.*;
  */
 public abstract class DatabaseDialectProvider {
 
-  /**
-   * Information about a JDBC URL.
-   *
-   * <p>The format of a JDBC URL is defined by the JDBC 4.2 specification as:
-   * <pre>
-   * jdbc:&lt;subprotocol>:&lt;subname>
-   * </pre>
-   *
-   * <p>where {@code subprotocol} defines the kind of database connectivity mechanism that may be
-   * supported by one or more drivers. The contents and syntax of the {@code subname} will depend on
-   * the subprotocol.
-   */
-  public interface JdbcUrlInfo {
-
     /**
-     * Get the subprotocol in the JDBC URL.
+     * Information about a JDBC URL.
      *
-     * @return the subprotocol
-     */
-    String subprotocol();
-
-    /**
-     * Get the subname in the JDBC URL, which is everything after the ':' character following the
-     * subprotocol.
+     * <p>The format of a JDBC URL is defined by the JDBC 4.2 specification as:
+     * <pre>
+     * jdbc:&lt;subprotocol>:&lt;subname>
+     * </pre>
      *
-     * @return the subname
+     * <p>where {@code subprotocol} defines the kind of database connectivity mechanism that may be
+     * supported by one or more drivers. The contents and syntax of the {@code subname} will depend on
+     * the subprotocol.
      */
-    String subname();
+    public interface JdbcUrlInfo {
 
-    /**
-     * Get the full JDBC URL.
-     *
-     * @return the URL.
-     */
-    String url();
-  }
+        /**
+         * Get the subprotocol in the JDBC URL.
+         *
+         * @return the subprotocol
+         */
+        String subprotocol();
 
-  private final String name;
+        /**
+         * Get the subname in the JDBC URL, which is everything after the ':' character following the
+         * subprotocol.
+         *
+         * @return the subname
+         */
+        String subname();
 
-  protected DatabaseDialectProvider(String name) {
-    assert name != null;
-    this.name = name;
-  }
-
-  /**
-   * The score that can be returned if the dialect does not match the connection.
-   */
-  public static final int NO_MATCH_SCORE = 0;
-
-  /**
-   * The "average" score that should be returned by the {@link #score(JdbcUrlInfo)} method to signal
-   * that the DatabaseDialect instance can be used with a connection.
-   */
-  public static final int AVERAGE_MATCHING_SCORE = 10;
-
-  /**
-   * The score for a dialect that is an excellent match.
-   */
-  public static final int EXCELLENT_MATCHING_SCORE = 100;
-
-  /**
-   * Return the score describing how well this {@link DatabaseDialect} instance works with the given
-   * JDBC URL and {@link Connection}. The DatabaseDialect that scores the highest for a given
-   * connection will be used.
-   *
-   * @param jdbcInfo the information about the JDBC connection URL; may not be null
-   * @return the score; may be {@link #NO_MATCH_SCORE} if the dialect does not
-   *     apply, or greater than or equal to {@link #NO_MATCH_SCORE} if the DatabaseDialect
-   *     can be used with this connection.
-   */
-  public abstract int score(JdbcUrlInfo jdbcInfo);
-
-  /**
-   * Create a dialect instance.
-   *
-   * @param config the connector configuration
-   * @return the dialect instance; never null
-   */
-  public abstract DatabaseDialect create(JdbcConfig config);
-
-  /**
-   * Return the name of the dialect.
-   *
-   * @return the name of the dialect; may not be null
-   */
-  public String dialectName() {
-    return name;
-  }
-
-  @Override
-  public String toString() {
-    return dialectName();
-  }
-
-  /**
-   * An abstract base class for a provider that will return a
-   * {@link DatabaseDialectProvider#EXCELLENT_MATCHING_SCORE}
-   * if any of the supplied JDBC subprotocols match the subprotocol from the JDBC connection URL, or
-   * {@link DatabaseDialectProvider#NO_MATCH_SCORE} otherwise.
-   */
-  public abstract static class SubprotocolBasedProvider extends DatabaseDialectProvider {
-    private final Set<String> subprotocols;
-
-    protected SubprotocolBasedProvider(
-        String name,
-        final String... subprotocols
-    ) {
-      this(name, Arrays.asList(subprotocols));
+        /**
+         * Get the full JDBC URL.
+         *
+         * @return the URL.
+         */
+        String url();
     }
 
-    protected SubprotocolBasedProvider(
-        String name,
-        final Collection<String> subprotocols
-    ) {
-      super(name);
-      this.subprotocols = new HashSet<>(subprotocols);
+    private final String name;
+
+    protected DatabaseDialectProvider(final String name) {
+        assert name != null;
+        this.name = name;
+    }
+
+    /**
+     * The score that can be returned if the dialect does not match the connection.
+     */
+    public static final int NO_MATCH_SCORE = 0;
+
+    /**
+     * The "average" score that should be returned by the {@link #score(JdbcUrlInfo)} method to signal
+     * that the DatabaseDialect instance can be used with a connection.
+     */
+    public static final int AVERAGE_MATCHING_SCORE = 10;
+
+    /**
+     * The score for a dialect that is an excellent match.
+     */
+    public static final int EXCELLENT_MATCHING_SCORE = 100;
+
+    /**
+     * Return the score describing how well this {@link DatabaseDialect} instance works with the given
+     * JDBC URL and {@link Connection}. The DatabaseDialect that scores the highest for a given
+     * connection will be used.
+     *
+     * @param jdbcInfo the information about the JDBC connection URL; may not be null
+     * @return the score; may be {@link #NO_MATCH_SCORE} if the dialect does not
+     *     apply, or greater than or equal to {@link #NO_MATCH_SCORE} if the DatabaseDialect
+     *     can be used with this connection.
+     */
+    public abstract int score(JdbcUrlInfo jdbcInfo);
+
+    /**
+     * Create a dialect instance.
+     *
+     * @param config the connector configuration
+     * @return the dialect instance; never null
+     */
+    public abstract DatabaseDialect create(JdbcConfig config);
+
+    /**
+     * Return the name of the dialect.
+     *
+     * @return the name of the dialect; may not be null
+     */
+    public String dialectName() {
+        return name;
     }
 
     @Override
-    public int score(JdbcUrlInfo urlInfo) {
-      if (urlInfo != null) {
-        for (String subprotocol : subprotocols) {
-          if (subprotocol.equalsIgnoreCase(urlInfo.subprotocol())) {
-            return EXCELLENT_MATCHING_SCORE;
-          }
+    public String toString() {
+        return dialectName();
+    }
+
+    /**
+     * An abstract base class for a provider that will return a
+     * {@link DatabaseDialectProvider#EXCELLENT_MATCHING_SCORE}
+     * if any of the supplied JDBC subprotocols match the subprotocol from the JDBC connection URL, or
+     * {@link DatabaseDialectProvider#NO_MATCH_SCORE} otherwise.
+     */
+    public abstract static class SubprotocolBasedProvider extends DatabaseDialectProvider {
+        private final Set<String> subprotocols;
+
+        protected SubprotocolBasedProvider(
+            final String name,
+            final String... subprotocols
+        ) {
+            this(name, Arrays.asList(subprotocols));
         }
-        // If still no match, see if the URL's subprotocol and subname start with the specified ...
-        String combined = urlInfo.subprotocol() + ":" + urlInfo.subname();
-        combined = combined.toLowerCase(Locale.getDefault());
-        for (String subprotocol : subprotocols) {
-          if (combined.startsWith(subprotocol.toLowerCase(Locale.getDefault()))) {
-            return EXCELLENT_MATCHING_SCORE;
-          }
+
+        protected SubprotocolBasedProvider(
+            final String name,
+            final Collection<String> subprotocols
+        ) {
+            super(name);
+            this.subprotocols = new HashSet<>(subprotocols);
         }
-      }
-      return NO_MATCH_SCORE;
-    }
-  }
 
-  /**
-   * An abstract base class for a provider that will return a fixed score.
-   */
-  public abstract static class FixedScoreProvider extends DatabaseDialectProvider {
-    private final int score;
-
-    protected FixedScoreProvider(
-        String name,
-        int score
-    ) {
-      super(name);
-      this.score = score;
+        @Override
+        public int score(final JdbcUrlInfo urlInfo) {
+            if (urlInfo != null) {
+                for (final String subprotocol : subprotocols) {
+                    if (subprotocol.equalsIgnoreCase(urlInfo.subprotocol())) {
+                        return EXCELLENT_MATCHING_SCORE;
+                    }
+                }
+                // If still no match, see if the URL's subprotocol and subname start with the specified ...
+                String combined = urlInfo.subprotocol() + ":" + urlInfo.subname();
+                combined = combined.toLowerCase(Locale.getDefault());
+                for (final String subprotocol : subprotocols) {
+                    if (combined.startsWith(subprotocol.toLowerCase(Locale.getDefault()))) {
+                        return EXCELLENT_MATCHING_SCORE;
+                    }
+                }
+            }
+            return NO_MATCH_SCORE;
+        }
     }
 
-    @Override
-    public int score(JdbcUrlInfo jdbcInfo) {
-      return score;
+    /**
+     * An abstract base class for a provider that will return a fixed score.
+     */
+    public abstract static class FixedScoreProvider extends DatabaseDialectProvider {
+        private final int score;
+
+        protected FixedScoreProvider(
+            final String name,
+            final int score
+        ) {
+            super(name);
+            this.score = score;
+        }
+
+        @Override
+        public int score(final JdbcUrlInfo jdbcInfo) {
+            return score;
+        }
     }
-  }
 }

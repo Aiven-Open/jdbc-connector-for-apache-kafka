@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2019 Aiven Oy
  * Copyright 2015 Confluent Inc.
  *
@@ -13,14 +13,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- **/
+ */
 
 package io.aiven.connect.jdbc.source;
 
 public class JdbcSourceConnectorConstants {
-  public static final String TABLE_NAME_KEY = "table";
-  public static final String QUERY_NAME_KEY = "query";
-  public static final String QUERY_NAME_VALUE = "query";
-  public static final String OFFSET_PROTOCOL_VERSION_KEY = "protocol";
-  public static final String PROTOCOL_VERSION_ONE = "1";
+    public static final String TABLE_NAME_KEY = "table";
+    public static final String QUERY_NAME_KEY = "query";
+    public static final String QUERY_NAME_VALUE = "query";
+    public static final String OFFSET_PROTOCOL_VERSION_KEY = "protocol";
+    public static final String PROTOCOL_VERSION_ONE = "1";
 }
