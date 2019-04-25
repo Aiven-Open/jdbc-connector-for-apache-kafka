@@ -1,0 +1,127 @@
+/*
+ * Copyright 2019 Aiven Oy
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    // https://docs.gradle.org/current/userguide/java_library_plugin.html
+    id "java-library"
+
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    id "checkstyle"
+
+    // https://docs.gradle.org/current/userguide/jacoco_plugin.html
+    id "jacoco"
+
+    // https://docs.gradle.org/current/userguide/distribution_plugin.html
+    id "distribution"
+
+    // https://docs.gradle.org/current/userguide/publishing_maven.html
+    id "maven-publish"
+}
+
+repositories {
+    jcenter()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+checkstyle {
+    toolVersion "8.19"
+    configDir rootProject.file("checkstyle/")
+    println configFile
+}
+
+jacoco {
+    toolVersion = "0.8.3"
+}
+
+distributions {
+    main {
+        contents {
+            from jar
+            from configurations.runtimeClasspath
+
+            into("/") {
+                from projectDir
+                include "version.txt", "README*", "LICENSE*", "NOTICE*", "licenses/"
+                include "config/"
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            // Defaults, for clarity
+            groupId = getGroup()
+            artifactId = getName()
+            version = getVersion()
+
+            pom {
+                name = "Aiven Kafka Connect JDBC connector"
+                description = "A Kafka Connect JDBC connector for copying data between databases and Kafka."
+                url = "https://aiven.io"
+                organization {
+                    name = "Aiven Oy"
+                    url = "https://aiven.io"
+                }
+                licenses {
+                    license {
+                        name = "Apache License 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.html"
+                        distribution = "repo"
+
+                    }
+                }
+                scm {
+                    connection = "scm:git:git://github.com/aiven/oss-kafka-connect-jdbc.git"
+                    developerConnection = "scm:git:git@github.com:aiven/oss-kafka-connect-jdbc.git"
+                    url = "https://github.com/aiven/oss-kafka-connect-jdbc"
+                    tag = "HEAD"
+                }
+            }
+        }
+    }
+}
+
+ext {
+    kafkaVersion = "2.2.0"
+    slf4jVersion = "1.7.25"
+}
+
+dependencies {
+    compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
+
+    runtimeOnly "org.xerial:sqlite-jdbc:3.25.2"
+    runtimeOnly "org.postgresql:postgresql:9.4-1206-jdbc41"
+    runtimeOnly "net.sourceforge.jtds:jtds:1.3.1"
+
+    implementation "com.google.guava:guava:27.1-jre"
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+
+    testImplementation "junit:junit:4.12"
+    testImplementation "org.easymock:easymock:4.0.1"
+    testImplementation "org.powermock:powermock-module-junit4:2.0.0"
+    testImplementation "org.powermock:powermock-api-easymock:2.0.0"
+    testImplementation "org.mockito:mockito-all:1.10.19"
+    testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
+    testImplementation "commons-io:commons-io:2.6"
+    testImplementation "org.apache.derby:derby:10.11.1.1"
+    testRuntime "org.slf4j:slf4j-log4j12:$slf4jVersion"
+}
