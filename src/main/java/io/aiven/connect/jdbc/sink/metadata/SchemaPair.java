@@ -17,38 +17,38 @@
 
 package io.aiven.connect.jdbc.sink.metadata;
 
-import org.apache.kafka.connect.data.Schema;
-
 import java.util.Objects;
 
+import org.apache.kafka.connect.data.Schema;
+
 public class SchemaPair {
-  public final Schema keySchema;
-  public final Schema valueSchema;
+    public final Schema keySchema;
+    public final Schema valueSchema;
 
-  public SchemaPair(Schema keySchema, Schema valueSchema) {
-    this.keySchema = keySchema;
-    this.valueSchema = valueSchema;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+    public SchemaPair(final Schema keySchema, final Schema valueSchema) {
+        this.keySchema = keySchema;
+        this.valueSchema = valueSchema;
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final SchemaPair that = (SchemaPair) o;
+        return Objects.equals(keySchema, that.keySchema)
+            && Objects.equals(valueSchema, that.valueSchema);
     }
-    SchemaPair that = (SchemaPair) o;
-    return Objects.equals(keySchema, that.keySchema)
-           && Objects.equals(valueSchema, that.valueSchema);
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(keySchema, valueSchema);
-  }
+    @Override
+    public int hashCode() {
+        return Objects.hash(keySchema, valueSchema);
+    }
 
-  public String toString() {
-    return String.format("<SchemaPair: %s, %s>", keySchema, valueSchema);
-  }
+    public String toString() {
+        return String.format("<SchemaPair: %s, %s>", keySchema, valueSchema);
+    }
 }

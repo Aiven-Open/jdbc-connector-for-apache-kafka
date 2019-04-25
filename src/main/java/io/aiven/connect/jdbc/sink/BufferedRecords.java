@@ -17,17 +17,6 @@
 
 package io.aiven.connect.jdbc.sink;
 
-import io.aiven.connect.jdbc.dialect.DatabaseDialect;
-import io.aiven.connect.jdbc.dialect.DatabaseDialect.StatementBinder;
-import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
-import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
-import io.aiven.connect.jdbc.util.ColumnId;
-import io.aiven.connect.jdbc.util.TableId;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -38,201 +27,214 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.sink.SinkRecord;
+
+import io.aiven.connect.jdbc.dialect.DatabaseDialect;
+import io.aiven.connect.jdbc.dialect.DatabaseDialect.StatementBinder;
+import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
+import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
+import io.aiven.connect.jdbc.util.ColumnId;
+import io.aiven.connect.jdbc.util.TableId;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BufferedRecords {
-  private static final Logger log = LoggerFactory.getLogger(BufferedRecords.class);
+    private static final Logger log = LoggerFactory.getLogger(BufferedRecords.class);
 
-  private final TableId tableId;
-  private final JdbcSinkConfig config;
-  private final DatabaseDialect dbDialect;
-  private final DbStructure dbStructure;
-  private final Connection connection;
+    private final TableId tableId;
+    private final JdbcSinkConfig config;
+    private final DatabaseDialect dbDialect;
+    private final DbStructure dbStructure;
+    private final Connection connection;
 
-  private List<SinkRecord> records = new ArrayList<>();
-  private SchemaPair currentSchemaPair;
-  private FieldsMetadata fieldsMetadata;
-  private PreparedStatement preparedStatement;
-  private StatementBinder preparedStatementBinder;
+    private List<SinkRecord> records = new ArrayList<>();
+    private SchemaPair currentSchemaPair;
+    private FieldsMetadata fieldsMetadata;
+    private PreparedStatement preparedStatement;
+    private StatementBinder preparedStatementBinder;
 
-  public BufferedRecords(
-      JdbcSinkConfig config,
-      TableId tableId,
-      DatabaseDialect dbDialect,
-      DbStructure dbStructure,
-      Connection connection
-  ) {
-    this.tableId = tableId;
-    this.config = config;
-    this.dbDialect = dbDialect;
-    this.dbStructure = dbStructure;
-    this.connection = connection;
-  }
-
-  public List<SinkRecord> add(SinkRecord record) throws SQLException {
-    final SchemaPair schemaPair = new SchemaPair(
-        record.keySchema(),
-        record.valueSchema()
-    );
-
-    if (currentSchemaPair == null) {
-      currentSchemaPair = schemaPair;
-      // re-initialize everything that depends on the record schema
-      fieldsMetadata = FieldsMetadata.extract(
-          tableId.tableName(),
-          config.pkMode,
-          config.pkFields,
-          config.fieldsWhitelist,
-          currentSchemaPair
-      );
-      dbStructure.createOrAmendIfNecessary(
-          config,
-          connection,
-          tableId,
-          fieldsMetadata
-      );
-
-      final String sql = getInsertSql();
-      log.debug(
-          "{} sql: {}",
-          config.insertMode,
-          sql
-      );
-      close();
-      preparedStatement = connection.prepareStatement(sql);
-      preparedStatementBinder = dbDialect.statementBinder(
-          preparedStatement,
-          config.pkMode,
-          schemaPair,
-          fieldsMetadata,
-          config.insertMode
-      );
+    public BufferedRecords(
+        final JdbcSinkConfig config,
+        final TableId tableId,
+        final DatabaseDialect dbDialect,
+        final DbStructure dbStructure,
+        final Connection connection
+    ) {
+        this.tableId = tableId;
+        this.config = config;
+        this.dbDialect = dbDialect;
+        this.dbStructure = dbStructure;
+        this.connection = connection;
     }
 
-    final List<SinkRecord> flushed;
-    if (currentSchemaPair.equals(schemaPair)) {
-      // Continue with current batch state
-      records.add(record);
-      if (records.size() >= config.batchSize) {
-        log.debug("Flushing buffered records after exceeding configured batch size {}.",
-            config.batchSize);
-        flushed = flush();
-      } else {
-        flushed = Collections.emptyList();
-      }
-    } else {
-      // Each batch needs to have the same SchemaPair, so get the buffered records out, reset
-      // state and re-attempt the add
-      log.debug("Flushing buffered records after due to unequal schema pairs: "
-          + "current schemas: {}, next schemas: {}", currentSchemaPair, schemaPair);
-      flushed = flush();
-      currentSchemaPair = null;
-      flushed.addAll(add(record));
-    }
-    return flushed;
-  }
-
-  public List<SinkRecord> flush() throws SQLException {
-    if (records.isEmpty()) {
-      log.debug("Records is empty");
-      return new ArrayList<>();
-    }
-    log.debug("Flushing {} buffered records", records.size());
-    for (SinkRecord record : records) {
-      preparedStatementBinder.bindRecord(record);
-    }
-    int totalUpdateCount = 0;
-    boolean successNoInfo = false;
-    for (int updateCount : preparedStatement.executeBatch()) {
-      if (updateCount == Statement.SUCCESS_NO_INFO) {
-        successNoInfo = true;
-        continue;
-      }
-      totalUpdateCount += updateCount;
-    }
-    if (totalUpdateCount != records.size() && !successNoInfo) {
-      switch (config.insertMode) {
-        case INSERT:
-          throw new ConnectException(String.format(
-              "Update count (%d) did not sum up to total number of records inserted (%d)",
-              totalUpdateCount,
-              records.size()
-          ));
-        case UPSERT:
-        case UPDATE:
-          log.debug(
-              "{} records:{} resulting in in totalUpdateCount:{}",
-              config.insertMode,
-              records.size(),
-              totalUpdateCount
-          );
-          break;
-        default:
-          throw new ConnectException("Unknown insert mode: " + config.insertMode);
-      }
-    }
-    if (successNoInfo) {
-      log.info(
-          "{} records:{} , but no count of the number of rows it affected is available",
-          config.insertMode,
-          records.size()
-      );
-    }
-
-    final List<SinkRecord> flushedRecords = records;
-    records = new ArrayList<>();
-    return flushedRecords;
-  }
-
-  public void close() throws SQLException {
-    log.info("Closing BufferedRecords with preparedStatement: {}", preparedStatement);
-    if (preparedStatement != null) {
-      preparedStatement.close();
-      preparedStatement = null;
-    }
-  }
-
-  private String getInsertSql() {
-    switch (config.insertMode) {
-      case INSERT:
-        return dbDialect.buildInsertStatement(
-            tableId,
-            asColumns(fieldsMetadata.keyFieldNames),
-            asColumns(fieldsMetadata.nonKeyFieldNames)
+    public List<SinkRecord> add(final SinkRecord record) throws SQLException {
+        final SchemaPair schemaPair = new SchemaPair(
+            record.keySchema(),
+            record.valueSchema()
         );
-      case UPSERT:
-        if (fieldsMetadata.keyFieldNames.isEmpty()) {
-          throw new ConnectException(String.format(
-              "Write to table '%s' in UPSERT mode requires key field names to be known, check the"
-              + " primary key configuration",
-              tableId
-          ));
-        }
-        try {
-          return dbDialect.buildUpsertQueryStatement(
-              tableId,
-              asColumns(fieldsMetadata.keyFieldNames),
-              asColumns(fieldsMetadata.nonKeyFieldNames)
-          );
-        } catch (UnsupportedOperationException e) {
-          throw new ConnectException(String.format(
-              "Write to table '%s' in UPSERT mode is not supported with the %s dialect.",
-              tableId,
-              dbDialect.name()
-          ));
-        }
-      case UPDATE:
-        return dbDialect.buildUpdateStatement(
-            tableId,
-            asColumns(fieldsMetadata.keyFieldNames),
-            asColumns(fieldsMetadata.nonKeyFieldNames)
-        );
-      default:
-        throw new ConnectException("Invalid insert mode");
-    }
-  }
 
-  private Collection<ColumnId> asColumns(Collection<String> names) {
-    return names.stream()
-                .map(name -> new ColumnId(tableId, name))
-                .collect(Collectors.toList());
-  }
+        if (currentSchemaPair == null) {
+            currentSchemaPair = schemaPair;
+            // re-initialize everything that depends on the record schema
+            fieldsMetadata = FieldsMetadata.extract(
+                tableId.tableName(),
+                config.pkMode,
+                config.pkFields,
+                config.fieldsWhitelist,
+                currentSchemaPair
+            );
+            dbStructure.createOrAmendIfNecessary(
+                config,
+                connection,
+                tableId,
+                fieldsMetadata
+            );
+
+            final String sql = getInsertSql();
+            log.debug(
+                "{} sql: {}",
+                config.insertMode,
+                sql
+            );
+            close();
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatementBinder = dbDialect.statementBinder(
+                preparedStatement,
+                config.pkMode,
+                schemaPair,
+                fieldsMetadata,
+                config.insertMode
+            );
+        }
+
+        final List<SinkRecord> flushed;
+        if (currentSchemaPair.equals(schemaPair)) {
+            // Continue with current batch state
+            records.add(record);
+            if (records.size() >= config.batchSize) {
+                log.debug("Flushing buffered records after exceeding configured batch size {}.",
+                    config.batchSize);
+                flushed = flush();
+            } else {
+                flushed = Collections.emptyList();
+            }
+        } else {
+            // Each batch needs to have the same SchemaPair, so get the buffered records out, reset
+            // state and re-attempt the add
+            log.debug("Flushing buffered records after due to unequal schema pairs: "
+                + "current schemas: {}, next schemas: {}", currentSchemaPair, schemaPair);
+            flushed = flush();
+            currentSchemaPair = null;
+            flushed.addAll(add(record));
+        }
+        return flushed;
+    }
+
+    public List<SinkRecord> flush() throws SQLException {
+        if (records.isEmpty()) {
+            log.debug("Records is empty");
+            return new ArrayList<>();
+        }
+        log.debug("Flushing {} buffered records", records.size());
+        for (final SinkRecord record : records) {
+            preparedStatementBinder.bindRecord(record);
+        }
+        int totalUpdateCount = 0;
+        boolean successNoInfo = false;
+        for (final int updateCount : preparedStatement.executeBatch()) {
+            if (updateCount == Statement.SUCCESS_NO_INFO) {
+                successNoInfo = true;
+                continue;
+            }
+            totalUpdateCount += updateCount;
+        }
+        if (totalUpdateCount != records.size() && !successNoInfo) {
+            switch (config.insertMode) {
+                case INSERT:
+                    throw new ConnectException(String.format(
+                        "Update count (%d) did not sum up to total number of records inserted (%d)",
+                        totalUpdateCount,
+                        records.size()
+                    ));
+                case UPSERT:
+                case UPDATE:
+                    log.debug(
+                        "{} records:{} resulting in in totalUpdateCount:{}",
+                        config.insertMode,
+                        records.size(),
+                        totalUpdateCount
+                    );
+                    break;
+                default:
+                    throw new ConnectException("Unknown insert mode: " + config.insertMode);
+            }
+        }
+        if (successNoInfo) {
+            log.info(
+                "{} records:{} , but no count of the number of rows it affected is available",
+                config.insertMode,
+                records.size()
+            );
+        }
+
+        final List<SinkRecord> flushedRecords = records;
+        records = new ArrayList<>();
+        return flushedRecords;
+    }
+
+    public void close() throws SQLException {
+        log.info("Closing BufferedRecords with preparedStatement: {}", preparedStatement);
+        if (preparedStatement != null) {
+            preparedStatement.close();
+            preparedStatement = null;
+        }
+    }
+
+    private String getInsertSql() {
+        switch (config.insertMode) {
+            case INSERT:
+                return dbDialect.buildInsertStatement(
+                    tableId,
+                    asColumns(fieldsMetadata.keyFieldNames),
+                    asColumns(fieldsMetadata.nonKeyFieldNames)
+                );
+            case UPSERT:
+                if (fieldsMetadata.keyFieldNames.isEmpty()) {
+                    throw new ConnectException(String.format(
+                        "Write to table '%s' in UPSERT mode requires key field names to be known, check the"
+                            + " primary key configuration",
+                        tableId
+                    ));
+                }
+                try {
+                    return dbDialect.buildUpsertQueryStatement(
+                        tableId,
+                        asColumns(fieldsMetadata.keyFieldNames),
+                        asColumns(fieldsMetadata.nonKeyFieldNames)
+                    );
+                } catch (final UnsupportedOperationException e) {
+                    throw new ConnectException(String.format(
+                        "Write to table '%s' in UPSERT mode is not supported with the %s dialect.",
+                        tableId,
+                        dbDialect.name()
+                    ));
+                }
+            case UPDATE:
+                return dbDialect.buildUpdateStatement(
+                    tableId,
+                    asColumns(fieldsMetadata.keyFieldNames),
+                    asColumns(fieldsMetadata.nonKeyFieldNames)
+                );
+            default:
+                throw new ConnectException("Invalid insert mode");
+        }
+    }
+
+    private Collection<ColumnId> asColumns(final Collection<String> names) {
+        return names.stream()
+            .map(name -> new ColumnId(tableId, name))
+            .collect(Collectors.toList());
+    }
 }

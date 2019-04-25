@@ -17,6 +17,13 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import java.util.Collection;
+
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
+
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
@@ -24,147 +31,141 @@ import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.IdentifierRules;
 import io.aiven.connect.jdbc.util.TableId;
-import org.apache.kafka.connect.data.Date;
-import org.apache.kafka.connect.data.Decimal;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
-
-import java.util.Collection;
 
 /**
  * A {@link DatabaseDialect} for Derby and IBM DB2.
  */
 public class DerbyDatabaseDialect extends GenericDatabaseDialect {
 
-  /**
-   * The provider for {@link DerbyDatabaseDialect}.
-   */
-  public static class Provider extends SubprotocolBasedProvider {
-    public Provider() {
-      super(DerbyDatabaseDialect.class.getSimpleName(), "derby");
+    /**
+     * The provider for {@link DerbyDatabaseDialect}.
+     */
+    public static class Provider extends SubprotocolBasedProvider {
+        public Provider() {
+            super(DerbyDatabaseDialect.class.getSimpleName(), "derby");
+        }
+
+        @Override
+        public DatabaseDialect create(final JdbcConfig config) {
+            return new DerbyDatabaseDialect(config);
+        }
+    }
+
+    /**
+     * Create a new dialect instance with the given connector configuration.
+     *
+     * @param config the connector configuration; may not be null
+     */
+    public DerbyDatabaseDialect(final JdbcConfig config) {
+        super(config, new IdentifierRules(".", "\"", "\""));
     }
 
     @Override
-    public DatabaseDialect create(JdbcConfig config) {
-      return new DerbyDatabaseDialect(config);
-    }
-  }
-
-  /**
-   * Create a new dialect instance with the given connector configuration.
-   *
-   * @param config the connector configuration; may not be null
-   */
-  public DerbyDatabaseDialect(JdbcConfig config) {
-    super(config, new IdentifierRules(".", "\"", "\""));
-  }
-
-  @Override
-  protected String currentTimestampDatabaseQuery() {
-    return "values(CURRENT_TIMESTAMP)";
-  }
-
-  @Override
-  protected String checkConnectionQuery() {
-    return "SELECT 1 FROM SYSIBM.SYSDUMMY1";
-  }
-
-  @Override
-  protected String getSqlType(SinkRecordField field) {
-    if (field.schemaName() != null) {
-      switch (field.schemaName()) {
-        case Decimal.LOGICAL_NAME:
-          return "DECIMAL(31," + field.schemaParameters().get(Decimal.SCALE_FIELD) + ")";
-        case Date.LOGICAL_NAME:
-          return "DATE";
-        case Time.LOGICAL_NAME:
-          return "TIME";
-        case Timestamp.LOGICAL_NAME:
-          return "TIMESTAMP";
-        default:
-          // fall through to normal types
-      }
-    }
-    switch (field.schemaType()) {
-      case INT8:
-        return "SMALLINT";
-      case INT16:
-        return "SMALLINT";
-      case INT32:
-        return "INTEGER";
-      case INT64:
-        return "BIGINT";
-      case FLOAT32:
-        return "FLOAT";
-      case FLOAT64:
-        return "DOUBLE";
-      case BOOLEAN:
-        return "SMALLINT";
-      case STRING:
-        return "VARCHAR(32672)";
-      case BYTES:
-        return "BLOB(64000)";
-      default:
-        return super.getSqlType(field);
-    }
-  }
-
-  @Override
-  public String buildUpsertQueryStatement(
-      final TableId table,
-      Collection<ColumnId> keyColumns,
-      Collection<ColumnId> nonKeyColumns
-  ) {
-    // https://db.apache.org/derby/docs/10.11/ref/rrefsqljmerge.html
-    final ExpressionBuilder.Transform<ColumnId> transform = (builder, col) -> {
-      builder.append(table)
-             .append(".")
-             .appendIdentifier(col.name())
-             .append("=DAT.")
-             .appendIdentifier(col.name());
-    };
-
-    ExpressionBuilder builder = expressionBuilder();
-    builder.append("merge into ");
-    builder.append(table);
-    builder.append(" using (values(");
-    builder.appendList()
-           .delimitedBy(", ")
-           .transformedBy(ExpressionBuilder.placeholderInsteadOfColumnNames("?"))
-           .of(keyColumns, nonKeyColumns);
-    builder.append(")) as DAT(");
-    builder.appendList()
-           .delimitedBy(", ")
-           .transformedBy(ExpressionBuilder.columnNames())
-           .of(keyColumns, nonKeyColumns);
-    builder.append(") on ");
-    builder.appendList()
-           .delimitedBy(" and ")
-           .transformedBy(transform)
-           .of(keyColumns);
-    if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
-      builder.append(" when matched then update set ");
-      builder.appendList()
-             .delimitedBy(", ")
-             .transformedBy(transform)
-             .of(nonKeyColumns);
+    protected String currentTimestampDatabaseQuery() {
+        return "values(CURRENT_TIMESTAMP)";
     }
 
-    builder.append(" when not matched then insert(");
-    builder.appendList().delimitedBy(",").of(nonKeyColumns, keyColumns);
-    builder.append(") values(");
-    builder.appendList()
-           .delimitedBy(",")
-           .transformedBy(ExpressionBuilder.columnNamesWithPrefix("DAT."))
-           .of(nonKeyColumns, keyColumns);
-    builder.append(")");
-    return builder.toString();
-  }
+    @Override
+    protected String checkConnectionQuery() {
+        return "SELECT 1 FROM SYSIBM.SYSDUMMY1";
+    }
 
-  @Override
-  protected String sanitizedUrl(String url) {
-    // Derby has semicolon delimited property name-value pairs
-    return super.sanitizedUrl(url)
-                .replaceAll("(?i)(;password=)[^;]*", "$1****");
-  }
+    @Override
+    protected String getSqlType(final SinkRecordField field) {
+        if (field.schemaName() != null) {
+            switch (field.schemaName()) {
+                case Decimal.LOGICAL_NAME:
+                    return "DECIMAL(31," + field.schemaParameters().get(Decimal.SCALE_FIELD) + ")";
+                case Date.LOGICAL_NAME:
+                    return "DATE";
+                case Time.LOGICAL_NAME:
+                    return "TIME";
+                case Timestamp.LOGICAL_NAME:
+                    return "TIMESTAMP";
+                default:
+                    // fall through to normal types
+            }
+        }
+        switch (field.schemaType()) {
+            case INT8:
+                return "SMALLINT";
+            case INT16:
+                return "SMALLINT";
+            case INT32:
+                return "INTEGER";
+            case INT64:
+                return "BIGINT";
+            case FLOAT32:
+                return "FLOAT";
+            case FLOAT64:
+                return "DOUBLE";
+            case BOOLEAN:
+                return "SMALLINT";
+            case STRING:
+                return "VARCHAR(32672)";
+            case BYTES:
+                return "BLOB(64000)";
+            default:
+                return super.getSqlType(field);
+        }
+    }
+
+    @Override
+    public String buildUpsertQueryStatement(
+        final TableId table,
+        final Collection<ColumnId> keyColumns,
+        final Collection<ColumnId> nonKeyColumns
+    ) {
+        // https://db.apache.org/derby/docs/10.11/ref/rrefsqljmerge.html
+        final ExpressionBuilder.Transform<ColumnId> transform = (builder, col) -> {
+            builder.append(table)
+                .append(".")
+                .appendIdentifier(col.name())
+                .append("=DAT.")
+                .appendIdentifier(col.name());
+        };
+
+        final ExpressionBuilder builder = expressionBuilder();
+        builder.append("merge into ");
+        builder.append(table);
+        builder.append(" using (values(");
+        builder.appendList()
+            .delimitedBy(", ")
+            .transformedBy(ExpressionBuilder.placeholderInsteadOfColumnNames("?"))
+            .of(keyColumns, nonKeyColumns);
+        builder.append(")) as DAT(");
+        builder.appendList()
+            .delimitedBy(", ")
+            .transformedBy(ExpressionBuilder.columnNames())
+            .of(keyColumns, nonKeyColumns);
+        builder.append(") on ");
+        builder.appendList()
+            .delimitedBy(" and ")
+            .transformedBy(transform)
+            .of(keyColumns);
+        if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
+            builder.append(" when matched then update set ");
+            builder.appendList()
+                .delimitedBy(", ")
+                .transformedBy(transform)
+                .of(nonKeyColumns);
+        }
+
+        builder.append(" when not matched then insert(");
+        builder.appendList().delimitedBy(",").of(nonKeyColumns, keyColumns);
+        builder.append(") values(");
+        builder.appendList()
+            .delimitedBy(",")
+            .transformedBy(ExpressionBuilder.columnNamesWithPrefix("DAT."))
+            .of(nonKeyColumns, keyColumns);
+        builder.append(")");
+        return builder.toString();
+    }
+
+    @Override
+    protected String sanitizedUrl(final String url) {
+        // Derby has semicolon delimited property name-value pairs
+        return super.sanitizedUrl(url)
+            .replaceAll("(?i)(;password=)[^;]*", "$1****");
+    }
 }

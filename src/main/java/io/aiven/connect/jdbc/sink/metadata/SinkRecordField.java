@@ -17,56 +17,56 @@
 
 package io.aiven.connect.jdbc.sink.metadata;
 
-import org.apache.kafka.connect.data.Schema;
-
 import java.util.Map;
+
+import org.apache.kafka.connect.data.Schema;
 
 public class SinkRecordField {
 
-  private final Schema schema;
-  private final String name;
-  private final boolean isPrimaryKey;
+    private final Schema schema;
+    private final String name;
+    private final boolean isPrimaryKey;
 
-  public SinkRecordField(Schema schema, String name, boolean isPrimaryKey) {
-    this.schema = schema;
-    this.name = name;
-    this.isPrimaryKey = isPrimaryKey;
-  }
+    public SinkRecordField(final Schema schema, final String name, final boolean isPrimaryKey) {
+        this.schema = schema;
+        this.name = name;
+        this.isPrimaryKey = isPrimaryKey;
+    }
 
-  public String schemaName() {
-    return schema.name();
-  }
+    public String schemaName() {
+        return schema.name();
+    }
 
-  public Map<String, String> schemaParameters() {
-    return schema.parameters();
-  }
+    public Map<String, String> schemaParameters() {
+        return schema.parameters();
+    }
 
-  public Schema.Type schemaType() {
-    return schema.type();
-  }
+    public Schema.Type schemaType() {
+        return schema.type();
+    }
 
-  public String name() {
-    return name;
-  }
+    public String name() {
+        return name;
+    }
 
-  public boolean isOptional() {
-    return !isPrimaryKey && schema.isOptional();
-  }
+    public boolean isOptional() {
+        return !isPrimaryKey && schema.isOptional();
+    }
 
-  public Object defaultValue() {
-    return schema.defaultValue();
-  }
+    public Object defaultValue() {
+        return schema.defaultValue();
+    }
 
-  public boolean isPrimaryKey() {
-    return isPrimaryKey;
-  }
+    public boolean isPrimaryKey() {
+        return isPrimaryKey;
+    }
 
-  @Override
-  public String toString() {
-    return "SinkRecordField{"
-           + "schema=" + schema
-           + ", name='" + name + '\''
-           + ", isPrimaryKey=" + isPrimaryKey
-           + '}';
-  }
+    @Override
+    public String toString() {
+        return "SinkRecordField{"
+            + "schema=" + schema
+            + ", name='" + name + '\''
+            + ", isPrimaryKey=" + isPrimaryKey
+            + '}';
+    }
 }

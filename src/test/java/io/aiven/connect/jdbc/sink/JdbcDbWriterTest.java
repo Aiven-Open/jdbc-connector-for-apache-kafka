@@ -17,21 +17,6 @@
 
 package io.aiven.connect.jdbc.sink;
 
-import io.aiven.connect.jdbc.util.TableDefinition;
-import io.aiven.connect.jdbc.util.TableId;
-import org.apache.kafka.connect.data.Date;
-import org.apache.kafka.connect.data.Decimal;
-import org.apache.kafka.connect.data.Field;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Time;
-import org.apache.kafka.connect.data.Timestamp;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -41,8 +26,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.sink.SinkRecord;
+
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.SqliteDatabaseDialect;
+import io.aiven.connect.jdbc.util.TableDefinition;
+import io.aiven.connect.jdbc.util.TableId;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
@@ -51,254 +52,268 @@ import static org.junit.Assert.assertNotNull;
 
 public class JdbcDbWriterTest {
 
-  private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
+    private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
-  private JdbcDbWriter writer = null;
-  private DatabaseDialect dialect;
+    private JdbcDbWriter writer = null;
+    private DatabaseDialect dialect;
 
-  @Before
-  public void setUp() throws IOException, SQLException {
-    sqliteHelper.setUp();
-  }
-
-  @After
-  public void tearDown() throws IOException, SQLException {
-    if (writer != null)
-      writer.closeQuietly();
-    sqliteHelper.tearDown();
-  }
-
-  private JdbcDbWriter newWriter(Map<String, String> props) {
-    final JdbcSinkConfig config = new JdbcSinkConfig(props);
-    dialect = new SqliteDatabaseDialect(config);
-    final DbStructure dbStructure = new DbStructure(dialect);
-    return new JdbcDbWriter(config, dialect, dbStructure);
-  }
-
-  @Test
-  public void autoCreateWithAutoEvolve() throws SQLException {
-    String topic = "books";
-    TableId tableId = new TableId(null, null, topic);
-
-    Map<String, String> props = new HashMap<>();
-    props.put("connection.url", sqliteHelper.sqliteUri());
-    props.put("auto.create", "true");
-    props.put("auto.evolve", "true");
-    props.put("pk.mode", "record_key");
-    props.put("pk.fields", "id"); // assigned name for the primitive key
-
-    writer = newWriter(props);
-
-    Schema keySchema = Schema.INT64_SCHEMA;
-
-    Schema valueSchema1 = SchemaBuilder.struct()
-                                       .field("author", Schema.STRING_SCHEMA)
-                                       .field("title", Schema.STRING_SCHEMA)
-                                       .build();
-
-    Struct valueStruct1 = new Struct(valueSchema1)
-        .put("author", "Tom Robbins")
-        .put("title", "Villa Incognito");
-
-    writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 1L, valueSchema1,
-                                                      valueStruct1, 0)));
-
-    TableDefinition metadata = dialect.describeTable(writer.cachedConnectionProvider.getConnection(),
-                                                     tableId);
-    assertTrue(metadata.definitionForColumn("id").isPrimaryKey());
-    for (Field field : valueSchema1.fields()) {
-      assertNotNull(metadata.definitionForColumn(field.name()));
+    @Before
+    public void setUp() throws IOException, SQLException {
+        sqliteHelper.setUp();
     }
 
-    Schema valueSchema2 = SchemaBuilder.struct()
-                                       .field("author", Schema.STRING_SCHEMA)
-                                       .field("title", Schema.STRING_SCHEMA)
-                                       .field("year", Schema.OPTIONAL_INT32_SCHEMA) // new field
-                                       .field("review", SchemaBuilder.string().defaultValue("").build()); // new field
-
-    Struct valueStruct2 = new Struct(valueSchema2)
-        .put("author", "Tom Robbins")
-        .put("title", "Fierce Invalids")
-        .put("year", 2016);
-
-    writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 2L, valueSchema2, valueStruct2, 0)));
-
-    TableDefinition refreshedMetadata = dialect.describeTable(sqliteHelper.connection, tableId);
-    assertTrue(refreshedMetadata.definitionForColumn("id").isPrimaryKey());
-    for (Field field : valueSchema2.fields()) {
-      assertNotNull(refreshedMetadata.definitionForColumn(field.name()));
+    @After
+    public void tearDown() throws IOException, SQLException {
+        if (writer != null) {
+            writer.closeQuietly();
+        }
+        sqliteHelper.tearDown();
     }
-  }
 
-  @Test(expected = SQLException.class)
-  public void multiInsertWithKafkaPkFailsDueToUniqueConstraint() throws SQLException {
-    writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, "");
-  }
+    private JdbcDbWriter newWriter(final Map<String, String> props) {
+        final JdbcSinkConfig config = new JdbcSinkConfig(props);
+        dialect = new SqliteDatabaseDialect(config);
+        final DbStructure dbStructure = new DbStructure(dialect);
+        return new JdbcDbWriter(config, dialect, dbStructure);
+    }
 
-  @Test
-  public void idempotentUpsertWithKafkaPk() throws SQLException {
-    writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, "");
-  }
+    @Test
+    public void autoCreateWithAutoEvolve() throws SQLException {
+        final String topic = "books";
+        final TableId tableId = new TableId(null, null, topic);
 
-  @Test(expected = SQLException.class)
-  public void multiInsertWithRecordKeyPkFailsDueToUniqueConstraint() throws SQLException {
-    writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, "");
-  }
+        final Map<String, String> props = new HashMap<>();
+        props.put("connection.url", sqliteHelper.sqliteUri());
+        props.put("auto.create", "true");
+        props.put("auto.evolve", "true");
+        props.put("pk.mode", "record_key");
+        props.put("pk.fields", "id"); // assigned name for the primitive key
 
-  @Test
-  public void idempotentUpsertWithRecordKeyPk() throws SQLException {
-    writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, "");
-  }
+        writer = newWriter(props);
 
-  @Test(expected = SQLException.class)
-  public void multiInsertWithRecordValuePkFailsDueToUniqueConstraint() throws SQLException {
-    writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title");
-  }
+        final Schema keySchema = Schema.INT64_SCHEMA;
 
-  @Test
-  public void idempotentUpsertWithRecordValuePk() throws SQLException {
-    writeSameRecordTwiceExpectingSingleUpdate(JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title");
-  }
+        final Schema valueSchema1 = SchemaBuilder.struct()
+            .field("author", Schema.STRING_SCHEMA)
+            .field("title", Schema.STRING_SCHEMA)
+            .build();
 
-  private void writeSameRecordTwiceExpectingSingleUpdate(
-      JdbcSinkConfig.InsertMode insertMode,
-      JdbcSinkConfig.PrimaryKeyMode pkMode,
-      String pkFields
-  ) throws SQLException {
-    String topic = "books";
-    int partition = 7;
-    long offset = 42;
+        final Struct valueStruct1 = new Struct(valueSchema1)
+            .put("author", "Tom Robbins")
+            .put("title", "Villa Incognito");
 
-    Map<String, String> props = new HashMap<>();
-    props.put("connection.url", sqliteHelper.sqliteUri());
-    props.put("auto.create", "true");
-    props.put("pk.mode", pkMode.toString());
-    props.put("pk.fields", pkFields);
-    props.put("insert.mode", insertMode.toString());
+        writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 1L, valueSchema1,
+            valueStruct1, 0)));
 
-    writer = newWriter(props);
+        final TableDefinition metadata = dialect.describeTable(writer.cachedConnectionProvider.getConnection(),
+            tableId);
+        assertTrue(metadata.definitionForColumn("id").isPrimaryKey());
+        for (final Field field : valueSchema1.fields()) {
+            assertNotNull(metadata.definitionForColumn(field.name()));
+        }
 
-    Schema keySchema = SchemaBuilder.struct()
-        .field("id", SchemaBuilder.INT64_SCHEMA);
+        final Schema valueSchema2 = SchemaBuilder.struct()
+            .field("author", Schema.STRING_SCHEMA)
+            .field("title", Schema.STRING_SCHEMA)
+            .field("year", Schema.OPTIONAL_INT32_SCHEMA) // new field
+            .field("review", SchemaBuilder.string().defaultValue("").build()); // new field
 
-    Struct keyStruct = new Struct(keySchema).put("id", 0L);
+        final Struct valueStruct2 = new Struct(valueSchema2)
+            .put("author", "Tom Robbins")
+            .put("title", "Fierce Invalids")
+            .put("year", 2016);
 
-    Schema valueSchema = SchemaBuilder.struct()
-        .field("author", Schema.STRING_SCHEMA)
-        .field("title", Schema.STRING_SCHEMA)
-        .build();
+        writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 2L, valueSchema2, valueStruct2, 0)));
 
-    Struct valueStruct = new Struct(valueSchema)
-        .put("author", "Tom Robbins")
-        .put("title", "Villa Incognito");
+        final TableDefinition refreshedMetadata = dialect.describeTable(sqliteHelper.connection, tableId);
+        assertTrue(refreshedMetadata.definitionForColumn("id").isPrimaryKey());
+        for (final Field field : valueSchema2.fields()) {
+            assertNotNull(refreshedMetadata.definitionForColumn(field.name()));
+        }
+    }
 
-    SinkRecord record = new SinkRecord(topic, partition, keySchema, keyStruct, valueSchema, valueStruct, offset);
+    @Test(expected = SQLException.class)
+    public void multiInsertWithKafkaPkFailsDueToUniqueConstraint() throws SQLException {
+        writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, "");
+    }
 
-    writer.write(Collections.nCopies(2, record));
+    @Test
+    public void idempotentUpsertWithKafkaPk() throws SQLException {
+        writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, "");
+    }
 
-    assertEquals(
-        1,
-        sqliteHelper.select("select count(*) from books", new SqliteHelper.ResultSetReadCallback() {
-          @Override
-          public void read(ResultSet rs) throws SQLException {
-            assertEquals(1, rs.getInt(1));
-          }
-        })
-    );
-  }
+    @Test(expected = SQLException.class)
+    public void multiInsertWithRecordKeyPkFailsDueToUniqueConstraint() throws SQLException {
+        writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, "");
+    }
 
-  @Test
-  public void sameRecordNTimes() throws SQLException {
-    String testId = "sameRecordNTimes";
-    String createTable = "CREATE TABLE " + testId + " (" +
-                         "    the_byte  INTEGER," +
-                         "    the_short INTEGER," +
-                         "    the_int INTEGER," +
-                         "    the_long INTEGER," +
-                         "    the_float REAL," +
-                         "    the_double REAL," +
-                         "    the_bool  INTEGER," +
-                         "    the_string TEXT," +
-                         "    the_bytes BLOB, " +
-                         "    the_decimal  NUMERIC," +
-                         "    the_date  NUMERIC," +
-                         "    the_time  NUMERIC," +
-                         "    the_timestamp  NUMERIC" +
-                         ");";
+    @Test
+    public void idempotentUpsertWithRecordKeyPk() throws SQLException {
+        writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, "");
+    }
 
-    sqliteHelper.deleteTable(testId);
-    sqliteHelper.createTable(createTable);
+    @Test(expected = SQLException.class)
+    public void multiInsertWithRecordValuePkFailsDueToUniqueConstraint() throws SQLException {
+        writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title");
+    }
 
-    Schema schema = SchemaBuilder.struct().name(testId)
-        .field("the_byte", Schema.INT8_SCHEMA)
-        .field("the_short", Schema.INT16_SCHEMA)
-        .field("the_int", Schema.INT32_SCHEMA)
-        .field("the_long", Schema.INT64_SCHEMA)
-        .field("the_float", Schema.FLOAT32_SCHEMA)
-        .field("the_double", Schema.FLOAT64_SCHEMA)
-        .field("the_bool", Schema.BOOLEAN_SCHEMA)
-        .field("the_string", Schema.STRING_SCHEMA)
-        .field("the_bytes", Schema.BYTES_SCHEMA)
-        .field("the_decimal", Decimal.schema(2).schema())
-        .field("the_date", Date.SCHEMA)
-        .field("the_time", Time.SCHEMA)
-        .field("the_timestamp", Timestamp.SCHEMA);
+    @Test
+    public void idempotentUpsertWithRecordValuePk() throws SQLException {
+        writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title");
+    }
 
-    final java.util.Date instant = new java.util.Date(1474661402123L);
+    private void writeSameRecordTwiceExpectingSingleUpdate(
+        final JdbcSinkConfig.InsertMode insertMode,
+        final JdbcSinkConfig.PrimaryKeyMode pkMode,
+        final String pkFields
+    ) throws SQLException {
+        final String topic = "books";
+        final int partition = 7;
+        final long offset = 42;
 
-    final Struct struct = new Struct(schema)
-        .put("the_byte", (byte) -32)
-        .put("the_short", (short) 1234)
-        .put("the_int", 42)
-        .put("the_long", 12425436L)
-        .put("the_float", 2356.3f)
-        .put("the_double", -2436546.56457d)
-        .put("the_bool", true)
-        .put("the_string", "foo")
-        .put("the_bytes", new byte[]{-32, 124})
-        .put("the_decimal", new BigDecimal("1234.567"))
-        .put("the_date", instant)
-        .put("the_time", instant)
-        .put("the_timestamp", instant);
+        final Map<String, String> props = new HashMap<>();
+        props.put("connection.url", sqliteHelper.sqliteUri());
+        props.put("auto.create", "true");
+        props.put("pk.mode", pkMode.toString());
+        props.put("pk.fields", pkFields);
+        props.put("insert.mode", insertMode.toString());
 
-    int numRecords = ThreadLocalRandom.current().nextInt(20, 80);
+        writer = newWriter(props);
 
-    Map<String, String> props = new HashMap<>();
-    props.put("connection.url", sqliteHelper.sqliteUri());
-    props.put("table.name.format", testId);
-    props.put("batch.size", String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
+        final Schema keySchema = SchemaBuilder.struct()
+            .field("id", SchemaBuilder.INT64_SCHEMA);
 
-    writer = newWriter(props);
+        final Struct keyStruct = new Struct(keySchema).put("id", 0L);
 
-    writer.write(Collections.nCopies(
-        numRecords,
-        new SinkRecord("topic", 0, null, null, schema, struct, 0)
-    ));
+        final Schema valueSchema = SchemaBuilder.struct()
+            .field("author", Schema.STRING_SCHEMA)
+            .field("title", Schema.STRING_SCHEMA)
+            .build();
 
-    assertEquals(
-        numRecords,
-        sqliteHelper.select(
-            "SELECT * FROM " + testId,
-            new SqliteHelper.ResultSetReadCallback() {
-              @Override
-              public void read(ResultSet rs) throws SQLException {
-                assertEquals(struct.getInt8("the_byte").byteValue(), rs.getByte("the_byte"));
-                assertEquals(struct.getInt16("the_short").shortValue(), rs.getShort("the_short"));
-                assertEquals(struct.getInt32("the_int").intValue(), rs.getInt("the_int"));
-                assertEquals(struct.getInt64("the_long").longValue(), rs.getLong("the_long"));
-                assertEquals(struct.getFloat32("the_float"), rs.getFloat("the_float"), 0.01);
-                assertEquals(struct.getFloat64("the_double"), rs.getDouble("the_double"), 0.01);
-                assertEquals(struct.getBoolean("the_bool"), rs.getBoolean("the_bool"));
-                assertEquals(struct.getString("the_string"), rs.getString("the_string"));
-                assertArrayEquals(struct.getBytes("the_bytes"), rs.getBytes("the_bytes"));
-                assertEquals(struct.get("the_decimal"), rs.getBigDecimal("the_decimal"));
-                assertEquals(new java.sql.Date(((java.util.Date) struct.get("the_date")).getTime()), rs.getDate("the_date"));
-                assertEquals(new java.sql.Time(((java.util.Date) struct.get("the_time")).getTime()), rs.getTime("the_time"));
-                assertEquals(new java.sql.Timestamp(((java.util.Date) struct.get("the_time")).getTime()), rs.getTimestamp("the_timestamp"));
-              }
-            }
-        )
-    );
-  }
+        final Struct valueStruct = new Struct(valueSchema)
+            .put("author", "Tom Robbins")
+            .put("title", "Villa Incognito");
+
+        final SinkRecord record = new SinkRecord(
+            topic, partition, keySchema, keyStruct, valueSchema, valueStruct, offset);
+
+        writer.write(Collections.nCopies(2, record));
+
+        assertEquals(
+            1,
+            sqliteHelper.select("select count(*) from books", new SqliteHelper.ResultSetReadCallback() {
+                @Override
+                public void read(final ResultSet rs) throws SQLException {
+                    assertEquals(1, rs.getInt(1));
+                }
+            })
+        );
+    }
+
+    @Test
+    public void sameRecordNTimes() throws SQLException {
+        final String testId = "sameRecordNTimes";
+        final String createTable = "CREATE TABLE " + testId + " ("
+            + "    the_byte  INTEGER,"
+            + "    the_short INTEGER,"
+            + "    the_int INTEGER,"
+            + "    the_long INTEGER,"
+            + "    the_float REAL,"
+            + "    the_double REAL,"
+            + "    the_bool  INTEGER,"
+            + "    the_string TEXT,"
+            + "    the_bytes BLOB, "
+            + "    the_decimal  NUMERIC,"
+            + "    the_date  NUMERIC,"
+            + "    the_time  NUMERIC,"
+            + "    the_timestamp  NUMERIC"
+            + ");";
+
+        sqliteHelper.deleteTable(testId);
+        sqliteHelper.createTable(createTable);
+
+        final Schema schema = SchemaBuilder.struct().name(testId)
+            .field("the_byte", Schema.INT8_SCHEMA)
+            .field("the_short", Schema.INT16_SCHEMA)
+            .field("the_int", Schema.INT32_SCHEMA)
+            .field("the_long", Schema.INT64_SCHEMA)
+            .field("the_float", Schema.FLOAT32_SCHEMA)
+            .field("the_double", Schema.FLOAT64_SCHEMA)
+            .field("the_bool", Schema.BOOLEAN_SCHEMA)
+            .field("the_string", Schema.STRING_SCHEMA)
+            .field("the_bytes", Schema.BYTES_SCHEMA)
+            .field("the_decimal", Decimal.schema(2).schema())
+            .field("the_date", Date.SCHEMA)
+            .field("the_time", Time.SCHEMA)
+            .field("the_timestamp", Timestamp.SCHEMA);
+
+        final java.util.Date instant = new java.util.Date(1474661402123L);
+
+        final Struct struct = new Struct(schema)
+            .put("the_byte", (byte) -32)
+            .put("the_short", (short) 1234)
+            .put("the_int", 42)
+            .put("the_long", 12425436L)
+            .put("the_float", 2356.3f)
+            .put("the_double", -2436546.56457d)
+            .put("the_bool", true)
+            .put("the_string", "foo")
+            .put("the_bytes", new byte[]{-32, 124})
+            .put("the_decimal", new BigDecimal("1234.567"))
+            .put("the_date", instant)
+            .put("the_time", instant)
+            .put("the_timestamp", instant);
+
+        final int numRecords = ThreadLocalRandom.current().nextInt(20, 80);
+
+        final Map<String, String> props = new HashMap<>();
+        props.put("connection.url", sqliteHelper.sqliteUri());
+        props.put("table.name.format", testId);
+        props.put("batch.size", String.valueOf(ThreadLocalRandom.current().nextInt(20, 100)));
+
+        writer = newWriter(props);
+
+        writer.write(Collections.nCopies(
+            numRecords,
+            new SinkRecord("topic", 0, null, null, schema, struct, 0)
+        ));
+
+        assertEquals(
+            numRecords,
+            sqliteHelper.select(
+                "SELECT * FROM " + testId,
+                new SqliteHelper.ResultSetReadCallback() {
+                    @Override
+                    public void read(final ResultSet rs) throws SQLException {
+                        assertEquals(struct.getInt8("the_byte").byteValue(), rs.getByte("the_byte"));
+                        assertEquals(struct.getInt16("the_short").shortValue(), rs.getShort("the_short"));
+                        assertEquals(struct.getInt32("the_int").intValue(), rs.getInt("the_int"));
+                        assertEquals(struct.getInt64("the_long").longValue(), rs.getLong("the_long"));
+                        assertEquals(struct.getFloat32("the_float"), rs.getFloat("the_float"), 0.01);
+                        assertEquals(struct.getFloat64("the_double"), rs.getDouble("the_double"), 0.01);
+                        assertEquals(struct.getBoolean("the_bool"), rs.getBoolean("the_bool"));
+                        assertEquals(struct.getString("the_string"), rs.getString("the_string"));
+                        assertArrayEquals(struct.getBytes("the_bytes"), rs.getBytes("the_bytes"));
+                        assertEquals(struct.get("the_decimal"), rs.getBigDecimal("the_decimal"));
+                        assertEquals(
+                            new java.sql.Date(((java.util.Date) struct.get("the_date")).getTime()),
+                            rs.getDate("the_date"));
+                        assertEquals(
+                            new java.sql.Time(((java.util.Date) struct.get("the_time")).getTime()),
+                            rs.getTime("the_time"));
+                        assertEquals(
+                            new java.sql.Timestamp(((java.util.Date) struct.get("the_time")).getTime()),
+                            rs.getTimestamp("the_timestamp"));
+                    }
+                }
+            )
+        );
+    }
 
 }

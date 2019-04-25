@@ -1,21 +1,27 @@
-/**
+/*
  * Copyright 2019 Aiven Oy
  * Copyright 2017 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package io.aiven.connect.jdbc.util;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import org.apache.kafka.connect.errors.ConnectException;
+
 import org.easymock.EasyMock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,9 +31,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(PowerMockRunner.class)
@@ -35,41 +38,41 @@ import static org.junit.Assert.assertNotNull;
 @PowerMockIgnore("javax.management.*")
 public class CachedConnectionProviderTest {
 
-  @Mock
-  private ConnectionProvider provider;
+    @Mock
+    private ConnectionProvider provider;
 
-  @Test
-  public void retryTillFailure() throws SQLException {
-    int retries = 15;
-    ConnectionProvider connectionProvider = new CachedConnectionProvider(provider, retries, 100L);
-    EasyMock.expect(provider.getConnection()).andThrow(new SQLException("test")).times(retries);
-    PowerMock.replayAll();
+    @Test
+    public void retryTillFailure() throws SQLException {
+        final int retries = 15;
+        final ConnectionProvider connectionProvider = new CachedConnectionProvider(provider, retries, 100L);
+        EasyMock.expect(provider.getConnection()).andThrow(new SQLException("test")).times(retries);
+        PowerMock.replayAll();
 
-    try {
-      connectionProvider.getConnection();
-    }catch(ConnectException ce){
-      assertNotNull(ce);
+        try {
+            connectionProvider.getConnection();
+        } catch (final ConnectException ex) {
+            assertNotNull(ex);
+        }
+
+        PowerMock.verifyAll();
     }
 
-    PowerMock.verifyAll();
-  }
 
+    @Test
+    public void retryTillConnect() throws SQLException {
+        final Connection connection = EasyMock.createMock(Connection.class);
+        final int retries = 15;
 
-  @Test
-  public void retryTillConnect() throws SQLException {
-    Connection connection = EasyMock.createMock(Connection.class);
-    int retries = 15;
-
-    ConnectionProvider connectionProvider = new CachedConnectionProvider(provider, retries, 100L);
-    EasyMock.expect(provider.getConnection())
+        final ConnectionProvider connectionProvider = new CachedConnectionProvider(provider, retries, 100L);
+        EasyMock.expect(provider.getConnection())
             .andThrow(new SQLException("test"))
-            .times(retries-1)
+            .times(retries - 1)
             .andReturn(connection);
-    PowerMock.replayAll();
+        PowerMock.replayAll();
 
-    assertNotNull(connectionProvider.getConnection());
+        assertNotNull(connectionProvider.getConnection());
 
-    PowerMock.verifyAll();
-  }
+        PowerMock.verifyAll();
+    }
 
 }

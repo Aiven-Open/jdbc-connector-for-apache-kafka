@@ -17,61 +17,63 @@
 
 package io.aiven.connect.jdbc;
 
-import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
-import io.aiven.connect.jdbc.sink.JdbcSinkTask;
-import io.aiven.connect.jdbc.util.Version;
-import org.apache.kafka.common.config.Config;
-import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.connect.connector.Task;
-import org.apache.kafka.connect.sink.SinkConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.kafka.common.config.Config;
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.connect.connector.Task;
+import org.apache.kafka.connect.sink.SinkConnector;
+
+import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
+import io.aiven.connect.jdbc.sink.JdbcSinkTask;
+import io.aiven.connect.jdbc.util.Version;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class JdbcSinkConnector extends SinkConnector {
-  private static final Logger log = LoggerFactory.getLogger(JdbcSinkConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(JdbcSinkConnector.class);
 
-  private Map<String, String> configProps;
+    private Map<String, String> configProps;
 
-  public Class<? extends Task> taskClass() {
-    return JdbcSinkTask.class;
-  }
-
-  @Override
-  public List<Map<String, String>> taskConfigs(int maxTasks) {
-    log.info("Setting task configurations for {} workers.", maxTasks);
-    final List<Map<String, String>> configs = new ArrayList<>(maxTasks);
-    for (int i = 0; i < maxTasks; ++i) {
-      configs.add(configProps);
+    public Class<? extends Task> taskClass() {
+        return JdbcSinkTask.class;
     }
-    return configs;
-  }
 
-  @Override
-  public void start(Map<String, String> props) {
-    configProps = props;
-  }
+    @Override
+    public List<Map<String, String>> taskConfigs(final int maxTasks) {
+        log.info("Setting task configurations for {} workers.", maxTasks);
+        final List<Map<String, String>> configs = new ArrayList<>(maxTasks);
+        for (int i = 0; i < maxTasks; ++i) {
+            configs.add(configProps);
+        }
+        return configs;
+    }
 
-  @Override
-  public void stop() {
-  }
+    @Override
+    public void start(final Map<String, String> props) {
+        configProps = props;
+    }
 
-  @Override
-  public ConfigDef config() {
-    return JdbcSinkConfig.CONFIG_DEF;
-  }
+    @Override
+    public void stop() {
+    }
 
-  @Override
-  public Config validate(Map<String, String> connectorConfigs) {
-    // TODO cross-fields validation here: pkFields against the pkMode
-    return super.validate(connectorConfigs);
-  }
+    @Override
+    public ConfigDef config() {
+        return JdbcSinkConfig.CONFIG_DEF;
+    }
 
-  @Override
-  public String version() {
-    return Version.getVersion();
-  }
+    @Override
+    public Config validate(final Map<String, String> connectorConfigs) {
+        // TODO cross-fields validation here: pkFields against the pkMode
+        return super.validate(connectorConfigs);
+    }
+
+    @Override
+    public String version() {
+        return Version.getVersion();
+    }
 }

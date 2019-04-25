@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2019 Aiven Oy
  * Copyright 2015 Confluent Inc.
  *
@@ -13,28 +13,28 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- **/
+ */
 
 package io.aiven.connect.jdbc.util;
-
-import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.common.config.ConfigException;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
 
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
+
 public class TimeZoneValidator implements ConfigDef.Validator {
 
-  public static final TimeZoneValidator INSTANCE = new TimeZoneValidator();
+    public static final TimeZoneValidator INSTANCE = new TimeZoneValidator();
 
-  @Override
-  public void ensureValid(String name, Object value) {
-    if (value != null) {
-      try {
-        ZoneId.of(value.toString());
-      } catch (DateTimeException e) {
-        throw new ConfigException(name, value, "Invalid time zone identifier");
-      }
+    @Override
+    public void ensureValid(final String name, final Object value) {
+        if (value != null) {
+            try {
+                ZoneId.of(value.toString());
+            } catch (final DateTimeException e) {
+                throw new ConfigException(name, value, "Invalid time zone identifier");
+            }
+        }
     }
-  }
 }

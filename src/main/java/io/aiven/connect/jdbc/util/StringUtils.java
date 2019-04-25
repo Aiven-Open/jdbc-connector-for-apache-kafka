@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2019 Aiven Oy
  * Copyright 2015 Confluent Inc.
  *
@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- **/
+ */
 
 package io.aiven.connect.jdbc.util;
 
@@ -23,24 +23,24 @@ package io.aiven.connect.jdbc.util;
  */
 public class StringUtils {
 
-  /**
-   * Generate a String by appending all the @{elements}, converted to Strings, delimited by
-   * @{delim}.
-   * @param elements list of elements to concatenate
-   * @param delim delimiter to place between each element
-   * @return the concatenated string with delimiters
-   */
-  public static <T> String join(Iterable<T> elements, String delim) {
-    StringBuilder result = new StringBuilder();
-    boolean first = true;
-    for (T elem : elements) {
-      if (first) {
-        first = false;
-      } else {
-        result.append(delim);
-      }
-      result.append(elem);
+    /**
+     * Generate a String by appending all the @{elements}, converted to Strings, delimited by
+     *
+     * @param elements list of elements to concatenate
+     * @param delim    delimiter to place between each element
+     * @return the concatenated string with delimiters
+     */
+    public static <T> String join(final Iterable<T> elements, final String delim) {
+        final StringBuilder result = new StringBuilder();
+        boolean first = true;
+        for (final T elem : elements) {
+            if (first) {
+                first = false;
+            } else {
+                result.append(delim);
+            }
+            result.append(elem);
+        }
+        return result.toString();
     }
-    return result.toString();
-  }
 }
