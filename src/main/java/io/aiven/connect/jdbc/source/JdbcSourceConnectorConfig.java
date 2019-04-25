@@ -20,10 +20,8 @@ package io.aiven.connect.jdbc.source;
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
-import io.aiven.connect.jdbc.util.DatabaseDialectRecommender;
 import io.aiven.connect.jdbc.util.TableId;
 import io.aiven.connect.jdbc.util.TimeZoneValidator;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Recommender;
@@ -41,21 +39,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class JdbcSourceConnectorConfig extends AbstractConfig {
+public class JdbcSourceConnectorConfig extends JdbcConfig {
 
   private static final Logger LOG = LoggerFactory.getLogger(JdbcSourceConnectorConfig.class);
-
-  public static final String CONNECTION_URL_CONFIG = "connection.url";
-  private static final String CONNECTION_URL_DOC = "JDBC connection URL.";
-  private static final String CONNECTION_URL_DISPLAY = "JDBC URL";
-
-  public static final String CONNECTION_USER_CONFIG = "connection.user";
-  private static final String CONNECTION_USER_DOC = "JDBC connection user.";
-  private static final String CONNECTION_USER_DISPLAY = "JDBC User";
-
-  public static final String CONNECTION_PASSWORD_CONFIG = "connection.password";
-  private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
-  private static final String CONNECTION_PASSWORD_DISPLAY = "JDBC Password";
 
   public static final String CONNECTION_ATTEMPTS_CONFIG = "connection.attempts";
   private static final String CONNECTION_ATTEMPTS_DOC
@@ -256,7 +242,6 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   );
   private static final Recommender MODE_DEPENDENTS_RECOMMENDER =  new ModeDependentsRecommender();
 
-
   public static final String TABLE_TYPE_DEFAULT = "TABLE";
   public static final String TABLE_TYPE_CONFIG = "table.types";
   private static final String TABLE_TYPE_DOC =
@@ -283,37 +268,12 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   private static final void addDatabaseOptions(ConfigDef config) {
     int orderInGroup = 0;
+    defineConnectionUrl(config, ++orderInGroup,
+        Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG));
+    defineConnectionUser(config, ++orderInGroup);
+    defineConnectionPassword(config, ++orderInGroup);
+
     config.define(
-        CONNECTION_URL_CONFIG,
-        Type.STRING,
-        Importance.HIGH,
-        CONNECTION_URL_DOC,
-        DATABASE_GROUP,
-        ++orderInGroup,
-        Width.LONG,
-        CONNECTION_URL_DISPLAY,
-        Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG)
-    ).define(
-        CONNECTION_USER_CONFIG,
-        Type.STRING,
-        null,
-        Importance.HIGH,
-        CONNECTION_USER_DOC,
-        DATABASE_GROUP,
-        ++orderInGroup,
-        Width.LONG,
-        CONNECTION_USER_DISPLAY
-    ).define(
-        CONNECTION_PASSWORD_CONFIG,
-        Type.PASSWORD,
-        null,
-        Importance.HIGH,
-        CONNECTION_PASSWORD_DOC,
-        DATABASE_GROUP,
-        ++orderInGroup,
-        Width.SHORT,
-        CONNECTION_PASSWORD_DISPLAY
-    ).define(
         CONNECTION_ATTEMPTS_CONFIG,
         Type.INT,
         CONNECTION_ATTEMPTS_DEFAULT,
@@ -397,28 +357,10 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         Width.SHORT,
         NUMERIC_MAPPING_DISPLAY,
         NUMERIC_MAPPING_RECOMMENDER
-    ).define(
-        DIALECT_NAME_CONFIG,
-        Type.STRING,
-        DIALECT_NAME_DEFAULT,
-        DatabaseDialectRecommender.INSTANCE,
-        Importance.LOW,
-        DIALECT_NAME_DOC,
-        DATABASE_GROUP,
-        ++orderInGroup,
-        Width.LONG,
-        DIALECT_NAME_DISPLAY,
-        DatabaseDialectRecommender.INSTANCE
-    ).define(
-        JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG,
-        JdbcConfig.SQL_QUOTE_IDENTIFIERS_TYPE,
-        JdbcConfig.SQL_QUOTE_IDENTIFIERS_DEFAULT,
-        Importance.MEDIUM,
-        JdbcConfig.SQL_QUOTE_IDENTIFIERS_DOC,
-        DATABASE_GROUP,
-        ++orderInGroup,
-        Width.SHORT,
-        JdbcConfig.SQL_QUOTE_IDENTIFIERS_DISPLAY);
+    );
+
+    defineDialectName(config, ++orderInGroup);
+    defineSqlQuoteIdentifiers(config, ++orderInGroup);
   }
 
   private static final void addModeOptions(ConfigDef config) {
@@ -584,7 +526,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
       }
       // Create the dialect to get the tables ...
-      AbstractConfig jdbcConfig = new AbstractConfig(CONFIG_DEF, config);
+      JdbcConfig jdbcConfig = new JdbcConfig(CONFIG_DEF, config);
       DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
       try (Connection db = dialect.getConnection()) {
         List<Object> result = new LinkedList<>();

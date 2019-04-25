@@ -17,10 +17,10 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 import io.aiven.connect.jdbc.util.*;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Time;
@@ -46,7 +46,7 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
     }
 
     @Override
-    public DatabaseDialect create(AbstractConfig config) {
+    public DatabaseDialect create(JdbcConfig config) {
       return new SqlServerDatabaseDialect(config);
     }
   }
@@ -56,7 +56,7 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
    *
    * @param config the connector configuration; may not be null
    */
-  public SqlServerDatabaseDialect(AbstractConfig config) {
+  public SqlServerDatabaseDialect(JdbcConfig config) {
     super(config, new IdentifierRules(".", "[", "]"));
   }
 

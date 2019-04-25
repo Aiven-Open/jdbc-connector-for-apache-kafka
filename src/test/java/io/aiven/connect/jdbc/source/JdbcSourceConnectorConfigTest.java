@@ -16,6 +16,7 @@
  **/
 package io.aiven.connect.jdbc.source;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigValue;
@@ -84,7 +85,7 @@ public class JdbcSourceConnectorConfigTest {
 
   @Test
   public void testConfigTableNameRecommenderWithoutSchemaOrTableTypes() throws Exception {
-    props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
     configDef = JdbcSourceConnectorConfig.baseConfigDef();
     results = configDef.validate(props);
     assertWhitelistRecommendations("some_table", "public_table", "private_table", "another_private_table");
@@ -93,7 +94,7 @@ public class JdbcSourceConnectorConfigTest {
 
   @Test
   public void testConfigTableNameRecommenderWitSchemaAndWithoutTableTypes() throws Exception {
-    props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
     props.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "PRIVATE_SCHEMA");
     configDef = JdbcSourceConnectorConfig.baseConfigDef();
     results = configDef.validate(props);
@@ -103,7 +104,7 @@ public class JdbcSourceConnectorConfigTest {
 
   @Test
   public void testConfigTableNameRecommenderWithSchemaAndTableTypes() throws Exception {
-    props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
     props.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "PRIVATE_SCHEMA");
     props.put(JdbcSourceConnectorConfig.TABLE_TYPE_CONFIG, "VIEW");
     configDef = JdbcSourceConnectorConfig.baseConfigDef();

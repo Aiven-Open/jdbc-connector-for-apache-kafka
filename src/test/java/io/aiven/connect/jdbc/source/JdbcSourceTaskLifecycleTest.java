@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc.source;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -51,7 +52,7 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
   @Test(expected = ConnectException.class)
   public void testMissingParentConfig() {
     Map<String, String> props = singleTableConfig();
-    props.remove(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    props.remove(JdbcConfig.CONNECTION_URL_CONFIG);
     task.start(props);
   }
 

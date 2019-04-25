@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.source.EmbeddedDerby;
 import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
@@ -66,7 +67,7 @@ public class JdbcSourceConnectorTest {
     connector = new JdbcSourceConnector();
     db = new EmbeddedDerby();
     connProps = new HashMap<>();
-    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
     connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
   }
@@ -92,14 +93,14 @@ public class JdbcSourceConnectorTest {
   @Test(expected = ConnectException.class)
   public void testMissingModeConfig() throws Exception {
     HashMap<String, String> connProps = new HashMap<>();
-    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, db.getUrl());
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
     connector.start(Collections.<String, String>emptyMap());
   }
 
   @Test(expected = ConnectException.class)
   public void testStartConnectionFailure() throws Exception {
     // Invalid URL
-    connector.start(Collections.singletonMap(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, "jdbc:foo"));
+    connector.start(Collections.singletonMap(JdbcConfig.CONNECTION_URL_CONFIG, "jdbc:foo"));
   }
 
   @Test
@@ -197,7 +198,7 @@ public class JdbcSourceConnectorTest {
   private void assertTaskConfigsHaveParentConfigs(List<Map<String, String>> configs) {
     for (Map<String, String> config : configs) {
       assertEquals(this.db.getUrl(),
-                   config.get(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG));
+                   config.get(JdbcConfig.CONNECTION_URL_CONFIG));
     }
   }
 

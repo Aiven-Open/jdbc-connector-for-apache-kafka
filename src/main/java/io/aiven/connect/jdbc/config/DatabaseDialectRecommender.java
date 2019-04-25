@@ -15,7 +15,7 @@
  * limitations under the License.
  **/
 
-package io.aiven.connect.jdbc.util;
+package io.aiven.connect.jdbc.config;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
 import org.apache.kafka.common.config.ConfigDef;

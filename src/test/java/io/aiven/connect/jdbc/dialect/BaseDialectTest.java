@@ -176,7 +176,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
     connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
     connProps.putAll(propertiesFromPairs(propertyPairs));
-    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, url);
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, url);
     if (quoteIdentifiers == null) {
       // no-op
     } else {
@@ -198,7 +198,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
   ) {
     Map<String, String> connProps = new HashMap<>();
     connProps.putAll(propertiesFromPairs(propertyPairs));
-    connProps.put(JdbcSinkConfig.CONNECTION_URL, url);
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, url);
     return new JdbcSinkConfig(connProps);
   }
 

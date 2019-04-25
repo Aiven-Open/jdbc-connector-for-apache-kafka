@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc.sink;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
@@ -75,7 +76,7 @@ public class SqliteHelperTest {
     sqliteHelper.createTable(createNonPkTable);
 
     Map<String, String> connProps = new HashMap<>();
-    connProps.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, sqliteHelper.sqliteUri());
+    connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, sqliteHelper.sqliteUri());
     JdbcSinkConfig config = new JdbcSinkConfig(connProps);
     DatabaseDialect dialect = new SqliteDatabaseDialect(config);
 

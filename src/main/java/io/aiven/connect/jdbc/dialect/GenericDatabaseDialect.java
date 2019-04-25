@@ -30,7 +30,6 @@ import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
 import io.aiven.connect.jdbc.source.JdbcSourceTaskConfig;
 import io.aiven.connect.jdbc.source.TimestampIncrementingCriteria;
 import io.aiven.connect.jdbc.util.*;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Struct;
@@ -76,13 +75,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     }
 
     @Override
-    public DatabaseDialect create(AbstractConfig config) {
+    public DatabaseDialect create(JdbcConfig config) {
       return new GenericDatabaseDialect(config);
     }
   }
 
   protected final Logger log = LoggerFactory.getLogger(getClass());
-  protected final AbstractConfig config;
 
   /**
    * Whether to map {@code NUMERIC} JDBC types by precision.
@@ -91,7 +89,9 @@ public class GenericDatabaseDialect implements DatabaseDialect {
   protected String catalogPattern;
   protected final String schemaPattern;
   protected final Set<String> tableTypes;
-  protected final String jdbcUrl;
+  protected final String connectionUrl;
+  protected final String connectionUsername;
+  protected final Password connectionPassword;
   private final IdentifierRules defaultIdentifierRules;
   private final AtomicReference<IdentifierRules> identifierRules = new AtomicReference<>();
   private final Queue<Connection> connections = new ConcurrentLinkedQueue<>();
@@ -104,7 +104,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
    *
    * @param config the connector configuration; may not be null
    */
-  public GenericDatabaseDialect(AbstractConfig config) {
+  public GenericDatabaseDialect(JdbcConfig config) {
     this(config, IdentifierRules.DEFAULT);
   }
 
@@ -116,12 +116,13 @@ public class GenericDatabaseDialect implements DatabaseDialect {
    *                               to be determined from the database metadata
    */
   protected GenericDatabaseDialect(
-      AbstractConfig config,
+      JdbcConfig config,
       IdentifierRules defaultIdentifierRules
   ) {
-    this.config = config;
     this.defaultIdentifierRules = defaultIdentifierRules;
-    this.jdbcUrl = config.getString(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG);
+    connectionUrl = config.getConnectionUrl();
+    connectionUsername = config.getConnectionUser();
+    connectionPassword = config.getConnectionPassword();
     if (config instanceof JdbcSinkConfig) {
       catalogPattern = JdbcSourceTaskConfig.CATALOG_PATTERN_DEFAULT;
       schemaPattern = JdbcSourceTaskConfig.SCHEMA_PATTERN_DEFAULT;
@@ -145,7 +146,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
       timeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
     }
 
-    quoteIdentifiers = config.getBoolean(JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG);
+    quoteIdentifiers = config.isQuoteSqlIdentifiers();
   }
 
   @Override
@@ -155,18 +156,15 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   @Override
   public Connection getConnection() throws SQLException {
-    // These config names are the same for both source and sink configs ...
-    String username = config.getString(JdbcSourceConnectorConfig.CONNECTION_USER_CONFIG);
-    Password dbPassword = config.getPassword(JdbcSourceConnectorConfig.CONNECTION_PASSWORD_CONFIG);
     Properties properties = new Properties();
-    if (username != null) {
-      properties.setProperty("user", username);
+    if (this.connectionUsername != null) {
+      properties.setProperty("user", this.connectionUsername);
     }
-    if (dbPassword != null) {
-      properties.setProperty("password", dbPassword.value());
+    if (this.connectionPassword != null) {
+      properties.setProperty("password", this.connectionPassword.value());
     }
     properties = addConnectionProperties(properties);
-    Connection connection = DriverManager.getConnection(jdbcUrl, properties);
+    Connection connection = DriverManager.getConnection(connectionUrl, properties);
     if (jdbcDriverInfo == null) {
       jdbcDriverInfo = createJdbcDriverInfo(connection);
     }
@@ -1682,7 +1680,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
   @Override
   public String identifier() {
-    return name() + " database " + sanitizedUrl(jdbcUrl);
+    return name() + " database " + sanitizedUrl(connectionUrl);
   }
 
   @Override
