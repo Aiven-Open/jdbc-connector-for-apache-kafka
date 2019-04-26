@@ -32,6 +32,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
 
 import org.junit.After;
@@ -750,7 +751,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         taskConfig.put(
             JdbcSourceConnectorConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, delay == null ? "0" : delay.toString());
         if (timeZone != null) {
-            taskConfig.put(JdbcSourceConnectorConfig.DB_TIMEZONE_CONFIG, timeZone);
+            taskConfig.put(JdbcConfig.DB_TIMEZONE_CONFIG, timeZone);
         }
         task.start(taskConfig);
     }

@@ -34,7 +34,6 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -174,14 +173,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
             mapNumerics = NumericMapping.NONE;
         }
 
-        if (config instanceof JdbcSourceConnectorConfig) {
-            timeZone = ((JdbcSourceConnectorConfig) config).timeZone();
-        } else if (config instanceof JdbcSinkConfig) {
-            timeZone = ((JdbcSinkConfig) config).timeZone;
-        } else {
-            timeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
-        }
-
+        timeZone = config.getDBTimeZone();
         quoteIdentifiers = config.isQuoteSqlIdentifiers();
     }
 

@@ -33,7 +33,6 @@ import org.apache.kafka.common.config.types.Password;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.StringUtils;
-import io.aiven.connect.jdbc.util.TimeZoneValidator;
 
 public class JdbcSinkConfig extends JdbcConfig {
 
@@ -41,7 +40,6 @@ public class JdbcSinkConfig extends JdbcConfig {
         INSERT,
         UPSERT,
         UPDATE;
-
     }
 
     public enum PrimaryKeyMode {
@@ -160,18 +158,10 @@ public class JdbcSinkConfig extends JdbcConfig {
 
     private static final ConfigDef.Range NON_NEGATIVE_INT_VALIDATOR = ConfigDef.Range.atLeast(0);
 
-    private static final String CONNECTION_GROUP = "Connection";
     private static final String WRITES_GROUP = "Writes";
     private static final String DATAMAPPING_GROUP = "Data Mapping";
     private static final String DDL_GROUP = "DDL Support";
     private static final String RETRIES_GROUP = "Retries";
-
-    public static final String DB_TIMEZONE_CONFIG = "db.timezone";
-    public static final String DB_TIMEZONE_DEFAULT = "UTC";
-    private static final String DB_TIMEZONE_CONFIG_DOC =
-        "Name of the JDBC timezone that should be used in the connector when "
-            + "inserting time-based values. Defaults to UTC.";
-    private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB Time Zone";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef();
 
@@ -181,6 +171,7 @@ public class JdbcSinkConfig extends JdbcConfig {
         defineConnectionUrl(CONFIG_DEF, ++orderInGroup, Collections.emptyList());
         defineConnectionUser(CONFIG_DEF, ++orderInGroup);
         defineConnectionPassword(CONFIG_DEF, ++orderInGroup);
+        defineDbTimezone(CONFIG_DEF, ++orderInGroup);
         defineDialectName(CONFIG_DEF, ++orderInGroup);
         defineSqlQuoteIdentifiers(CONFIG_DEF, ++orderInGroup);
 
@@ -254,18 +245,7 @@ public class JdbcSinkConfig extends JdbcConfig {
                 4,
                 ConfigDef.Width.LONG,
                 FIELDS_WHITELIST_DISPLAY
-            )
-            .define(
-                DB_TIMEZONE_CONFIG,
-                ConfigDef.Type.STRING,
-                DB_TIMEZONE_DEFAULT,
-                TimeZoneValidator.INSTANCE,
-                ConfigDef.Importance.MEDIUM,
-                DB_TIMEZONE_CONFIG_DOC,
-                DATAMAPPING_GROUP,
-                5,
-                ConfigDef.Width.MEDIUM,
-                DB_TIMEZONE_CONFIG_DISPLAY);
+            );
 
         // DDL
         CONFIG_DEF
