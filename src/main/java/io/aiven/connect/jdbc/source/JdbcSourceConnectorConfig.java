@@ -121,7 +121,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             + "updates so each row can be assigned a unique stream offset.";
     private static final String MODE_DISPLAY = "Table Loading Mode";
 
-    public static final String MODE_UNSPECIFIED = "";
     public static final String MODE_BULK = "bulk";
     public static final String MODE_TIMESTAMP = "timestamp";
     public static final String MODE_INCREMENTING = "incrementing";
@@ -359,9 +358,8 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         config.define(
             MODE_CONFIG,
             Type.STRING,
-            MODE_UNSPECIFIED,
+            ConfigDef.NO_DEFAULT_VALUE,
             ConfigDef.ValidString.in(
-                MODE_UNSPECIFIED,
                 MODE_BULK,
                 MODE_TIMESTAMP,
                 MODE_INCREMENTING,
@@ -491,10 +489,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
     public JdbcSourceConnectorConfig(final Map<String, ?> props) {
         super(CONFIG_DEF, props);
-        final String mode = getString(JdbcSourceConnectorConfig.MODE_CONFIG);
-        if (mode.equals(JdbcSourceConnectorConfig.MODE_UNSPECIFIED)) {
-            throw new ConfigException("Query mode must be specified");
-        }
     }
 
     private static class TableRecommender implements Recommender {
@@ -502,22 +496,26 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         @SuppressWarnings("unchecked")
         @Override
         public List<Object> validValues(final String name, final Map<String, Object> config) {
-            final String dbUrl = (String) config.get(CONNECTION_URL_CONFIG);
-            if (dbUrl == null) {
-                throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
-            }
-            // Create the dialect to get the tables ...
-            final JdbcConfig jdbcConfig = new JdbcConfig(CONFIG_DEF, config);
-            final DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
-            try (final Connection db = dialect.getConnection()) {
-                final List<Object> result = new LinkedList<>();
-                for (final TableId id : dialect.tableIds(db)) {
-                    // Just add the unqualified table name
-                    result.add(id.tableName());
+            try {
+                final String dbUrl = (String) config.get(CONNECTION_URL_CONFIG);
+                if (dbUrl == null) {
+                    throw new ConfigException(CONNECTION_URL_CONFIG + " cannot be null.");
                 }
-                return result;
-            } catch (final SQLException e) {
-                throw new ConfigException("Couldn't open connection to " + dbUrl, e);
+                // Create the dialect to get the tables ...
+                final JdbcConfig jdbcConfig = new JdbcConfig(CONFIG_DEF, config);
+                final DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
+                try (final Connection db = dialect.getConnection()) {
+                    final List<Object> result = new LinkedList<>();
+                    for (final TableId id : dialect.tableIds(db)) {
+                        // Just add the unqualified table name
+                        result.add(id.tableName());
+                    }
+                    return result;
+                } catch (final SQLException e) {
+                    throw new ConfigException("Couldn't open connection to " + dbUrl, e);
+                }
+            } catch (final Exception ex) {
+                throw new ConfigException("Can't get recommended tables: " + ex.getMessage());
             }
         }
 
@@ -602,6 +600,11 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         @Override
         public boolean visible(final String name, final Map<String, Object> config) {
             final String mode = (String) config.get(MODE_CONFIG);
+
+            if (mode == null) {
+                return true;
+            }
+
             switch (mode) {
                 case MODE_BULK:
                     return false;
@@ -614,8 +617,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
                     return name.equals(TIMESTAMP_COLUMN_NAME_CONFIG)
                         || name.equals(INCREMENTING_COLUMN_NAME_CONFIG)
                         || name.equals(VALIDATE_NON_NULL_CONFIG);
-                case MODE_UNSPECIFIED:
-                    throw new ConfigException("Query mode must be specified");
                 default:
                     throw new ConfigException("Invalid mode: " + mode);
             }
@@ -706,6 +707,10 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
     public NumericMapping numericMapping() {
         return NumericMapping.get(this);
+    }
+
+    public String getMode() {
+        return getString(MODE_CONFIG);
     }
 
     public static void main(final String[] args) {

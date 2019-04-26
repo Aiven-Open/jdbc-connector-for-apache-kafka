@@ -112,7 +112,7 @@ public class JdbcSourceTask extends SourceTask {
             ? Collections.singletonList(query)
             : tables;
 
-        final String mode = config.getString(JdbcSourceTaskConfig.MODE_CONFIG);
+        final String mode = config.getMode();
         //used only in table mode
         final Map<String, List<Map<String, String>>> partitionsByTableFqn = new HashMap<>();
         Map<Map<String, String>, Map<String, Object>> offsets = null;

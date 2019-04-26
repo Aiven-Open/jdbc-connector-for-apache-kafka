@@ -87,6 +87,7 @@ public class JdbcSourceConnectorConfigTest {
 
     @Test
     public void testConfigTableNameRecommenderWithoutSchemaOrTableTypes() throws Exception {
+        props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
         configDef = JdbcSourceConnectorConfig.baseConfigDef();
         results = configDef.validate(props);
@@ -96,6 +97,7 @@ public class JdbcSourceConnectorConfigTest {
 
     @Test
     public void testConfigTableNameRecommenderWitSchemaAndWithoutTableTypes() throws Exception {
+        props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
         props.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "PRIVATE_SCHEMA");
         configDef = JdbcSourceConnectorConfig.baseConfigDef();
