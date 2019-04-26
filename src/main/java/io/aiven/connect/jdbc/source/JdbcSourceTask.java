@@ -29,7 +29,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.common.config.ConfigException;
@@ -152,7 +151,6 @@ public class JdbcSourceTask extends SourceTask {
             = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG);
         final boolean validateNonNulls
             = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
-        final TimeZone timeZone = config.timeZone();
 
         for (final String tableOrQuery : tablesOrQuery) {
             final List<Map<String, String>> tablePartitionsToCheck;
@@ -211,7 +209,7 @@ public class JdbcSourceTask extends SourceTask {
                         incrementingColumn,
                         offset,
                         timestampDelayInterval,
-                        timeZone
+                        config.getDBTimeZone()
                     )
                 );
             } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
@@ -225,7 +223,7 @@ public class JdbcSourceTask extends SourceTask {
                         null,
                         offset,
                         timestampDelayInterval,
-                        timeZone
+                        config.getDBTimeZone()
                     )
                 );
             } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
@@ -239,7 +237,7 @@ public class JdbcSourceTask extends SourceTask {
                         incrementingColumn,
                         offset,
                         timestampDelayInterval,
-                        timeZone
+                        config.getDBTimeZone()
                     )
                 );
             }

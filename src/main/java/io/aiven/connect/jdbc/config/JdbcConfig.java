@@ -16,13 +16,17 @@
 
 package io.aiven.connect.jdbc.config;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.types.Password;
+
+import io.aiven.connect.jdbc.util.TimeZoneValidator;
 
 public class JdbcConfig extends AbstractConfig {
     private static final String DATABASE_GROUP = "Database";
@@ -38,6 +42,13 @@ public class JdbcConfig extends AbstractConfig {
     public static final String CONNECTION_PASSWORD_CONFIG = "connection.password";
     private static final String CONNECTION_PASSWORD_DOC = "JDBC connection password.";
     private static final String CONNECTION_PASSWORD_DISPLAY = "JDBC Password";
+
+    public static final String DB_TIMEZONE_CONFIG = "db.timezone";
+    private static final String DB_TIMEZONE_DEFAULT = "UTC";
+    private static final String DB_TIMEZONE_CONFIG_DOC =
+        "Name of the JDBC timezone that should be used in the connector when "
+            + "querying with time-based criteria. Defaults to UTC.";
+    private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB time zone";
 
     public static final String DIALECT_NAME_CONFIG = "dialect.name";
     private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
@@ -70,6 +81,10 @@ public class JdbcConfig extends AbstractConfig {
 
     public final String getConnectionUser() {
         return getString(CONNECTION_USER_CONFIG);
+    }
+
+    public final TimeZone getDBTimeZone() {
+        return TimeZone.getTimeZone(ZoneId.of(getString(DB_TIMEZONE_CONFIG)));
     }
 
     public final Password getConnectionPassword() {
@@ -122,6 +137,21 @@ public class JdbcConfig extends AbstractConfig {
             orderInGroup,
             ConfigDef.Width.MEDIUM,
             CONNECTION_PASSWORD_DISPLAY
+        );
+    }
+
+    protected static void defineDbTimezone(final ConfigDef configDef, final int orderInGroup) {
+        configDef.define(
+            DB_TIMEZONE_CONFIG,
+            ConfigDef.Type.STRING,
+            DB_TIMEZONE_DEFAULT,
+            TimeZoneValidator.INSTANCE,
+            ConfigDef.Importance.MEDIUM,
+            DB_TIMEZONE_CONFIG_DOC,
+            DATABASE_GROUP,
+            orderInGroup,
+            ConfigDef.Width.MEDIUM,
+            DB_TIMEZONE_CONFIG_DISPLAY
         );
     }
 

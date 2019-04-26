@@ -37,4 +37,9 @@ public class TimeZoneValidator implements ConfigDef.Validator {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "valid time zone identifier (e.g., 'Europe/Helsinki', 'UTC+2', 'Z', 'CET')";
+    }
 }

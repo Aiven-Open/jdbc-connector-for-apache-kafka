@@ -19,7 +19,6 @@ package io.aiven.connect.jdbc.source;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,7 +43,6 @@ import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
 import io.aiven.connect.jdbc.util.TableId;
-import io.aiven.connect.jdbc.util.TimeZoneValidator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,16 +105,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
     private static final EnumRecommender NUMERIC_MAPPING_RECOMMENDER =
         EnumRecommender.in(NumericMapping.values());
-
-    public static final String DIALECT_NAME_CONFIG = "dialect.name";
-    private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
-    public static final String DIALECT_NAME_DEFAULT = "";
-    private static final String DIALECT_NAME_DOC =
-        "The name of the database dialect that should be used for this connector. By default this "
-            + "is empty, and the connector automatically determines the dialect based upon the "
-            + "JDBC connection URL. Use this if you want to override that behavior and use a "
-            + "specific dialect. All properly-packaged dialects in the JDBC connector plugin "
-            + "can be used.";
 
     public static final String MODE_CONFIG = "mode";
     private static final String MODE_DOC =
@@ -231,14 +218,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             + " from the last time we fetched until current time minus the delay.";
     public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
     private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
-
-    public static final String DB_TIMEZONE_CONFIG = "db.timezone";
-    public static final String DB_TIMEZONE_DEFAULT = "UTC";
-    private static final String DB_TIMEZONE_CONFIG_DOC =
-        "Name of the JDBC timezone that should be used in the connector when "
-            + "querying with time-based criteria. Defaults to UTC.";
-    private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB time zone";
-
 
     public static final String DATABASE_GROUP = "Database";
     public static final String MODE_GROUP = "Mode";
@@ -370,6 +349,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             NUMERIC_MAPPING_RECOMMENDER
         );
 
+        defineDbTimezone(config, ++orderInGroup);
         defineDialectName(config, ++orderInGroup);
         defineSqlQuoteIdentifiers(config, ++orderInGroup);
     }
@@ -504,17 +484,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             ++orderInGroup,
             Width.MEDIUM,
             TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY
-        ).define(
-            DB_TIMEZONE_CONFIG,
-            Type.STRING,
-            DB_TIMEZONE_DEFAULT,
-            TimeZoneValidator.INSTANCE,
-            Importance.MEDIUM,
-            DB_TIMEZONE_CONFIG_DOC,
-            CONNECTOR_GROUP,
-            ++orderInGroup,
-            Width.MEDIUM,
-            DB_TIMEZONE_CONFIG_DISPLAY);
+        );
     }
 
     public static final ConfigDef CONFIG_DEF = baseConfigDef();
@@ -736,11 +706,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
     public NumericMapping numericMapping() {
         return NumericMapping.get(this);
-    }
-
-    public TimeZone timeZone() {
-        final String dbTimeZone = getString(JdbcSourceTaskConfig.DB_TIMEZONE_CONFIG);
-        return TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
     }
 
     public static void main(final String[] args) {
