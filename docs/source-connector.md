@@ -43,6 +43,36 @@ For example, for PostgreSQL the connection URL might look like
 jdbc:postgresql://localhost:5432/test?user=fred&password=secret&ssl=true
 ```
 
+#### Setting Default Fetch Size to Prevent Out-of-Memory Errors
+
+By default, some JDBC drivers (e.g., PostgreSQL's and MySQL's) fetch all
+the rows from the database after executing a query and store them in
+memory. This is not practical in the case of this Source connector due
+to two reasons:
+1. A query may result in too many rows, storing which in memory will
+   cause out-of-memory errors.
+2. The number of rows posted to Kafka on a single poll is limited by
+   `batch.max.rows`.
+
+To address this potential issue, some drivers provide a parameter that
+is set in URL and defines the default number of rows to fetch and keep
+in memory. For example,
+[PostgreSQL's driver](https://jdbc.postgresql.org/documentation/head/connect.html)
+uses `defaultRowFetchSize` and its usage might look like
+```
+jdbc:postgresql://localhost:5432/test?<other_properties>&defaultRowFetchSize=10000
+```
+
+In
+[MySQL's driver](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-configuration-properties.html),
+it is called `defaultFetchSize`.
+
+Some drivers require autocommit to be disabled along with setting the
+default fetch size to operate in this mode. The connector does this.
+
+Check the driver documentation for the availability of these parameter,
+its name and if it is need to be set at all.
+
 ### SQL Dialects
 
 Different databases use different dialects of SQL. The connector
