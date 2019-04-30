@@ -37,20 +37,20 @@ public class NumericMappingConfigTest {
     public static Iterable<Object[]> mapping() {
         return Arrays.asList(
             new Object[][]{
-                {NumericMapping.NONE, null},
-                {NumericMapping.NONE, "none"},
-                {NumericMapping.NONE, "NONE"},
-                {NumericMapping.PRECISION_ONLY, "precision_only"},
-                {NumericMapping.PRECISION_ONLY, "PRECISION_ONLY"},
-                {NumericMapping.BEST_FIT, "best_fit"},
-                {NumericMapping.BEST_FIT, "BEST_FIT"},
-                {NumericMapping.NONE, null},
-                {NumericMapping.NONE, "none"},
-                {NumericMapping.NONE, "NONE"},
-                {NumericMapping.PRECISION_ONLY, "precision_only"},
-                {NumericMapping.PRECISION_ONLY, "PRECISION_ONLY"},
-                {NumericMapping.BEST_FIT, "best_fit"},
-                {NumericMapping.BEST_FIT, "BEST_FIT"}
+                {NumericMapping.NONE, false, null},
+                {NumericMapping.NONE, false, "none"},
+                {NumericMapping.NONE, false, "NONE"},
+                {NumericMapping.PRECISION_ONLY, false, "precision_only"},
+                {NumericMapping.PRECISION_ONLY, false, "PRECISION_ONLY"},
+                {NumericMapping.BEST_FIT, false, "best_fit"},
+                {NumericMapping.BEST_FIT, false, "BEST_FIT"},
+                {NumericMapping.PRECISION_ONLY, true, null},
+                {NumericMapping.NONE, true, "none"},
+                {NumericMapping.NONE, true, "NONE"},
+                {NumericMapping.PRECISION_ONLY, true, "precision_only"},
+                {NumericMapping.PRECISION_ONLY, true, "PRECISION_ONLY"},
+                {NumericMapping.BEST_FIT, true, "best_fit"},
+                {NumericMapping.BEST_FIT, true, "BEST_FIT"}
             }
         );
     }
@@ -59,7 +59,10 @@ public class NumericMappingConfigTest {
     public NumericMapping expected;
 
     @Parameterized.Parameter(1)
-    public String numericMappingString;
+    public boolean precisionMapping;
+
+    @Parameterized.Parameter(2)
+    public String extendedMapping;
 
     @Before
     public void setup() throws Exception {
@@ -71,8 +74,12 @@ public class NumericMappingConfigTest {
         props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, "jdbc:foo:bar");
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
-        if (numericMappingString != null) {
-            props.put(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG, numericMappingString);
+        props.put(
+            JdbcSourceConnectorConfig.NUMERIC_PRECISION_MAPPING_CONFIG,
+            String.valueOf(precisionMapping)
+        );
+        if (extendedMapping != null) {
+            props.put(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG, extendedMapping);
         }
         final JdbcSourceConnectorConfig config = new JdbcSourceConnectorConfig(props);
         assertEquals(expected, NumericMapping.get(config));
