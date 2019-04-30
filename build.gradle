@@ -126,6 +126,12 @@ dependencies {
     testRuntime "org.slf4j:slf4j-log4j12:$slf4jVersion"
 }
 
+processResources {
+    filesMatching('kafka-connect-jdbc-version.properties') {
+        expand(version: version)
+    }
+}
+
 task connectorConfigDoc {
     description = "Generates the connector's configuration documentation."
     group = "documentation"
