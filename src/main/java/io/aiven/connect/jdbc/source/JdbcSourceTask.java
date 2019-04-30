@@ -97,7 +97,13 @@ public class JdbcSourceTask extends SourceTask {
         }
         log.info("Using JDBC dialect {}", dialect.name());
 
-        cachedConnectionProvider = new CachedConnectionProvider(dialect, maxConnAttempts, retryBackoff);
+        cachedConnectionProvider = new CachedConnectionProvider(dialect, maxConnAttempts, retryBackoff) {
+            @Override
+            protected void onConnect(final Connection connection) throws SQLException {
+                super.onConnect(connection);
+                connection.setAutoCommit(false);
+            }
+        };
 
         final List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
         final String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
