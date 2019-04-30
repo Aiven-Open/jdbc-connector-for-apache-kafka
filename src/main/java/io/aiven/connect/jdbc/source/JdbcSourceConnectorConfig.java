@@ -77,7 +77,17 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
     public static final int BATCH_MAX_ROWS_DEFAULT = 100;
     private static final String BATCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
 
+    public static final String NUMERIC_PRECISION_MAPPING_CONFIG = "numeric.precision.mapping";
+    private static final String NUMERIC_PRECISION_MAPPING_DOC =
+        "Whether or not to attempt mapping NUMERIC values by precision to integral types. This "
+            + "option is now deprecated. A future version may remove it completely. Please use "
+            + "``numeric.mapping`` instead.";
+
+    public static final boolean NUMERIC_PRECISION_MAPPING_DEFAULT = false;
     public static final String NUMERIC_MAPPING_CONFIG = "numeric.mapping";
+    private static final String NUMERIC_PRECISION_MAPPING_DISPLAY = "Map Numeric Values By "
+        + "Precision (deprecated)";
+
     private static final String NUMERIC_MAPPING_DOC =
         "Map NUMERIC values by precision and optionally scale to integral or decimal types. Use "
             + "``none`` if all NUMERIC columns are to be represented by Connect's DECIMAL logical "
@@ -88,9 +98,11 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             + "to serialization issues with Avro since Connect's DECIMAL type is mapped to its "
             + "binary representation, and ``best_fit`` will often be preferred since it maps to the"
             + " most appropriate primitive type.";
-    private static final String NUMERIC_MAPPING_DEFAULT = NumericMapping.NONE.name().toLowerCase(Locale.ROOT);
+
+    public static final String NUMERIC_MAPPING_DEFAULT = null;
     private static final String NUMERIC_MAPPING_DISPLAY = "Map Numeric Values, Integral "
         + "or Decimal, By Precision and Scale";
+
     private static final EnumRecommender NUMERIC_MAPPING_RECOMMENDER =
         EnumRecommender.in(NumericMapping.values());
 
@@ -312,6 +324,16 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             ++orderInGroup,
             Width.SHORT,
             SCHEMA_PATTERN_DISPLAY
+        ).define(
+            NUMERIC_PRECISION_MAPPING_CONFIG,
+            Type.BOOLEAN,
+            NUMERIC_PRECISION_MAPPING_DEFAULT,
+            Importance.LOW,
+            NUMERIC_PRECISION_MAPPING_DOC,
+            DATABASE_GROUP,
+            ++orderInGroup,
+            Width.SHORT,
+            NUMERIC_PRECISION_MAPPING_DISPLAY
         ).define(
             NUMERIC_MAPPING_CONFIG,
             Type.STRING,
@@ -615,11 +637,20 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         }
 
         public static NumericMapping get(final String prop) {
+            // not adding a check for null value because the recommender/validator should catch those.
             return REVERSE.get(prop.toLowerCase(Locale.ROOT));
         }
 
         public static NumericMapping get(final JdbcSourceConnectorConfig config) {
-            return get(config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG));
+            final String newMappingConfig = config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG);
+            // We use 'null' as default to be able to check the old config if the new one is unset.
+            if (newMappingConfig != null) {
+                return get(config.getString(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG));
+            }
+            if (config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG)) {
+                return NumericMapping.PRECISION_ONLY;
+            }
+            return NumericMapping.NONE;
         }
     }
 
