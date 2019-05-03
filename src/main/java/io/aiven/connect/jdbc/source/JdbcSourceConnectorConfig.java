@@ -167,7 +167,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
     public static final String SCHEMA_PATTERN_CONFIG = "schema.pattern";
     private static final String SCHEMA_PATTERN_DOC =
         "Schema pattern to fetch table metadata from the database:\n"
-            + "  * \"\" retrieves those without a schema,"
+            + "  * \"\" retrieves those without a schema,\n"
             + "  * null (default) means that the schema name should not be used to narrow the search,"
             + " so that all table metadata would be fetched, regardless of their schema.";
     private static final String SCHEMA_PATTERN_DISPLAY = "Schema pattern";
@@ -176,7 +176,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
     public static final String CATALOG_PATTERN_CONFIG = "catalog.pattern";
     private static final String CATALOG_PATTERN_DOC =
         "Catalog pattern to fetch table metadata from the database:\n"
-            + "  * \"\" retrieves those without a catalog,"
+            + "  * \"\" retrieves those without a catalog,\n"
             + "  * null (default) means that the catalog name should not be used to narrow the search"
             + " so that all table metadata would be fetched, regardless of their catalog.";
     private static final String CATALOG_PATTERN_DISPLAY = "Schema pattern";

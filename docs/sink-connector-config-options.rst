@@ -60,7 +60,7 @@ Writes
 
   ``upsert``
 
-      Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT OR IGNORE``.
+      Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT .. ON CONFLICT .. DO UPDATE SET ..``.
 
   ``update``
 
@@ -100,7 +100,7 @@ Data Mapping
 
   ``kafka``
 
-      Kafka coordinates are used as the PK.
+      Kafka coordinates (the topic, partition, and offset) are used as the PK.
 
   ``record_key``
 
@@ -124,7 +124,7 @@ Data Mapping
 
   ``kafka``
 
-      Must be a trio representing the Kafka coordinates, defaults to ``__connect_topic,__connect_partition,__connect_offset`` if empty.
+      Must be a trio representing the Kafka coordinates (the topic, partition, and offset), defaults to ``__connect_topic,__connect_partition,__connect_offset`` if empty.
 
   ``record_key``
 
