@@ -90,9 +90,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/aiven/oss-kafka-connect-jdbc.git"
-                    developerConnection = "scm:git:git@github.com:aiven/oss-kafka-connect-jdbc.git"
-                    url = "https://github.com/aiven/oss-kafka-connect-jdbc"
+                    connection = "scm:git:git://github.com/aiven/aiven-kafka-connect-jdbc.git"
+                    developerConnection = "scm:git:git@github.com:aiven/aiven-kafka-connect-jdbc.git"
+                    url = "https://github.com/aiven/aiven-kafka-connect-jdbc"
                     tag = "HEAD"
                 }
             }
