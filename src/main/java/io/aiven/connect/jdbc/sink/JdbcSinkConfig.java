@@ -366,6 +366,10 @@ public class JdbcSinkConfig extends JdbcConfig {
     }
 
     public static void main(final String... args) {
+        System.out.println("=========================================");
+        System.out.println("JDBC Sink connector Configuration Options");
+        System.out.println("=========================================");
+        System.out.println();
         System.out.println(CONFIG_DEF.toEnrichedRst());
     }
 }
