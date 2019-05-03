@@ -57,7 +57,9 @@ Database
 ``catalog.pattern``
   Catalog pattern to fetch table metadata from the database:
 
-    * "" retrieves those without a catalog,  * null (default) means that the catalog name should not be used to narrow the search so that all table metadata would be fetched, regardless of their catalog.
+    * "" retrieves those without a catalog,
+
+    * null (default) means that the catalog name should not be used to narrow the search so that all table metadata would be fetched, regardless of their catalog.
 
   * Type: string
   * Default: null
@@ -66,7 +68,9 @@ Database
 ``schema.pattern``
   Schema pattern to fetch table metadata from the database:
 
-    * "" retrieves those without a schema,  * null (default) means that the schema name should not be used to narrow the search, so that all table metadata would be fetched, regardless of their schema.
+    * "" retrieves those without a schema,
+
+    * null (default) means that the schema name should not be used to narrow the search, so that all table metadata would be fetched, regardless of their schema.
 
   * Type: string
   * Default: null
