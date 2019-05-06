@@ -26,7 +26,6 @@ import org.apache.kafka.connect.source.SourceRecord;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
-import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 
 import org.easymock.EasyMock;
 import org.junit.Test;
@@ -45,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
     @Mock
-    private CachedConnectionProvider mockCachedConnectionProvider;
+    private SourceConnectionProvider mockSourceConnectionProvider;
 
     @Mock
     private Connection conn;
@@ -68,14 +67,14 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
     public void testStartStop() throws Exception {
         // Minimal start/stop functionality
         PowerMock.expectNew(
-            CachedConnectionProvider.class,
+            SourceConnectionProvider.class,
             EasyMock.anyObject(DatabaseDialect.class),
             EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT),
             EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT))
-            .andReturn(mockCachedConnectionProvider);
+            .andReturn(mockSourceConnectionProvider);
 
         // Should request a connection, then should close it on stop()
-        EasyMock.expect(mockCachedConnectionProvider.getConnection()).andReturn(db.getConnection());
+        EasyMock.expect(mockSourceConnectionProvider.getConnection()).andReturn(db.getConnection());
 
         PowerMock.expectLastCall();
 
