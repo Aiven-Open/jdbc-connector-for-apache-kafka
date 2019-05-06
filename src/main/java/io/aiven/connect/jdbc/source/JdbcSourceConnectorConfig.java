@@ -82,12 +82,11 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         "Whether or not to attempt mapping NUMERIC values by precision to integral types. This "
             + "option is now deprecated. A future version may remove it completely. Please use "
             + "``numeric.mapping`` instead.";
-
     public static final boolean NUMERIC_PRECISION_MAPPING_DEFAULT = false;
-    public static final String NUMERIC_MAPPING_CONFIG = "numeric.mapping";
     private static final String NUMERIC_PRECISION_MAPPING_DISPLAY = "Map Numeric Values By "
         + "Precision (deprecated)";
 
+    public static final String NUMERIC_MAPPING_CONFIG = "numeric.mapping";
     private static final String NUMERIC_MAPPING_DOC =
         "Map NUMERIC values by precision and optionally scale to integral or decimal types. Use "
             + "``none`` if all NUMERIC columns are to be represented by Connect's DECIMAL logical "
@@ -489,6 +488,12 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
     public JdbcSourceConnectorConfig(final Map<String, ?> props) {
         super(CONFIG_DEF, props);
+        if (props.containsKey(NUMERIC_PRECISION_MAPPING_CONFIG)) {
+            LOG.warn("Option {} is deprecated and may be removed in future versions. "
+                    + "Please use {} instead (see the documentation).",
+                NUMERIC_PRECISION_MAPPING_CONFIG,
+                NUMERIC_MAPPING_CONFIG);
+        }
     }
 
     private static class TableRecommender implements Recommender {
