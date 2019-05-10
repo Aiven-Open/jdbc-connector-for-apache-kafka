@@ -19,7 +19,12 @@ package io.aiven.connect.jdbc.dialect;
 
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -205,5 +210,12 @@ public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDia
         assertEquals(Types.INTEGER, columnDefn.type());
         assertEquals(false, columnDefn.isPrimaryKey());
         assertEquals(true, columnDefn.isOptional());
+    }
+
+    @Test
+    public void testX() throws SQLException {
+        final Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(ZoneOffset.UTC));
+        final Instant dbInstant = dialect.currentTimeOnDB(sqliteHelper.connection, cal).toInstant();
+        assertEquals(0, Duration.between(dbInstant, Instant.now()).getSeconds());
     }
 }
