@@ -197,7 +197,7 @@ following auto-evolution limitations apply:
 
 To enable table auto-evolution, set `auto.evolve=true`.
 
-### Data Mapping
+## Data Mapping
 
 The nullability of a column is based on the optionality of the
 corresponding fields in the schema.
@@ -277,3 +277,75 @@ _(continued)_
 |        `Date`       |                          `DATE`                         |        `DATE`       |
 |        `Time`       |                          `TIME`                         |        `TIME`       |
 |     `Timestamp`     |                        `DATETIME`                       |      `DATETIME`     |
+
+## Example
+
+Let's look at an example.
+
+We have `messages` table in PostgreSQL with the following schema:
+
+| Column name | Type        |
+|:-----------:|:-----------:|
+| `text`      | `VARCHAR`   |
+| `sent_at`   | `TIMESTAMP` |
+
+We have messages in JSON that look like this:
+```json
+{
+  "text": "Hello",
+  "sent_at": 1560507792000
+}
+```
+
+where `1560507792000` is `Friday, June 14, 2019 10:23:12 AM` as a Unix
+timestamp in milliseconds.
+
+We want to ingest these messages into `messages` table using Kafka topic
+with the same name `messages` and the JDBC Sink connector.
+
+Let's set up the connector.
+
+Kafka record values must be structs with primitive fields. This
+is fine, our JSON structure perfectly fits this.
+
+The converter requires the knowledge of the value schema. We will use
+`org.apache.kafka.connect.json.JsonConverter` for values with enabled
+schemas. However currently (as of Kafka 2.2.1) `JsonConverter` with
+enabled schemas requires record values to contain explicit schemas in
+themselves. In our case, this looks like this:
+```json
+{
+  "schema": {
+    "type": "struct",
+    "fields": [
+        { "field": "text", "type": "string", "optional": false },
+        { "field": "sent_at", "type": "int64", "name": "org.apache.kafka.connect.data.Timestamp", "optional": false }
+    ]
+  },
+  "payload": {
+      "text": "Hello",
+      "sent_at": 1560507792000
+  }
+}
+```
+
+Messages in this format should be published into `messages` topic.
+
+Here's a configuration that makes this case work:
+
+```properties
+name=example-jdbc-sink
+
+# These are defaults, but they're here for clarity:
+key.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter.schemas.enable=true
+
+connector.class=io.aiven.connect.jdbc.JdbcSinkConnector
+connection.url=jdbc:postgresql://localhost:5432/kafkaconnect?user=postgres&password=mysecretpassword
+
+topics=messages
+
+# This is default, but it's here for clarity:
+insert.mode=insert
+```
