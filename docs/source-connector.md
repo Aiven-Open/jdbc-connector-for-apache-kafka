@@ -56,16 +56,21 @@ to two reasons:
 
 To address this potential issue, some drivers provide a parameter that
 is set in URL and defines the default number of rows to fetch and keep
-in memory. For example,
+in memory.
+
 [PostgreSQL's driver](https://jdbc.postgresql.org/documentation/head/connect.html)
-uses `defaultRowFetchSize` and its usage might look like
+uses `defaultRowFetchSize`. The URL with it might look like
 ```
-jdbc:postgresql://localhost:5432/test?<other_properties>&defaultRowFetchSize=10000
+jdbc:postgresql://localhost:5432/test?<other_properties>&defaultRowFetchSize=1000
 ```
 
 In
 [MySQL's driver](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-configuration-properties.html),
-it is called `defaultFetchSize`.
+it is called `defaultFetchSize`. Also setting `useCursorFetch=true` is required.
+The URL with it might look like
+```
+jdbc:mysq://localhost:3306/test?<other_properties>&useCursorFetch=true&defaultFetchSize=1000
+```
 
 Some drivers require autocommit to be disabled along with setting the
 default fetch size to operate in this mode. The connector does this.
