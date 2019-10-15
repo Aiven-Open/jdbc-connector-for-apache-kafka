@@ -178,7 +178,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             + "  * \"\" retrieves those without a catalog,\n"
             + "  * null (default) means that the catalog name should not be used to narrow the search"
             + " so that all table metadata would be fetched, regardless of their catalog.";
-    private static final String CATALOG_PATTERN_DISPLAY = "Schema pattern";
+    private static final String CATALOG_PATTERN_DISPLAY = "Catalog pattern";
     public static final String CATALOG_PATTERN_DEFAULT = null;
 
     public static final String QUERY_CONFIG = "query";
