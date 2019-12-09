@@ -127,7 +127,7 @@ dependencies {
 }
 
 processResources {
-    filesMatching('kafka-connect-jdbc-version.properties') {
+    filesMatching('aiven-kafka-connect-jdbc-version.properties') {
         expand(version: version)
     }
 }
