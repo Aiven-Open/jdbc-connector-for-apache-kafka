@@ -156,6 +156,18 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     }
 
     @Test
+    public void upsertWithEmptyNonKeyColumns() {
+        final String expected = readQueryResourceForThisTest("upsert2");
+        final TableId customer = tableId("Customer");
+        final String actual = dialect.buildUpsertQueryStatement(
+                customer,
+                columns(customer, "id", "name", "salary", "address"),
+                columns(customer)
+        );
+        assertQueryEquals(expected, actual);
+    }
+
+    @Test
     public void shouldSanitizeUrlWithoutCredentialsInProperties() {
         assertSanitizedUrl(
             "jdbc:postgresql://localhost/test?user=fred&ssl=true",
