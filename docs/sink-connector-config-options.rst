@@ -38,7 +38,7 @@ Database
 
   * Type: string
   * Default: ""
-  * Valid Values: [, Db2DatabaseDialect, MySqlDatabaseDialect, SybaseDatabaseDialect, GenericDatabaseDialect, OracleDatabaseDialect, SqlServerDatabaseDialect, PostgreSqlDatabaseDialect, SqliteDatabaseDialect, DerbyDatabaseDialect, SapHanaDatabaseDialect, VerticaDatabaseDialect]
+  * Valid Values: [, Db2DatabaseDialect, MySqlDatabaseDialect, SybaseDatabaseDialect, GenericDatabaseDialect, OracleDatabaseDialect, SqlServerDatabaseDialect, PostgreSqlDatabaseDialect, SqliteDatabaseDialect, DerbyDatabaseDialect, SapHanaDatabaseDialect, VerticaDatabaseDialect, RedshiftDatabaseDialect]
   * Importance: low
 
 ``sql.quote.identifiers``
@@ -58,6 +58,10 @@ Writes
 
       Use standard SQL ``INSERT`` statements.
 
+  ``multi``
+
+      Use multi-row inserts, e.g. ``INSERT INTO table_name (column_list) VALUES (value_list_1), (value_list_2), ... (value_list_n);``
+
   ``upsert``
 
       Use the appropriate upsert semantics for the target database if it is supported by the connector, e.g. ``INSERT .. ON CONFLICT .. DO UPDATE SET ..``.
@@ -68,7 +72,7 @@ Writes
 
   * Type: string
   * Default: insert
-  * Valid Values: [insert, upsert, update]
+  * Valid Values: [insert, multi, upsert, update]
   * Importance: high
 
 ``batch.size``

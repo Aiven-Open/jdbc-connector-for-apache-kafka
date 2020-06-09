@@ -77,6 +77,13 @@ from Kafka.
 This mode is used by default. To enable it explicitly, set
 `insert.mode=insert`.
 
+### Multi Mode
+
+In this mode, the connector executes an `INSERT` SQL query with multiple
+values (effectively inserting multiple row/records per query).
+
+To use this mode, set `insert.mode=multi`
+
 ### Update Mode
 
 In this mode, the connector executes `UPDATE` SQL query on each record
