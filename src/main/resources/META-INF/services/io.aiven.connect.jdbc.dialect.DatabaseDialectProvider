@@ -4,6 +4,7 @@ io.aiven.connect.jdbc.dialect.DerbyDatabaseDialect$Provider
 io.aiven.connect.jdbc.dialect.OracleDatabaseDialect$Provider
 io.aiven.connect.jdbc.dialect.SqliteDatabaseDialect$Provider
 io.aiven.connect.jdbc.dialect.PostgreSqlDatabaseDialect$Provider
+io.aiven.connect.jdbc.dialect.RedshiftDatabaseDialect$Provider
 io.aiven.connect.jdbc.dialect.MySqlDatabaseDialect$Provider
 io.aiven.connect.jdbc.dialect.SqlServerDatabaseDialect$Provider
 io.aiven.connect.jdbc.dialect.SapHanaDatabaseDialect$Provider

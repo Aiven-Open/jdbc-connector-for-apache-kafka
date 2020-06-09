@@ -38,6 +38,7 @@ public class JdbcSinkConfig extends JdbcConfig {
 
     public enum InsertMode {
         INSERT,
+        MULTI,
         UPSERT,
         UPDATE;
     }
@@ -105,6 +106,8 @@ public class JdbcSinkConfig extends JdbcConfig {
         "The insertion mode to use. Supported modes are:\n"
             + "``insert``\n"
             + "    Use standard SQL ``INSERT`` statements.\n"
+            + "``multi``\n"
+            + "    Use multi-row ``INSERT`` statements.\n"
             + "``upsert``\n"
             + "    Use the appropriate upsert semantics for the target database if it is supported by "
             + "the connector, e.g. ``INSERT .. ON CONFLICT .. DO UPDATE SET ..``.\n"

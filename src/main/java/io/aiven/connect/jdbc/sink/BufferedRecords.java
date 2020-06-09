@@ -40,6 +40,8 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.aiven.connect.jdbc.sink.JdbcSinkConfig.InsertMode.MULTI;
+
 public class BufferedRecords {
     private static final Logger log = LoggerFactory.getLogger(BufferedRecords.class);
 
@@ -92,7 +94,13 @@ public class BufferedRecords {
                 fieldsMetadata
             );
 
-            final String sql = getInsertSql();
+            final String sql;
+            if (config.insertMode == MULTI && records.isEmpty())  {
+                sql = getFirstMultirowInsertSql();
+            } else {
+                sql = getInsertSql();
+            }
+
             log.debug(
                 "{} sql: {}",
                 config.insertMode,
@@ -158,6 +166,7 @@ public class BufferedRecords {
                         totalUpdateCount,
                         records.size()
                     ));
+                case MULTI:
                 case UPSERT:
                 case UPDATE:
                     log.debug(
@@ -192,6 +201,28 @@ public class BufferedRecords {
         }
     }
 
+    private String getFirstMultirowInsertSql() {
+        if (config.insertMode != MULTI) {
+            throw new ConnectException(String.format(
+                    "Multi-row first insert SQL unsupported by insert mode %s",
+                    config.insertMode
+            ));
+        }
+        try {
+            return dbDialect.buildFirstMultiInsertStatement(
+                    tableId,
+                    asColumns(fieldsMetadata.keyFieldNames),
+                    asColumns(fieldsMetadata.nonKeyFieldNames)
+            );
+        } catch (final UnsupportedOperationException e) {
+            throw new ConnectException(String.format(
+                    "Write to table '%s' in MULTI mode is not supported with the %s dialect.",
+                    tableId,
+                    dbDialect.name()
+            ));
+        }
+    }
+
     private String getInsertSql() {
         switch (config.insertMode) {
             case INSERT:
@@ -199,6 +230,12 @@ public class BufferedRecords {
                     tableId,
                     asColumns(fieldsMetadata.keyFieldNames),
                     asColumns(fieldsMetadata.nonKeyFieldNames)
+                );
+            case MULTI:
+                return dbDialect.buildMultiInsertStatement(
+                        tableId,
+                        asColumns(fieldsMetadata.keyFieldNames),
+                        asColumns(fieldsMetadata.nonKeyFieldNames)
                 );
             case UPSERT:
                 if (fieldsMetadata.keyFieldNames.isEmpty()) {

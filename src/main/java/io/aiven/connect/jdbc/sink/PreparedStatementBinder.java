@@ -68,6 +68,7 @@ public class PreparedStatementBinder implements StatementBinder {
         int index = 1;
         switch (insertMode) {
             case INSERT:
+            case MULTI:
             case UPSERT:
                 index = bindKeyFields(record, index);
                 bindNonKeyFields(record, valueStruct, index);

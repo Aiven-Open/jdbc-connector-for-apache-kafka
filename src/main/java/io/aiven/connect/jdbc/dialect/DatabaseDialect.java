@@ -324,6 +324,18 @@ public interface DatabaseDialect extends ConnectionProvider {
         Collection<ColumnId> nonKeyColumns
     );
 
+    String buildFirstMultiInsertStatement(
+            TableId tableId,
+            Collection<ColumnId> keyColumns,
+            Collection<ColumnId> nonKeyColumns
+    );
+
+    String buildMultiInsertStatement(
+            TableId tableId,
+            Collection<ColumnId> keyColumns,
+            Collection<ColumnId> nonKeyColumns
+    );
+
     /**
      * Build the UPDATE prepared statement expression for the given table and its columns. Variables
      * for each key column should also appear in the WHERE clause of the statement.
@@ -423,6 +435,8 @@ public interface DatabaseDialect extends ConnectionProvider {
         Schema schema,
         Object value
     ) throws SQLException;
+
+
 
     /**
      * A function to bind the values from a sink record into a prepared statement.
