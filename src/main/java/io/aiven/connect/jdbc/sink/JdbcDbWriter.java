@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -91,21 +92,33 @@ public class JdbcDbWriter {
 
     TableId destinationTable(final String topic) {
         final String tableName = generateTableNameFor(topic);
-        if (tableName.isEmpty()) {
-            throw new ConnectException(String.format(
-                    "Destination table name for topic '%s' is empty using the format string '%s'",
-                    topic,
-                    config.tableNameFormat
-            ));
-        }
         return dbDialect.parseTableIdentifier(tableName);
     }
 
     public String generateTableNameFor(final String topic) {
-        final String tableName = config.tableNameFormat.replace("${topic}", topic);
-        return config.tableNameNormalize
-                ? NORMALIZE_TABLE_NAME_FOR_TOPIC.matcher(tableName).replaceAll("_")
-                : tableName;
+        String tableName = config.tableNameFormat.replace("${topic}", topic);
+        if (config.tableNameNormalize) {
+            tableName = NORMALIZE_TABLE_NAME_FOR_TOPIC.matcher(tableName).replaceAll("_");
+        }
+        if (!config.topicsToTablesMapping.isEmpty()) {
+            tableName = config.topicsToTablesMapping.getOrDefault(topic, "");
+        }
+        if (tableName.isEmpty()) {
+            final String errorMessage =
+                    String.format(
+                            "Destination table for the topic: '%s' "
+                                    + "couldn't be found in the topics to tables mapping: '%s' "
+                                    + "and couldn't be generated for the format string '%s'",
+                            topic,
+                            config.topicsToTablesMapping
+                                    .entrySet()
+                                    .stream()
+                                    .map(e -> String.join("->", e.getKey(), e.getValue()))
+                                    .collect(Collectors.joining(",")),
+                            config.tableNameFormat);
+            throw new ConnectException(errorMessage);
+        }
+        return tableName;
     }
 
 }
