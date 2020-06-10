@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,6 @@ import java.util.TimeZone;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.config.types.Password;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.StringUtils;
@@ -58,12 +57,15 @@ public class JdbcSinkConfig extends JdbcConfig {
     );
 
     public static final String TABLE_NAME_FORMAT = "table.name.format";
-    private static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
+
+    public static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
+
     private static final String TABLE_NAME_FORMAT_DOC =
         "A format string for the destination table name, which may contain '${topic}' as a "
             + "placeholder for the originating topic name.\n"
             + "For example, ``kafka_${topic}`` for the topic 'orders' will map to the table name "
-            + "'kafka_orders'.";
+            + "'kafka_orders'. The alphanumeric characters (``a-z A-Z 0-9``) and ``_`` "
+            + "will remain as is, others (like ``.``) will be replaced by ``_``.";
     private static final String TABLE_NAME_FORMAT_DISPLAY = "Table Name Format";
 
     public static final String MAX_RETRIES = "max.retries";
@@ -322,14 +324,6 @@ public class JdbcSinkConfig extends JdbcConfig {
         fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
         final String dbTimeZone = getString(DB_TIMEZONE_CONFIG);
         timeZone = TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
-    }
-
-    private String getPasswordValue(final String key) {
-        final Password password = getPassword(key);
-        if (password != null) {
-            return password.value();
-        }
-        return null;
     }
 
     private static class EnumValidator implements ConfigDef.Validator {

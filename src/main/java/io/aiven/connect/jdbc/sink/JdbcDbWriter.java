@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -34,11 +35,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JdbcDbWriter {
+
     private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
+    private static final Pattern NORMALIZE_TABLE_NAME_FOR_TOPIC = Pattern.compile("(?<!^)[^a-zA-Z0-9_-]");
+
     private final JdbcSinkConfig config;
+
     private final DatabaseDialect dbDialect;
+
     private final DbStructure dbStructure;
+
     final CachedConnectionProvider cachedConnectionProvider;
 
     JdbcDbWriter(final JdbcSinkConfig config, final DatabaseDialect dbDialect, final DbStructure dbStructure) {
@@ -83,14 +90,20 @@ public class JdbcDbWriter {
     }
 
     TableId destinationTable(final String topic) {
-        final String tableName = config.tableNameFormat.replace("${topic}", topic);
+        final String tableName = generateTableNameFor(topic);
         if (tableName.isEmpty()) {
             throw new ConnectException(String.format(
-                "Destination table name for topic '%s' is empty using the format string '%s'",
-                topic,
-                config.tableNameFormat
+                    "Destination table name for topic '%s' is empty using the format string '%s'",
+                    topic,
+                    config.tableNameFormat
             ));
         }
         return dbDialect.parseTableIdentifier(tableName);
     }
+
+    public String generateTableNameFor(final String topic) {
+        final String tableName = config.tableNameFormat.replace("${topic}", topic);
+        return NORMALIZE_TABLE_NAME_FOR_TOPIC.matcher(tableName).replaceAll("_");
+    }
+
 }
