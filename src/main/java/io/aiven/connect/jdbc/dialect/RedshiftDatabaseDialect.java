@@ -22,7 +22,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -218,6 +221,18 @@ public class RedshiftDatabaseDialect extends GenericDatabaseDialect {
             default:
                 return super.getSqlType(field);
         }
+    }
+
+    @Override
+    public List<String> buildAlterTable(
+            final TableId table,
+            final Collection<SinkRecordField> fields
+    ) {
+        final List<String> queries = new ArrayList<>(fields.size());
+        for (final SinkRecordField field : fields) {
+            queries.addAll(super.buildAlterTable(table, Collections.singleton(field)));
+        }
+        return queries;
     }
 
     @Override
