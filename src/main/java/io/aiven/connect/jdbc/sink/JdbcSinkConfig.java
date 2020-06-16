@@ -57,16 +57,22 @@ public class JdbcSinkConfig extends JdbcConfig {
     );
 
     public static final String TABLE_NAME_FORMAT = "table.name.format";
-
     public static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
-
     private static final String TABLE_NAME_FORMAT_DOC =
         "A format string for the destination table name, which may contain '${topic}' as a "
             + "placeholder for the originating topic name.\n"
             + "For example, ``kafka_${topic}`` for the topic 'orders' will map to the table name "
-            + "'kafka_orders'. The alphanumeric characters (``a-z A-Z 0-9``) and ``_`` "
-            + "will remain as is, others (like ``.``) will be replaced by ``_``.";
+            + "'kafka_orders'.";
     private static final String TABLE_NAME_FORMAT_DISPLAY = "Table Name Format";
+
+    public static final String TABLE_NAME_NORMALIZE = "table.name.normalize";
+    public static final boolean TABLE_NAME_NORMALIZE_DEFAULT = false;
+    private static final String TABLE_NAME_NORMALIZE_DOC =
+            "If set to ``true`` the alphanumeric characters (``a-z A-Z 0-9``) and ``_`` "
+                    + "in the destination table name for the particular topic will remain as is, "
+                    + "others (like ``.``) will be replaced by ``_``. "
+                    + "By default is set to ``false``.";
+    private static final String TABLE_NAME_NORMALIZE_DISPLAY = "Table Name Normalize";
 
     public static final String MAX_RETRIES = "max.retries";
     private static final int MAX_RETRIES_DEFAULT = 10;
@@ -216,6 +222,17 @@ public class JdbcSinkConfig extends JdbcConfig {
                 TABLE_NAME_FORMAT_DISPLAY
             )
             .define(
+                TABLE_NAME_NORMALIZE,
+                ConfigDef.Type.BOOLEAN,
+                TABLE_NAME_NORMALIZE_DEFAULT,
+                ConfigDef.Importance.MEDIUM,
+                TABLE_NAME_NORMALIZE_DOC,
+                DATAMAPPING_GROUP,
+                2,
+                ConfigDef.Width.LONG,
+                TABLE_NAME_NORMALIZE_DISPLAY
+            )
+            .define(
                 PK_MODE,
                 ConfigDef.Type.STRING,
                 PK_MODE_DEFAULT,
@@ -223,7 +240,7 @@ public class JdbcSinkConfig extends JdbcConfig {
                 ConfigDef.Importance.HIGH,
                 PK_MODE_DOC,
                 DATAMAPPING_GROUP,
-                2,
+                3,
                 ConfigDef.Width.MEDIUM,
                 PK_MODE_DISPLAY
             )
@@ -234,7 +251,7 @@ public class JdbcSinkConfig extends JdbcConfig {
                 ConfigDef.Importance.MEDIUM,
                 PK_FIELDS_DOC,
                 DATAMAPPING_GROUP,
-                3,
+                4,
                 ConfigDef.Width.LONG, PK_FIELDS_DISPLAY
             )
             .define(
@@ -244,7 +261,7 @@ public class JdbcSinkConfig extends JdbcConfig {
                 ConfigDef.Importance.MEDIUM,
                 FIELDS_WHITELIST_DOC,
                 DATAMAPPING_GROUP,
-                4,
+                5,
                 ConfigDef.Width.LONG,
                 FIELDS_WHITELIST_DISPLAY
             );
@@ -299,6 +316,7 @@ public class JdbcSinkConfig extends JdbcConfig {
     }
 
     public final String tableNameFormat;
+    public final boolean tableNameNormalize;
     public final int batchSize;
     public final int maxRetries;
     public final int retryBackoffMs;
@@ -313,6 +331,7 @@ public class JdbcSinkConfig extends JdbcConfig {
     public JdbcSinkConfig(final Map<?, ?> props) {
         super(CONFIG_DEF, props);
         tableNameFormat = getString(TABLE_NAME_FORMAT).trim();
+        tableNameNormalize = getBoolean(TABLE_NAME_NORMALIZE);
         batchSize = getInt(BATCH_SIZE);
         maxRetries = getInt(MAX_RETRIES);
         retryBackoffMs = getInt(RETRY_BACKOFF_MS);

@@ -38,7 +38,7 @@ public class JdbcDbWriter {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
-    private static final Pattern NORMALIZE_TABLE_NAME_FOR_TOPIC = Pattern.compile("(?<!^)[^a-zA-Z0-9_-]");
+    private static final Pattern NORMALIZE_TABLE_NAME_FOR_TOPIC = Pattern.compile("[^a-zA-Z0-9_]");
 
     private final JdbcSinkConfig config;
 
@@ -103,7 +103,9 @@ public class JdbcDbWriter {
 
     public String generateTableNameFor(final String topic) {
         final String tableName = config.tableNameFormat.replace("${topic}", topic);
-        return NORMALIZE_TABLE_NAME_FOR_TOPIC.matcher(tableName).replaceAll("_");
+        return config.tableNameNormalize
+                ? NORMALIZE_TABLE_NAME_FOR_TOPIC.matcher(tableName).replaceAll("_")
+                : tableName;
     }
 
 }

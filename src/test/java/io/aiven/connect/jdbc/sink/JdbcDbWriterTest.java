@@ -79,20 +79,23 @@ public class JdbcDbWriterTest {
 
     @Test
     public void shouldGenerateNormalizedTableNameForTopic() {
-
-        final Map<String, String> props = new HashMap<>();
+        final Map<String, Object> props = new HashMap<>();
         props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
         props.put(JdbcSinkConfig.TABLE_NAME_FORMAT, "kafka_topic_${topic}");
+        props.put(JdbcSinkConfig.TABLE_NAME_NORMALIZE, true);
         final JdbcSinkConfig jdbcSinkConfig = new JdbcSinkConfig(props);
 
         dialect = new SqliteDatabaseDialect(jdbcSinkConfig);
         final DbStructure dbStructure = new DbStructure(dialect);
         final JdbcDbWriter jdbcDbWriter = new JdbcDbWriter(jdbcSinkConfig, dialect, dbStructure);
 
+        assertEquals("kafka_topic___some_topic",
+                jdbcDbWriter.generateTableNameFor("--some_topic"));
+
         assertEquals("kafka_topic_some_topic",
                 jdbcDbWriter.generateTableNameFor("some_topic"));
 
-        assertEquals("kafka_topic_some-topic",
+        assertEquals("kafka_topic_some_topic",
                 jdbcDbWriter.generateTableNameFor("some-topic"));
 
         assertEquals("kafka_topic_this_is_topic_with_dots",
@@ -104,25 +107,6 @@ public class JdbcDbWriterTest {
         assertEquals("kafka_topic_orders_topic__3",
                 jdbcDbWriter.generateTableNameFor("orders_topic_#3"));
 
-    }
-
-
-    @Test
-    public void shouldGetNormalizedTableName() {
-        final Map<String, String> props = new HashMap<>();
-        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhnost");
-        props.put(JdbcSinkConfig.TABLE_NAME_FORMAT, "${topic}");
-
-        final JdbcSinkConfig jdbcSinkConfig = new JdbcSinkConfig(props);
-        dialect = new SqliteDatabaseDialect(jdbcSinkConfig);
-        final DbStructure dbStructure = new DbStructure(dialect);
-        final JdbcDbWriter writer = new JdbcDbWriter(jdbcSinkConfig, dialect, dbStructure);
-
-        TableId tableId = writer.destinationTable("this.is.my.topic");
-        assertEquals("this_is_my_topic", tableId.tableName());
-
-        tableId = writer.destinationTable("the_topic");
-        assertEquals("the_topic", tableId.tableName());
     }
 
     @Test
