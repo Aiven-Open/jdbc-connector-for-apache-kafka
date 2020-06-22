@@ -57,7 +57,7 @@ public class JdbcSinkConfig extends JdbcConfig {
     );
 
     public static final String TABLE_NAME_FORMAT = "table.name.format";
-    public static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
+    private static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";
     private static final String TABLE_NAME_FORMAT_DOC =
         "A format string for the destination table name, which may contain '${topic}' as a "
             + "placeholder for the originating topic name.\n"
@@ -68,10 +68,9 @@ public class JdbcSinkConfig extends JdbcConfig {
     public static final String TABLE_NAME_NORMALIZE = "table.name.normalize";
     public static final boolean TABLE_NAME_NORMALIZE_DEFAULT = false;
     private static final String TABLE_NAME_NORMALIZE_DOC =
-            "If set to ``true`` the alphanumeric characters (``a-z A-Z 0-9``) and ``_`` "
-                    + "in the destination table name for the particular topic will remain as is, "
-                    + "others (like ``.``) will be replaced by ``_``. "
-                    + "By default is set to ``false``.";
+            "Whether or not to normalize destination table names for topics. "
+                    + "When set to ``true``, the alphanumeric characters (``a-z A-Z 0-9``) and ``_`` "
+                    + "remain as is, others (like ``.``) are replaced with ``_``.";
     private static final String TABLE_NAME_NORMALIZE_DISPLAY = "Table Name Normalize";
 
     public static final String MAX_RETRIES = "max.retries";
@@ -225,7 +224,7 @@ public class JdbcSinkConfig extends JdbcConfig {
                 TABLE_NAME_NORMALIZE,
                 ConfigDef.Type.BOOLEAN,
                 TABLE_NAME_NORMALIZE_DEFAULT,
-                ConfigDef.Importance.MEDIUM,
+                ConfigDef.Importance.LOW,
                 TABLE_NAME_NORMALIZE_DOC,
                 DATAMAPPING_GROUP,
                 2,

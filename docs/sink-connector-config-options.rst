@@ -91,6 +91,13 @@ Data Mapping
   * Default: ${topic}
   * Importance: medium
 
+``table.name.normalize``
+  Whether or not to normalize destination table names for topics. When set to ``true``, the alphanumeric characters (``a-z A-Z 0-9``) and ``_`` remain as is, others (like ``.``) are replaced with ``_``.
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
 ``pk.mode``
   The primary key mode, also refer to ``pk.fields`` documentation for interplay. Supported modes are:
 
