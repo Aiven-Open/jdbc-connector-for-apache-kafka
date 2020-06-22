@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,6 +75,38 @@ public class JdbcDbWriterTest {
         dialect = new SqliteDatabaseDialect(config);
         final DbStructure dbStructure = new DbStructure(dialect);
         return new JdbcDbWriter(config, dialect, dbStructure);
+    }
+
+    @Test
+    public void shouldGenerateNormalizedTableNameForTopic() {
+        final Map<String, Object> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.TABLE_NAME_FORMAT, "kafka_topic_${topic}");
+        props.put(JdbcSinkConfig.TABLE_NAME_NORMALIZE, true);
+        final JdbcSinkConfig jdbcSinkConfig = new JdbcSinkConfig(props);
+
+        dialect = new SqliteDatabaseDialect(jdbcSinkConfig);
+        final DbStructure dbStructure = new DbStructure(dialect);
+        final JdbcDbWriter jdbcDbWriter = new JdbcDbWriter(jdbcSinkConfig, dialect, dbStructure);
+
+        assertEquals("kafka_topic___some_topic",
+                jdbcDbWriter.generateTableNameFor("--some_topic"));
+
+        assertEquals("kafka_topic_some_topic",
+                jdbcDbWriter.generateTableNameFor("some_topic"));
+
+        assertEquals("kafka_topic_some_topic",
+                jdbcDbWriter.generateTableNameFor("some-topic"));
+
+        assertEquals("kafka_topic_this_is_topic_with_dots",
+                jdbcDbWriter.generateTableNameFor("this.is.topic.with.dots"));
+
+        assertEquals("kafka_topic_this_is_topic_with_dots_and_weired_characters___",
+                jdbcDbWriter.generateTableNameFor("this.is.topic.with.dots.and.weired.characters#$%"));
+
+        assertEquals("kafka_topic_orders_topic__3",
+                jdbcDbWriter.generateTableNameFor("orders_topic_#3"));
+
     }
 
     @Test
