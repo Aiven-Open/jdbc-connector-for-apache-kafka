@@ -108,9 +108,10 @@ ext {
 dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
 
-    runtimeOnly "org.xerial:sqlite-jdbc:3.25.2"
-    runtimeOnly "org.postgresql:postgresql:42.2.9"
+    runtimeOnly "org.xerial:sqlite-jdbc:3.32.3"
+    runtimeOnly "org.postgresql:postgresql:42.2.14"
     runtimeOnly "net.sourceforge.jtds:jtds:1.3.1"
+    runtimeOnly "net.snowflake:snowflake-jdbc:3.12.8"
 
     implementation "com.google.guava:guava:27.1-jre"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
