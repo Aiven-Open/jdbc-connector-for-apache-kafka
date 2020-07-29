@@ -104,7 +104,9 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
             case BOOLEAN:
                 return "bit";
             case STRING:
-                return "varchar(max)";
+                //900 is a max size for a column on which SQL server builds an index
+                //here is the docs: https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2008-r2/ms191241(v=sql.105)?redirectedfrom=MSDN
+                return field.isPrimaryKey() ? "varchar(900)" : "varchar(max)";
             case BYTES:
                 return "varbinary(max)";
             default:
