@@ -46,8 +46,11 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
      */
     public static class Provider extends SubprotocolBasedProvider {
         public Provider() {
-            super(SqlServerDatabaseDialect.class.getSimpleName(), "microsoft:sqlserver", "sqlserver",
-                "jtds:sqlserver");
+            super(SqlServerDatabaseDialect.class.getSimpleName(),
+                    "microsoft:sqlserver",
+                    "sqlserver",
+                    "jdbc:sqlserver",
+                    "jtds:sqlserver");
         }
 
         @Override
