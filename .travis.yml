@@ -4,7 +4,6 @@ git:
   depth: 3
 
 jdk:
-  - openjdk8
   - openjdk11
 
 before_cache:
