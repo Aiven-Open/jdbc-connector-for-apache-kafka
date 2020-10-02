@@ -257,4 +257,9 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
         return builder.toString();
     }
 
+    @Override
+    protected String currentTimestampDatabaseQuery() {
+        return "SELECT CLOCK_TIMESTAMP()";
+    }
+
 }
