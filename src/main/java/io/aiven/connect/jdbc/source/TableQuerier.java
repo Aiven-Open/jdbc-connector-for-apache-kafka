@@ -27,12 +27,17 @@ import org.apache.kafka.connect.source.SourceRecord;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.util.TableId;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * TableQuerier executes queries against a specific table. Implementations handle different types
  * of queries: periodic bulk loading, incremental loads using auto incrementing IDs, incremental
  * loads using timestamps, etc.
  */
 abstract class TableQuerier implements Comparable<TableQuerier> {
+    private static final Logger log = LoggerFactory.getLogger(TableQuerier.class);
+
     public enum QueryMode {
         TABLE, // Copying whole tables, with queries constructed automatically
         QUERY // User-specified query
@@ -119,8 +124,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
         if (stmt != null) {
             try {
                 stmt.close();
-            } catch (final SQLException ignored) {
-                // intentionally ignored
+            } catch (final SQLException e) {
+                log.warn("Error closing PreparedStatement", e);
             }
         }
         stmt = null;
@@ -130,8 +135,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
         if (resultSet != null) {
             try {
                 resultSet.close();
-            } catch (final SQLException ignored) {
-                // intentionally ignored
+            } catch (final SQLException e) {
+                log.warn("Error closing ResultSet", e);
             }
         }
         resultSet = null;
@@ -141,8 +146,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
         if (connection != null) {
             try {
                 connection.commit();
-            } catch (final SQLException ignored) {
-                // intentionally ignored
+            } catch (final SQLException e) {
+                log.warn("Error committing", e);
             }
         }
         connection = null;
