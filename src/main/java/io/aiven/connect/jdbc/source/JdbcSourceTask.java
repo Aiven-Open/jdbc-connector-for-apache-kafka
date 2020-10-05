@@ -54,6 +54,8 @@ import org.slf4j.LoggerFactory;
  */
 public class JdbcSourceTask extends SourceTask {
 
+    private static final long MAX_SLEEP_INTERVAL_MS = 100L;
+
     private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
     private Time time;
@@ -299,9 +301,11 @@ public class JdbcSourceTask extends SourceTask {
                 final long nextUpdate = querier.getLastUpdate()
                     + config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
                 final long untilNext = nextUpdate - time.milliseconds();
-                if (untilNext > 0) {
-                    log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
-                    time.sleep(untilNext);
+                final long toSleepMs = Math.min(untilNext, MAX_SLEEP_INTERVAL_MS);
+                if (toSleepMs > 0) {
+                    log.trace("Waiting {} ms to poll {} next ({} ms total left to wait)",
+                              toSleepMs, querier.toString(), untilNext);
+                    time.sleep(toSleepMs);
                     continue; // Re-check stop flag before continuing
                 }
             }
