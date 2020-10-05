@@ -27,12 +27,17 @@ import org.apache.kafka.connect.source.SourceRecord;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.util.TableId;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * TableQuerier executes queries against a specific table. Implementations handle different types
  * of queries: periodic bulk loading, incremental loads using auto incrementing IDs, incremental
  * loads using timestamps, etc.
  */
 abstract class TableQuerier implements Comparable<TableQuerier> {
+    private static final Logger log = LoggerFactory.getLogger(TableQuerier.class);
+
     public enum QueryMode {
         TABLE, // Copying whole tables, with queries constructed automatically
         QUERY // User-specified query
@@ -47,6 +52,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     // Mutable state
 
     protected long lastUpdate;
+    protected Connection connection;
     protected PreparedStatement stmt;
     protected ResultSet resultSet;
     protected SchemaMapping schemaMapping;
@@ -86,6 +92,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
 
     public void maybeStartQuery(final Connection db) throws SQLException {
         if (resultSet == null) {
+            this.connection = db;
             stmt = getOrCreatePreparedStatement(db);
             resultSet = executeQuery();
             // backwards compatible
@@ -105,6 +112,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     public void reset(final long now) {
         closeResultSetQuietly();
         closeStatementQuietly();
+        commitQuietly();
+
         // TODO: Can we cache this and quickly check that it's identical for the next query
         // instead of constructing from scratch since it's almost always the same
         schemaMapping = null;
@@ -115,8 +124,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
         if (stmt != null) {
             try {
                 stmt.close();
-            } catch (final SQLException ignored) {
-                // intentionally ignored
+            } catch (final SQLException e) {
+                log.warn("Error closing PreparedStatement", e);
             }
         }
         stmt = null;
@@ -126,11 +135,22 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
         if (resultSet != null) {
             try {
                 resultSet.close();
-            } catch (final SQLException ignored) {
-                // intentionally ignored
+            } catch (final SQLException e) {
+                log.warn("Error closing ResultSet", e);
             }
         }
         resultSet = null;
+    }
+
+    private void commitQuietly() {
+        if (connection != null) {
+            try {
+                connection.commit();
+            } catch (final SQLException e) {
+                log.warn("Error committing", e);
+            }
+        }
+        connection = null;
     }
 
     @Override
