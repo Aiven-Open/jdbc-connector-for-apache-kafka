@@ -298,10 +298,11 @@ public class JdbcSourceTask extends SourceTask {
                 // If not in the middle of an update, wait for next update time
                 final long nextUpdate = querier.getLastUpdate()
                     + config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
-                final long untilNext = nextUpdate - time.milliseconds();
-                if (untilNext > 0) {
-                    log.trace("Waiting {} ms to poll {} next", untilNext, querier.toString());
-                    time.sleep(untilNext);
+                final long now = time.milliseconds();
+                final long sleepMs = Math.min(nextUpdate - now, 100);
+                if (sleepMs > 0) {
+                    log.trace("Waiting {} ms to poll {} next", nextUpdate - now, querier.toString());
+                    time.sleep(sleepMs);
                     continue; // Re-check stop flag before continuing
                 }
             }
