@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,7 @@ import io.aiven.connect.jdbc.dialect.DatabaseDialect.StatementBinder;
 import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
 import io.aiven.connect.jdbc.util.ColumnId;
+import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
 
 import org.slf4j.Logger;
@@ -56,11 +57,11 @@ public class BufferedRecords {
     private StatementBinder preparedStatementBinder;
 
     public BufferedRecords(
-        final JdbcSinkConfig config,
-        final TableId tableId,
-        final DatabaseDialect dbDialect,
-        final DbStructure dbStructure,
-        final Connection connection
+            final JdbcSinkConfig config,
+            final TableId tableId,
+            final DatabaseDialect dbDialect,
+            final DbStructure dbStructure,
+            final Connection connection
     ) {
         this.tableId = tableId;
         this.config = config;
@@ -71,41 +72,42 @@ public class BufferedRecords {
 
     public List<SinkRecord> add(final SinkRecord record) throws SQLException {
         final SchemaPair schemaPair = new SchemaPair(
-            record.keySchema(),
-            record.valueSchema()
+                record.keySchema(),
+                record.valueSchema()
         );
 
         if (currentSchemaPair == null) {
             currentSchemaPair = schemaPair;
             // re-initialize everything that depends on the record schema
             fieldsMetadata = FieldsMetadata.extract(
-                tableId.tableName(),
-                config.pkMode,
-                config.pkFields,
-                config.fieldsWhitelist,
-                currentSchemaPair
+                    tableId.tableName(),
+                    config.pkMode,
+                    config.pkFields,
+                    config.fieldsWhitelist,
+                    currentSchemaPair
             );
             dbStructure.createOrAmendIfNecessary(
-                config,
-                connection,
-                tableId,
-                fieldsMetadata
+                    config,
+                    connection,
+                    tableId,
+                    fieldsMetadata
             );
 
-            final String sql = getInsertSql();
+            final TableDefinition tableDefinition = dbStructure.tableDefinitionFor(tableId, connection);
+            final String sql = getInsertSql(tableDefinition);
             log.debug(
-                "{} sql: {}",
-                config.insertMode,
-                sql
+                    "{} sql: {}",
+                    config.insertMode,
+                    sql
             );
             close();
             preparedStatement = connection.prepareStatement(sql);
             preparedStatementBinder = dbDialect.statementBinder(
-                preparedStatement,
-                config.pkMode,
-                schemaPair,
-                fieldsMetadata,
-                config.insertMode
+                    preparedStatement,
+                    config.pkMode,
+                    schemaPair,
+                    fieldsMetadata,
+                    config.insertMode
             );
         }
 
@@ -115,7 +117,7 @@ public class BufferedRecords {
             records.add(record);
             if (records.size() >= config.batchSize) {
                 log.debug("Flushing buffered records after exceeding configured batch size {}.",
-                    config.batchSize);
+                        config.batchSize);
                 flushed = flush();
             } else {
                 flushed = Collections.emptyList();
@@ -124,7 +126,7 @@ public class BufferedRecords {
             // Each batch needs to have the same SchemaPair, so get the buffered records out, reset
             // state and re-attempt the add
             log.debug("Flushing buffered records after due to unequal schema pairs: "
-                + "current schemas: {}, next schemas: {}", currentSchemaPair, schemaPair);
+                    + "current schemas: {}, next schemas: {}", currentSchemaPair, schemaPair);
             flushed = flush();
             currentSchemaPair = null;
             flushed.addAll(add(record));
@@ -154,17 +156,17 @@ public class BufferedRecords {
             switch (config.insertMode) {
                 case INSERT:
                     throw new ConnectException(String.format(
-                        "Update count (%d) did not sum up to total number of records inserted (%d)",
-                        totalUpdateCount,
-                        records.size()
+                            "Update count (%d) did not sum up to total number of records inserted (%d)",
+                            totalUpdateCount,
+                            records.size()
                     ));
                 case UPSERT:
                 case UPDATE:
                     log.debug(
-                        "{} records:{} resulting in in totalUpdateCount:{}",
-                        config.insertMode,
-                        records.size(),
-                        totalUpdateCount
+                            "{} records:{} resulting in in totalUpdateCount:{}",
+                            config.insertMode,
+                            records.size(),
+                            totalUpdateCount
                     );
                     break;
                 default:
@@ -173,9 +175,9 @@ public class BufferedRecords {
         }
         if (successNoInfo) {
             log.info(
-                "{} records:{} , but no count of the number of rows it affected is available",
-                config.insertMode,
-                records.size()
+                    "{} records:{} , but no count of the number of rows it affected is available",
+                    config.insertMode,
+                    records.size()
             );
         }
 
@@ -192,40 +194,43 @@ public class BufferedRecords {
         }
     }
 
-    private String getInsertSql() {
+    private String getInsertSql(final TableDefinition tableDefinition) {
         switch (config.insertMode) {
             case INSERT:
                 return dbDialect.buildInsertStatement(
-                    tableId,
-                    asColumns(fieldsMetadata.keyFieldNames),
-                    asColumns(fieldsMetadata.nonKeyFieldNames)
+                        tableId,
+                        tableDefinition,
+                        asColumns(fieldsMetadata.keyFieldNames),
+                        asColumns(fieldsMetadata.nonKeyFieldNames)
                 );
             case UPSERT:
                 if (fieldsMetadata.keyFieldNames.isEmpty()) {
                     throw new ConnectException(String.format(
-                        "Write to table '%s' in UPSERT mode requires key field names to be known, check the"
-                            + " primary key configuration",
-                        tableId
+                            "Write to table '%s' in UPSERT mode requires key field names to be known, check the"
+                                    + " primary key configuration",
+                            tableId
                     ));
                 }
                 try {
                     return dbDialect.buildUpsertQueryStatement(
-                        tableId,
-                        asColumns(fieldsMetadata.keyFieldNames),
-                        asColumns(fieldsMetadata.nonKeyFieldNames)
+                            tableId,
+                            tableDefinition,
+                            asColumns(fieldsMetadata.keyFieldNames),
+                            asColumns(fieldsMetadata.nonKeyFieldNames)
                     );
                 } catch (final UnsupportedOperationException e) {
                     throw new ConnectException(String.format(
-                        "Write to table '%s' in UPSERT mode is not supported with the %s dialect.",
-                        tableId,
-                        dbDialect.name()
+                            "Write to table '%s' in UPSERT mode is not supported with the %s dialect.",
+                            tableId,
+                            dbDialect.name()
                     ));
                 }
             case UPDATE:
                 return dbDialect.buildUpdateStatement(
-                    tableId,
-                    asColumns(fieldsMetadata.keyFieldNames),
-                    asColumns(fieldsMetadata.nonKeyFieldNames)
+                        tableId,
+                        tableDefinition,
+                        asColumns(fieldsMetadata.keyFieldNames),
+                        asColumns(fieldsMetadata.nonKeyFieldNames)
                 );
             default:
                 throw new ConnectException("Invalid insert mode");
@@ -234,7 +239,7 @@ public class BufferedRecords {
 
     private Collection<ColumnId> asColumns(final Collection<String> names) {
         return names.stream()
-            .map(name -> new ColumnId(tableId, name))
-            .collect(Collectors.toList());
+                .map(name -> new ColumnId(tableId, name))
+                .collect(Collectors.toList());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2018 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -325,6 +325,24 @@ public interface DatabaseDialect extends ConnectionProvider {
     );
 
     /**
+     * Build the INSERT prepared statement expression for the given table and its columns.
+     *
+     * @param table            the identifier of the table; may not be null
+     * @param tableDefinition  the table definition; may be null if unknown
+     * @param keyColumns       the identifiers of the columns in the primary/unique key; may not be null
+     *                         but may be empty
+     * @param nonKeyColumns    the identifiers of the other columns in the table; may not be null but may
+     *                         be empty
+     * @return the INSERT statement; may not be null
+     */
+    default String buildInsertStatement(TableId table,
+                                        TableDefinition tableDefinition,
+                                        Collection<ColumnId> keyColumns,
+                                        Collection<ColumnId> nonKeyColumns) {
+        return buildInsertStatement(table, keyColumns, nonKeyColumns);
+    }
+
+    /**
      * Build the UPDATE prepared statement expression for the given table and its columns. Variables
      * for each key column should also appear in the WHERE clause of the statement.
      *
@@ -340,6 +358,25 @@ public interface DatabaseDialect extends ConnectionProvider {
         Collection<ColumnId> keyColumns,
         Collection<ColumnId> nonKeyColumns
     );
+
+    /**
+     * Build the UPDATE prepared statement expression for the given table and its columns. Variables
+     * for each key column should also appear in the WHERE clause of the statement.
+     *
+     * @param table         the identifier of the table; may not be null
+     * @param tableDefinition  the table definition; may be null if unknown
+     * @param keyColumns    the identifiers of the columns in the primary/unique key; may not be null
+     *                      but may be empty
+     * @param nonKeyColumns the identifiers of the other columns in the table; may not be null but may
+     *                      be empty
+     * @return the UPDATE statement; may not be null
+     */
+    default String buildUpdateStatement(TableId table,
+                                        TableDefinition tableDefinition,
+                                        Collection<ColumnId> keyColumns,
+                                        Collection<ColumnId> nonKeyColumns) {
+        return buildUpdateStatement(table, keyColumns, nonKeyColumns);
+    }
 
     /**
      * Build the UPSERT or MERGE prepared statement expression to either insert a new record into the
@@ -359,6 +396,27 @@ public interface DatabaseDialect extends ConnectionProvider {
         Collection<ColumnId> keyColumns,
         Collection<ColumnId> nonKeyColumns
     );
+
+    /**
+     * Build the UPSERT or MERGE prepared statement expression to either insert a new record into the
+     * given table or update an existing record in that table Variables for each key column should
+     * also appear in the WHERE clause of the statement.
+     *
+     * @param table         the identifier of the table; may not be null
+     * @param tableDefinition  the table definition; may be null if unknown
+     * @param keyColumns    the identifiers of the columns in the primary/unique key; may not be null
+     *                      but may be empty
+     * @param nonKeyColumns the identifiers of the other columns in the table; may not be null but may
+     *                      be empty
+     * @return the upsert/merge statement; may not be null
+     * @throws UnsupportedOperationException if the dialect does not support upserts
+     */
+    default String buildUpsertQueryStatement(TableId table,
+                                             TableDefinition tableDefinition,
+                                             Collection<ColumnId> keyColumns,
+                                             Collection<ColumnId> nonKeyColumns) {
+        return buildUpsertQueryStatement(table, keyColumns, nonKeyColumns);
+    }
 
     /**
      * Build the DROP TABLE statement expression for the given table.
