@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,17 @@ plugins {
 
     // https://docs.gradle.org/current/userguide/publishing_maven.html
     id "maven-publish"
+
+    // https://docs.gradle.org/current/userguide/idea_plugin.html
+    id "idea"
 }
 
 repositories {
     jcenter()
+    // For kafka-avro-serializer and kafka-connect-avro-converter
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
 }
 
 java {
@@ -103,6 +110,37 @@ publishing {
 ext {
     kafkaVersion = "2.2.0"
     slf4jVersion = "1.7.25"
+    confluentPlatformVersion = "4.1.4"
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            srcDirs = ['src/integration-test/java']
+        }
+        resources {
+            srcDirs = ['src/integration-test/resources']
+        }
+
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+idea {
+    module {
+        testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
+        testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntime.extendsFrom testRuntimeClasspath
+}
+
+test {
+    useJUnit()
 }
 
 dependencies {
@@ -128,7 +166,49 @@ dependencies {
     testImplementation "org.apache.derby:derby:10.11.1.1"
     testRuntime "org.slf4j:slf4j-log4j12:$slf4jVersion"
 
+    integrationTestImplementation "org.apache.kafka:connect-api:$kafkaVersion"
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "org.apache.kafka:connect-json:$kafkaVersion"
+    integrationTestImplementation "org.apache.kafka:connect-transforms:$kafkaVersion"
+    integrationTestImplementation "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
+    integrationTestImplementation "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
+    integrationTestImplementation "org.apache.avro:avro:1.8.1"
+
+    integrationTestImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+
+    integrationTestImplementation "org.testcontainers:junit-jupiter:1.14.3"
+    integrationTestImplementation "org.testcontainers:testcontainers:1.14.3"
+    integrationTestImplementation "org.testcontainers:kafka:1.14.3"
+    integrationTestImplementation "org.testcontainers:postgresql:1.14.3"
+
+    integrationTestImplementation "cloud.localstack:localstack-utils:0.2.5"
+
+    integrationTestImplementation sourceSets.test.output
 }
+
+task integrationTest(type: Test) {
+    description = 'Runs the integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    dependsOn test, distTar
+
+    useJUnitPlatform()
+
+    // Run always.
+    outputs.upToDateWhen { false }
+
+    if (project.hasProperty("tablePollIntervalMs")) {
+        //pass table.poll.interval.ms
+        systemProperty("integration-test.table.poll.interval.ms", project.hasProperty("tablePollIntervalMs"))
+    }
+
+    // Pass the distribution file path to the tests.
+    systemProperty("integration-test.distribution.file.path", distTar.archiveFile.get().asFile.path)
+}
+
 
 processResources {
     filesMatching('aiven-kafka-connect-jdbc-version.properties') {
