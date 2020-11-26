@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2018 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -39,6 +41,7 @@ import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.IdentifierRules;
+import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
 
 /**
@@ -60,8 +63,11 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
         }
     }
 
-    private static final String JSON_TYPE_NAME = "json";
-    private static final String JSONB_TYPE_NAME = "jsonb";
+    protected static final String JSON_TYPE_NAME = "json";
+
+    protected static final String JSONB_TYPE_NAME = "jsonb";
+
+    private static final List<String> CAST_TYPES = List.of(JSON_TYPE_NAME, JSONB_TYPE_NAME);
 
     /**
      * Create a new dialect instance with the given connector configuration.
@@ -93,8 +99,8 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
 
     @Override
     public String addFieldToSchema(
-        final ColumnDefinition columnDefn,
-        final SchemaBuilder builder
+            final ColumnDefinition columnDefn,
+            final SchemaBuilder builder
     ) {
         // Add the PostgreSQL-specific types first
         final String fieldName = fieldNameFor(columnDefn);
@@ -122,8 +128,8 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
                 // since only fixed byte arrays can have a fixed size
                 if (isJsonType(columnDefn)) {
                     builder.field(
-                        fieldName,
-                        columnDefn.isOptional() ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA
+                            fieldName,
+                            columnDefn.isOptional() ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA
                     );
                     return fieldName;
                 }
@@ -139,7 +145,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
 
     @Override
     public ColumnConverter createColumnConverter(
-        final ColumnMapping mapping
+            final ColumnMapping mapping
     ) {
         // First handle any PostgreSQL-specific types
         final ColumnDefinition columnDefn = mapping.columnDefn();
@@ -195,7 +201,6 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
         }
         switch (field.schemaType()) {
             case INT8:
-                return "SMALLINT";
             case INT16:
                 return "SMALLINT";
             case INT32:
@@ -218,32 +223,85 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
     }
 
     @Override
-    public String buildUpsertQueryStatement(
-        final TableId table,
-        final Collection<ColumnId> keyColumns,
-        final Collection<ColumnId> nonKeyColumns
-    ) {
-        final ExpressionBuilder.Transform<ColumnId> transform = (builder, col) -> {
-            builder.appendIdentifier(col.name())
-                .append("=EXCLUDED.")
-                .appendIdentifier(col.name());
+    public String buildInsertStatement(final TableId table,
+                                       final TableDefinition tableDefinition,
+                                       final Collection<ColumnId> keyColumns,
+                                       final Collection<ColumnId> nonKeyColumns) {
+        return expressionBuilder()
+                .append("INSERT INTO ")
+                .append(table)
+                .append("(")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(ExpressionBuilder.columnNames())
+                .of(keyColumns, nonKeyColumns)
+                .append(") VALUES(")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(transformColumn(tableDefinition))
+                .of(keyColumns, nonKeyColumns)
+                .append(")")
+                .toString();
+    }
+
+    @Override
+    public String buildUpdateStatement(final TableId table,
+                                       final TableDefinition tableDefinition,
+                                       final Collection<ColumnId> keyColumns,
+                                       final Collection<ColumnId> nonKeyColumns) {
+        final ExpressionBuilder.Transform<ColumnId> columnTransform = (builder, columnId) -> {
+            builder.append(columnId.name())
+                    .append("=?")
+                    .append(cast(tableDefinition, columnId));
         };
 
         final ExpressionBuilder builder = expressionBuilder();
-        builder.append("INSERT INTO ");
-        builder.append(table);
-        builder.append(" (");
-        builder.appendList()
-            .delimitedBy(",")
-            .transformedBy(ExpressionBuilder.columnNames())
-            .of(keyColumns, nonKeyColumns);
-        builder.append(") VALUES (");
-        builder.appendMultiple(",", "?", keyColumns.size() + nonKeyColumns.size());
-        builder.append(") ON CONFLICT (");
-        builder.appendList()
-            .delimitedBy(",")
-            .transformedBy(ExpressionBuilder.columnNames())
-            .of(keyColumns);
+        builder.append("UPDATE ")
+                .append(table)
+                .append(" SET ")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(columnTransform)
+                .of(nonKeyColumns);
+        if (!keyColumns.isEmpty()) {
+            builder.append(" WHERE ");
+            builder.appendList()
+                    .delimitedBy(" AND ")
+                    .transformedBy(ExpressionBuilder.columnNamesWith(" = ?"))
+                    .of(keyColumns);
+        }
+        return builder.toString();
+    }
+
+    @Override
+    public String buildUpsertQueryStatement(final TableId table,
+                                            final TableDefinition tableDefinition,
+                                            final Collection<ColumnId> keyColumns,
+                                            final Collection<ColumnId> nonKeyColumns) {
+        final ExpressionBuilder.Transform<ColumnId> transform = (builder, col) -> {
+            builder.appendIdentifier(col.name())
+                    .append("=EXCLUDED.")
+                    .appendIdentifier(col.name());
+        };
+
+        final ExpressionBuilder builder = expressionBuilder();
+        builder.append("INSERT INTO ")
+                .append(table)
+                .append(" (")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(ExpressionBuilder.columnNames())
+                .of(keyColumns, nonKeyColumns)
+                .append(") VALUES (")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(transformColumn(tableDefinition))
+                .of(keyColumns, nonKeyColumns)
+                .append(") ON CONFLICT (")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(ExpressionBuilder.columnNames())
+                .of(keyColumns);
         builder.append(") ");
         if (nonKeyColumns.isEmpty()) {
             builder.append("DO NOTHING");
@@ -255,6 +313,26 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
                     .of(nonKeyColumns);
         }
         return builder.toString();
+    }
+
+    private ExpressionBuilder.Transform<ColumnId> transformColumn(final TableDefinition tableDefinition) {
+        return (builder, column) -> {
+            builder.append("?");
+            builder.append(cast(tableDefinition, column));
+        };
+    }
+
+    private String cast(final TableDefinition tableDfn, final ColumnId columnId) {
+        if (Objects.nonNull(tableDfn)) {
+            final var columnDef = tableDfn.definitionForColumn(columnId.name());
+            final var typeName = columnDef.typeName();
+            if (Objects.nonNull(typeName)) {
+                if (CAST_TYPES.contains(typeName.toLowerCase())) {
+                    return "::" + typeName.toLowerCase();
+                }
+            }
+        }
+        return "";
     }
 
 }

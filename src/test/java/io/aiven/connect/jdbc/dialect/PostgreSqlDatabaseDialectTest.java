@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2020 Aiven Oy
  * Copyright 2017 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,24 +17,78 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import java.sql.Types;
 import java.util.List;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
+import io.aiven.connect.jdbc.source.ColumnMapping;
+import io.aiven.connect.jdbc.util.ColumnDefinition;
+import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.TableId;
 
 import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 
 public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDatabaseDialect> {
 
     @Override
     protected PostgreSqlDatabaseDialect createDialect() {
         return new PostgreSqlDatabaseDialect(sourceConfigWithUrl("jdbc:postgresql://something"));
+    }
+
+    @Test
+    public void shouldCreateConverterForJdbcTypes() {
+        assertColumnConverter(
+                Types.OTHER,
+                PostgreSqlDatabaseDialect.JSON_TYPE_NAME,
+                Schema.STRING_SCHEMA,
+                String.class
+        );
+        assertColumnConverter(
+                Types.OTHER,
+                PostgreSqlDatabaseDialect.JSONB_TYPE_NAME,
+                Schema.STRING_SCHEMA,
+                String.class
+        );
+    }
+
+    protected <T> void assertColumnConverter(final int jdbcType,
+                                             final String typeName,
+                                             final Schema schemaType,
+                                             final Class<T> clazz) {
+        final var columnDefinition = new ColumnDefinition(
+                new ColumnId(
+                        new TableId(
+                                "test_catalog",
+                                "test",
+                                "test_table"
+                        ),
+                        "column"
+                ),
+                jdbcType,
+                typeName,
+                clazz.getCanonicalName(),
+                ColumnDefinition.Nullability.NOT_NULL,
+                ColumnDefinition.Mutability.UNKNOWN,
+                0, 0, false, 1, false,
+                false, false, false, false
+        );
+        assertNotNull(
+                dialect.createColumnConverter(
+                        new ColumnMapping(
+                                columnDefinition, 1,
+                                new Field("a", 1, schemaType)
+                        )
+                )
+        );
     }
 
     @Test
@@ -100,7 +154,7 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     @Test
     public void shouldBuildAlterTableStatement() {
         final String[] expected = {
-            readQueryResourceForThisTest("alter_table")
+                readQueryResourceForThisTest("alter_table")
         };
         final List<String> actual = dialect.buildAlterTable(tableId, sinkRecordFields);
         assertStatements(expected, actual);
@@ -109,7 +163,7 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     @Test
     public void shouldBuildUpsertStatement() {
         final String expected = readQueryResourceForThisTest("upsert0");
-        final String actual = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
+        final String actual = dialect.buildUpsertQueryStatement(tableId, null, pkColumns, columnsAtoD);
         assertQueryEquals(expected, actual);
     }
 
@@ -148,9 +202,9 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
         final String expected = readQueryResourceForThisTest("upsert1");
         final TableId customer = tableId("Customer");
         final String actual = dialect.buildUpsertQueryStatement(
-            customer,
-            columns(customer, "id"),
-            columns(customer, "name", "salary", "address")
+                customer, null,
+                columns(customer, "id"),
+                columns(customer, "name", "salary", "address")
         );
         assertQueryEquals(expected, actual);
     }
@@ -160,7 +214,7 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
         final String expected = readQueryResourceForThisTest("upsert2");
         final TableId customer = tableId("Customer");
         final String actual = dialect.buildUpsertQueryStatement(
-                customer,
+                customer, null,
                 columns(customer, "id", "name", "salary", "address"),
                 columns(customer)
         );
@@ -170,16 +224,16 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     @Test
     public void shouldSanitizeUrlWithoutCredentialsInProperties() {
         assertSanitizedUrl(
-            "jdbc:postgresql://localhost/test?user=fred&ssl=true",
-            "jdbc:postgresql://localhost/test?user=fred&ssl=true"
+                "jdbc:postgresql://localhost/test?user=fred&ssl=true",
+                "jdbc:postgresql://localhost/test?user=fred&ssl=true"
         );
     }
 
     @Test
     public void shouldSanitizeUrlWithCredentialsInUrlProperties() {
         assertSanitizedUrl(
-            "jdbc:postgresql://localhost/test?user=fred&password=secret&ssl=true",
-            "jdbc:postgresql://localhost/test?user=fred&password=****&ssl=true"
+                "jdbc:postgresql://localhost/test?user=fred&password=secret&ssl=true",
+                "jdbc:postgresql://localhost/test?user=fred&password=****&ssl=true"
         );
     }
 }
