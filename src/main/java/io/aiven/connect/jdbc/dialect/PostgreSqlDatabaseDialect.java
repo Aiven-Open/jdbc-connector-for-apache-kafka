@@ -25,6 +25,7 @@ import java.sql.Types;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -67,7 +68,9 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
 
     protected static final String JSONB_TYPE_NAME = "jsonb";
 
-    private static final List<String> CAST_TYPES = List.of(JSON_TYPE_NAME, JSONB_TYPE_NAME);
+    protected static final String UUID_TYPE_NAME = "uuid";
+
+    private static final List<String> CAST_TYPES = List.of(JSON_TYPE_NAME, JSONB_TYPE_NAME, UUID_TYPE_NAME);
 
     /**
      * Create a new dialect instance with the given connector configuration.
@@ -133,6 +136,13 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
                     );
                     return fieldName;
                 }
+                if (isUuidType(columnDefn)) {
+                    builder.field(
+                            fieldName,
+                            columnDefn.isOptional() ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA
+                    );
+                    return fieldName;
+                }
                 break;
             }
             default:
@@ -168,6 +178,9 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
                 if (isJsonType(columnDefn)) {
                     return rs -> rs.getString(col);
                 }
+                if (isUuidType(columnDefn)) {
+                    return rs -> rs.getString(col);
+                }
                 break;
             }
             default:
@@ -181,6 +194,10 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
     protected boolean isJsonType(final ColumnDefinition columnDefn) {
         final String typeName = columnDefn.typeName();
         return JSON_TYPE_NAME.equalsIgnoreCase(typeName) || JSONB_TYPE_NAME.equalsIgnoreCase(typeName);
+    }
+
+    protected boolean isUuidType(final ColumnDefinition columnDefn) {
+        return UUID.class.getName().equals(columnDefn.classNameForType());
     }
 
     @Override
