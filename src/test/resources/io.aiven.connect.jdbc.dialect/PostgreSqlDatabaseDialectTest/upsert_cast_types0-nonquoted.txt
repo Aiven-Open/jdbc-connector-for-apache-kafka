@@ -1,0 +1,1 @@
+INSERT INTO cast_types_table (pk,uuid_col,json_col,jsonb_col) VALUES (?,?::uuid,?::json,?::jsonb) ON CONFLICT (pk) DO UPDATE SET uuid_col=EXCLUDED.uuid_col,json_col=EXCLUDED.json_col,jsonb_col=EXCLUDED.jsonb_col

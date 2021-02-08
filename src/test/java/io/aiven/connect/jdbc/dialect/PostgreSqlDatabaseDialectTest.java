@@ -19,6 +19,7 @@ package io.aiven.connect.jdbc.dialect;
 
 import java.sql.Types;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -31,13 +32,58 @@ import org.apache.kafka.connect.data.Timestamp;
 import io.aiven.connect.jdbc.source.ColumnMapping;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.ColumnId;
+import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
 public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDatabaseDialect> {
+
+    private TableId castTypesTableId;
+
+    private ColumnId castTypesPkColumn;
+
+    private ColumnId columnUuid;
+
+    private ColumnId columnJson;
+
+    private ColumnId columnJsonb;
+
+    private TableDefinition castTypesTableDefinition;
+
+    @Before
+    public void setupTest() {
+        castTypesTableId = new TableId(null, null, "cast_types_table");
+        castTypesPkColumn = new ColumnId(castTypesTableId, "pk");
+        columnUuid = new ColumnId(castTypesTableId, "uuid_col");
+        columnJson = new ColumnId(castTypesTableId, "json_col");
+        columnJsonb = new ColumnId(castTypesTableId, "jsonb_col");
+        castTypesTableDefinition =
+                new TableDefinition(
+                        castTypesTableId,
+                        List.of(
+                                createColumnDefinition(
+                                        castTypesPkColumn,
+                                        Types.INTEGER,
+                                        "INT", Integer.class, true),
+                                createColumnDefinition(
+                                        columnUuid,
+                                        Types.OTHER,
+                                        PostgreSqlDatabaseDialect.UUID_TYPE_NAME, UUID.class),
+                                createColumnDefinition(
+                                        columnJson,
+                                        Types.OTHER,
+                                        PostgreSqlDatabaseDialect.JSON_TYPE_NAME, String.class),
+                                createColumnDefinition(
+                                        columnJsonb,
+                                        Types.OTHER,
+                                        PostgreSqlDatabaseDialect.JSONB_TYPE_NAME, String.class)
+                        )
+                );
+    }
 
     @Override
     protected PostgreSqlDatabaseDialect createDialect() {
@@ -60,31 +106,32 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
         );
     }
 
+    @Test
+    public void shouldCreateConverterForUuidType() {
+        assertColumnConverter(
+                Types.OTHER,
+                PostgreSqlDatabaseDialect.UUID_TYPE_NAME,
+                Schema.STRING_SCHEMA,
+                UUID.class
+        );
+    }
+
     protected <T> void assertColumnConverter(final int jdbcType,
                                              final String typeName,
                                              final Schema schemaType,
                                              final Class<T> clazz) {
-        final var columnDefinition = new ColumnDefinition(
-                new ColumnId(
-                        new TableId(
-                                "test_catalog",
-                                "test",
-                                "test_table"
-                        ),
-                        "column"
-                ),
-                jdbcType,
-                typeName,
-                clazz.getCanonicalName(),
-                ColumnDefinition.Nullability.NOT_NULL,
-                ColumnDefinition.Mutability.UNKNOWN,
-                0, 0, false, 1, false,
-                false, false, false, false
-        );
         assertNotNull(
                 dialect.createColumnConverter(
                         new ColumnMapping(
-                                columnDefinition, 1,
+                                createColumnDefinition(
+                                        new ColumnId(
+                                                new TableId(
+                                                        "test_catalog",
+                                                        "test",
+                                                        "test_table"
+                                                ),
+                                                "column"
+                                        ), jdbcType, typeName, clazz), 1,
                                 new Field("a", 1, schemaType)
                         )
                 )
@@ -161,9 +208,65 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     }
 
     @Test
+    public void shouldBuildInsertStatement() {
+        final String expected = readQueryResourceForThisTest("insert0");
+        final String actual = dialect.buildInsertStatement(
+                castTypesTableId,
+                castTypesTableDefinition,
+                List.of(castTypesPkColumn),
+                List.of(columnUuid, columnJson, columnJsonb));
+        assertQueryEquals(expected, actual);
+    }
+
+    @Test
+    public void shouldBuildUpdateStatement() {
+        final String expected = readQueryResourceForThisTest("update0");
+        final String actual = dialect.buildUpdateStatement(
+                castTypesTableId,
+                castTypesTableDefinition,
+                List.of(castTypesPkColumn),
+                List.of(columnUuid, columnJson, columnJsonb));
+        assertQueryEquals(expected, actual);
+    }
+
+    private <T> ColumnDefinition createColumnDefinition(final ColumnId columnId,
+                                                        final int jdbcType,
+                                                        final String typeName,
+                                                        final Class<T> clazz) {
+        return createColumnDefinition(columnId, jdbcType, typeName, clazz, false);
+    }
+
+    private <T> ColumnDefinition createColumnDefinition(final ColumnId columnId,
+                                                        final int jdbcType,
+                                                        final String typeName,
+                                                        final Class<T> clazz, final boolean isPk) {
+        return new ColumnDefinition(
+                columnId,
+                jdbcType,
+                typeName,
+                clazz.getName(),
+                ColumnDefinition.Nullability.NOT_NULL,
+                ColumnDefinition.Mutability.UNKNOWN,
+                0, 0, false, 1, false,
+                false, false, false, isPk
+        );
+    }
+
+    @Test
     public void shouldBuildUpsertStatement() {
         final String expected = readQueryResourceForThisTest("upsert0");
         final String actual = dialect.buildUpsertQueryStatement(tableId, null, pkColumns, columnsAtoD);
+        assertQueryEquals(expected, actual);
+    }
+
+    @Test
+    public void shouldBuildUpsertStatementForCastTypes() {
+        final String expected = readQueryResourceForThisTest("upsert_cast_types0");
+        final String actual = dialect.buildUpsertQueryStatement(
+                castTypesTableId,
+                castTypesTableDefinition,
+                List.of(castTypesPkColumn),
+                List.of(columnUuid, columnJson, columnJsonb));
         assertQueryEquals(expected, actual);
     }
 

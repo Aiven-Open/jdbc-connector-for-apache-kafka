@@ -1,0 +1,1 @@
+UPDATE "cast_types_table" SET uuid_col=?::uuid,json_col=?::json,jsonb_col=?::jsonb WHERE "pk" = ?
