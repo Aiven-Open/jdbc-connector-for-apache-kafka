@@ -1,7 +1,5 @@
 # Kafka Connect JDBC Connector
 
-[![Build Status](https://travis-ci.org/aiven/aiven-kafka-connect-jdbc.svg?branch=master)](https://travis-ci.org/aiven/aiven-kafka-connect-jdbc)
-
 This repository includes a Sink and Source
 [Kafka Connect](http://kafka.apache.org/documentation.html#connect)
 connectors for JDBC-compatible databases.
