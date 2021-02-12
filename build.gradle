@@ -58,7 +58,7 @@ distributions {
 
             into("/") {
                 from projectDir
-                include "version.txt", "README*", "LICENSE*", "NOTICE*", "licenses/"
+                include "README*", "LICENSE*", "NOTICE*", "licenses/"
                 include "config/"
             }
         }
