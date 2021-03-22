@@ -17,8 +17,11 @@
 
 package io.aiven.connect.jdbc.sink.metadata;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +133,33 @@ public class FieldsMetadata {
             );
         }
 
-        return new FieldsMetadata(keyFieldNames, nonKeyFieldNames, allFields);
+        final var allFieldsOrdered = new LinkedHashMap<String, SinkRecordField>();
+        for (final var fieldName : JdbcSinkConfig.DEFAULT_KAFKA_PK_NAMES) {
+            if (allFields.containsKey(fieldName)) {
+                allFieldsOrdered.put(fieldName, allFields.get(fieldName));
+            }
+        }
+
+        if (valueSchema != null) {
+            for (final var field : valueSchema.fields()) {
+                final var fieldName = field.name();
+                if (allFields.containsKey(fieldName)) {
+                    allFieldsOrdered.put(fieldName, allFields.get(fieldName));
+                }
+            }
+        }
+
+        if (allFieldsOrdered.size() < allFields.size()) {
+            final var fieldKeys = new ArrayList<>(allFields.keySet());
+            Collections.sort(fieldKeys);
+            for (final var fieldName : fieldKeys) {
+                if (!allFieldsOrdered.containsKey(fieldName)) {
+                    allFieldsOrdered.put(fieldName, allFields.get(fieldName));
+                }
+            }
+        }
+
+        return new FieldsMetadata(keyFieldNames, nonKeyFieldNames, allFieldsOrdered);
     }
 
     private static void extractKafkaPk(
