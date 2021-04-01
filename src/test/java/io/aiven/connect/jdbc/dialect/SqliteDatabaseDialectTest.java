@@ -17,6 +17,8 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.Duration;
@@ -40,7 +42,9 @@ import io.aiven.connect.jdbc.util.TableId;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,6 +52,9 @@ import static org.junit.Assert.assertTrue;
 public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDialect> {
 
     private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
     public void beforeEach() throws Exception {
@@ -61,7 +68,12 @@ public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDia
 
     @Override
     protected SqliteDatabaseDialect createDialect() {
-        return new SqliteDatabaseDialect(sourceConfigWithUrl("jdbc:sqlite://something"));
+        try {
+            final String dbFile = File.createTempFile("sqlite", "", folder.getRoot()).toString();
+            return new SqliteDatabaseDialect(sourceConfigWithUrl("jdbc:sqlite:" + dbFile));
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
