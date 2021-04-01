@@ -183,7 +183,8 @@ public class BufferedRecordsTest {
         final SinkRecord recordA = new SinkRecord("dummy", 0, null, null, schemaA, valueA, 0);
         buffer.add(recordA);
 
-        Mockito.verify(connectionMock, Mockito.times(1)).prepareStatement(Matchers.eq("UPDATE `dummy` SET `name` = ?"));
+        Mockito.verify(connectionMock, Mockito.times(1))
+            .prepareStatement(Matchers.eq("UPDATE \"dummy\" SET \"name\" = ?"));
 
     }
 }
