@@ -113,7 +113,7 @@ in all catalogs and schemas. This can be changed in several ways:
 
 The connector periodically polls the database metadata, detects created
 and deleted tables. It automatically adapts to these changes by starting
-polling created tables and stopping deleted ones. The metadata poll
+polling created tables and stopping polling deleted ones. The metadata poll
 interval is configured by `table.poll.interval.ms` and is 60 seconds by
 default.
 
@@ -161,6 +161,8 @@ _incremental modes_.
 In this mode, the connector will query tables without any filtering,
 periodically retrieving all rows from them and publishing them to Kafka.
 
+TODO: How doesn't this produce duplicates?
+
 To use this mode, set `mode=bulk`.
 
 ### Incremental Modes
@@ -175,7 +177,7 @@ advisable to have these columns indexed.
 
 #### Incremental Mode With Incrementing Column
 
-In this mode, tables are supposed to have a numeric column containing
+In this mode tables have a numeric column containing
 sequentially growing numbers. Normally, this is a unique ID column with
 automatically generated values, like `AUTO_INCREMENT` columns from MySQL
 or sequential columns from PostgreSQL.
@@ -185,12 +187,14 @@ will detect only newly created rows. This makes this mode most suitable
 for streaming immutable rows that are added to a table, for example, for
 streaming facts from a fact table.
 
+TODO: the exact algorithm!!!!
+
 To use this mode, set `mode=incrementing`. Use 
 `incrementing.column.name` for setting the incrementing column name.
 
 #### Incremental Mode With Timestamp Column
 
-In this mode, tables are supposed to have one or many timestamp columns.
+In this mode tables have one or many timestamp columns.
 The connector will apply `COALESCE` SQL function to them to get one
 timestamp for a row. Rows with this timestamp greater than the largest
 previously known will be retrieved on the next query.
