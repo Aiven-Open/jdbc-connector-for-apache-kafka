@@ -203,7 +203,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
     }
 
     @Override
-    public Timestamp beginTimetampValue() {
+    public Timestamp beginTimestampValue() {
         Timestamp timestampOffset = offset.getTimestampOffset();
         if (timestampOffset != null) {
             return timestampOffset;
@@ -213,7 +213,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
     }
 
     @Override
-    public Timestamp endTimetampValue() throws SQLException {
+    public Timestamp endTimestampValue() throws SQLException {
         final long currentDbTime = dialect.currentTimeOnDB(
             stmt.getConnection(),
             DateTimeUtils.getTimeZoneCalendar(timeZone)
