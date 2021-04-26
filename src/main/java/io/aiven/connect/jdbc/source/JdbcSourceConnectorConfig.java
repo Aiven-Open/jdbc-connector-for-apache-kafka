@@ -212,10 +212,18 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         "How long to wait after a row with certain timestamp appears before we include it in the "
             + "result. You may choose to add some delay to allow transactions with earlier timestamp to"
             + " complete. The first execution will fetch all available records (i.e. starting at "
-            + "timestamp 0) until current time minus the delay. Every following execution will get data"
+            + "timestamp greater than 0) until current time minus the delay. Every following execution will get data"
             + " from the last time we fetched until current time minus the delay.";
     public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
     private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
+
+    public static final String TIMESTAMP_INITIAL_MS_CONFIG = "timestamp.initial.ms";
+    private static final String TIMESTAMP_INITIAL_MS_DOC =
+            "The initial value of timestamp when selecting records. "
+                + "The records having timestamp greater than the value are included in the result."
+                + " Defaults to 0.";
+    public static final long TIMESTAMP_INITIAL_MS_DEFAULT = 0;
+    private static final String TIMESTAMP_INITIAL_MS_DISPLAY = "Initial timestamp (ms since epoch, can be negative)";
 
     public static final String DATABASE_GROUP = "Database";
     public static final String MODE_GROUP = "Mode";
@@ -417,7 +425,18 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             MODE_GROUP,
             ++orderInGroup,
             Width.SHORT,
-            QUERY_DISPLAY);
+            QUERY_DISPLAY)
+        .define(
+            TIMESTAMP_INITIAL_MS_CONFIG,
+            Type.LONG,
+            TIMESTAMP_INITIAL_MS_DEFAULT,
+            Importance.LOW,
+            TIMESTAMP_INITIAL_MS_DOC,
+            MODE_GROUP,
+            ++orderInGroup,
+            Width.MEDIUM,
+            TIMESTAMP_INITIAL_MS_DISPLAY
+        );
     }
 
     private static final void addConnectorOptions(final ConfigDef config) {

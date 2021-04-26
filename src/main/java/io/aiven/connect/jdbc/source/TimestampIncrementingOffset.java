@@ -51,7 +51,11 @@ public class TimestampIncrementingOffset {
     }
 
     public Timestamp getTimestampOffset() {
-        return timestampOffset != null ? timestampOffset : new Timestamp(0L);
+        return getTimestampOffset(0l);
+    }
+
+    public Timestamp getTimestampOffset(long defaultTimestampOffset) {
+        return timestampOffset != null ? timestampOffset : new Timestamp(defaultTimestampOffset);
     }
 
     public Map<String, Object> toMap() {
