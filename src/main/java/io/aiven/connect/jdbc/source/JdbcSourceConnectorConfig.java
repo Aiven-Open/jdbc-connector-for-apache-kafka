@@ -430,7 +430,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             TIMESTAMP_INITIAL_MS_CONFIG,
             Type.LONG,
             TIMESTAMP_INITIAL_MS_DEFAULT,
-            Importance.LOW,
+            Importance.HIGH,
             TIMESTAMP_INITIAL_MS_DOC,
             MODE_GROUP,
             ++orderInGroup,

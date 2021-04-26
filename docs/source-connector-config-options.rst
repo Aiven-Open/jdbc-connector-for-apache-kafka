@@ -221,4 +221,10 @@ Connector
   * Default: 0
   * Importance: high
 
+``timestamp.initial.ms``
+  The initial value of timestamp when selecting records. The records having timestamp greater than the value are included in the result.
+
+  * Type: long
+  * Default: 0
+  * Importance: high
 
