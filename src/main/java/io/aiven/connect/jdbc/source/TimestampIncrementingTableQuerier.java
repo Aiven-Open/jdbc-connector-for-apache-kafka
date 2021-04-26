@@ -204,7 +204,12 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
 
     @Override
     public Timestamp beginTimetampValue() {
-        return offset.getTimestampOffset(initialTimestampOffset);
+        Timestamp timestampOffset = offset.getTimestampOffset();
+        if (timestampOffset != null) {
+            return timestampOffset;
+        } else {
+            return new Timestamp(initialTimestampOffset);
+        }
     }
 
     @Override
