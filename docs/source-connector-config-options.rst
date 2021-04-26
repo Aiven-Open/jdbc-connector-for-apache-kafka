@@ -215,7 +215,7 @@ Connector
   * Importance: high
 
 ``timestamp.delay.interval.ms``
-  How long to wait after a row with certain timestamp appears before we include it in the result. You may choose to add some delay to allow transactions with earlier timestamp to complete. The first execution will fetch all available records (i.e. starting at timestamp 0) until current time minus the delay. Every following execution will get data from the last time we fetched until current time minus the delay.
+  How long to wait after a row with certain timestamp appears before we include it in the result. You may choose to add some delay to allow transactions with earlier timestamp to complete. The first execution will fetch all available records (i.e. starting at timestamp greater than 0) until current time minus the delay. Every following execution will get data from the last time we fetched until current time minus the delay.
 
   * Type: long
   * Default: 0
