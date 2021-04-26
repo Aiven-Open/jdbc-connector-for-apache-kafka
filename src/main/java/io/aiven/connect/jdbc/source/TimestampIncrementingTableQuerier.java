@@ -223,7 +223,12 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
 
     @Override
     public Long lastIncrementedValue() {
-        return offset.getIncrementingOffset();
+        Long incrementingOffset = offset.getIncrementingOffset();
+        if (incrementingOffset != null) {
+            return incrementingOffset;
+        } else {
+            return -1L;
+        }
     }
 
     @Override

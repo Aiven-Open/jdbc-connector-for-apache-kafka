@@ -77,7 +77,7 @@ public class TimestampIncrementingCriteriaTest {
             criteria = this.criteria;
         }
         final TimestampIncrementingOffset offset = criteria.extractValues(schema, record, null);
-        assertEquals(expected, offset.getIncrementingOffset());
+        assertEquals(expected, offset.getIncrementingOffset().longValue());
     }
 
     @Test

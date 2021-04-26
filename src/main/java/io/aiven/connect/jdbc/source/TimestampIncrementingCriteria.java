@@ -188,9 +188,9 @@ public class TimestampIncrementingCriteria {
         Timestamp extractedTimestamp = null;
         if (hasTimestampColumns()) {
             extractedTimestamp = extractOffsetTimestamp(schema, record);
-            assert previousOffset == null ||
-                    previousOffset.getTimestampOffset() == null ||
-                    (previousOffset.getTimestampOffset() != null
+            assert previousOffset == null
+                || previousOffset.getTimestampOffset() == null
+                || (previousOffset.getTimestampOffset() != null
                 && previousOffset.getTimestampOffset().compareTo(
                 extractedTimestamp) <= 0
             );
@@ -201,7 +201,9 @@ public class TimestampIncrementingCriteria {
 
             // If we are only using an incrementing column, then this must be incrementing.
             // If we are also using a timestamp, then we may see updates to older rows.
-            assert previousOffset == null || previousOffset.getIncrementingOffset() == -1L
+            assert previousOffset == null
+                || previousOffset.getIncrementingOffset() == null
+                || previousOffset.getIncrementingOffset() == -1L
                 || extractedId > previousOffset.getIncrementingOffset() || hasTimestampColumns();
         }
         return new TimestampIncrementingOffset(extractedTimestamp, extractedId);
