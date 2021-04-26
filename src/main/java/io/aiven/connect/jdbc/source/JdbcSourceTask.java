@@ -151,6 +151,8 @@ public class JdbcSourceTask extends SourceTask {
             = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG);
         final Long timestampInitialMs
             = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_INITIAL_MS_CONFIG);
+        final Long incrementingOffsetInitial
+            = config.getLong(JdbcSourceTaskConfig.INCREMENTING_INITIAL_VALUE_CONFIG);
         final boolean validateNonNulls
             = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
 
@@ -212,8 +214,8 @@ public class JdbcSourceTask extends SourceTask {
                         offset,
                         timestampDelayInterval,
                         timestampInitialMs,
-                        config.getDBTimeZone()
-                    )
+                        incrementingOffsetInitial,
+                        config.getDBTimeZone())
                 );
             } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
                 tableQueue.add(
@@ -227,8 +229,8 @@ public class JdbcSourceTask extends SourceTask {
                         offset,
                         timestampDelayInterval,
                         timestampInitialMs,
-                        config.getDBTimeZone()
-                    )
+                        incrementingOffsetInitial,
+                        config.getDBTimeZone())
                 );
             } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
                 tableQueue.add(
@@ -242,8 +244,8 @@ public class JdbcSourceTask extends SourceTask {
                         offset,
                         timestampDelayInterval,
                         timestampInitialMs,
-                        config.getDBTimeZone()
-                    )
+                        incrementingOffsetInitial,
+                        config.getDBTimeZone())
                 );
             }
         }

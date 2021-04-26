@@ -62,10 +62,10 @@ public class TimestampIncrementingOffsetTest {
     @Test
     public void testGetIncrementingOffset() {
         assertNull(unset.getIncrementingOffset());
-        assertEquals(-1, tsOnly.getIncrementingOffset().longValue());
+        assertNull(tsOnly.getIncrementingOffset());
         assertEquals(id, incOnly.getIncrementingOffset().longValue());
         assertEquals(id, tsInc.getIncrementingOffset().longValue());
-        assertEquals(-1, nanosOffset.getIncrementingOffset().longValue());
+        assertNull(nanosOffset.getIncrementingOffset());
     }
 
     @Test

@@ -133,6 +133,14 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
     public static final String INCREMENTING_COLUMN_NAME_DEFAULT = "";
     private static final String INCREMENTING_COLUMN_NAME_DISPLAY = "Incrementing Column Name";
 
+    public static final String INCREMENTING_INITIAL_VALUE_CONFIG = "incrementing.initial";
+    private static final String INCREMENTING_INITIAL_VALUE_DOC =
+            "For the incrementing column, consider only the rows that have the value greater than this."
+            + " Use this if you need to pick up rows with negative or zero value, "
+            + " or if you want to skip rows.";
+    public static final long INCREMENTING_INITIAL_VALUE_DEFAULT = -1;
+    private static final String INCREMENTING_INITIAL_VALUE_DISPLAY = "Incrementing Column Initial Value";
+
     public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
     private static final String TIMESTAMP_COLUMN_NAME_DOC =
         "Comma separated list of one or more timestamp columns to detect new or modified rows using "
@@ -381,7 +389,9 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             Arrays.asList(
                 INCREMENTING_COLUMN_NAME_CONFIG,
                 TIMESTAMP_COLUMN_NAME_CONFIG,
-                VALIDATE_NON_NULL_CONFIG
+                VALIDATE_NON_NULL_CONFIG,
+                TIMESTAMP_INITIAL_MS_CONFIG,
+                INCREMENTING_INITIAL_VALUE_CONFIG
             )
         ).define(
             INCREMENTING_COLUMN_NAME_CONFIG,
@@ -436,6 +446,17 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             ++orderInGroup,
             Width.MEDIUM,
             TIMESTAMP_INITIAL_MS_DISPLAY
+        )
+        .define(
+            INCREMENTING_INITIAL_VALUE_CONFIG,
+            Type.LONG,
+            INCREMENTING_INITIAL_VALUE_DEFAULT,
+            Importance.HIGH,
+            INCREMENTING_INITIAL_VALUE_DOC,
+            MODE_GROUP,
+            ++orderInGroup,
+            Width.MEDIUM,
+            INCREMENTING_INITIAL_VALUE_DISPLAY
         );
     }
 
