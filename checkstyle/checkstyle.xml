@@ -277,7 +277,7 @@
 
         <!-- See http://checkstyle.sourceforge.net/config_sizes.html#ParameterNumber -->
         <module name="ParameterNumber">
-            <property name="max" value="10"/>
+            <property name="max" value="11"/>
         </module>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#ClassDataAbstractionCoupling -->
