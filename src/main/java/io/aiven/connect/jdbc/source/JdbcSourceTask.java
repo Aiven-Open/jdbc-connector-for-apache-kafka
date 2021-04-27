@@ -213,8 +213,7 @@ public class JdbcSourceTask extends SourceTask {
                         incrementingColumn,
                         offset,
                         timestampDelayInterval,
-                        timestampInitialMs,
-                        incrementingOffsetInitial,
+                        Arrays.asList(timestampInitialMs, incrementingOffsetInitial),
                         config.getDBTimeZone())
                 );
             } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
@@ -228,8 +227,7 @@ public class JdbcSourceTask extends SourceTask {
                         null,
                         offset,
                         timestampDelayInterval,
-                        timestampInitialMs,
-                        incrementingOffsetInitial,
+                        Arrays.asList(timestampInitialMs, incrementingOffsetInitial),
                         config.getDBTimeZone())
                 );
             } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
@@ -243,8 +241,7 @@ public class JdbcSourceTask extends SourceTask {
                         incrementingColumn,
                         offset,
                         timestampDelayInterval,
-                        timestampInitialMs,
-                        incrementingOffsetInitial,
+                        Arrays.asList(timestampInitialMs, incrementingOffsetInitial),
                         config.getDBTimeZone())
                 );
             }

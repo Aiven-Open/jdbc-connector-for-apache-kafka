@@ -218,7 +218,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         timestampInternal(-15L, Arrays.asList(-1, 0, 1));
     }
 
-    public void timestampInternal(final Long timestampInitialMs, final List<Integer> expectedIds) throws Exception {
+    private void timestampInternal(final Long timestampInitialMs, final List<Integer> expectedIds) throws Exception {
         expectInitializeNoOffsets(Arrays.asList(
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
@@ -766,6 +766,16 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     private void startTask(final String timestampColumn, final String incrementingColumn,
                            final String query, final Long delay, final String timeZone,
                            final Long incrementingInitial, final Long timestampInitialMs) {
+        final String mode = mode(timestampColumn, incrementingColumn);
+        initializeTask();
+        final Map<String, String> taskConfig = taskConfig(timestampColumn, incrementingColumn,
+                query, delay, timeZone,
+                incrementingInitial, timestampInitialMs,
+                mode);
+        task.start(taskConfig);
+    }
+
+    private String mode(final String timestampColumn, final String incrementingColumn) {
         String mode = null;
         if (timestampColumn != null && incrementingColumn != null) {
             mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
@@ -776,7 +786,13 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         } else {
             mode = JdbcSourceConnectorConfig.MODE_BULK;
         }
-        initializeTask();
+        return mode;
+    }
+
+    private Map<String, String> taskConfig(final String timestampColumn, final String incrementingColumn,
+                                           final String query, final Long delay, final String timeZone,
+                                           final Long incrementingInitial, final Long timestampInitialMs,
+                                           final String mode) {
         final Map<String, String> taskConfig = singleTableConfig();
         taskConfig.put(JdbcSourceConnectorConfig.MODE_CONFIG, mode);
         if (query != null) {
@@ -801,7 +817,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         if (timeZone != null) {
             taskConfig.put(JdbcConfig.DB_TIMEZONE_CONFIG, timeZone);
         }
-        task.start(taskConfig);
+        return taskConfig;
     }
 
     private void verifyIncrementingFirstPoll(final String topic) throws Exception {
