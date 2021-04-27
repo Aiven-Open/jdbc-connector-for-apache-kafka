@@ -161,8 +161,6 @@ _incremental modes_.
 In this mode, the connector will query tables without any filtering,
 periodically retrieving all rows from them and publishing them to Kafka.
 
-TODO: How doesn't this produce duplicates?
-
 To use this mode, set `mode=bulk`.
 
 ### Incremental Modes
@@ -186,8 +184,6 @@ Normally updates do not change row IDs. Because of this, the connector
 will detect only newly created rows. This makes this mode most suitable
 for streaming immutable rows that are added to a table, for example, for
 streaming facts from a fact table.
-
-TODO: the exact algorithm!!!!
 
 To use this mode, set `mode=incrementing`. Use 
 `incrementing.column.name` for setting the incrementing column name.
