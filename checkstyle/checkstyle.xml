@@ -277,7 +277,7 @@
 
         <!-- See http://checkstyle.sourceforge.net/config_sizes.html#ParameterNumber -->
         <module name="ParameterNumber">
-            <property name="max" value="11"/>
+            <property name="max" value="10"/>
         </module>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#ClassDataAbstractionCoupling -->
@@ -290,17 +290,13 @@
         <module name="ClassFanOutComplexity"/>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#CyclomaticComplexity -->
-        <module name="CyclomaticComplexity">
-            <property name="max" value="12"/>
-        </module>
+        <module name="CyclomaticComplexity"/>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#JavaNCSS -->
         <module name="JavaNCSS"/>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#NPathComplexity -->
-        <module name="NPathComplexity">
-            <property name="max" value="640"/>
-        </module>
+        <module name="NPathComplexity"/>
 
 
         <!-- See http://checkstyle.sourceforge.net/config_design.html#OneTopLevelClass -->
