@@ -290,13 +290,17 @@
         <module name="ClassFanOutComplexity"/>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#CyclomaticComplexity -->
-        <module name="CyclomaticComplexity"/>
+        <module name="CyclomaticComplexity">
+            <property name="max" value="12"/>
+        </module>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#JavaNCSS -->
         <module name="JavaNCSS"/>
 
         <!-- See http://checkstyle.sourceforge.net/config_metrics.html#NPathComplexity -->
-        <module name="NPathComplexity"/>
+        <module name="NPathComplexity">
+            <property name="max" value="640"/>
+        </module>
 
 
         <!-- See http://checkstyle.sourceforge.net/config_design.html#OneTopLevelClass -->

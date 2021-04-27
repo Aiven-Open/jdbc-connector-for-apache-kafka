@@ -163,7 +163,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         db.insert(SINGLE_TABLE_NAME, "id", -1);
         db.insert(SINGLE_TABLE_NAME, "id", 0);
 
-        startTask(null, "id", null, initialId, null);
+        startTask(null, "id", null, 0L, "UTC", initialId, null);
         verifyPoll(expectedIds.size(), "id", expectedIds, false, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         // Adding records should result in only those records during the next poll()
@@ -243,7 +243,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                 "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
                 "id", 1);
 
-        startTask("modified", null, null, null, timestampInitialMs);
+        startTask("modified", null, null, 0L, "UTC", null, timestampInitialMs);
         verifyPoll(expectedIds.size(), "id", expectedIds, true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         // If there isn't enough resolution, this could miss some rows. In this case, we'll only see
@@ -761,11 +761,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     private void startTask(final String timestampColumn, final String incrementingColumn, final String query) {
         startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", null, null);
-    }
-
-    private void startTask(final String timestampColumn, final String incrementingColumn, final String query,
-                           final Long incrementingInitial, final Long timestampInitialMs) {
-        startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", incrementingInitial, timestampInitialMs);
     }
 
     private void startTask(final String timestampColumn, final String incrementingColumn,
