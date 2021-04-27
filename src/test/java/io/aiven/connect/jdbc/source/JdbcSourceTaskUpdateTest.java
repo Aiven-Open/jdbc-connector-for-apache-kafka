@@ -148,7 +148,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         manualIncrementingInternal(-2L, Arrays.asList(-1, 0));
     }
 
-    private void manualIncrementingInternal(Long initialId, List<Integer> expectedIds) throws Exception {
+    private void manualIncrementingInternal(final Long initialId, final List<Integer> expectedIds) throws Exception {
         expectInitializeNoOffsets(Arrays.asList(
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
@@ -218,7 +218,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         timestampInternal(-15L, Arrays.asList(-1, 0, 1));
     }
 
-    public void timestampInternal(Long timestampInitialMs, List<Integer> expectedIds) throws Exception {
+    public void timestampInternal(final Long timestampInitialMs, final List<Integer> expectedIds) throws Exception {
         expectInitializeNoOffsets(Arrays.asList(
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
@@ -763,13 +763,14 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", null, null);
     }
 
-    private void startTask(final String timestampColumn, final String incrementingColumn, final String query, Long incrementingInitial, Long timestampInitialMs) {
+    private void startTask(final String timestampColumn, final String incrementingColumn, final String query,
+                           final Long incrementingInitial, final Long timestampInitialMs) {
         startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", incrementingInitial, timestampInitialMs);
     }
 
     private void startTask(final String timestampColumn, final String incrementingColumn,
                            final String query, final Long delay, final String timeZone,
-                           Long incrementingInitial, Long timestampInitialMs) {
+                           final Long incrementingInitial, final Long timestampInitialMs) {
         String mode = null;
         if (timestampColumn != null && incrementingColumn != null) {
             mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
