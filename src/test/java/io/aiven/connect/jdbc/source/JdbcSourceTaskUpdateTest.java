@@ -163,7 +163,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         db.insert(SINGLE_TABLE_NAME, "id", -1);
         db.insert(SINGLE_TABLE_NAME, "id", 0);
 
-        startTask(null, "id", null, initialId);
+        startTask(null, "id", null, initialId, null);
         verifyPoll(expectedIds.size(), "id", expectedIds, false, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         // Adding records should result in only those records during the next poll()
@@ -205,6 +205,20 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     @Test
     public void testTimestamp() throws Exception {
+        timestampInternal(null, Arrays.asList(1));
+    }
+
+    @Test
+    public void testTimestampManualOffset() throws Exception {
+        timestampInternal(0L, Arrays.asList(1));
+    }
+
+    @Test
+    public void testTimestampCustomOffset() throws Exception {
+        timestampInternal(-15L, Arrays.asList(-1, 0, 1));
+    }
+
+    public void timestampInternal(Long timestampInitialMs, List<Integer> expectedIds) throws Exception {
         expectInitializeNoOffsets(Arrays.asList(
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
@@ -217,11 +231,20 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             "modified", "TIMESTAMP NOT NULL",
             "id", "INT");
         db.insert(SINGLE_TABLE_NAME,
-            "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
-            "id", 1);
+                "modified", DateTimeUtils.formatTimestamp(new Timestamp(-20L), UTC_TIME_ZONE),
+                "id", -2);
+        db.insert(SINGLE_TABLE_NAME,
+                "modified", DateTimeUtils.formatTimestamp(new Timestamp(-10L), UTC_TIME_ZONE),
+                "id", -1);
+        db.insert(SINGLE_TABLE_NAME,
+                "modified", DateTimeUtils.formatTimestamp(new Timestamp(0L), UTC_TIME_ZONE),
+                "id", 0);
+        db.insert(SINGLE_TABLE_NAME,
+                "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
+                "id", 1);
 
-        startTask("modified", null, null);
-        verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
+        startTask("modified", null, null, null, timestampInitialMs);
+        verifyPoll(expectedIds.size(), "id", expectedIds, true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         // If there isn't enough resolution, this could miss some rows. In this case, we'll only see
         // IDs 3 & 4.
@@ -293,7 +316,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             "modified", DateTimeUtils.formatTimestamp(new Timestamp(10L), UTC_TIME_ZONE),
             "id", 1);
 
-        startTask("modified", null, null, 4L, "UTC", null);
+        startTask("modified", null, null, 4L, "UTC", null, null);
         verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         final Long currentTime = new Date().getTime();
@@ -366,7 +389,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         final String modifiedTimestamp = DateTimeUtils.formatTimestamp(new Timestamp(10L), timeZone);
         db.insert(SINGLE_TABLE_NAME, "modified", modifiedTimestamp, "id", 1);
 
-        startTask("modified", "id", null, 0L, timeZoneID, null);
+        startTask("modified", "id", null, 0L, timeZoneID, null, null);
         verifyIncrementingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         PowerMock.verifyAll();
@@ -381,7 +404,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             "id", "INT NOT NULL");
 
         try {
-            startTask("modified", "id", null, 0L, invalidTimeZoneID, null);
+            startTask("modified", "id", null, 0L, invalidTimeZoneID, null, null);
             fail("A ConfigException should have been thrown");
         } catch (final ConnectException e) {
             assertTrue(e.getCause() instanceof ConfigException);
@@ -737,16 +760,16 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     }
 
     private void startTask(final String timestampColumn, final String incrementingColumn, final String query) {
-        startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", null);
+        startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", null, null);
     }
 
-    private void startTask(final String timestampColumn, final String incrementingColumn, final String query, Long incrementingInitial) {
-        startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", incrementingInitial);
+    private void startTask(final String timestampColumn, final String incrementingColumn, final String query, Long incrementingInitial, Long timestampInitialMs) {
+        startTask(timestampColumn, incrementingColumn, query, 0L, "UTC", incrementingInitial, timestampInitialMs);
     }
 
     private void startTask(final String timestampColumn, final String incrementingColumn,
                            final String query, final Long delay, final String timeZone,
-                           Long incrementingInitial) {
+                           Long incrementingInitial, Long timestampInitialMs) {
         String mode = null;
         if (timestampColumn != null && incrementingColumn != null) {
             mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
@@ -772,6 +795,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         }
         if (incrementingInitial != null) {
             taskConfig.put(JdbcSourceConnectorConfig.INCREMENTING_INITIAL_VALUE_CONFIG, incrementingInitial.toString());
+        }
+        if (timestampInitialMs != null) {
+            taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_INITIAL_MS_CONFIG, timestampInitialMs.toString());
         }
 
         taskConfig.put(
