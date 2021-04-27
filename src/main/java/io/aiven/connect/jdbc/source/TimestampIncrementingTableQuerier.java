@@ -207,7 +207,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
 
     @Override
     public Timestamp beginTimestampValue() {
-        Timestamp timestampOffset = offset.getTimestampOffset();
+        final Timestamp timestampOffset = offset.getTimestampOffset();
         if (timestampOffset != null) {
             return timestampOffset;
         } else {
@@ -226,7 +226,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
 
     @Override
     public Long lastIncrementedValue() {
-        Long incrementingOffset = offset.getIncrementingOffset();
+        final Long incrementingOffset = offset.getIncrementingOffset();
         if (incrementingOffset != null) {
             return incrementingOffset;
         } else {
