@@ -435,8 +435,8 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             MODE_GROUP,
             ++orderInGroup,
             Width.SHORT,
-            QUERY_DISPLAY)
-        .define(
+            QUERY_DISPLAY
+        ).define(
             TIMESTAMP_INITIAL_MS_CONFIG,
             Type.LONG,
             TIMESTAMP_INITIAL_MS_DEFAULT,
@@ -446,8 +446,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             ++orderInGroup,
             Width.MEDIUM,
             TIMESTAMP_INITIAL_MS_DISPLAY
-        )
-        .define(
+        ).define(
             INCREMENTING_INITIAL_VALUE_CONFIG,
             Type.LONG,
             INCREMENTING_INITIAL_VALUE_DEFAULT,
