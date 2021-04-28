@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class TimestampIncrementingOffsetTest {
     private final Timestamp ts = new Timestamp(100L);
@@ -46,10 +46,8 @@ public class TimestampIncrementingOffsetTest {
 
     @Test
     public void testDefaults() {
-        assertEquals(-1, unset.getIncrementingOffset());
-        assertNotNull(unset.getTimestampOffset());
-        assertEquals(0, unset.getTimestampOffset().getTime());
-        assertEquals(0, unset.getTimestampOffset().getNanos());
+        assertNull(unset.getIncrementingOffset());
+        assertNull(unset.getTimestampOffset());
     }
 
     @Test
@@ -63,20 +61,20 @@ public class TimestampIncrementingOffsetTest {
 
     @Test
     public void testGetIncrementingOffset() {
-        assertEquals(-1, unset.getIncrementingOffset());
-        assertEquals(-1, tsOnly.getIncrementingOffset());
-        assertEquals(id, incOnly.getIncrementingOffset());
-        assertEquals(id, tsInc.getIncrementingOffset());
-        assertEquals(-1, nanosOffset.getIncrementingOffset());
+        assertNull(unset.getIncrementingOffset());
+        assertNull(tsOnly.getIncrementingOffset());
+        assertEquals(id, incOnly.getIncrementingOffset().longValue());
+        assertEquals(id, tsInc.getIncrementingOffset().longValue());
+        assertNull(nanosOffset.getIncrementingOffset());
     }
 
     @Test
     public void testGetTimestampOffset() {
-        assertNotNull(unset.getTimestampOffset());
+        assertNull(unset.getTimestampOffset());
         final Timestamp zero = new Timestamp(0);
-        assertEquals(zero, unset.getTimestampOffset());
         assertEquals(ts, tsOnly.getTimestampOffset());
-        assertEquals(zero, incOnly.getTimestampOffset());
+        assertEquals(ts, tsOnly.getTimestampOffset());
+        assertNull(incOnly.getTimestampOffset());
         assertEquals(ts, tsInc.getTimestampOffset());
         assertEquals(nanos, nanosOffset.getTimestampOffset());
     }

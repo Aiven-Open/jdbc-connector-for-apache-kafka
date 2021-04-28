@@ -133,6 +133,14 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
     public static final String INCREMENTING_COLUMN_NAME_DEFAULT = "";
     private static final String INCREMENTING_COLUMN_NAME_DISPLAY = "Incrementing Column Name";
 
+    public static final String INCREMENTING_INITIAL_VALUE_CONFIG = "incrementing.initial";
+    private static final String INCREMENTING_INITIAL_VALUE_DOC =
+            "For the incrementing column, consider only the rows that have the value greater than this."
+            + " Use this if you need to pick up rows with negative or zero value, "
+            + " or if you want to skip rows.";
+    public static final long INCREMENTING_INITIAL_VALUE_DEFAULT = -1;
+    private static final String INCREMENTING_INITIAL_VALUE_DISPLAY = "Incrementing Column Initial Value";
+
     public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
     private static final String TIMESTAMP_COLUMN_NAME_DOC =
         "Comma separated list of one or more timestamp columns to detect new or modified rows using "
@@ -212,10 +220,18 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         "How long to wait after a row with certain timestamp appears before we include it in the "
             + "result. You may choose to add some delay to allow transactions with earlier timestamp to"
             + " complete. The first execution will fetch all available records (i.e. starting at "
-            + "timestamp 0) until current time minus the delay. Every following execution will get data"
+            + "timestamp greater than 0) until current time minus the delay. Every following execution will get data"
             + " from the last time we fetched until current time minus the delay.";
     public static final long TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT = 0;
     private static final String TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY = "Delay Interval (ms)";
+
+    public static final String TIMESTAMP_INITIAL_MS_CONFIG = "timestamp.initial.ms";
+    private static final String TIMESTAMP_INITIAL_MS_DOC =
+            "The initial value of timestamp when selecting records. "
+                + "The records having timestamp greater than the value are included in the result."
+                + " Defaults to 0.";
+    public static final long TIMESTAMP_INITIAL_MS_DEFAULT = 0;
+    private static final String TIMESTAMP_INITIAL_MS_DISPLAY = "Initial timestamp (ms since epoch, can be negative)";
 
     public static final String DATABASE_GROUP = "Database";
     public static final String MODE_GROUP = "Mode";
@@ -373,7 +389,9 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             Arrays.asList(
                 INCREMENTING_COLUMN_NAME_CONFIG,
                 TIMESTAMP_COLUMN_NAME_CONFIG,
-                VALIDATE_NON_NULL_CONFIG
+                VALIDATE_NON_NULL_CONFIG,
+                TIMESTAMP_INITIAL_MS_CONFIG,
+                INCREMENTING_INITIAL_VALUE_CONFIG
             )
         ).define(
             INCREMENTING_COLUMN_NAME_CONFIG,
@@ -417,7 +435,28 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             MODE_GROUP,
             ++orderInGroup,
             Width.SHORT,
-            QUERY_DISPLAY);
+            QUERY_DISPLAY
+        ).define(
+            TIMESTAMP_INITIAL_MS_CONFIG,
+            Type.LONG,
+            TIMESTAMP_INITIAL_MS_DEFAULT,
+            Importance.MEDIUM,
+            TIMESTAMP_INITIAL_MS_DOC,
+            MODE_GROUP,
+            ++orderInGroup,
+            Width.MEDIUM,
+            TIMESTAMP_INITIAL_MS_DISPLAY
+        ).define(
+            INCREMENTING_INITIAL_VALUE_CONFIG,
+            Type.LONG,
+            INCREMENTING_INITIAL_VALUE_DEFAULT,
+            Importance.MEDIUM,
+            INCREMENTING_INITIAL_VALUE_DOC,
+            MODE_GROUP,
+            ++orderInGroup,
+            Width.MEDIUM,
+            INCREMENTING_INITIAL_VALUE_DISPLAY
+        );
     }
 
     private static final void addConnectorOptions(final ConfigDef config) {

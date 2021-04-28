@@ -113,7 +113,7 @@ in all catalogs and schemas. This can be changed in several ways:
 
 The connector periodically polls the database metadata, detects created
 and deleted tables. It automatically adapts to these changes by starting
-polling created tables and stopping deleted ones. The metadata poll
+polling created tables and stopping polling deleted ones. The metadata poll
 interval is configured by `table.poll.interval.ms` and is 60 seconds by
 default.
 
@@ -175,7 +175,7 @@ advisable to have these columns indexed.
 
 #### Incremental Mode With Incrementing Column
 
-In this mode, tables are supposed to have a numeric column containing
+In this mode tables have a numeric column containing
 sequentially growing numbers. Normally, this is a unique ID column with
 automatically generated values, like `AUTO_INCREMENT` columns from MySQL
 or sequential columns from PostgreSQL.
@@ -190,7 +190,7 @@ To use this mode, set `mode=incrementing`. Use
 
 #### Incremental Mode With Timestamp Column
 
-In this mode, tables are supposed to have one or many timestamp columns.
+In this mode tables have one or many timestamp columns.
 The connector will apply `COALESCE` SQL function to them to get one
 timestamp for a row. Rows with this timestamp greater than the largest
 previously known will be retrieved on the next query.

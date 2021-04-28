@@ -69,6 +69,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
     private final List<ColumnId> timestampColumns;
     private String incrementingColumnName;
     private long timestampDelay;
+    private final long initialTimestampOffset;
+    private final long initialIncrementingOffset;
     private TimestampIncrementingOffset offset;
     private TimestampIncrementingCriteria criteria;
     private final Map<String, String> partition;
@@ -83,12 +85,16 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
                                              final String incrementingColumnName,
                                              final Map<String, Object> offsetMap,
                                              final Long timestampDelay,
+                                             final long timestampInitialMs,
+                                             final long incrementingOffsetInitial,
                                              final TimeZone timeZone) {
         super(dialect, mode, name, topicPrefix);
         this.incrementingColumnName = incrementingColumnName;
         this.timestampColumnNames = timestampColumnNames != null
             ? timestampColumnNames : Collections.<String>emptyList();
         this.timestampDelay = timestampDelay;
+        this.initialTimestampOffset = timestampInitialMs;
+        this.initialIncrementingOffset = incrementingOffsetInitial;
         this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
 
         this.timestampColumns = new ArrayList<>();
@@ -200,12 +206,17 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
     }
 
     @Override
-    public Timestamp beginTimetampValue() {
-        return offset.getTimestampOffset();
+    public Timestamp beginTimestampValue() {
+        final Timestamp timestampOffset = offset.getTimestampOffset();
+        if (timestampOffset != null) {
+            return timestampOffset;
+        } else {
+            return new Timestamp(initialTimestampOffset);
+        }
     }
 
     @Override
-    public Timestamp endTimetampValue() throws SQLException {
+    public Timestamp endTimestampValue() throws SQLException {
         final long currentDbTime = dialect.currentTimeOnDB(
             stmt.getConnection(),
             DateTimeUtils.getTimeZoneCalendar(timeZone)
@@ -215,7 +226,12 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
 
     @Override
     public Long lastIncrementedValue() {
-        return offset.getIncrementingOffset();
+        final Long incrementingOffset = offset.getIncrementingOffset();
+        if (incrementingOffset != null) {
+            return incrementingOffset;
+        } else {
+            return initialIncrementingOffset;
+        }
     }
 
     @Override

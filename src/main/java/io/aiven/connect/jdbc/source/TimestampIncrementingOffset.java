@@ -36,22 +36,19 @@ public class TimestampIncrementingOffset {
 
     /**
      * @param timestampOffset    the timestamp offset.
-     *                           If null, {@link #getTimestampOffset()} will return
-     *                           {@code new Timestamp(0)}.
      * @param incrementingOffset the incrementing offset.
-     *                           If null, {@link #getIncrementingOffset()} will return -1.
      */
     public TimestampIncrementingOffset(final Timestamp timestampOffset, final Long incrementingOffset) {
         this.timestampOffset = timestampOffset;
         this.incrementingOffset = incrementingOffset;
     }
 
-    public long getIncrementingOffset() {
-        return incrementingOffset == null ? -1 : incrementingOffset;
+    public Long getIncrementingOffset() {
+        return incrementingOffset;
     }
 
     public Timestamp getTimestampOffset() {
-        return timestampOffset != null ? timestampOffset : new Timestamp(0L);
+        return timestampOffset;
     }
 
     public Map<String, Object> toMap() {
