@@ -85,15 +85,16 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
                                              final String incrementingColumnName,
                                              final Map<String, Object> offsetMap,
                                              final Long timestampDelay,
-                                             final List<Long> initialsOffsets,
+                                             final long timestampInitialMs,
+                                             final long incrementingOffsetInitial,
                                              final TimeZone timeZone) {
         super(dialect, mode, name, topicPrefix);
         this.incrementingColumnName = incrementingColumnName;
         this.timestampColumnNames = timestampColumnNames != null
             ? timestampColumnNames : Collections.<String>emptyList();
         this.timestampDelay = timestampDelay;
-        this.initialTimestampOffset = initialsOffsets.get(0);
-        this.initialIncrementingOffset = initialsOffsets.get(1);
+        this.initialTimestampOffset = timestampInitialMs;
+        this.initialIncrementingOffset = incrementingOffsetInitial;
         this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
 
         this.timestampColumns = new ArrayList<>();

@@ -38,6 +38,11 @@
 
     <suppress checks="ParameterNumber"
               files="(ColumnDefinition|GenericDatabaseDialect|SqlServerDatabaseDialect).java"/>
+
+    <suppress checks="ParameterNumber"
+              files="TimestampIncrementingTableQuerier.java"
+              lines="80"/>
+
     <!---->
 
 
