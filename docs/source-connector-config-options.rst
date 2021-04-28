@@ -226,12 +226,12 @@ Connector
 
   * Type: long
   * Default: 0
-  * Importance: high
+  * Importance: medium
 
 ``incrementing.initial``
   The initial value of incremental column when selecting records. The records the incremental column with value greater than the configured value are included in the result.
 
   * Type: long
   * Default: -1
-  * Importance: high
+  * Importance: medium
 
