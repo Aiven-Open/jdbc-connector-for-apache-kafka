@@ -69,7 +69,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
     private final List<ColumnId> timestampColumns;
     private String incrementingColumnName;
     private long timestampDelay;
-    private long initialTimestampOffset;
+    private final long initialTimestampOffset;
     private final long initialIncrementingOffset;
     private TimestampIncrementingOffset offset;
     private TimestampIncrementingCriteria criteria;
@@ -92,10 +92,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier
         this.timestampColumnNames = timestampColumnNames != null
             ? timestampColumnNames : Collections.<String>emptyList();
         this.timestampDelay = timestampDelay;
-        final long initialTimestampOffset = initialsOffsets.get(0);
-        final long initialIncrementingOffset = initialsOffsets.get(1);
-        this.initialTimestampOffset = initialTimestampOffset;
-        this.initialIncrementingOffset = initialIncrementingOffset;
+        this.initialTimestampOffset = initialsOffsets.get(0);
+        this.initialIncrementingOffset = initialsOffsets.get(1);
         this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
 
         this.timestampColumns = new ArrayList<>();
