@@ -388,6 +388,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
             Schema.BOOLEAN_SCHEMA,
             Schema.BYTES_SCHEMA,
             Schema.STRING_SCHEMA,
+            SchemaBuilder.array(Schema.INT32_SCHEMA),
             Decimal.schema(0),
             Date.SCHEMA,
             Time.SCHEMA,

@@ -17,6 +17,7 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,8 +25,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -33,6 +36,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.errors.DataException;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
@@ -49,6 +53,17 @@ import io.aiven.connect.jdbc.util.TableId;
  * A {@link DatabaseDialect} for PostgreSQL.
  */
 public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
+
+    private static final Map<Schema.Type, Class<?>> SUPPORTED_ARRAY_VALUE_TYPES_TO_JAVA = Map.of(
+            Schema.Type.INT8, short.class,
+            Schema.Type.INT16, short.class,
+            Schema.Type.INT32, int.class,
+            Schema.Type.INT64, long.class,
+            Schema.Type.FLOAT32, float.class,
+            Schema.Type.FLOAT64, double.class,
+            Schema.Type.BOOLEAN, boolean.class,
+            Schema.Type.STRING, String.class
+    );
 
     /**
      * The provider for {@link PostgreSqlDatabaseDialect}.
@@ -202,8 +217,13 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
 
     @Override
     protected String getSqlType(final SinkRecordField field) {
-        if (field.schemaName() != null) {
-            switch (field.schemaName()) {
+        final String sqlType = getSqlTypeFromSchema(field.schema());
+        return sqlType != null ? sqlType : super.getSqlType(field);
+    }
+
+    private String getSqlTypeFromSchema(final Schema schema) {
+        if (schema.name() != null) {
+            switch (schema.name()) {
                 case Decimal.LOGICAL_NAME:
                     return "DECIMAL";
                 case Date.LOGICAL_NAME:
@@ -216,7 +236,7 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
                     // fall through to normal types
             }
         }
-        switch (field.schemaType()) {
+        switch (schema.type()) {
             case INT8:
             case INT16:
                 return "SMALLINT";
@@ -234,8 +254,50 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
                 return "TEXT";
             case BYTES:
                 return "BYTEA";
+            case ARRAY:
+                return getSqlTypeFromSchema(schema.valueSchema()) + "[]";
             default:
-                return super.getSqlType(field);
+                return null;
+        }
+    }
+
+    @Override
+    protected boolean maybeBindPrimitive(
+            final PreparedStatement statement,
+            final int index,
+            final Schema schema,
+            final Object value
+    ) throws SQLException {
+        if (schema.type() == Schema.Type.ARRAY) {
+            return bindPrimitiveArray(statement, index, schema, value);
+        } else {
+            return super.maybeBindPrimitive(statement, index, schema, value);
+        }
+    }
+
+    private boolean bindPrimitiveArray(
+            final PreparedStatement statement,
+            final int index,
+            final Schema schema,
+            final Object value
+    ) throws SQLException {
+        final Schema.Type valueType = schema.valueSchema().type();
+        final Class<?> componentType = SUPPORTED_ARRAY_VALUE_TYPES_TO_JAVA.get(valueType);
+        if (componentType != null) {
+            List<?> valueCollection = (List<?>) value;
+            // Postgres does not have an 8-bit integer, using short as the best alternative.
+            if (valueType == Schema.Type.INT8) {
+                valueCollection = valueCollection.stream()
+                        .map(o -> ((Byte) o).shortValue()).collect(Collectors.toList());
+            }
+            final Object newValue = Array.newInstance(componentType, valueCollection.size());
+            for (int i = 0; i < valueCollection.size(); i++) {
+                Array.set(newValue, i, valueCollection.get(i));
+            }
+            statement.setObject(index, newValue, Types.ARRAY);
+            return true;
+        } else {
+            throw new DataException(String.format("Unsupported schema type %s for ARRAY values", valueType));
         }
     }
 

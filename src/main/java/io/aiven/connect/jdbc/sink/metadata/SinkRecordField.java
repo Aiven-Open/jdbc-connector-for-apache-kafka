@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2021 Aiven Oy
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,10 @@ public class SinkRecordField {
         this.schema = schema;
         this.name = name;
         this.isPrimaryKey = isPrimaryKey;
+    }
+
+    public Schema schema() {
+        return schema;
     }
 
     public String schemaName() {

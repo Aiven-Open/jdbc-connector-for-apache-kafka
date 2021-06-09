@@ -17,17 +17,24 @@
 
 package io.aiven.connect.jdbc.dialect;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.errors.DataException;
 
 import io.aiven.connect.jdbc.source.ColumnMapping;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
@@ -38,7 +45,9 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDatabaseDialect> {
 
@@ -338,5 +347,93 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
                 "jdbc:postgresql://localhost/test?user=fred&password=secret&ssl=true",
                 "jdbc:postgresql://localhost/test?user=fred&password=****&ssl=true"
         );
+    }
+
+
+    @Test
+    @Override
+    public void bindFieldArrayUnsupported() {
+    }
+
+    @Test
+    public void bindFieldArray() throws SQLException {
+        int index = ThreadLocalRandom.current().nextInt();
+
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.INT8_SCHEMA),
+                Arrays.asList((byte) 1, (byte) 2, (byte) 3)
+        ).setObject(index, new short[] {1, 2, 3}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.INT16_SCHEMA),
+                Arrays.asList((short) 1, (short) 2, (short) 3)
+        ).setObject(index, new short[] {1, 2, 3}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.INT32_SCHEMA),
+                Arrays.asList(1, 2, 3)
+        ).setObject(index, new int[] {1, 2, 3}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.INT64_SCHEMA),
+                Arrays.asList(1L, 2L, 3L)
+        ).setObject(index, new long[] {1L, 2L, 3L}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.FLOAT32_SCHEMA),
+                Arrays.asList(1.23F, 2.34F, 3.45F)
+        ).setObject(index, new float[] {1.23F, 2.34F, 3.45F}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.FLOAT64_SCHEMA),
+                Arrays.asList(1.23D, 2.34D, 3.45D)
+        ).setObject(index, new double[] {1.23D, 2.34D, 3.45D}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.STRING_SCHEMA),
+                Arrays.asList("qwe", "asd", "zxc")
+        ).setObject(index, new String[] {"qwe", "asd", "zxc"}, Types.ARRAY);
+        super.verifyBindField(
+                ++index,
+                SchemaBuilder.array(Schema.BOOLEAN_SCHEMA),
+                Arrays.asList(true, false, true)
+        ).setObject(index, new boolean[] {true, false, true}, Types.ARRAY);
+    }
+
+    @Test
+    public void bindFieldArrayOfStructsUnsupported() {
+        final Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
+        final Schema arraySchema = SchemaBuilder.array(structSchema);
+        assertThatThrownBy(() -> dialect.bindField(mock(PreparedStatement.class), 1, arraySchema,
+                Collections.singletonList(structSchema)))
+                .isInstanceOf(DataException.class)
+                .hasMessage("Unsupported schema type STRUCT for ARRAY values");
+    }
+
+    @Test
+    public void bindFieldArrayOfArraysUnsupported() {
+        final Schema arraySchema = SchemaBuilder.array(SchemaBuilder.array(Schema.INT8_SCHEMA));
+        assertThatThrownBy(
+            () -> dialect.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList()))
+                .isInstanceOf(DataException.class)
+                .hasMessage("Unsupported schema type ARRAY for ARRAY values");
+    }
+
+    @Test
+    public void bindFieldArrayOfMapsUnsupported() {
+        final Schema mapSchema = SchemaBuilder.array(SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA));
+        assertThatThrownBy(() -> dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap()))
+                .isInstanceOf(DataException.class)
+                .hasMessage("Unsupported schema type MAP for ARRAY values");
+    }
+
+    @Test
+    public void bindFieldMapUnsupported() {
+        final Schema bytesSchema = SchemaBuilder.array(Schema.BYTES_SCHEMA);
+        assertThatThrownBy(
+            () -> dialect.bindField(mock(PreparedStatement.class), 1, bytesSchema, Collections.emptyMap()))
+                .isInstanceOf(DataException.class)
+                .hasMessage("Unsupported schema type BYTES for ARRAY values");
     }
 }
