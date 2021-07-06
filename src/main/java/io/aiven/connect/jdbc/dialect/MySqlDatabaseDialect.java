@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Properties;
 
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -121,6 +122,14 @@ public class MySqlDatabaseDialect extends GenericDatabaseDialect {
             default:
                 return super.getSqlType(field);
         }
+    }
+
+    @Override
+    protected Properties addConnectionProperties(final Properties properties) {
+        properties.put("allowLoadLocalInFile", Boolean.FALSE.toString());
+        properties.put("allowUrlInLocalInfile", Boolean.FALSE.toString());
+        properties.put("autoDeserialize", Boolean.FALSE.toString());
+        return properties;
     }
 
     @Override
