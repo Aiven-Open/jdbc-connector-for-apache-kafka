@@ -223,24 +223,26 @@ types are used.
 |        `Date`       |        `DATE`       |        `DATE`       |        `DATE`       |
 |        `Time`       |        `TIME`       |        `TIME`       |      `TIME(3)`      |
 |     `Timestamp`     |     `TIMESTAMP`     |     `TIMESTAMP`     |    `DATETIME(3)`    |
+|       `ARRAY`       |         `-`         |         `-`         |         `-`         |
 
 _(continued)_
 
-| Connect schema type |       Oracle      |     PostgreSQL     |     SAP HANA    |
-|:-------------------:|:-----------------:|:------------------:|:---------------:|
-|        `INT8`       |   `NUMBER(3,0)`   |     `SMALLINT`     |    `TINYINT`    |
-|       `INT16`       |   `NUMBER(5,0)`   |     `SMALLINT`     |    `SMALLINT`   |
-|       `INT32`       |   `NUMBER(10,0)`  |        `INT`       |    `INTEGER`    |
-|       `INT64`       |   `NUMBER(19,0)`  |      `BIGINT`      |     `BIGINT`    |
-|      `FLOAT32`      |   `BINARY_FLOAT`  |       `REAL`       |      `REAL`     |
-|      `FLOAT64`      |  `BINARY_DOUBLE`  | `DOUBLE PRECISION` |     `DOUBLE`    |
-|      `BOOLEAN`      |   `NUMBER(1,0)`   |      `BOOLEAN`     |    `BOOLEAN`    |
-|       `STRING`      |       `CLOB`      |       `TEXT`       | `VARCHAR(1000)` |
-|       `BYTES`       |       `BLOB`      |       `BYTEA`      |      `BLOB`     |
-|      `Decimal`      | `NUMBER(*,scale)` |      `DECIMAL`     |    `DECIMAL`    |
-|        `Date`       |       `DATE`      |       `DATE`       |      `DATE`     |
-|        `Time`       |       `DATE`      |       `TIME`       |      `DATE`     |
-|     `Timestamp`     |    `TIMESTAMP`    |     `TIMESTAMP`    |   `TIMESTAMP`   |
+| Connect schema type |       Oracle      |                  PostgreSQL                  |     SAP HANA    |
+|:-------------------:|:-----------------:|:--------------------------------------------:|:---------------:|
+|        `INT8`       |   `NUMBER(3,0)`   |                  `SMALLINT`                  |    `TINYINT`    |
+|       `INT16`       |   `NUMBER(5,0)`   |                  `SMALLINT`                  |    `SMALLINT`   |
+|       `INT32`       |   `NUMBER(10,0)`  |                     `INT`                    |    `INTEGER`    |
+|       `INT64`       |   `NUMBER(19,0)`  |                    `BIGINT`                  |     `BIGINT`    |
+|      `FLOAT32`      |   `BINARY_FLOAT`  |                     `REAL`                   |      `REAL`     |
+|      `FLOAT64`      |  `BINARY_DOUBLE`  |               `DOUBLE PRECISION`             |     `DOUBLE`    |
+|      `BOOLEAN`      |   `NUMBER(1,0)`   |                   `BOOLEAN`                  |    `BOOLEAN`    |
+|       `STRING`      |       `CLOB`      |                     `TEXT`                   | `VARCHAR(1000)` |
+|       `BYTES`       |       `BLOB`      |                     `BYTEA`                  |      `BLOB`     |
+|      `Decimal`      | `NUMBER(*,scale)` |                    `DECIMAL`                 |    `DECIMAL`    |
+|        `Date`       |       `DATE`      |                     `DATE`                   |      `DATE`     |
+|        `Time`       |       `DATE`      |                     `TIME`                   |      `DATE`     |
+|     `Timestamp`     |    `TIMESTAMP`    |                   `TIMESTAMP`                |   `TIMESTAMP`   |
+|       `ARRAY`       |        `-`        |[`*[]`](#supported-array-types-for-postgresql)|       `-`       |
 
 _(continued)_
 
@@ -259,6 +261,7 @@ _(continued)_
 |        `Date`       | `NUMERIC` |        `DATE`       |
 |        `Time`       | `NUMERIC` |        `TIME`       |
 |     `Timestamp`     | `NUMERIC` |     `DATETIME2`     |
+|       `ARRAY`       |    `-`    |         `-`         |
 
 _(continued)_
 
@@ -277,6 +280,28 @@ _(continued)_
 |        `Date`       |                          `DATE`                         |        `DATE`       |
 |        `Time`       |                          `TIME`                         |        `TIME`       |
 |     `Timestamp`     |                        `DATETIME`                       |      `DATETIME`     |
+|       `ARRAY`       |                           `-`                           |         `-`         |
+
+### Supported array types for PostgreSQL
+
+| Connect schema type |      PostgreSQL     |
+|:-------------------:|:-------------------:|
+|        `INT8`       |      `SMALLINT`     |
+|       `INT16`       |      `SMALLINT`     |
+|       `INT32`       |      `INTEGER`      |
+|       `INT64`       |       `BIGINT`      |
+|      `FLOAT32`      |       `FLOAT`       |
+|      `FLOAT64`      |       `DOUBLE`      |
+|      `BOOLEAN`      |      `SMALLINT`     |
+|       `STRING`      |   `VARCHAR(32672)`  |
+|       `BYTES`       |         `-`         |
+|       `ARRAY`       |         `-`         |
+|      `Decimal`      |         `-`         |
+|        `Date`       |      `INTEGER`      |
+|        `Time`       |      `INTEGER`      |
+|     `Timestamp`     |       `BIGINT`      |
+|        `MAP`        |         `-`         |
+|       `STRUCT`      |         `-`         |
 
 ## Example
 
