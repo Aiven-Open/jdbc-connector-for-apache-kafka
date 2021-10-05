@@ -141,7 +141,7 @@ and offset—as a composite primary key.
 It is possible to specify the names of the corresponding fields in the
 destination table by configuring:
 ```
-pk.fields=<topic_column>,<pratition_column>,<offset_column>
+pk.fields=<topic_column>,<partition_column>,<offset_column>
 ```
 If not specified, `__connect_topic`, `__connect_partition`, and
 `__connect_offset` will be used.
