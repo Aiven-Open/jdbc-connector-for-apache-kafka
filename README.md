@@ -1,4 +1,4 @@
-# Kafka Connect JDBC Connector
+# Aiven's JDBC Sink and Source Connectors for Apache Kafka
 
 This repository includes a Sink and Source
 [Kafka Connect](http://kafka.apache.org/documentation.html#connect)
@@ -21,9 +21,9 @@ The Sink connector documentation can be found
 
 # Contribute
 
-[Source Code](https://github.com/aiven/aiven-kafka-connect-jdbc)
+[Source Code](https://github.com/aiven/jdbc-connector-for-apache-kafka)
 
-[Issue Tracker](https://github.com/aiven/aiven-kafka-connect-jdbc/issues)
+[Issue Tracker](https://github.com/aiven/jdbc-connector-for-apache-kafka/issues)
 
 # License
 
