@@ -74,7 +74,7 @@ publishing {
             version = getVersion()
 
             pom {
-                name = "Aiven Kafka Connect JDBC connector"
+                name = "Aiven's JDBC Sink and Source Connectors for Apache Kafka"
                 description = "A Kafka Connect JDBC connector for copying data between databases and Kafka."
                 url = "https://aiven.io"
                 organization {
@@ -90,9 +90,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/aiven/aiven-kafka-connect-jdbc.git"
-                    developerConnection = "scm:git:git@github.com:aiven/aiven-kafka-connect-jdbc.git"
-                    url = "https://github.com/aiven/aiven-kafka-connect-jdbc"
+                    connection = "scm:git:git://github.com/aiven/jdbc-connector-for-apache-kafka.git"
+                    developerConnection = "scm:git:git@github.com:aiven/jdbc-connector-for-apache-kafka.git"
+                    url = "https://github.com/aiven/jdbc-connector-for-apache-kafka"
                     tag = "HEAD"
                 }
             }
@@ -132,7 +132,7 @@ dependencies {
 }
 
 processResources {
-    filesMatching('aiven-kafka-connect-jdbc-version.properties') {
+    filesMatching('jdbc-connector-for-apache-kafka-version.properties') {
         expand(version: version)
     }
 }
