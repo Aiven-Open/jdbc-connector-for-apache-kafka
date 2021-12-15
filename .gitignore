@@ -1,5 +1,6 @@
 # Build products
 target/
+bin
 
 # IntelliJ data
 *.iml
