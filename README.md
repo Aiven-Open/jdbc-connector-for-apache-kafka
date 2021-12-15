@@ -11,7 +11,7 @@ to thank the Confluent team for their efforts in developing the
 connector and aim to continue keeping this fork well-maintained and
 truly open.
 
-# Documentation
+## Documentation
 
 The Source connector documentation can be found
 [here](docs/source-connector.md).
@@ -19,14 +19,18 @@ The Source connector documentation can be found
 The Sink connector documentation can be found
 [here](docs/sink-connector.md).
 
-# Contribute
+## Contribute
 
 [Source Code](https://github.com/aiven/jdbc-connector-for-apache-kafka)
 
 [Issue Tracker](https://github.com/aiven/jdbc-connector-for-apache-kafka/issues)
 
-# License
+## License
 
 The project is licensed under the
 [Apache 2 license](https://www.apache.org/licenses/LICENSE-2.0). See
 [LICENSE](LICENSE).
+
+## Security
+
+Security policies can be found [here](SECURITY.md) and the list of known vulnerabilities [here](cve-list.md)
