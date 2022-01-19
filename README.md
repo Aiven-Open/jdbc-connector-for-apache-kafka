@@ -1,7 +1,7 @@
-# Aiven's JDBC Sink and Source Connectors for Apache Kafka
+# Aiven's JDBC Sink and Source Connectors for Apache Kafka®
 
 This repository includes a Sink and Source
-[Kafka Connect](http://kafka.apache.org/documentation.html#connect)
+[Apache Kafka Connect](http://kafka.apache.org/documentation.html#connect)
 connectors for JDBC-compatible databases.
 
 The project originates from Confluent
@@ -34,3 +34,6 @@ The project is licensed under the
 ## Security
 
 Security policies can be found [here](SECURITY.md) and the list of known vulnerabilities [here](cve-list.md)
+
+## Trademark
+Apache Kafka, Apache Kafka Connect are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries. Kafka Connect JDBC is trademark and property of their respective owners. All product and service names used in this page are for identification purposes only and do not imply endorsement.
