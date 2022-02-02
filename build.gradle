@@ -32,7 +32,7 @@ plugins {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 java {
@@ -42,7 +42,7 @@ java {
 
 checkstyle {
     toolVersion "8.35"
-    configDir rootProject.file("checkstyle/")
+    configDirectory.set(rootProject.file("checkstyle/"))
     println configFile
 }
 
@@ -126,9 +126,9 @@ dependencies {
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
     testImplementation "commons-io:commons-io:2.6"
     testImplementation "org.apache.derby:derby:10.11.1.1"
-    testRuntime "org.slf4j:slf4j-log4j12:$slf4jVersion"
     testImplementation 'org.assertj:assertj-core:3.19.0'
 
+    testRuntimeOnly "org.slf4j:slf4j-log4j12:$slf4jVersion"
 }
 
 processResources {
