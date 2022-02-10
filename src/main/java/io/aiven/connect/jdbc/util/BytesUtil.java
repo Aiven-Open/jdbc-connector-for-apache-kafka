@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2019 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
