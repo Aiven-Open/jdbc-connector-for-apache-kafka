@@ -41,6 +41,8 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.aiven.connect.jdbc.sink.JdbcSinkConfig.InsertMode.MULTI;
+
 public class BufferedRecords {
     private static final Logger log = LoggerFactory.getLogger(BufferedRecords.class);
 
@@ -53,6 +55,7 @@ public class BufferedRecords {
     private List<SinkRecord> records = new ArrayList<>();
     private SchemaPair currentSchemaPair;
     private FieldsMetadata fieldsMetadata;
+    private TableDefinition tableDefinition;
     private PreparedStatement preparedStatement;
     private StatementBinder preparedStatementBinder;
 
@@ -76,39 +79,10 @@ public class BufferedRecords {
                 record.valueSchema()
         );
 
-        if (currentSchemaPair == null) {
-            currentSchemaPair = schemaPair;
-            // re-initialize everything that depends on the record schema
-            fieldsMetadata = FieldsMetadata.extract(
-                    tableId.tableName(),
-                    config.pkMode,
-                    config.pkFields,
-                    config.fieldsWhitelist,
-                    currentSchemaPair
-            );
-            dbStructure.createOrAmendIfNecessary(
-                    config,
-                    connection,
-                    tableId,
-                    fieldsMetadata
-            );
+        log.debug("buffered records in list {}", records.size());
 
-            final TableDefinition tableDefinition = dbStructure.tableDefinitionFor(tableId, connection);
-            final String sql = getInsertSql(tableDefinition);
-            log.debug(
-                    "{} sql: {}",
-                    config.insertMode,
-                    sql
-            );
-            close();
-            preparedStatement = connection.prepareStatement(sql);
-            preparedStatementBinder = dbDialect.statementBinder(
-                    preparedStatement,
-                    config.pkMode,
-                    schemaPair,
-                    fieldsMetadata,
-                    config.insertMode
-            );
+        if (currentSchemaPair == null) {
+            reInitialize(schemaPair);
         }
 
         final List<SinkRecord> flushed;
@@ -134,27 +108,77 @@ public class BufferedRecords {
         return flushed;
     }
 
+    private void prepareStatement() throws SQLException {
+        final String sql = writeSql();
+
+        log.debug("Prepared SQL {} for insert mode {}", sql, config.insertMode);
+
+        close();
+        preparedStatement = connection.prepareStatement(sql);
+        preparedStatementBinder = dbDialect.statementBinder(
+                preparedStatement,
+                config.pkMode,
+                currentSchemaPair,
+                fieldsMetadata,
+                config.insertMode
+        );
+    }
+
+    private String writeSql() {
+        final String sql;
+        log.debug("Generating query for insert mode {} and {} records", config.insertMode, records.size());
+        if (config.insertMode == MULTI) {
+            sql = getMultiInsertSql(tableDefinition);
+        } else {
+            sql = getInsertSql(tableDefinition);
+        }
+        return sql;
+    }
+
+    // re-initialize everything that depends on the record schema
+    private void reInitialize(final SchemaPair schemaPair) throws SQLException {
+        currentSchemaPair = schemaPair;
+        fieldsMetadata = FieldsMetadata.extract(
+                tableId.tableName(),
+                config.pkMode,
+                config.pkFields,
+                config.fieldsWhitelist,
+                currentSchemaPair
+        );
+        dbStructure.createOrAmendIfNecessary(
+                config,
+                connection,
+                tableId,
+                fieldsMetadata
+        );
+
+        tableDefinition = dbStructure.tableDefinitionFor(tableId, connection);
+    }
+
     public List<SinkRecord> flush() throws SQLException {
         if (records.isEmpty()) {
             log.debug("Records is empty");
             return new ArrayList<>();
         }
-        log.debug("Flushing {} buffered records", records.size());
-        for (final SinkRecord record : records) {
-            preparedStatementBinder.bindRecord(record);
-        }
+        prepareStatement();
+        bindRecords();
+
         int totalUpdateCount = 0;
         boolean successNoInfo = false;
-        for (final int updateCount : preparedStatement.executeBatch()) {
+
+        log.debug("Executing batch...");
+        for (final int updateCount : executeBatch()) {
             if (updateCount == Statement.SUCCESS_NO_INFO) {
                 successNoInfo = true;
                 continue;
             }
             totalUpdateCount += updateCount;
         }
+        log.debug("Done executing batch.");
         if (totalUpdateCount != records.size() && !successNoInfo) {
             switch (config.insertMode) {
                 case INSERT:
+                case MULTI:
                     throw new ConnectException(String.format(
                             "Update count (%d) did not sum up to total number of records inserted (%d)",
                             totalUpdateCount,
@@ -186,11 +210,58 @@ public class BufferedRecords {
         return flushedRecords;
     }
 
+    private int[] executeBatch() throws SQLException {
+        if (config.insertMode == MULTI) {
+            preparedStatement.addBatch();
+        }
+        log.debug("Executing batch with insert mode {}", config.insertMode);
+        return preparedStatement.executeBatch();
+    }
+
+    private void bindRecords() throws SQLException {
+        log.debug("Binding {} buffered records", records.size());
+        int index = 1;
+        for (final SinkRecord record : records) {
+            if (config.insertMode == MULTI) {
+                // All records are bound to the same prepared statement,
+                // so when binding fields for record N (N > 0)
+                // we need to start at the index where binding fields for record N - 1 stopped.
+                index = preparedStatementBinder.bindRecord(index, record);
+            } else {
+                preparedStatementBinder.bindRecord(record);
+            }
+        }
+        log.debug("Done binding records.");
+    }
+
     public void close() throws SQLException {
         log.info("Closing BufferedRecords with preparedStatement: {}", preparedStatement);
         if (preparedStatement != null) {
             preparedStatement.close();
             preparedStatement = null;
+        }
+    }
+
+    private String getMultiInsertSql(final TableDefinition tableDefinition) {
+        if (config.insertMode != MULTI) {
+            throw new ConnectException(String.format(
+                    "Multi-row first insert SQL unsupported by insert mode %s",
+                    config.insertMode
+            ));
+        }
+        try {
+            return dbDialect.buildMultiInsertStatement(
+                    tableId,
+                    records.size(),
+                    asColumns(fieldsMetadata.keyFieldNames),
+                    asColumns(fieldsMetadata.nonKeyFieldNames)
+            );
+        } catch (final UnsupportedOperationException e) {
+            throw new ConnectException(String.format(
+                    "Write to table '%s' in MULTI mode is not supported with the %s dialect.",
+                    tableId,
+                    dbDialect.name()
+            ));
         }
     }
 

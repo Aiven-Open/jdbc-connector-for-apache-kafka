@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.data.Date;
@@ -84,6 +85,10 @@ import io.aiven.connect.jdbc.util.TableId;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.aiven.connect.jdbc.util.CollectionUtils.isEmpty;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.IntStream.range;
 
 /**
  * A {@link DatabaseDialect} implementation that provides functionality based upon JDBC and SQL.
@@ -1348,6 +1353,44 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         builder.appendMultiple(",", "?", keyColumns.size() + nonKeyColumns.size());
         builder.append(")");
         return builder.toString();
+    }
+
+    @Override
+    public String buildMultiInsertStatement(final TableId table,
+                                            final int records,
+                                            final Collection<ColumnId> keyColumns,
+                                            final Collection<ColumnId> nonKeyColumns) {
+
+        if (records < 1) {
+            throw new IllegalArgumentException("number of records must be a positive number, but got: " + records);
+        }
+        if (isEmpty(keyColumns) && isEmpty(nonKeyColumns)) {
+            throw new IllegalArgumentException("no columns specified");
+        }
+        requireNonNull(table, "table must not be null");
+
+        final String insertStatement = expressionBuilder()
+                .append("INSERT INTO ")
+                .append(table)
+                .append("(")
+                .appendList()
+                .delimitedBy(",")
+                .transformedBy(ExpressionBuilder.columnNames())
+                .of(keyColumns, nonKeyColumns)
+                .append(") VALUES ")
+                .toString();
+
+        final String singleRowPlaceholder = expressionBuilder()
+                .append("(")
+                .appendMultiple(",", "?", keyColumns.size() + nonKeyColumns.size())
+                .append(")")
+                .toString();
+
+        final String allRowsPlaceholder = range(1, records + 1)
+                .mapToObj(i -> singleRowPlaceholder)
+                .collect(Collectors.joining(","));
+
+        return insertStatement + allRowsPlaceholder;
     }
 
     @Override
