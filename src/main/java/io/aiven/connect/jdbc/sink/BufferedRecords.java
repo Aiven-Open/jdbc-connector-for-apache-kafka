@@ -109,7 +109,13 @@ public class BufferedRecords {
     }
 
     private void prepareStatement() throws SQLException {
-        final String sql = writeSql();
+        final String sql;
+        log.debug("Generating query for insert mode {} and {} records", config.insertMode, records.size());
+        if (config.insertMode == MULTI) {
+            sql = getMultiInsertSql();
+        } else {
+            sql = getInsertSql();
+        }
 
         log.debug("Prepared SQL {} for insert mode {}", sql, config.insertMode);
 
@@ -124,18 +130,9 @@ public class BufferedRecords {
         );
     }
 
-    private String writeSql() {
-        final String sql;
-        log.debug("Generating query for insert mode {} and {} records", config.insertMode, records.size());
-        if (config.insertMode == MULTI) {
-            sql = getMultiInsertSql(tableDefinition);
-        } else {
-            sql = getInsertSql(tableDefinition);
-        }
-        return sql;
-    }
-
-    // re-initialize everything that depends on the record schema
+    /**
+     * Re-initialize everything that depends on the record schema
+     */
     private void reInitialize(final SchemaPair schemaPair) throws SQLException {
         currentSchemaPair = schemaPair;
         fieldsMetadata = FieldsMetadata.extract(
@@ -242,7 +239,7 @@ public class BufferedRecords {
         }
     }
 
-    private String getMultiInsertSql(final TableDefinition tableDefinition) {
+    private String getMultiInsertSql() {
         if (config.insertMode != MULTI) {
             throw new ConnectException(String.format(
                     "Multi-row first insert SQL unsupported by insert mode %s",
@@ -265,7 +262,7 @@ public class BufferedRecords {
         }
     }
 
-    private String getInsertSql(final TableDefinition tableDefinition) {
+    private String getInsertSql() {
         switch (config.insertMode) {
             case INSERT:
                 return dbDialect.buildInsertStatement(
