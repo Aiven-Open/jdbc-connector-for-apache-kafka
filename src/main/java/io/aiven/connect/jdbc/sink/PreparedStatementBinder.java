@@ -31,6 +31,8 @@ import io.aiven.connect.jdbc.dialect.DatabaseDialect.StatementBinder;
 import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
 
+import static io.aiven.connect.jdbc.sink.JdbcSinkConfig.InsertMode.MULTI;
+
 public class PreparedStatementBinder implements StatementBinder {
 
     private final JdbcSinkConfig.PrimaryKeyMode pkMode;
@@ -41,12 +43,12 @@ public class PreparedStatementBinder implements StatementBinder {
     private final DatabaseDialect dialect;
 
     public PreparedStatementBinder(
-        final DatabaseDialect dialect,
-        final PreparedStatement statement,
-        final JdbcSinkConfig.PrimaryKeyMode pkMode,
-        final SchemaPair schemaPair,
-        final FieldsMetadata fieldsMetadata,
-        final JdbcSinkConfig.InsertMode insertMode
+            final DatabaseDialect dialect,
+            final PreparedStatement statement,
+            final JdbcSinkConfig.PrimaryKeyMode pkMode,
+            final SchemaPair schemaPair,
+            final FieldsMetadata fieldsMetadata,
+            final JdbcSinkConfig.InsertMode insertMode
     ) {
         this.dialect = dialect;
         this.pkMode = pkMode;
@@ -58,6 +60,12 @@ public class PreparedStatementBinder implements StatementBinder {
 
     @Override
     public void bindRecord(final SinkRecord record) throws SQLException {
+        // backwards compatibility
+        bindRecord(1, record);
+    }
+
+
+    public int bindRecord(int index, final SinkRecord record) throws SQLException {
         final Struct valueStruct = (Struct) record.value();
 
         // Assumption: the relevant SQL has placeholders for keyFieldNames first followed by
@@ -65,23 +73,28 @@ public class PreparedStatementBinder implements StatementBinder {
         //             the relevant SQL has placeholders for nonKeyFieldNames first followed by
         //             keyFieldNames, in iteration order for all UPDATE queries
 
-        int index = 1;
+        final int nextIndex;
         switch (insertMode) {
             case INSERT:
+            case MULTI:
             case UPSERT:
                 index = bindKeyFields(record, index);
-                bindNonKeyFields(record, valueStruct, index);
+                nextIndex = bindNonKeyFields(record, valueStruct, index);
                 break;
 
             case UPDATE:
                 index = bindNonKeyFields(record, valueStruct, index);
-                bindKeyFields(record, index);
+                nextIndex = bindKeyFields(record, index);
                 break;
             default:
                 throw new AssertionError();
 
         }
-        statement.addBatch();
+        // in a multi-row insert, all records are a single item in the batch
+        if (insertMode != MULTI) {
+            statement.addBatch();
+        }
+        return nextIndex;
     }
 
     protected int bindKeyFields(final SinkRecord record, int index) throws SQLException {
@@ -128,9 +141,9 @@ public class PreparedStatementBinder implements StatementBinder {
     }
 
     protected int bindNonKeyFields(
-        final SinkRecord record,
-        final Struct valueStruct,
-        int index
+            final SinkRecord record,
+            final Struct valueStruct,
+            int index
     ) throws SQLException {
         for (final String fieldName : fieldsMetadata.nonKeyFieldNames) {
             final Field field = record.valueSchema().field(fieldName);

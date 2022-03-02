@@ -325,6 +325,24 @@ public interface DatabaseDialect extends ConnectionProvider {
     );
 
     /**
+     * Build an INSERT statement for multiple rows.
+     *
+     * @param table            the identifier of the table; may not be null
+     * @param records          number of rows which will be inserted; must be a positive number
+     * @param keyColumns       the identifiers of the columns in the primary/unique key; may not be null
+     *                         but may be empty
+     * @param nonKeyColumns    the identifiers of the other columns in the table; may not be null but may
+     *                         be empty
+     * @return the INSERT statement; may not be null
+     */
+    String buildMultiInsertStatement(
+        TableId table,
+        int records,
+        Collection<ColumnId> keyColumns,
+        Collection<ColumnId> nonKeyColumns
+    );
+
+    /**
      * Build the INSERT prepared statement expression for the given table and its columns.
      *
      * @param table            the identifier of the table; may not be null
@@ -494,7 +512,18 @@ public interface DatabaseDialect extends ConnectionProvider {
          * @param record the sink record with values to be bound into the statement; never null
          * @throws SQLException if there is a problem binding values into the statement
          */
-        void bindRecord(SinkRecord record) throws SQLException;
+        default void bindRecord(SinkRecord record) throws SQLException {
+            bindRecord(1, record);
+        }
+
+        /**
+         * Bind the values in the supplied record, starting at the specified index.
+         *
+         * @param index     the index at which binding starts; must be positive
+         * @param record    the sink record with values to be bound into the statement; never null
+         * @throws SQLException if there is a problem binding values into the statement
+         */
+        int bindRecord(int index, SinkRecord record) throws SQLException;
     }
 
     /**
