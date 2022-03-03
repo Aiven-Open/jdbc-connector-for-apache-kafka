@@ -35,7 +35,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -166,7 +165,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         if (config instanceof JdbcSinkConfig) {
             catalogPattern = JdbcSourceTaskConfig.CATALOG_PATTERN_DEFAULT;
             schemaPattern = JdbcSourceTaskConfig.SCHEMA_PATTERN_DEFAULT;
-            tableTypes = new HashSet<>(Arrays.asList(JdbcSourceTaskConfig.TABLE_TYPE_DEFAULT));
+            tableTypes = new HashSet<>(getDefaultSinkTableTypes());
         } else {
             catalogPattern = config.getString(JdbcSourceTaskConfig.CATALOG_PATTERN_CONFIG);
             schemaPattern = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);
@@ -180,6 +179,10 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
         timeZone = config.getDBTimeZone();
         quoteIdentifiers = config.isQuoteSqlIdentifiers();
+    }
+
+    protected List<String> getDefaultSinkTableTypes() {
+        return List.of(JdbcSourceTaskConfig.TABLE_TYPE_DEFAULT);
     }
 
     @Override
@@ -496,8 +499,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         final Connection connection,
         final TableId tableId
     ) throws SQLException {
-        final DatabaseMetaData metadata = connection.getMetaData();
-        final String[] tableTypes = tableTypes(metadata, new HashSet<>(Arrays.asList("TABLE", "PARTITIONED TABLE")));
+        final String[] tableTypes = tableTypes(connection.getMetaData(), this.tableTypes);
 
         log.info("Checking {} dialect for existence of table {}", this, tableId);
         try (final ResultSet rs = connection.getMetaData().getTables(
