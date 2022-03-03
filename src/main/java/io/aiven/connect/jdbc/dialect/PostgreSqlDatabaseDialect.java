@@ -65,6 +65,8 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
             Schema.Type.STRING, String.class
     );
 
+    private static final List<String> SINK_TABLE_TYPE_DEFAULT = List.of("TABLE", "PARTITIONED TABLE");
+
     /**
      * The provider for {@link PostgreSqlDatabaseDialect}.
      */
@@ -414,4 +416,8 @@ public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
         return "";
     }
 
+    @Override
+    protected List<String> getDefaultSinkTableTypes() {
+        return SINK_TABLE_TYPE_DEFAULT;
+    }
 }
