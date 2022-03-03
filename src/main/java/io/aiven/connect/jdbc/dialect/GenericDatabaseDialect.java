@@ -496,12 +496,15 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         final Connection connection,
         final TableId tableId
     ) throws SQLException {
+        final DatabaseMetaData metadata = connection.getMetaData();
+        final String[] tableTypes = tableTypes(metadata, new HashSet<>(Arrays.asList("TABLE", "PARTITIONED TABLE")));
+
         log.info("Checking {} dialect for existence of table {}", this, tableId);
         try (final ResultSet rs = connection.getMetaData().getTables(
             tableId.catalogName(),
             tableId.schemaName(),
             tableId.tableName(),
-            new String[]{"TABLE"}
+            tableTypes
         )) {
             final boolean exists = rs.next();
             log.info("Using {} dialect table {} {}", this, tableId, exists ? "present" : "absent");
