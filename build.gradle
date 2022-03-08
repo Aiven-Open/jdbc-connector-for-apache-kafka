@@ -121,7 +121,7 @@ dependencies {
     implementation "com.google.guava:guava:27.1-jre"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
 
-    testImplementation "junit:junit:4.12"
+    testImplementation "junit:junit:4.13.2"
     testImplementation "org.easymock:easymock:4.3"
     testImplementation "org.powermock:powermock-module-junit4:2.0.0"
     testImplementation "org.powermock:powermock-api-easymock:2.0.9"
