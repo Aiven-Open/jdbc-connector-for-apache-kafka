@@ -105,7 +105,7 @@ publishing {
 
 ext {
     kafkaVersion = "2.2.0"
-    slf4jVersion = "1.7.25"
+    slf4jVersion = "1.7.36"
 }
 
 dependencies {
