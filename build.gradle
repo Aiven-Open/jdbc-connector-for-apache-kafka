@@ -29,10 +29,16 @@ plugins {
 
     // https://docs.gradle.org/current/userguide/publishing_maven.html
     id "maven-publish"
+
+    // https://docs.gradle.org/current/userguide/idea_plugin.html
+    id 'idea'
 }
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
 }
 
 java {
@@ -59,7 +65,7 @@ distributions {
 
             into("/") {
                 from projectDir
-                include "README*", "LICENSE*", "NOTICE*", "licenses/"
+                include "version.txt", "README*", "LICENSE*", "NOTICE*", "licenses/"
                 include "config/"
             }
         }
@@ -107,7 +113,47 @@ ext {
     kafkaVersion = "2.2.0"
     slf4jVersion = "1.7.36"
     derbyVersion = "10.15.2.0"
+
+    avroVersion = "1.8.1"
+    // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
+    confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
+    hamcrestVersion = "2.2"
+    jacksonVersion = "2.13.1" // This Jackson is used in the tests.
+    jupiterVersion = "5.8.2"
+    kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
+    jettyVersion = "9.4.11.v20180605"
+    junit4Version = "4.13.2"
+    jsr305Version = "3.0.2"
+    log4jVersion = "2.17.1"
+    mockitoVersion = '4.3.1'
+    servletVersion = "3.1.0"
+    spotbugsAnnotationsVersion = "4.5.2"
+    testcontainersVersion = '1.16.3'
+    assertjVersion = "3.22.0"
+    awaitilityVersion = '4.2.0'
 }
+
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integrationTest/java')
+        resources.srcDir file('src/integrationTest/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+idea {
+    module {
+        testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
+        testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 
 dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
@@ -136,6 +182,48 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.22.0'
 
     testRuntimeOnly "org.slf4j:slf4j-log4j12:$slf4jVersion"
+
+    integrationTestRuntimeOnly "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
+    integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
+    integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
+    integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+    integrationTestRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
+
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+    integrationTestImplementation "javax.servlet:javax.servlet-api:$servletVersion"
+    integrationTestImplementation "org.apache.avro:avro:$avroVersion"
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-http:$jettyVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-server:$jettyVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-util:$jettyVersion"
+    integrationTestImplementation "junit:junit:$junit4Version" // This is for testcontainers
+    integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
+    integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
+    integrationTestImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    integrationTestImplementation "org.testcontainers:postgresql:$testcontainersVersion"
+    integrationTestImplementation "org.awaitility:awaitility:$awaitilityVersion"
+    integrationTestImplementation("org.assertj:assertj-db:2.0.2")
+
+    // Make test utils from 'test' available in 'integration-test'
+    integrationTestImplementation sourceSets.test.output
+}
+
+task integrationTest(type: Test) {
+    description = 'Runs the integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    dependsOn test, distTar
+
+    useJUnitPlatform()
+
+    // Run always.
+    outputs.upToDateWhen { false }
+
+    // Pass the distribution file path to the tests.
+    systemProperty("integration-test.distribution.file.path", distTar.archiveFile.get().asFile.path)
 }
 
 processResources {
