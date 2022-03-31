@@ -49,7 +49,7 @@
     <suppress checks="ClassFanOutComplexity"
               files="(DatabaseDialect|GenericDatabaseDialect).java"/>
 
-    <suppress checks="ClassDataAbstractionCoupling" files=".*Test\.java"/>
+    <suppress checks="ClassDataAbstractionCoupling" files=".*Test|ConnectRunner.java"/>
     <suppress checks="JavaNCSS" files=".*Test\.java"/>
     <suppress checks="ClassFanOutComplexity" files=".*Test\.java"/>
 </suppressions>
