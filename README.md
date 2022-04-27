@@ -1,8 +1,8 @@
 # Aiven's JDBC Sink and Source Connectors for Apache Kafka®
 
-This repository includes a Sink and Source
-[Apache Kafka Connect](http://kafka.apache.org/documentation.html#connect)
-connectors for JDBC-compatible databases.
+This repository includes a Source connector that allows transfering data from a relational database into Apache Kafka topics
+and a Sink connector that allows to transfer data from Kafka topics into a relational database
+[Apache Kafka Connect](http://kafka.apache.org/documentation.html#connect) over JDBC.
 
 The project originates from Confluent
 [kafka-connect-jdbc](https://github.com/confluentinc/kafka-connect-jdbc).
