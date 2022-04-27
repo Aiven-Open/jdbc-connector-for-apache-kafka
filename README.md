@@ -13,11 +13,31 @@ truly open.
 
 ## Documentation
 
-The Source connector documentation can be found
+The documentation can be found in the `docs/` directory of the source code
+
+For the Source connector it could be found at
 [here](docs/source-connector.md).
 
-The Sink connector documentation can be found
+For the Sink connector it could be found at
 [here](docs/sink-connector.md).
+
+## Building from source
+
+Prerequisites for building JDBC connector for Apache Kafka:
+
+* Git
+* Java 11
+
+```
+git clone git@github.com:aiven/jdbc-connector-for-apache-kafka.git
+cd jdbc-connector-for-apache-kafka
+./gradlew clean build
+```
+
+To publish to maven local use
+```
+./gradlew clean build publishToMavenLocal
+```
 
 ## Contribute
 
