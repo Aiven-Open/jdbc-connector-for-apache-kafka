@@ -119,7 +119,7 @@ ext {
     confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.13.3" // This Jackson is used in the tests.
-    jupiterVersion = "5.8.2"
+    jupiterVersion = "5.9.0"
     kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
     jettyVersion = "11.0.11"
     junit4Version = "4.13.2"
