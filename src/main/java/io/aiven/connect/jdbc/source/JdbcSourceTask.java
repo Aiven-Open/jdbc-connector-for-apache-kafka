@@ -39,7 +39,6 @@ import org.apache.kafka.connect.source.SourceTask;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
-import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.TableId;
@@ -59,7 +58,7 @@ public class JdbcSourceTask extends SourceTask {
     private Time time;
     private JdbcSourceTaskConfig config;
     private DatabaseDialect dialect;
-    private CachedConnectionProvider cachedConnectionProvider;
+    private SourceConnectionProvider cachedConnectionProvider;
     private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
     private final AtomicBoolean running = new AtomicBoolean(false);
 
