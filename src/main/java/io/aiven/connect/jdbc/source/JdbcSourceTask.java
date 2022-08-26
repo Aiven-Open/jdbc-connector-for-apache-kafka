@@ -156,6 +156,8 @@ public class JdbcSourceTask extends SourceTask {
             = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
 
         if (config.getBoolean(JdbcSourceTaskConfig.INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG)) {
+            new StartupMetricUpdater(dialect, cachedConnectionProvider, config)
+                    .initializeAndExecuteMetric(properties, query);
         }
 
         for (final String tableOrQuery : tablesOrQuery) {
