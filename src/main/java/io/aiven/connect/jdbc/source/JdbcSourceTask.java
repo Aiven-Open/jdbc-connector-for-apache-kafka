@@ -155,6 +155,9 @@ public class JdbcSourceTask extends SourceTask {
         final boolean validateNonNulls
             = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
 
+        if (config.getBoolean(JdbcSourceTaskConfig.INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG)) {
+        }
+
         for (final String tableOrQuery : tablesOrQuery) {
             final List<Map<String, String>> tablePartitionsToCheck;
             final Map<String, String> partition;

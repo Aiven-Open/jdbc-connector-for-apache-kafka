@@ -32,8 +32,19 @@ public class JdbcSourceTaskConfig extends JdbcSourceConnectorConfig {
     public static final String TABLES_CONFIG = "tables";
     private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
+    public static final String INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG = "sourceTask.initialMessageCount.enabled";
+
+    private static final String INITIAL_MESSAGE_COUNT_METRIC_ENABLED_DOC = "Enables a custom metric to determine the "
+            + "number of messages/records that will be published into the Kafka topic. To reduce database load, the "
+            + "corresponding query is executed at startup only. The metric is published via JMX under "
+            + "io.aiven.connect.jdbc.initialImportCount<task=\"{connector/task_name}\", topic=\"{topic_name}\", "
+            + "[table=\"{table_name}\","
+            + "The attribute 'table' is only present in mode 'table', not in 'query' mode.";
+
     static ConfigDef config = baseConfigDef()
-        .define(TABLES_CONFIG, Type.LIST, Importance.HIGH, TABLES_DOC);
+        .define(TABLES_CONFIG, Type.LIST, Importance.HIGH, TABLES_DOC)
+        .define(INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG, Type.BOOLEAN, Boolean.FALSE, Importance.MEDIUM,
+                INITIAL_MESSAGE_COUNT_METRIC_ENABLED_DOC);
 
     public JdbcSourceTaskConfig(final Map<String, String> props) {
         super(config, props);
