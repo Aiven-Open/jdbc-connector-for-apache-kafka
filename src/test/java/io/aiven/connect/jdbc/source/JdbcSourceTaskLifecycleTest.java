@@ -34,6 +34,7 @@ import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 
 import org.easymock.EasyMock;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -55,6 +56,18 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
     @Mock
     private Connection conn;
+
+    @Before
+    public void beforeEach() throws Exception {
+        super.setup();
+        // cleanup JMX beans
+        final ObjectName mbeanQuery = new ObjectName("io.aiven.connect.jdbc.initialImportCount:*");
+        final Set<ObjectName> objectNamesToClean = ManagementFactory.getPlatformMBeanServer()
+                .queryNames(mbeanQuery, null);
+        for (final ObjectName objectName : objectNamesToClean) {
+            ManagementFactory.getPlatformMBeanServer().unregisterMBean(objectName);
+        }
+    }
 
     @Test(expected = ConnectException.class)
     public void testMissingParentConfig() {
