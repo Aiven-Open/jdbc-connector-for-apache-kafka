@@ -43,8 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 // Tests conversion of data types and schemas. These use the types supported by Derby, which
 // might not cover everything in the SQL standards and definitely doesn't cover any non-standard
@@ -209,16 +208,16 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
     public void testNumeric() throws Exception {
         typeConversion("NUMERIC(1)", false,
             new EmbeddedDerby.Literal("CAST (1 AS NUMERIC)"),
-            Schema.INT8_SCHEMA, new Byte("1"));
+            Schema.INT8_SCHEMA, Byte.valueOf("1"));
         typeConversion("NUMERIC(3)", false,
             new EmbeddedDerby.Literal("CAST (123 AS NUMERIC)"),
-            Schema.INT16_SCHEMA, new Short("123"));
+            Schema.INT16_SCHEMA, Short.valueOf("123"));
         typeConversion("NUMERIC(5)", false,
             new EmbeddedDerby.Literal("CAST (12345 AS NUMERIC)"),
-            Schema.INT32_SCHEMA, new Integer("12345"));
+            Schema.INT32_SCHEMA, Integer.valueOf("12345"));
         typeConversion("NUMERIC(10)", false,
             new EmbeddedDerby.Literal("CAST (1234567890 AS NUMERIC(10))"),
-            Schema.INT64_SCHEMA, new Long("1234567890"));
+            Schema.INT64_SCHEMA, Long.valueOf("1234567890"));
     }
 
     @Test
@@ -286,7 +285,7 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
         expected.setTimeZone(TimeZone.getTimeZone("UTC"));
         typeConversion("TIMESTAMP", false, "1977-02-13 23:03:20",
             Timestamp.builder().build(),
-            expected.getTime());
+            java.sql.Timestamp.from(expected.getTime().toInstant()));
     }
 
     @Test
@@ -295,7 +294,7 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
         expected.setTimeZone(TimeZone.getTimeZone("UTC"));
         typeConversion("TIMESTAMP", true, "1977-02-13 23:03:20",
             Timestamp.builder().optional().build(),
-            expected.getTime());
+            java.sql.Timestamp.from(expected.getTime().toInstant()));
         typeConversion("TIMESTAMP", true, null,
             Timestamp.builder().optional().build(),
             null);
@@ -325,26 +324,26 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
     private void validateRecords(final List<SourceRecord> records, final Schema expectedFieldSchema,
                                  final Object expectedValue) {
         // Validate # of records and object type
-        assertEquals(1, records.size());
+        assertThat(records).hasSize(1);
         final Object objValue = records.get(0).value();
-        assertTrue(objValue instanceof Struct);
+        assertThat(objValue).isInstanceOf(Struct.class);
         final Struct value = (Struct) objValue;
 
         // Validate schema
         final Schema schema = value.schema();
-        assertEquals(Type.STRUCT, schema.type());
+        assertThat(schema.type()).isEqualTo(Type.STRUCT);
         final List<Field> fields = schema.fields();
 
-        assertEquals(1, fields.size());
+        assertThat(fields).hasSize(1);
 
         final Schema fieldSchema = fields.get(0).schema();
-        assertEquals(expectedFieldSchema, fieldSchema);
+        assertThat(fieldSchema).isEqualTo(expectedFieldSchema);
         if (expectedValue instanceof byte[]) {
-            assertTrue(value.get(fields.get(0)) instanceof byte[]);
-            assertEquals(ByteBuffer.wrap((byte[]) expectedValue),
-                ByteBuffer.wrap((byte[]) value.get(fields.get(0))));
+            assertThat(value.get(fields.get(0))).isInstanceOf(byte[].class);
+            assertThat(ByteBuffer.wrap((byte[]) value.get(fields.get(0))))
+                .isEqualTo(ByteBuffer.wrap((byte[]) expectedValue));
         } else {
-            assertEquals(expectedValue, value.get(fields.get(0)));
+            assertThat(value.get(fields.get(0))).isEqualTo(expectedValue);
         }
     }
 }

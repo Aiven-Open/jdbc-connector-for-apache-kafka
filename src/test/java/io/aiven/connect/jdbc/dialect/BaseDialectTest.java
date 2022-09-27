@@ -63,8 +63,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -254,7 +253,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
         }
         final SinkRecordField field = new SinkRecordField(schemaBuilder.build(), schemaName, false);
         final String sqlType = dialect.getSqlType(field);
-        assertEquals(expectedSqlType, sqlType);
+        assertThat(sqlType).isEqualTo(expectedSqlType);
     }
 
     protected void assertMapping(
@@ -270,8 +269,9 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
 
     protected Map<String, String> propertiesFromPairs(final String... pairs) {
         final Map<String, String> props = new HashMap<>();
-        assertEquals("Expecting even number of properties but found " + pairs.length, 0,
-            pairs.length % 2);
+        assertThat(pairs.length % 2)
+            .as("Expecting even number of properties but found " + pairs.length)
+            .isZero();
         for (int i = 0; i != pairs.length; ++i) {
             final String key = pairs[i];
             final String value = pairs[++i];
@@ -282,7 +282,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
 
     protected void assertStatements(final String[] expected, final List<String> actual) {
         // TODO: Remove
-        assertEquals(expected.length, actual.size());
+        assertThat(actual).hasSameSizeAs(expected);
         for (int i = 0; i != expected.length; ++i) {
             assertQueryEquals(expected[i], actual.get(i));
         }
@@ -302,17 +302,17 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
 
     protected void verifyDataTypeMapping(final String expected, final Schema schema) {
         final SinkRecordField field = new SinkRecordField(schema, schema.name(), schema.isOptional());
-        assertEquals(expected, dialect.getSqlType(field));
+        assertThat(dialect.getSqlType(field)).isEqualTo(expected);
     }
 
     protected void verifyCreateOneColNoPk(final String expected) {
-        assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
+        assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, List.of(
             new SinkRecordField(Schema.INT32_SCHEMA, "col1", false)
         )));
     }
 
     protected void verifyCreateOneColOnePk(final String expected) {
-        assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, Arrays.asList(
+        assertQueryEquals(expected, dialect.buildCreateTableStatement(tableId, List.of(
             new SinkRecordField(Schema.INT32_SCHEMA, "pk1", true)
         )));
     }
@@ -326,16 +326,16 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     }
 
     protected void verifyAlterAddOneCol(final String... expected) {
-        assertArrayEquals(expected, dialect.buildAlterTable(tableId, Arrays.asList(
+        assertThat(dialect.buildAlterTable(tableId, List.of(
             new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "newcol1", false)
-        )).toArray());
+        ))).containsExactly(expected);
     }
 
     protected void verifyAlterAddTwoCols(final String... expected) {
-        assertArrayEquals(expected, dialect.buildAlterTable(tableId, Arrays.asList(
+        assertThat(dialect.buildAlterTable(tableId, Arrays.asList(
             new SinkRecordField(Schema.OPTIONAL_INT32_SCHEMA, "newcol1", false),
             new SinkRecordField(SchemaBuilder.int32().defaultValue(42).build(), "newcol2", false)
-        )).toArray());
+        ))).containsExactly(expected);
     }
 
     @Test
@@ -419,11 +419,11 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     }
 
     protected void assertSanitizedUrl(final String url, final String expectedSanitizedUrl) {
-        assertEquals(expectedSanitizedUrl, dialect.sanitizedUrl(url));
+        assertThat(dialect.sanitizedUrl(url)).isEqualTo(expectedSanitizedUrl);
     }
 
     protected void assertQueryEquals(final String expected, final String actual) {
-        assertEquals(expected, actual);
+        assertThat(actual).isEqualTo(expected);
     }
 
     protected PreparedStatement verifyBindField(final int index, final Schema schema, final Object value)

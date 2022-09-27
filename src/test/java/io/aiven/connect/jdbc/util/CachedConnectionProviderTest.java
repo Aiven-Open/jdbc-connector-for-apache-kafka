@@ -31,7 +31,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({CachedConnectionProviderTest.class})
@@ -48,11 +49,8 @@ public class CachedConnectionProviderTest {
         EasyMock.expect(provider.getConnection()).andThrow(new SQLException("test")).times(retries);
         PowerMock.replayAll();
 
-        try {
-            connectionProvider.getConnection();
-        } catch (final ConnectException ex) {
-            assertNotNull(ex);
-        }
+        assertThatThrownBy(connectionProvider::getConnection)
+            .isInstanceOf(ConnectException.class);
 
         PowerMock.verifyAll();
     }
@@ -70,7 +68,7 @@ public class CachedConnectionProviderTest {
             .andReturn(connection);
         PowerMock.replayAll();
 
-        assertNotNull(connectionProvider.getConnection());
+        assertThat(connectionProvider.getConnection()).isNotNull();
 
         PowerMock.verifyAll();
     }

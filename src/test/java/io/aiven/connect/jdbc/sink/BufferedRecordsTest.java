@@ -42,7 +42,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import static java.sql.Statement.SUCCESS_NO_INFO;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -80,36 +80,34 @@ public class BufferedRecordsTest {
 
         final TableId tableId = new TableId(null, null, "dummy");
         final BufferedRecords buffer = new BufferedRecords(
-                config, tableId, dbDialect, dbStructure, sqliteHelper.connection);
+            config, tableId, dbDialect, dbStructure, sqliteHelper.connection);
 
         final Schema schemaA = SchemaBuilder.struct()
-                .field("name", Schema.STRING_SCHEMA)
-                .build();
+            .field("name", Schema.STRING_SCHEMA)
+            .build();
         final Struct valueA = new Struct(schemaA)
-                .put("name", "cuba");
+            .put("name", "cuba");
         final SinkRecord recordA = wrapInSinkRecord(valueA);
 
         final Schema schemaB = SchemaBuilder.struct()
-                .field("name", Schema.STRING_SCHEMA)
-                .field("age", Schema.OPTIONAL_INT32_SCHEMA)
-                .build();
+            .field("name", Schema.STRING_SCHEMA)
+            .field("age", Schema.OPTIONAL_INT32_SCHEMA)
+            .build();
         final Struct valueB = new Struct(schemaB)
-                .put("name", "cuba")
-                .put("age", 4);
+            .put("name", "cuba")
+            .put("age", 4);
         final SinkRecord recordB = new SinkRecord("dummy", 1, null, null, schemaB, valueB, 1);
 
         // test records are batched correctly based on schema equality as records are added
         //   (schemaA,schemaA,schemaA,schemaB,schemaA) -> ([schemaA,schemaA,schemaA],[schemaB],[schemaA])
 
-        assertEquals(Collections.emptyList(), buffer.add(recordA));
-        assertEquals(Collections.emptyList(), buffer.add(recordA));
-        assertEquals(Collections.emptyList(), buffer.add(recordA));
+        assertThat(buffer.add(recordA)).isEmpty();
+        assertThat(buffer.add(recordA)).isEmpty();
+        assertThat(buffer.add(recordA)).isEmpty();
 
-        assertEquals(Arrays.asList(recordA, recordA, recordA), buffer.add(recordB));
-
-        assertEquals(Collections.singletonList(recordB), buffer.add(recordA));
-
-        assertEquals(Collections.singletonList(recordA), buffer.flush());
+        assertThat(buffer.add(recordB)).isEqualTo(Arrays.asList(recordA, recordA, recordA));
+        assertThat(buffer.add(recordA)).isEqualTo(Collections.singletonList(recordB));
+        assertThat(buffer.flush()).isEqualTo(Collections.singletonList(recordA));
     }
 
     @Test
@@ -222,14 +220,10 @@ public class BufferedRecordsTest {
         // Given the 5 records, and batch size of 2, we expect 2 inserts.
         // One record is still waiting in the buffer, and that is expected.
         verify(connection, times(2)).prepareStatement(sqlCaptor.capture());
-        assertEquals(
-                sqlCaptor.getAllValues().get(0),
-                "INSERT INTO \"planets\"(\"name\",\"planetid\") VALUES (?,?),(?,?)"
-        );
-        assertEquals(
-                sqlCaptor.getAllValues().get(1),
-                "INSERT INTO \"planets\"(\"name\",\"planetid\") VALUES (?,?),(?,?)"
-        );
+        assertThat(sqlCaptor.getAllValues().get(0)).isEqualTo(
+            "INSERT INTO \"planets\"(\"name\",\"planetid\") VALUES (?,?),(?,?)");
+        assertThat(sqlCaptor.getAllValues().get(1)).isEqualTo(
+            "INSERT INTO \"planets\"(\"name\",\"planetid\") VALUES (?,?),(?,?)");
     }
 
     @Test

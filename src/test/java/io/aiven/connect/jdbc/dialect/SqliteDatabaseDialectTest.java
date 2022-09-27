@@ -46,8 +46,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDialect> {
 
@@ -205,24 +204,24 @@ public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDia
         sqliteHelper.createTable(
             "create table x (id int primary key, name text not null, optional_age int null)");
         final TableDefinition defn = dialect.describeTable(sqliteHelper.connection, tableId);
-        assertEquals(tableId, defn.id());
+        assertThat(defn.id()).isEqualTo(tableId);
         ColumnDefinition columnDefn = defn.definitionForColumn("id");
-        assertEquals("INT", columnDefn.typeName());
-        assertEquals(Types.INTEGER, columnDefn.type());
-        assertEquals(true, columnDefn.isPrimaryKey());
-        assertEquals(false, columnDefn.isOptional());
+        assertThat(columnDefn.typeName()).isEqualTo("INT");
+        assertThat(columnDefn.type()).isEqualTo(Types.INTEGER);
+        assertThat(columnDefn.isPrimaryKey()).isTrue();
+        assertThat(columnDefn.isOptional()).isFalse();
 
         columnDefn = defn.definitionForColumn("name");
-        assertEquals("TEXT", columnDefn.typeName());
-        assertEquals(Types.VARCHAR, columnDefn.type());
-        assertEquals(false, columnDefn.isPrimaryKey());
-        assertEquals(false, columnDefn.isOptional());
+        assertThat(columnDefn.typeName()).isEqualTo("TEXT");
+        assertThat(columnDefn.type()).isEqualTo(Types.VARCHAR);
+        assertThat(columnDefn.isPrimaryKey()).isFalse();
+        assertThat(columnDefn.isOptional()).isFalse();
 
         columnDefn = defn.definitionForColumn("optional_age");
-        assertEquals("INT", columnDefn.typeName());
-        assertEquals(Types.INTEGER, columnDefn.type());
-        assertEquals(false, columnDefn.isPrimaryKey());
-        assertEquals(true, columnDefn.isOptional());
+        assertThat(columnDefn.typeName()).isEqualTo("INT");
+        assertThat(columnDefn.type()).isEqualTo(Types.INTEGER);
+        assertThat(columnDefn.isPrimaryKey()).isFalse();
+        assertThat(columnDefn.isOptional()).isTrue();
     }
 
     @Test
@@ -231,6 +230,6 @@ public class SqliteDatabaseDialectTest extends BaseDialectTest<SqliteDatabaseDia
         final Instant dbInstant = dialect.currentTimeOnDB(sqliteHelper.connection, cal).toInstant();
         // Check that the UTC timezone is correct.
         final long diffSec = Math.abs(Duration.between(dbInstant, Instant.now()).getSeconds());
-        assertTrue(diffSec <= 3);
+        assertThat(diffSec).isLessThanOrEqualTo(3);
     }
 }

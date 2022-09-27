@@ -38,7 +38,6 @@ import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.TableId;
 
 import org.easymock.EasyMock;
-import org.easymock.Mock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,9 +47,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JdbcSourceConnector.class, DatabaseDialect.class})
@@ -60,9 +58,6 @@ public class JdbcSourceConnectorTest {
     private JdbcSourceConnector connector;
     private EmbeddedDerby db;
     private Map<String, String> connProps;
-
-    @Mock
-    private DatabaseDialect dialect;
 
     @Before
     public void setup() {
@@ -82,27 +77,26 @@ public class JdbcSourceConnectorTest {
 
     @Test
     public void testTaskClass() {
-        assertEquals(JdbcSourceTask.class, connector.taskClass());
+        assertThat(connector.taskClass()).isEqualTo(JdbcSourceTask.class);
     }
 
-    @Test(expected = ConnectException.class)
-    public void testMissingUrlConfig() throws Exception {
+    @Test
+    public void testMissingUrlConfig() {
         final HashMap<String, String> connProps = new HashMap<>();
         connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
-        connector.start(connProps);
+        assertThatThrownBy(() -> connector.start(connProps)).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
-    public void testMissingModeConfig() throws Exception {
-        final HashMap<String, String> connProps = new HashMap<>();
-        connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
-        connector.start(Collections.<String, String>emptyMap());
+    @Test
+    public void testMissingModeConfig() {
+        assertThatThrownBy(() -> connector.start(Collections.emptyMap())).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
-    public void testStartConnectionFailure() throws Exception {
+    @Test
+    public void testStartConnectionFailure() {
         // Invalid URL
-        connector.start(Collections.singletonMap(JdbcConfig.CONNECTION_URL_CONFIG, "jdbc:foo"));
+        final Map<String, String> connProps = Collections.singletonMap(JdbcConfig.CONNECTION_URL_CONFIG, "jdbc:foo");
+        assertThatThrownBy(() -> connector.start(connProps)).isInstanceOf(ConnectException.class);
     }
 
     @Test
@@ -138,15 +132,16 @@ public class JdbcSourceConnectorTest {
 
     @Test
     public void testPartitioningOneTable() throws Exception {
-        // Tests simplest case where we have exactly 1 table and also ensures we return fewer tasks
+        // Tests the simplest case where we have exactly 1 table and also ensures we return fewer tasks
         // if there aren't enough tables for the max # of tasks
         db.createTable("test", "id", "INT NOT NULL");
         connector.start(connProps);
         final List<Map<String, String>> configs = connector.taskConfigs(10);
-        assertEquals(1, configs.size());
+        assertThat(configs).hasSize(1);
         assertTaskConfigsHaveParentConfigs(configs);
-        assertEquals(tables("test"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+        assertThat(configs.get(0))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, tables("test"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
         connector.stop();
     }
 
@@ -159,15 +154,18 @@ public class JdbcSourceConnectorTest {
         db.createTable("test4", "id", "INT NOT NULL");
         connector.start(connProps);
         final List<Map<String, String>> configs = connector.taskConfigs(3);
-        assertEquals(3, configs.size());
+        assertThat(configs).hasSize(3);
         assertTaskConfigsHaveParentConfigs(configs);
 
-        assertEquals(tables("test1", "test2"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-        assertEquals(tables("test3"), configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(1).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-        assertEquals(tables("test4"), configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(2).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+        assertThat(configs.get(0))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, tables("test1", "test2"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
+        assertThat(configs.get(1))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, tables("test3"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
+        assertThat(configs.get(2))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, tables("test4"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
 
         connector.stop();
     }
@@ -182,15 +180,18 @@ public class JdbcSourceConnectorTest {
         db.createTable("test4", "id", "INT NOT NULL");
         connector.start(connProps);
         final List<Map<String, String>> configs = connector.taskConfigs(3);
-        assertEquals(3, configs.size());
+        assertThat(configs).hasSize(3);
         assertTaskConfigsHaveParentConfigs(configs);
 
-        assertEquals(unqualifiedTables("test1", "test2"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-        assertEquals(unqualifiedTables("test3"), configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(1).get(JdbcSourceTaskConfig.QUERY_CONFIG));
-        assertEquals(unqualifiedTables("test4"), configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertNull(configs.get(2).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+        assertThat(configs.get(0))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, unqualifiedTables("test1", "test2"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
+        assertThat(configs.get(1))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, unqualifiedTables("test3"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
+        assertThat(configs.get(2))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, unqualifiedTables("test4"))
+            .doesNotContainKey(JdbcSourceTaskConfig.QUERY_CONFIG);
 
         connector.stop();
     }
@@ -204,11 +205,12 @@ public class JdbcSourceConnectorTest {
         connProps.put(JdbcSourceConnectorConfig.QUERY_CONFIG, sampleQuery);
         connector.start(connProps);
         final List<Map<String, String>> configs = connector.taskConfigs(3);
-        assertEquals(1, configs.size());
+        assertThat(configs).hasSize(1);
         assertTaskConfigsHaveParentConfigs(configs);
 
-        assertEquals("", configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
-        assertEquals(sampleQuery, configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+        assertThat(configs.get(0))
+            .containsEntry(JdbcSourceTaskConfig.TABLES_CONFIG, "")
+            .containsEntry(JdbcSourceTaskConfig.QUERY_CONFIG, sampleQuery);
 
         connector.stop();
     }
@@ -218,23 +220,22 @@ public class JdbcSourceConnectorTest {
         final String sampleQuery = "SELECT foo, bar FROM sample_table";
         connProps.put(JdbcSourceConnectorConfig.QUERY_CONFIG, sampleQuery);
         connProps.put(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG, "foo,bar");
-        assertThrows(ConnectException.class, () -> connector.start(connProps));
+        assertThatThrownBy(() -> connector.start(connProps)).isInstanceOf(ConnectException.class);
 
         connector = new JdbcSourceConnector();
         connProps.remove(JdbcSourceConnectorConfig.QUERY_CONFIG);
         connProps.put(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG, "false");
         connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_INCREMENTING);
-        assertThrows(ConnectException.class, () -> connector.start(connProps));
+        assertThatThrownBy(() -> connector.start(connProps)).isInstanceOf(ConnectException.class);
 
         connector = new JdbcSourceConnector();
         connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
-        assertThrows(ConnectException.class, () -> connector.start(connProps));
+        assertThatThrownBy(() -> connector.start(connProps)).isInstanceOf(ConnectException.class);
     }
 
     private void assertTaskConfigsHaveParentConfigs(final List<Map<String, String>> configs) {
         for (final Map<String, String> config : configs) {
-            assertEquals(this.db.getUrl(),
-                config.get(JdbcConfig.CONNECTION_URL_CONFIG));
+            assertThat(config).containsEntry(JdbcConfig.CONNECTION_URL_CONFIG, this.db.getUrl());
         }
     }
 

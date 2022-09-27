@@ -39,7 +39,8 @@ import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.mockito.Mock;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -113,9 +114,9 @@ public abstract class BaseDialectTypeTest<T extends GenericDatabaseDialect> {
         dialect.addFieldToSchema(columnDefn, schemaBuilder);
         final Schema schema = schemaBuilder.build();
         final List<Field> fields = schema.fields();
-        assertEquals(1, fields.size());
+        assertThat(fields).hasSize(1);
         final Field field = fields.get(0);
-        assertEquals(expectedType, field.schema().type());
+        assertThat(field.schema().type()).isEqualTo(expectedType);
 
         // Set up the ResultSet
         when(resultSet.getBigDecimal(1, scale)).thenReturn(BIG_DECIMAL);
@@ -137,9 +138,10 @@ public abstract class BaseDialectTypeTest<T extends GenericDatabaseDialect> {
         );
         final Object value = converter.convert(resultSet);
         if (value instanceof Number && expectedValue instanceof Number) {
-            assertEquals(((Number) expectedValue).floatValue(), ((Number) value).floatValue(), 0.01d);
+            assertThat(((Number) value).floatValue())
+                .isCloseTo(((Number) expectedValue).floatValue(), offset(0.01f));
         } else {
-            assertEquals(expectedValue, value);
+            assertThat(value).isEqualTo(expectedValue);
         }
     }
 
@@ -172,8 +174,8 @@ public abstract class BaseDialectTypeTest<T extends GenericDatabaseDialect> {
 
     protected Map<String, String> propertiesFromPairs(final String... pairs) {
         final Map<String, String> props = new HashMap<>();
-        assertEquals("Expecting even number of properties but found " + pairs.length, 0,
-            pairs.length % 2);
+        assertThat(pairs.length % 2).as("Expecting even number of properties but found " + pairs.length)
+            .isZero();
         for (int i = 0; i != pairs.length; ++i) {
             final String key = pairs[i];
             final String value = pairs[++i];

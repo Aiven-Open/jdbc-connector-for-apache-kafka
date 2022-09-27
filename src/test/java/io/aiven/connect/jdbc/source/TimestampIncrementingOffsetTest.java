@@ -22,8 +22,7 @@ import java.sql.Timestamp;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TimestampIncrementingOffsetTest {
     private final Timestamp ts = new Timestamp(100L);
@@ -40,74 +39,71 @@ public class TimestampIncrementingOffsetTest {
         final long millis = System.currentTimeMillis();
         nanos = new Timestamp(millis);
         nanos.setNanos((int) (millis % 1000) * 1000000 + 123456);
-        assertEquals(millis, nanos.getTime());
+        assertThat(nanos.getTime()).isEqualTo(millis);
         nanosOffset = new TimestampIncrementingOffset(nanos, null);
     }
 
     @Test
     public void testDefaults() {
-        assertNull(unset.getIncrementingOffset());
-        assertNull(unset.getTimestampOffset());
+        assertThat(unset.getIncrementingOffset()).isNull();
+        assertThat(unset.getTimestampOffset()).isNull();
     }
 
     @Test
     public void testToMap() {
-        assertEquals(0, unset.toMap().size());
-        assertEquals(2, tsOnly.toMap().size());
-        assertEquals(1, incOnly.toMap().size());
-        assertEquals(3, tsInc.toMap().size());
-        assertEquals(2, nanosOffset.toMap().size());
+        assertThat(unset.toMap()).isEmpty();
+        assertThat(tsOnly.toMap()).hasSize(2);
+        assertThat(incOnly.toMap()).hasSize(1);
+        assertThat(tsInc.toMap()).hasSize(3);
+        assertThat(nanosOffset.toMap()).hasSize(2);
     }
 
     @Test
     public void testGetIncrementingOffset() {
-        assertNull(unset.getIncrementingOffset());
-        assertNull(tsOnly.getIncrementingOffset());
-        assertEquals(id, incOnly.getIncrementingOffset().longValue());
-        assertEquals(id, tsInc.getIncrementingOffset().longValue());
-        assertNull(nanosOffset.getIncrementingOffset());
+        assertThat(unset.getIncrementingOffset()).isNull();
+        assertThat(tsOnly.getIncrementingOffset()).isNull();
+        assertThat(incOnly.getIncrementingOffset().longValue()).isEqualTo(id);
+        assertThat(tsInc.getIncrementingOffset()).isEqualTo(id);
+        assertThat(nanosOffset.getIncrementingOffset()).isNull();
     }
 
     @Test
     public void testGetTimestampOffset() {
-        assertNull(unset.getTimestampOffset());
+        assertThat(unset.getTimestampOffset()).isNull();
         final Timestamp zero = new Timestamp(0);
-        assertEquals(ts, tsOnly.getTimestampOffset());
-        assertEquals(ts, tsOnly.getTimestampOffset());
-        assertNull(incOnly.getTimestampOffset());
-        assertEquals(ts, tsInc.getTimestampOffset());
-        assertEquals(nanos, nanosOffset.getTimestampOffset());
+        assertThat(tsOnly.getTimestampOffset()).isEqualTo(ts);
+        assertThat(tsOnly.getTimestampOffset()).isEqualTo(ts);
+        assertThat(incOnly.getTimestampOffset()).isNull();
+        assertThat(tsInc.getTimestampOffset()).isEqualTo(ts);
+        assertThat(nanosOffset.getTimestampOffset()).isEqualTo(nanos);
     }
 
     @Test
     public void testFromMap() {
-        assertEquals(unset, TimestampIncrementingOffset.fromMap(unset.toMap()));
-        assertEquals(tsOnly, TimestampIncrementingOffset.fromMap(tsOnly.toMap()));
-        assertEquals(incOnly, TimestampIncrementingOffset.fromMap(incOnly.toMap()));
-        assertEquals(tsInc, TimestampIncrementingOffset.fromMap(tsInc.toMap()));
-        assertEquals(nanosOffset, TimestampIncrementingOffset.fromMap(nanosOffset.toMap()));
+        assertThat(TimestampIncrementingOffset.fromMap(unset.toMap())).isEqualTo(unset);
+        assertThat(TimestampIncrementingOffset.fromMap(tsOnly.toMap())).isEqualTo(tsOnly);
+        assertThat(TimestampIncrementingOffset.fromMap(incOnly.toMap())).isEqualTo(incOnly);
+        assertThat(TimestampIncrementingOffset.fromMap(tsInc.toMap())).isEqualTo(tsInc);
+        assertThat(TimestampIncrementingOffset.fromMap(nanosOffset.toMap())).isEqualTo(nanosOffset);
     }
 
     @Test
     public void testEquals() {
-        assertEquals(nanosOffset, nanosOffset);
-        assertEquals(
-            new TimestampIncrementingOffset(null, null),
-            new TimestampIncrementingOffset(null, null)
-        );
-        assertEquals(unset, new TimestampIncrementingOffset(null, null));
+        assertThat(nanosOffset).isEqualTo(nanosOffset);
+        assertThat(new TimestampIncrementingOffset(null, null)).isEqualTo(new TimestampIncrementingOffset(null, null));
+        assertThat(new TimestampIncrementingOffset(null, null)).isEqualTo(unset);
 
         TimestampIncrementingOffset x = new TimestampIncrementingOffset(null, id);
-        assertEquals(x, incOnly);
+        assertThat(incOnly).isEqualTo(x);
 
         x = new TimestampIncrementingOffset(ts, null);
-        assertEquals(x, tsOnly);
+        assertThat(tsOnly).isEqualTo(x);
 
         x = new TimestampIncrementingOffset(ts, id);
-        assertEquals(x, tsInc);
+        assertThat(tsInc).isEqualTo(x);
 
         x = new TimestampIncrementingOffset(nanos, null);
-        assertEquals(x, nanosOffset);
+        assertThat(nanosOffset).isEqualTo(x);
     }
 
 }

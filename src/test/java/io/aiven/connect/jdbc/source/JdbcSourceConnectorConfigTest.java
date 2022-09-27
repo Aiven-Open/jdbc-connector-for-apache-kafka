@@ -17,7 +17,6 @@
 
 package io.aiven.connect.jdbc.source;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -42,10 +41,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.util.Lists.list;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Recommender.class})
@@ -58,7 +55,7 @@ public class JdbcSourceConnectorConfigTest {
     private List<ConfigValue> results;
     @Mock
     private Recommender mockRecommender;
-    private MockTime time = new MockTime();
+    private final MockTime time = new MockTime();
 
     @Before
     public void setup() throws Exception {
@@ -86,42 +83,42 @@ public class JdbcSourceConnectorConfigTest {
     }
 
     @Test
-    public void testConfigTableNameRecommenderWithoutSchemaOrTableTypes() throws Exception {
+    public void testConfigTableNameRecommenderWithoutSchemaOrTableTypes() {
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
         configDef = JdbcSourceConnectorConfig.baseConfigDef();
         results = configDef.validate(props);
-        assertWhitelistRecommendations("some_table", "public_table", "private_table", "another_private_table");
-        assertBlacklistRecommendations("some_table", "public_table", "private_table", "another_private_table");
+        assertWhitelistRecommendations(list("some_table", "public_table", "private_table", "another_private_table"));
+        assertBlacklistRecommendations(list("some_table", "public_table", "private_table", "another_private_table"));
     }
 
     @Test
-    public void testConfigTableNameRecommenderWitSchemaAndWithoutTableTypes() throws Exception {
+    public void testConfigTableNameRecommenderWitSchemaAndWithoutTableTypes() {
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
         props.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "PRIVATE_SCHEMA");
         configDef = JdbcSourceConnectorConfig.baseConfigDef();
         results = configDef.validate(props);
-        assertWhitelistRecommendations("private_table", "another_private_table");
-        assertBlacklistRecommendations("private_table", "another_private_table");
+        assertWhitelistRecommendations(list("private_table", "another_private_table"));
+        assertBlacklistRecommendations(list("private_table", "another_private_table"));
     }
 
     @Test
-    public void testConfigTableNameRecommenderWithSchemaAndTableTypes() throws Exception {
+    public void testConfigTableNameRecommenderWithSchemaAndTableTypes() {
         props.put(JdbcConfig.CONNECTION_URL_CONFIG, db.getUrl());
         props.put(JdbcSourceConnectorConfig.SCHEMA_PATTERN_CONFIG, "PRIVATE_SCHEMA");
         props.put(JdbcSourceConnectorConfig.TABLE_TYPE_CONFIG, "VIEW");
         configDef = JdbcSourceConnectorConfig.baseConfigDef();
         results = configDef.validate(props);
-        assertWhitelistRecommendations();
-        assertBlacklistRecommendations();
+        assertThat(namedValue(results, JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG).recommendedValues()).isEmpty();
+        assertThat(namedValue(results, JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG).recommendedValues()).isEmpty();
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testCachingRecommender() {
-        final List<Object> results1 = Collections.singletonList((Object) "xyz");
-        final List<Object> results2 = Collections.singletonList((Object) "123");
+        final List<String> results1 = Collections.singletonList("xyz");
+        final List<String> results2 = Collections.singletonList("123");
         // Set up the mock recommender to be called twice, returning different results each time
         EasyMock.expect(mockRecommender.validValues(EasyMock.anyObject(String.class), EasyMock.anyObject(Map.class)))
             .andReturn(results1);
@@ -132,65 +129,57 @@ public class JdbcSourceConnectorConfigTest {
 
         final CachingRecommender recommender = new CachingRecommender(mockRecommender, time, 1000L);
 
-        final Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
+        final Map<String, Object> config1 = Collections.singletonMap("k", "v");
         // Populate the cache
-        assertSame(results1, recommender.validValues("x", config1));
+        assertThat(recommender.validValues("x", config1)).isSameAs(results1);
         // Try the cache before expiration
         time.sleep(100L);
-        assertSame(results1, recommender.validValues("x", config1));
+        assertThat(recommender.validValues("x", config1)).isSameAs(results1);
         // Wait for the cache to expire
         time.sleep(2000L);
-        assertSame(results2, recommender.validValues("x", config1));
+        assertThat(recommender.validValues("x", config1)).isSameAs(results2);
 
         PowerMock.verifyAll();
     }
 
     @Test
     public void testDefaultConstructedCachedTableValuesReturnsNull() {
-        final Map<String, Object> config = Collections.singletonMap("k", (Object) "v");
+        final Map<String, Object> config = Collections.singletonMap("k", "v");
         final CachedRecommenderValues cached = new CachedRecommenderValues();
-        assertNull(cached.cachedValue(config, 20L));
+        assertThat(cached.cachedValue(config, 20L)).isNull();
     }
 
     @Test
     public void testCachedTableValuesReturnsCachedResultWithinExpiryTime() {
-        final Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
-        final Map<String, Object> config2 = Collections.singletonMap("k", (Object) "v");
-        final List<Object> results = Collections.singletonList((Object) "xyz");
+        final Map<String, Object> config1 = Collections.singletonMap("k", "v");
+        final Map<String, Object> config2 = Collections.singletonMap("k", "v");
+        final List<Object> results = Collections.singletonList("xyz");
         final long expiry = 20L;
         final CachedRecommenderValues cached = new CachedRecommenderValues(config1, results, expiry);
-        assertSame(results, cached.cachedValue(config2, expiry - 1L));
+        assertThat(cached.cachedValue(config2, expiry - 1L)).isSameAs(results);
     }
 
     @Test
     public void testCachedTableValuesReturnsNullResultAtOrAfterExpiryTime() {
-        final Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
-        final Map<String, Object> config2 = Collections.singletonMap("k", (Object) "v");
-        final List<Object> results = Collections.singletonList((Object) "xyz");
+        final Map<String, Object> config1 = Collections.singletonMap("k", "v");
+        final Map<String, Object> config2 = Collections.singletonMap("k", "v");
+        final List<Object> results = Collections.singletonList("xyz");
         final long expiry = 20L;
         final CachedRecommenderValues cached = new CachedRecommenderValues(config1, results, expiry);
-        assertNull(cached.cachedValue(config2, expiry));
-        assertNull(cached.cachedValue(config2, expiry + 1L));
+        assertThat(cached.cachedValue(config2, expiry)).isNull();
+        assertThat(cached.cachedValue(config2, expiry + 1L)).isNull();
     }
 
     @Test
     public void testCachedTableValuesReturnsNullResultIfConfigurationChanges() {
-        final Map<String, Object> config1 = Collections.singletonMap("k", (Object) "v");
-        final Map<String, Object> config2 = Collections.singletonMap("k", (Object) "zed");
-        final List<Object> results = Collections.singletonList((Object) "xyz");
+        final Map<String, Object> config1 = Collections.singletonMap("k", "v");
+        final Map<String, Object> config2 = Collections.singletonMap("k", "zed");
+        final List<Object> results = Collections.singletonList("xyz");
         final long expiry = 20L;
         final CachedRecommenderValues cached = new CachedRecommenderValues(config1, results, expiry);
-        assertNull(cached.cachedValue(config2, expiry - 1L));
-        assertNull(cached.cachedValue(config2, expiry));
-        assertNull(cached.cachedValue(config2, expiry + 1L));
-    }
-
-    @SuppressWarnings("unchecked")
-    protected <T> void assertContains(final Collection<T> actual, final T... expected) {
-        for (final T e : expected) {
-            assertTrue(actual.contains(e));
-        }
-        assertEquals(expected.length, actual.size());
+        assertThat(cached.cachedValue(config2, expiry - 1L)).isNull();
+        assertThat(cached.cachedValue(config2, expiry)).isNull();
+        assertThat(cached.cachedValue(config2, expiry + 1L)).isNull();
     }
 
     protected ConfigValue namedValue(final List<ConfigValue> values, final String name) {
@@ -202,22 +191,13 @@ public class JdbcSourceConnectorConfigTest {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    protected <T> void assertRecommendedValues(final ConfigValue value, final T... recommendedValues) {
-        assertContains(value.recommendedValues(), recommendedValues);
+    protected void assertWhitelistRecommendations(final List<String> recommendedValues) {
+        assertThat(namedValue(results, JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG).recommendedValues())
+            .containsExactlyInAnyOrderElementsOf(recommendedValues);
     }
 
-    @SuppressWarnings("unchecked")
-    protected <T> void assertWhitelistRecommendations(final T... recommendedValues) {
-        assertContains(
-            namedValue(results, JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG).recommendedValues(),
-            recommendedValues);
-    }
-
-    @SuppressWarnings("unchecked")
-    protected <T> void assertBlacklistRecommendations(final T... recommendedValues) {
-        assertContains(
-            namedValue(results, JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG).recommendedValues(),
-            recommendedValues);
+    protected void assertBlacklistRecommendations(final List<String> recommendedValues) {
+        assertThat(namedValue(results, JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG).recommendedValues())
+            .containsExactlyInAnyOrderElementsOf(recommendedValues);
     }
 }

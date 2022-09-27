@@ -29,7 +29,7 @@ import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertSame;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class DatabaseDialectsTest {
 
@@ -37,16 +37,17 @@ public class DatabaseDialectsTest {
     public void shouldLoadAllBuiltInDialects() {
         final Collection<? extends DatabaseDialectProvider> providers = DatabaseDialects
             .registeredDialectProviders();
-        assertContainsInstanceOf(providers, GenericDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, DerbyDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, OracleDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, SqliteDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, PostgreSqlDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, MySqlDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, SqlServerDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, SapHanaDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, VerticaDatabaseDialect.Provider.class);
-        assertContainsInstanceOf(providers, MockDatabaseDialect.Provider.class);
+        assertThat(providers)
+            .hasAtLeastOneElementOfType(GenericDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(DerbyDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(OracleDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(SqliteDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(PostgreSqlDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(MySqlDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(SqlServerDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(SapHanaDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(VerticaDatabaseDialect.Provider.class)
+            .hasAtLeastOneElementOfType(MockDatabaseDialect.Provider.class);
     }
 
     @Test
@@ -89,9 +90,6 @@ public class DatabaseDialectsTest {
 
     @Test
     public void shouldFindSapDialect() {
-        try {
-        } finally {
-        }
         assertDialect(SapHanaDatabaseDialect.class, "jdbc:sap://myServer:30015/?autocommit=false");
     }
 
@@ -128,17 +126,4 @@ public class DatabaseDialectsTest {
         final DatabaseDialect dialect = DatabaseDialects.findBestFor(url, config);
         assertSame(dialect.getClass(), clazz);
     }
-
-    private void assertContainsInstanceOf(
-        final Collection<? extends DatabaseDialectProvider> providers,
-        final Class<? extends DatabaseDialectProvider> clazz
-    ) {
-        for (final DatabaseDialectProvider provider : providers) {
-            if (provider.getClass().equals(clazz)) {
-                return;
-            }
-        }
-        fail("Missing " + clazz.getName());
-    }
-
 }

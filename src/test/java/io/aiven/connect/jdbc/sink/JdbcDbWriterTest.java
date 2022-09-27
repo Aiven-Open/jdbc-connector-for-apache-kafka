@@ -19,7 +19,6 @@ package io.aiven.connect.jdbc.sink;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,10 +45,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 public class JdbcDbWriterTest {
 
@@ -90,30 +87,26 @@ public class JdbcDbWriterTest {
         final DbStructure dbStructure = new DbStructure(dialect);
         final JdbcDbWriter jdbcDbWriter = new JdbcDbWriter(jdbcSinkConfig, dialect, dbStructure);
 
-        assertEquals("kafka_topic___some_topic",
-                jdbcDbWriter.generateTableNameFor("--some_topic"));
+        assertThat(jdbcDbWriter.generateTableNameFor("--some_topic")).isEqualTo("kafka_topic___some_topic");
 
-        assertEquals("kafka_topic_some_topic",
-                jdbcDbWriter.generateTableNameFor("some_topic"));
+        assertThat(jdbcDbWriter.generateTableNameFor("some_topic")).isEqualTo("kafka_topic_some_topic");
 
-        assertEquals("kafka_topic_some_topic",
-                jdbcDbWriter.generateTableNameFor("some-topic"));
+        assertThat(jdbcDbWriter.generateTableNameFor("some-topic")).isEqualTo("kafka_topic_some_topic");
 
-        assertEquals("kafka_topic_this_is_topic_with_dots",
-                jdbcDbWriter.generateTableNameFor("this.is.topic.with.dots"));
+        assertThat(jdbcDbWriter.generateTableNameFor("this.is.topic.with.dots"))
+            .isEqualTo("kafka_topic_this_is_topic_with_dots");
 
-        assertEquals("kafka_topic_this_is_topic_with_dots_and_weired_characters___",
-                jdbcDbWriter.generateTableNameFor("this.is.topic.with.dots.and.weired.characters#$%"));
+        assertThat(jdbcDbWriter.generateTableNameFor("this.is.topic.with.dots.and.weired.characters#$%"))
+            .isEqualTo("kafka_topic_this_is_topic_with_dots_and_weired_characters___");
 
-        assertEquals("kafka_topic_orders_topic__3",
-                jdbcDbWriter.generateTableNameFor("orders_topic_#3"));
+        assertThat(jdbcDbWriter.generateTableNameFor("orders_topic_#3")).isEqualTo("kafka_topic_orders_topic__3");
 
     }
 
     @Test
     public void shouldSelectTableFromMapping() {
         final Map<String, String> props = new HashMap<>();
-        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhnost");
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
         props.put(JdbcSinkConfig.TABLE_NAME_FORMAT, "${topic}");
         props.put(JdbcSinkConfig.TOPICS_TO_TABLES_MAPPING, "some_topic:same_table");
 
@@ -123,13 +116,13 @@ public class JdbcDbWriterTest {
         final JdbcDbWriter writer = new JdbcDbWriter(jdbcSinkConfig, dialect, dbStructure);
 
         final TableId tableId = writer.destinationTable("some_topic");
-        assertEquals("same_table", tableId.tableName());
+        assertThat(tableId.tableName()).isEqualTo("same_table");
     }
 
     @Test(expected = ConnectException.class)
     public void shouldThrowConnectExceptionForUnknownTopicToTableMapping() {
         final Map<String, String> props = new HashMap<>();
-        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhnost");
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
         props.put(JdbcSinkConfig.TABLE_NAME_FORMAT, "");
         props.put(JdbcSinkConfig.TOPICS_TO_TABLES_MAPPING, "some_topic:same_table,some_topic2:same_table2");
 
@@ -170,9 +163,9 @@ public class JdbcDbWriterTest {
 
         final TableDefinition metadata = dialect.describeTable(writer.cachedConnectionProvider.getConnection(),
             tableId);
-        assertTrue(metadata.definitionForColumn("id").isPrimaryKey());
+        assertThat(metadata.definitionForColumn("id").isPrimaryKey()).isTrue();
         for (final Field field : valueSchema1.fields()) {
-            assertNotNull(metadata.definitionForColumn(field.name()));
+            assertThat(metadata.definitionForColumn(field.name())).isNotNull();
         }
 
         final Schema valueSchema2 = SchemaBuilder.struct()
@@ -189,9 +182,9 @@ public class JdbcDbWriterTest {
         writer.write(Collections.singleton(new SinkRecord(topic, 0, keySchema, 2L, valueSchema2, valueStruct2, 0)));
 
         final TableDefinition refreshedMetadata = dialect.describeTable(sqliteHelper.connection, tableId);
-        assertTrue(refreshedMetadata.definitionForColumn("id").isPrimaryKey());
+        assertThat(refreshedMetadata.definitionForColumn("id").isPrimaryKey()).isTrue();
         for (final Field field : valueSchema2.fields()) {
-            assertNotNull(refreshedMetadata.definitionForColumn(field.name()));
+            assertThat(refreshedMetadata.definitionForColumn(field.name())).isNotNull();
         }
     }
 
@@ -268,15 +261,9 @@ public class JdbcDbWriterTest {
 
         writer.write(Collections.nCopies(2, record));
 
-        assertEquals(
-            1,
-            sqliteHelper.select("select count(*) from books", new SqliteHelper.ResultSetReadCallback() {
-                @Override
-                public void read(final ResultSet rs) throws SQLException {
-                    assertEquals(1, rs.getInt(1));
-                }
-            })
-        );
+        assertThat(sqliteHelper.select("select count(*) from books",
+            rs -> assertThat(rs.getInt(1)).isOne()))
+            .isOne();
     }
 
     @Test
@@ -347,36 +334,27 @@ public class JdbcDbWriterTest {
             new SinkRecord("topic", 0, null, null, schema, struct, 0)
         ));
 
-        assertEquals(
-            numRecords,
-            sqliteHelper.select(
-                "SELECT * FROM " + testId,
-                new SqliteHelper.ResultSetReadCallback() {
-                    @Override
-                    public void read(final ResultSet rs) throws SQLException {
-                        assertEquals(struct.getInt8("the_byte").byteValue(), rs.getByte("the_byte"));
-                        assertEquals(struct.getInt16("the_short").shortValue(), rs.getShort("the_short"));
-                        assertEquals(struct.getInt32("the_int").intValue(), rs.getInt("the_int"));
-                        assertEquals(struct.getInt64("the_long").longValue(), rs.getLong("the_long"));
-                        assertEquals(struct.getFloat32("the_float"), rs.getFloat("the_float"), 0.01);
-                        assertEquals(struct.getFloat64("the_double"), rs.getDouble("the_double"), 0.01);
-                        assertEquals(struct.getBoolean("the_bool"), rs.getBoolean("the_bool"));
-                        assertEquals(struct.getString("the_string"), rs.getString("the_string"));
-                        assertArrayEquals(struct.getBytes("the_bytes"), rs.getBytes("the_bytes"));
-                        assertEquals(struct.get("the_decimal"), rs.getBigDecimal("the_decimal"));
-                        assertEquals(
-                            new java.sql.Date(((java.util.Date) struct.get("the_date")).getTime()),
-                            rs.getDate("the_date"));
-                        assertEquals(
-                            new java.sql.Time(((java.util.Date) struct.get("the_time")).getTime()),
-                            rs.getTime("the_time"));
-                        assertEquals(
-                            new java.sql.Timestamp(((java.util.Date) struct.get("the_time")).getTime()),
-                            rs.getTimestamp("the_timestamp"));
-                    }
-                }
-            )
-        );
+        assertThat(sqliteHelper.select(
+            "SELECT * FROM " + testId,
+            rs -> {
+                assertThat(rs.getByte("the_byte")).isEqualTo(struct.getInt8("the_byte").byteValue());
+                assertThat(rs.getShort("the_short")).isEqualTo(struct.getInt16("the_short").shortValue());
+                assertThat(rs.getInt("the_int")).isEqualTo(struct.getInt32("the_int").intValue());
+                assertThat(rs.getLong("the_long")).isEqualTo(struct.getInt64("the_long").longValue());
+                assertThat(rs.getFloat("the_float")).isCloseTo(struct.getFloat32("the_float"), offset(0.01f));
+                assertThat(rs.getDouble("the_double")).isCloseTo(struct.getFloat64("the_double"), offset(0.01d));
+                assertThat(rs.getBoolean("the_bool")).isEqualTo(struct.getBoolean("the_bool"));
+                assertThat(rs.getString("the_string")).isEqualTo(struct.getString("the_string"));
+                assertThat(rs.getBytes("the_bytes")).containsExactly(struct.getBytes("the_bytes"));
+                assertThat(rs.getBigDecimal("the_decimal")).isEqualTo(struct.get("the_decimal"));
+                assertThat(rs.getDate("the_date")).isEqualTo(
+                    new java.sql.Date(((java.util.Date) struct.get("the_date")).getTime()));
+                assertThat(rs.getTime("the_time")).isEqualTo(
+                    new java.sql.Time(((java.util.Date) struct.get("the_time")).getTime()));
+                assertThat(rs.getTimestamp("the_timestamp")).isEqualTo(
+                    new java.sql.Timestamp(((java.util.Date) struct.get("the_time")).getTime()));
+            }
+        )).isEqualTo(numRecords);
     }
 
 }

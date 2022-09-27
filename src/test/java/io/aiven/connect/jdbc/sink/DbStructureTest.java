@@ -30,8 +30,7 @@ import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class DbStructureTest {
 
@@ -39,24 +38,24 @@ public class DbStructureTest {
 
     @Test
     public void testNoMissingFields() {
-        assertTrue(missingFields(sinkRecords("aaa"), columns("aaa", "bbb")).isEmpty());
+        assertThat(missingFields(sinkRecords("aaa"), columns("aaa", "bbb"))).isEmpty();
     }
 
     @Test
     public void testMissingFieldsWithSameCase() {
-        assertEquals(1, missingFields(sinkRecords("aaa", "bbb"), columns("aaa")).size());
+        assertThat(missingFields(sinkRecords("aaa", "bbb"), columns("aaa"))).hasSize(1);
     }
 
     @Test
     public void testSameNamesDifferentCases() {
-        assertTrue(missingFields(sinkRecords("aaa"), columns("aAa", "AaA")).isEmpty());
+        assertThat(missingFields(sinkRecords("aaa"), columns("aAa", "AaA"))).isEmpty();
     }
 
     @Test
     public void testMissingFieldsWithDifferentCase() {
-        assertTrue(missingFields(sinkRecords("aaa", "bbb"), columns("AaA", "BbB")).isEmpty());
-        assertTrue(missingFields(sinkRecords("AaA", "bBb"), columns("aaa", "bbb")).isEmpty());
-        assertTrue(missingFields(sinkRecords("AaA", "bBb"), columns("aAa", "BbB")).isEmpty());
+        assertThat(missingFields(sinkRecords("aaa", "bbb"), columns("AaA", "BbB"))).isEmpty();
+        assertThat(missingFields(sinkRecords("AaA", "bBb"), columns("aaa", "bbb"))).isEmpty();
+        assertThat(missingFields(sinkRecords("AaA", "bBb"), columns("aAa", "BbB"))).isEmpty();
     }
 
     private Set<SinkRecordField> missingFields(

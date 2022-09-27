@@ -18,7 +18,6 @@
 package io.aiven.connect.jdbc.sink;
 
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -45,10 +44,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.data.Offset.offset;
 import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class JdbcSinkTaskTest extends EasyMockSupport {
     private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
@@ -110,34 +109,28 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
             new SinkRecord(topic, 1, null, null, SCHEMA, struct, 42)
         ));
 
-        assertEquals(
-            1,
-            sqliteHelper.select(
-                "SELECT * FROM " + topic,
-                new SqliteHelper.ResultSetReadCallback() {
-                    @Override
-                    public void read(final ResultSet rs) throws SQLException {
-                        assertEquals(topic, rs.getString("kafka_topic"));
-                        assertEquals(1, rs.getInt("kafka_partition"));
-                        assertEquals(42, rs.getLong("kafka_offset"));
-                        assertEquals(struct.getString("firstName"), rs.getString("firstName"));
-                        assertEquals(struct.getString("lastName"), rs.getString("lastName"));
-                        assertEquals(struct.getBoolean("bool"), rs.getBoolean("bool"));
-                        assertEquals(struct.getInt8("byte").byteValue(), rs.getByte("byte"));
-                        assertEquals(struct.getInt16("short").shortValue(), rs.getShort("short"));
-                        assertEquals(struct.getInt32("age").intValue(), rs.getInt("age"));
-                        assertEquals(struct.getInt64("long").longValue(), rs.getLong("long"));
-                        assertEquals(struct.getFloat32("float"), rs.getFloat("float"), 0.01);
-                        assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
-                        final java.sql.Timestamp dbTimestamp = rs.getTimestamp(
-                            "modified",
-                            DateTimeUtils.getTimeZoneCalendar(timeZone)
-                        );
-                        assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
-                    }
-                }
-            )
-        );
+        assertThat(sqliteHelper.select(
+            "SELECT * FROM " + topic,
+            rs -> {
+                assertThat(rs.getString("kafka_topic")).isEqualTo(topic);
+                assertThat(rs.getInt("kafka_partition")).isOne();
+                assertThat(rs.getLong("kafka_offset")).isEqualTo(42);
+                assertThat(rs.getString("firstName")).isEqualTo(struct.getString("firstName"));
+                assertThat(rs.getString("lastName")).isEqualTo(struct.getString("lastName"));
+                assertThat(rs.getBoolean("bool")).isEqualTo(struct.getBoolean("bool"));
+                assertThat(rs.getByte("byte")).isEqualTo(struct.getInt8("byte").byteValue());
+                assertThat(rs.getShort("short")).isEqualTo(struct.getInt16("short").shortValue());
+                assertThat(rs.getInt("age")).isEqualTo(struct.getInt32("age").intValue());
+                assertThat(rs.getLong("long")).isEqualTo(struct.getInt64("long").longValue());
+                assertThat(rs.getFloat("float")).isCloseTo(struct.getFloat32("float"), offset(0.01f));
+                assertThat(rs.getDouble("double")).isCloseTo(struct.getFloat64("double"), offset(0.01));
+                final java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                    "modified",
+                    DateTimeUtils.getTimeZoneCalendar(timeZone)
+                );
+                assertThat(dbTimestamp.getTime()).isEqualTo(((Date) struct.get("modified")).getTime());
+            }
+        )).isOne();
     }
 
     @Test
@@ -189,31 +182,25 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
             + "' and lastName='"
             + struct.getString("lastName")
             + "'";
-        assertEquals(
-            1,
-            sqliteHelper.select(
-                query,
-                new SqliteHelper.ResultSetReadCallback() {
-                    @Override
-                    public void read(final ResultSet rs) throws SQLException {
-                        assertEquals(struct.getBoolean("bool"), rs.getBoolean("bool"));
-                        rs.getShort("short");
-                        assertTrue(rs.wasNull());
-                        assertEquals(struct.getInt8("byte").byteValue(), rs.getByte("byte"));
-                        assertEquals(struct.getInt32("age").intValue(), rs.getInt("age"));
-                        assertEquals(struct.getInt64("long").longValue(), rs.getLong("long"));
-                        rs.getShort("float");
-                        assertTrue(rs.wasNull());
-                        assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
-                        final java.sql.Timestamp dbTimestamp = rs.getTimestamp(
-                            "modified",
-                            DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC))
-                        );
-                        assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
-                    }
-                }
-            )
-        );
+        assertThat(sqliteHelper.select(
+            query,
+            rs -> {
+                assertThat(rs.getBoolean("bool")).isEqualTo(struct.getBoolean("bool"));
+                rs.getShort("short");
+                assertThat(rs.wasNull()).isTrue();
+                assertThat(rs.getByte("byte")).isEqualTo(struct.getInt8("byte").byteValue());
+                assertThat(rs.getInt("age")).isEqualTo(struct.getInt32("age").intValue());
+                assertThat(rs.getLong("long")).isEqualTo(struct.getInt64("long").longValue());
+                rs.getShort("float");
+                assertThat(rs.wasNull()).isTrue();
+                assertThat(rs.getDouble("double")).isCloseTo(struct.getFloat64("double"), offset(0.01));
+                final java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                    "modified",
+                    DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC))
+                );
+                assertThat(dbTimestamp.getTime()).isEqualTo(((Date) struct.get("modified")).getTime());
+            }
+        )).isOne();
     }
 
     @Test
@@ -250,28 +237,13 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
 
         replayAll();
 
-        try {
-            task.put(records);
-            fail();
-        } catch (final RetriableException expected) {
-        }
-
-        try {
-            task.put(records);
-            fail();
-        } catch (final RetriableException expected) {
-        }
-
-        try {
-            task.put(records);
-            fail();
-        } catch (final RetriableException e) {
-            fail("Non-retriable exception expected");
-        } catch (final ConnectException expected) {
-            assertEquals(SQLException.class, expected.getCause().getClass());
-        }
+        assertThatThrownBy(() -> task.put(records)).isInstanceOf(RetriableException.class);
+        assertThatThrownBy(() -> task.put(records)).isInstanceOf(RetriableException.class);
+        assertThatThrownBy(() -> task.put(records))
+            .isNotInstanceOf(RetriableException.class)
+            .isInstanceOf(ConnectException.class)
+            .hasCauseInstanceOf(SQLException.class);
 
         verifyAll();
     }
-
 }

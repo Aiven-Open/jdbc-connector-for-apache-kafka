@@ -23,6 +23,8 @@ import org.apache.kafka.common.config.ConfigException;
 
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class TimeZoneValidatorTest {
 
     @Test
@@ -45,13 +47,15 @@ public class TimeZoneValidatorTest {
         TimeZoneValidator.INSTANCE.ensureValid("db.timezone", null);
     }
 
-    @Test(expected = ConfigException.class)
+    @Test
     public void testInvalidTimeZone() {
-        TimeZoneValidator.INSTANCE.ensureValid("db.timezone", "invalid");
+        assertThatThrownBy(() -> TimeZoneValidator.INSTANCE.ensureValid("db.timezone", "invalid"))
+            .isInstanceOf(ConfigException.class);
     }
 
-    @Test(expected = ConfigException.class)
+    @Test
     public void testEmptyTimeZone() {
-        TimeZoneValidator.INSTANCE.ensureValid("db.timezone", "");
+        assertThatThrownBy(() -> TimeZoneValidator.INSTANCE.ensureValid("db.timezone", ""))
+            .isInstanceOf(ConfigException.class);
     }
 }

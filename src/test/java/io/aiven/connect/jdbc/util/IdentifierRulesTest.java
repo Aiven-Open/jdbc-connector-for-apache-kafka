@@ -22,8 +22,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IdentifierRulesTest {
 
@@ -38,12 +38,12 @@ public class IdentifierRulesTest {
     @Test
     public void testParsingWithMultiCharacterQuotes() {
         rules = new IdentifierRules(".", "'''", "'''");
-        assertParts("'''p1'''.'''p2'''.'''p3'''", "p1", "p2", "p3");
-        assertParts("'''p1'''.'''p3'''", "p1", "p3");
-        assertParts("'''p1'''", "p1");
-        assertParts("'''p1.1.2.3'''", "p1.1.2.3");
-        assertParts("'''p1.1.2.3.'''", "p1.1.2.3.");
-        assertParts("", "");
+        assertThat(rules.parseQualifiedIdentifier("'''p1'''.'''p2'''.'''p3'''")).containsExactly("p1", "p2", "p3");
+        assertThat(rules.parseQualifiedIdentifier("'''p1'''.'''p3'''")).containsExactly("p1", "p3");
+        assertThat(rules.parseQualifiedIdentifier("'''p1'''")).containsExactly("p1");
+        assertThat(rules.parseQualifiedIdentifier("'''p1.1.2.3'''")).containsExactly("p1.1.2.3");
+        assertThat(rules.parseQualifiedIdentifier("'''p1.1.2.3.'''")).containsExactly("p1.1.2.3.");
+        assertThat(rules.parseQualifiedIdentifier("")).containsExactly("");
         assertParsingFailure("'''p1.p2"); // unmatched quote
         assertParsingFailure("'''p1'''.'''p3'''."); // ends with delim
     }
@@ -51,33 +51,33 @@ public class IdentifierRulesTest {
     @Test
     public void testParsingWithDifferentLeadingAndTrailingQuotes() {
         rules = new IdentifierRules(".", "[", "]");
-        assertParts("[p1].[p2].[p3]", "p1", "p2", "p3");
-        assertParts("[p1].[p3]", "p1", "p3");
-        assertParts("[p1]", "p1");
-        assertParts("[p1.1.2.3]", "p1.1.2.3");
-        assertParts("[p1[.[1.[2.3]", "p1[.[1.[2.3");
-        assertParts("", "");
+        assertThat(rules.parseQualifiedIdentifier("[p1].[p2].[p3]")).containsExactly("p1", "p2", "p3");
+        assertThat(rules.parseQualifiedIdentifier("[p1].[p3]")).containsExactly("p1", "p3");
+        assertThat(rules.parseQualifiedIdentifier("[p1]")).containsExactly("p1");
+        assertThat(rules.parseQualifiedIdentifier("[p1.1.2.3]")).containsExactly("p1.1.2.3");
+        assertThat(rules.parseQualifiedIdentifier("[p1[.[1.[2.3]")).containsExactly("p1[.[1.[2.3");
+        assertThat(rules.parseQualifiedIdentifier("")).containsExactly("");
         assertParsingFailure("[p1].[p3]."); // ends with delim
     }
 
     @Test
     public void testParsingWithSingleCharacterQuotes() {
         rules = new IdentifierRules(".", "'", "'");
-        assertParts("'p1'.'p2'.'p3'", "p1", "p2", "p3");
-        assertParts("'p1'.'p3'", "p1", "p3");
-        assertParts("'p1'", "p1");
-        assertParts("'p1.1.2.3'", "p1.1.2.3");
-        assertParts("", "");
+        assertThat(rules.parseQualifiedIdentifier("'p1'.'p2'.'p3'")).containsExactly("p1", "p2", "p3");
+        assertThat(rules.parseQualifiedIdentifier("'p1'.'p3'")).containsExactly("p1", "p3");
+        assertThat(rules.parseQualifiedIdentifier("'p1'")).containsExactly("p1");
+        assertThat(rules.parseQualifiedIdentifier("'p1.1.2.3'")).containsExactly("p1.1.2.3");
+        assertThat(rules.parseQualifiedIdentifier("")).containsExactly("");
         assertParsingFailure("'p1'.'p3'."); // ends with delim
     }
 
     @Test
     public void testParsingWithoutQuotes() {
         rules = new IdentifierRules(".", "'", "'");
-        assertParts("p1.p2.p3", "p1", "p2", "p3");
-        assertParts("p1.p3", "p1", "p3");
-        assertParts("p1", "p1");
-        assertParts("", "");
+        assertThat(rules.parseQualifiedIdentifier("p1.p2.p3")).containsExactly("p1", "p2", "p3");
+        assertThat(rules.parseQualifiedIdentifier("p1.p3")).containsExactly("p1", "p3");
+        assertThat(rules.parseQualifiedIdentifier("p1")).containsExactly("p1");
+        assertThat(rules.parseQualifiedIdentifier("")).containsExactly("");
         assertParsingFailure("'p1'.'p3'."); // ends with delim
         assertParsingFailure("p1.p3."); // ends with delim
     }
@@ -85,28 +85,15 @@ public class IdentifierRulesTest {
     @Test
     public void testParsingWithUnsupportedQuotes() {
         rules = new IdentifierRules(".", " ", " ");
-        assertParts("p1.p2.p3", "p1", "p2", "p3");
-        assertParts("p1.p3", "p1", "p3");
-        assertParts("p1", "p1");
-        assertParts("", "");
-    }
-
-    protected void assertParts(final String fqn, final String... expectedParts) {
-        parts = rules.parseQualifiedIdentifier(fqn);
-        assertEquals(expectedParts.length, parts.size());
-        int index = 0;
-        for (final String expectedPart : expectedParts) {
-            assertEquals(expectedPart, parts.get(index++));
-        }
+        assertThat(rules.parseQualifiedIdentifier("p1.p2.p3")).containsExactly("p1", "p2", "p3");
+        assertThat(rules.parseQualifiedIdentifier("p1.p3")).containsExactly("p1", "p3");
+        assertThat(rules.parseQualifiedIdentifier("p1")).containsExactly("p1");
+        assertThat(rules.parseQualifiedIdentifier("")).containsExactly("");
     }
 
     protected void assertParsingFailure(final String fqn) {
-        try {
-            parts = rules.parseQualifiedIdentifier(fqn);
-            fail("expected parsing error");
-        } catch (final IllegalArgumentException e) {
-            // success
-        }
+        assertThatThrownBy(() -> rules.parseQualifiedIdentifier(fqn))
+            .as("expected parsing error")
+            .isInstanceOf(IllegalArgumentException.class);
     }
-
 }
