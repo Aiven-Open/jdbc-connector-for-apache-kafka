@@ -128,7 +128,7 @@ ext {
     mockitoVersion = '4.3.1'
     servletVersion = "4.0.1"
     spotbugsAnnotationsVersion = "4.5.2"
-    testcontainersVersion = '1.17.4'
+    testcontainersVersion = '1.17.5'
     assertjVersion = "3.22.0"
     awaitilityVersion = '4.2.0'
 }
