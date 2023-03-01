@@ -121,7 +121,7 @@ ext {
     jacksonVersion = "2.14.1" // This Jackson is used in the tests.
     jupiterVersion = "5.9.1"
     kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
-    jettyVersion = "11.0.13"
+    jettyVersion = "11.0.14"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
     log4jVersion = "2.19.0"
