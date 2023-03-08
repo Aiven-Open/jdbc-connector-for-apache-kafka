@@ -31,6 +31,7 @@ import org.apache.kafka.connect.runtime.rest.entities.ConnectorInfo;
 import org.apache.kafka.connect.runtime.standalone.StandaloneConfig;
 import org.apache.kafka.connect.runtime.standalone.StandaloneHerder;
 import org.apache.kafka.connect.storage.MemoryOffsetBackingStore;
+import org.apache.kafka.connect.util.ConnectorTaskId;
 import org.apache.kafka.connect.util.FutureCallback;
 
 import org.slf4j.Logger;
@@ -100,6 +101,22 @@ public final class ConnectRunner {
 
         final Herder.Created<ConnectorInfo> connectorInfoCreated = cb.get();
         assert connectorInfoCreated.created();
+    }
+
+    public void restartTask(final String connector, final int task) throws ExecutionException, InterruptedException {
+        assert herder != null;
+
+        final FutureCallback<Void> cb = new FutureCallback<>(
+            (error, ignored) -> {
+                if (error != null) {
+                    LOGGER.error("Failed to restart task {}-{}", connector, task, error);
+                } else {
+                    LOGGER.info("Restarted task {}-{}", connector, task);
+                }
+            });
+
+        herder.restartTask(new ConnectorTaskId(connector, task), cb);
+        cb.get();
     }
 
     void stop() {

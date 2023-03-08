@@ -262,6 +262,17 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             + "In most cases it only makes sense to have either TABLE or VIEW.";
     private static final String TABLE_TYPE_DISPLAY = "Table Types";
 
+
+    public static final String QUALIFY_TABLE_NAMES_CONFIG = "qualify.table.names";
+    private static final String QUALIFY_TABLE_NAMES_DOC =
+            "Whether to use fully-qualified table names when querying the database. If disabled, "
+                    + "queries will be performed with unqualified table names. This may be useful if the "
+                    + "database has been configured with a search path to automatically direct unqualified "
+                    + "queries to the correct table when there are multiple tables available with the same "
+                    + "unqualified name";
+    public static final boolean QUALIFY_TABLE_NAMES_DEFAULT = true;
+    private static final String QUALIFY_TABLE_NAMES_DISPLAY = "Qualify table names";
+
     public static ConfigDef baseConfigDef() {
         final ConfigDef config = new ConfigDef();
         addDatabaseOptions(config);
@@ -361,6 +372,16 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             Width.SHORT,
             NUMERIC_MAPPING_DISPLAY,
             NUMERIC_MAPPING_RECOMMENDER
+        ).define(
+            QUALIFY_TABLE_NAMES_CONFIG,
+            Type.BOOLEAN,
+            QUALIFY_TABLE_NAMES_DEFAULT,
+            Importance.LOW,
+            QUALIFY_TABLE_NAMES_DOC,
+            DATABASE_GROUP,
+            ++orderInGroup,
+            Width.SHORT,
+            QUALIFY_TABLE_NAMES_DISPLAY
         );
 
         defineDbTimezone(config, ++orderInGroup);

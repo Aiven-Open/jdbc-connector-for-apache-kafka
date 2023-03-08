@@ -27,6 +27,8 @@ import java.util.Properties;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
@@ -51,6 +53,7 @@ public abstract class AbstractIT {
         DockerImageName.parse("confluentinc/cp-kafka")
             .withTag(DEFAULT_KAFKA_TAG);
     protected static KafkaProducer<String, GenericRecord> producer;
+    protected static KafkaConsumer<String, GenericRecord> consumer;
     @Container
     protected KafkaContainer kafkaContainer = new KafkaContainer(DEFAULT_IMAGE_NAME)
         .withNetwork(Network.newNetwork())
@@ -69,6 +72,7 @@ public abstract class AbstractIT {
         final Path pluginDir = setupPluginDir();
         setupKafkaConnect(pluginDir);
         producer = createProducer();
+        consumer = createConsumer();
     }
 
     private static Path setupPluginDir() throws Exception {
@@ -85,13 +89,17 @@ public abstract class AbstractIT {
         return pluginDir;
     }
 
-    private void setupKafka() throws Exception {
-        LOGGER.info("Setup Kafka");
+
+    protected void createTopic(final String topic, final int numPartitions) throws Exception {
         try (final AdminClient adminClient = createAdminClient()) {
-            LOGGER.info("Create topic {}", TEST_TOPIC_NAME);
-            final NewTopic newTopic = new NewTopic(TEST_TOPIC_NAME, 4, (short) 1);
+            LOGGER.info("Create topic {}", topic);
+            final NewTopic newTopic = new NewTopic(topic, numPartitions, (short) 1);
             adminClient.createTopics(List.of(newTopic)).all().get();
         }
+    }
+
+    private void setupKafka() throws Exception {
+        createTopic(TEST_TOPIC_NAME, 4);
     }
 
     protected AdminClient createAdminClient() {
@@ -118,10 +126,24 @@ public abstract class AbstractIT {
         return new KafkaProducer<>(producerProps);
     }
 
+    protected KafkaConsumer<String, GenericRecord> createConsumer() {
+        LOGGER.info("Create kafka consumer");
+        final Map<String, Object> consumerProps = new HashMap<>();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                "io.confluent.kafka.serializers.KafkaAvroDeserializer");
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                "io.confluent.kafka.serializers.KafkaAvroDeserializer");
+        consumerProps.put("schema.registry.url", schemaRegistryContainer.getSchemaRegistryUrl());
+        return new KafkaConsumer<>(consumerProps);
+    }
+
     @AfterEach
     final void tearDown() {
         connectRunner.stop();
         producer.close();
+        consumer.close();
 
         connectRunner.awaitStop();
     }
