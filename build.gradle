@@ -214,7 +214,6 @@ task integrationTest(type: Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 
-    // Integration tests run independently from unit tests
     dependsOn testClasses, distTar
 
     useJUnitPlatform()
