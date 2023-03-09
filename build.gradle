@@ -137,7 +137,6 @@ ext {
 sourceSets {
     integrationTest {
         java.srcDir file('src/integrationTest/java')
-        resources.srcDir file('src/integrationTest/resources')
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
@@ -188,7 +187,6 @@ dependencies {
     integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
     integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
-    integrationTestRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
 
     integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
     integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
