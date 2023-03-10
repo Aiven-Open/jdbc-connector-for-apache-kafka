@@ -122,14 +122,16 @@ ext {
     jupiterVersion = "5.9.1"
     jettyVersion = "9.4.51.v20230217"
     junit4Version = "4.13.2"
-    jsr305Version = "3.0.2"
-    log4jVersion = "2.20.0"
-    mockitoVersion = '5.1.1'
     servletVersion = "4.0.1"
-    spotbugsAnnotationsVersion = "4.5.2"
     testcontainersVersion = '1.17.6'
-    assertjVersion = "3.22.0"
     awaitilityVersion = '4.2.0'
+    jupiterVersion = "5.9.1"
+    log4jVersion = "2.20.0"
+
+    // Integration tests are not necessary to change these
+    slf4jVersion = "1.7.36"
+    derbyVersion = "10.15.2.0"
+    mockitoVersion = '5.1.1'
 }
 
 sourceSets {
