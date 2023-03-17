@@ -122,20 +122,21 @@ ext {
     jupiterVersion = "5.9.1"
     jettyVersion = "9.4.51.v20230217"
     junit4Version = "4.13.2"
-    jsr305Version = "3.0.2"
-    log4jVersion = "2.20.0"
-    mockitoVersion = '5.1.1'
     servletVersion = "4.0.1"
-    spotbugsAnnotationsVersion = "4.5.2"
     testcontainersVersion = '1.17.6'
-    assertjVersion = "3.22.0"
     awaitilityVersion = '4.2.0'
+    jupiterVersion = "5.9.1"
+    log4jVersion = "2.20.0"
+
+    // Integration tests are not necessary to change these
+    slf4jVersion = "1.7.36"
+    derbyVersion = "10.15.2.0"
+    mockitoVersion = '5.1.1'
 }
 
 sourceSets {
     integrationTest {
         java.srcDir file('src/integrationTest/java')
-        resources.srcDir file('src/integrationTest/resources')
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
@@ -186,7 +187,6 @@ dependencies {
     integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
     integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
-    integrationTestRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
 
     integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
     integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
@@ -214,7 +214,8 @@ task integrationTest(type: Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 
-    dependsOn test, distTar
+    // Integration tests run independently from unit tests
+    dependsOn testClasses, distTar
 
     useJUnitPlatform()
 
