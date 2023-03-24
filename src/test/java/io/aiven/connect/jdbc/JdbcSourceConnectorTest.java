@@ -174,7 +174,7 @@ public class JdbcSourceConnectorTest {
 
     @Test
     public void testPartitioningUnqualifiedTables() throws Exception {
-        connProps.put(JdbcSourceConnectorConfig.QUALIFY_TABLE_NAMES_CONFIG, "false");
+        connProps.put(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG, "false");
         // Tests distributing tables across multiple tasks, in this case unevenly
         db.createTable("test1", "id", "INT NOT NULL");
         db.createTable("test2", "id", "INT NOT NULL");
@@ -222,7 +222,7 @@ public class JdbcSourceConnectorTest {
 
         connector = new JdbcSourceConnector();
         connProps.remove(JdbcSourceConnectorConfig.QUERY_CONFIG);
-        connProps.put(JdbcSourceConnectorConfig.QUALIFY_TABLE_NAMES_CONFIG, "false");
+        connProps.put(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG, "false");
         connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_INCREMENTING);
         assertThrows(ConnectException.class, () -> connector.start(connProps));
 

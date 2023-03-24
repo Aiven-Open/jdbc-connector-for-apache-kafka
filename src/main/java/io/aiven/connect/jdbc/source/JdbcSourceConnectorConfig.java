@@ -263,15 +263,15 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
     private static final String TABLE_TYPE_DISPLAY = "Table Types";
 
 
-    public static final String QUALIFY_TABLE_NAMES_CONFIG = "qualify.table.names";
-    private static final String QUALIFY_TABLE_NAMES_DOC =
+    public static final String TABLE_NAMES_QUALIFY_CONFIG = "table.names.qualify";
+    private static final String TABLE_NAMES_QUALIFY_DOC =
             "Whether to use fully-qualified table names when querying the database. If disabled, "
                     + "queries will be performed with unqualified table names. This may be useful if the "
                     + "database has been configured with a search path to automatically direct unqualified "
                     + "queries to the correct table when there are multiple tables available with the same "
                     + "unqualified name";
-    public static final boolean QUALIFY_TABLE_NAMES_DEFAULT = true;
-    private static final String QUALIFY_TABLE_NAMES_DISPLAY = "Qualify table names";
+    public static final boolean TABLE_NAMES_QUALIFY_DEFAULT = true;
+    private static final String TABLE_NAMES_QUALIFY_DISPLAY = "Qualify table names";
 
     public static ConfigDef baseConfigDef() {
         final ConfigDef config = new ConfigDef();
@@ -373,15 +373,15 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
             NUMERIC_MAPPING_DISPLAY,
             NUMERIC_MAPPING_RECOMMENDER
         ).define(
-            QUALIFY_TABLE_NAMES_CONFIG,
+                TABLE_NAMES_QUALIFY_CONFIG,
             Type.BOOLEAN,
-            QUALIFY_TABLE_NAMES_DEFAULT,
+                TABLE_NAMES_QUALIFY_DEFAULT,
             Importance.LOW,
-            QUALIFY_TABLE_NAMES_DOC,
+                TABLE_NAMES_QUALIFY_DOC,
             DATABASE_GROUP,
             ++orderInGroup,
             Width.SHORT,
-            QUALIFY_TABLE_NAMES_DISPLAY
+                TABLE_NAMES_QUALIFY_DISPLAY
         );
 
         defineDbTimezone(config, ++orderInGroup);

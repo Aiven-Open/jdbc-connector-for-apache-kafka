@@ -38,7 +38,7 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.QUALIFY_TABLE_NAMES_CONFIG;
+import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG;
 
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this
@@ -134,7 +134,7 @@ public class TableMonitorThread extends Thread {
                 + "JDBC Source connector fails to start when it detects duplicate table name "
                 + "configurations. Update the connector's " + configText + " config to include exactly "
                 + "one table in each of the tables listed below or, to use unqualified table names, consider "
-                + "setting " +  QUALIFY_TABLE_NAMES_CONFIG + " to 'false'.\n\t";
+                + "setting " + TABLE_NAMES_QUALIFY_CONFIG + " to 'false'.\n\t";
             throw new ConnectException(msg + duplicates.values());
         }
         return tables;

@@ -182,7 +182,7 @@ public class UnqualifiedTableNamesIntegrationTest extends AbstractPostgresIT {
         final Map<String, String> config = super.basicConnectorConfig();
         config.put("name", CONNECTOR_NAME);
         config.put("topic.prefix", "");
-        config.put("qualify.table.names", "false");
+        config.put("table.names.qualify", "false");
         config.put("poll.interval.ms", "1000"); // Poll quickly for shorter tests
         config.put("whitelist", TABLE);
         config.put("connector.class", JdbcSourceConnector.class.getName());

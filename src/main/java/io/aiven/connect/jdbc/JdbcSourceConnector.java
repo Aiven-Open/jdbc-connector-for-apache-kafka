@@ -103,7 +103,7 @@ public class JdbcSourceConnector extends SourceConnector {
         Set<String> whitelistSet = whitelist.isEmpty() ? null : new HashSet<>(whitelist);
         final List<String> blacklist = config.getList(JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG);
         final Set<String> blacklistSet = blacklist.isEmpty() ? null : new HashSet<>(blacklist);
-        final boolean qualifyTableNames = config.getBoolean(JdbcSourceConnectorConfig.QUALIFY_TABLE_NAMES_CONFIG);
+        final boolean qualifyTableNames = config.getBoolean(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG);
 
         if (whitelistSet != null && blacklistSet != null) {
             throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
