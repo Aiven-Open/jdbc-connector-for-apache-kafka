@@ -49,6 +49,10 @@ public class TableId implements Comparable<TableId>, ExpressionBuilder.Expressab
         return tableName;
     }
 
+    public TableId unqualified() {
+        return new TableId(null, null, this.tableName);
+    }
+
     @Override
     public void appendTo(final ExpressionBuilder builder, final boolean useQuotes) {
         if (catalogName != null) {

@@ -103,6 +103,7 @@ public class JdbcSourceConnector extends SourceConnector {
         Set<String> whitelistSet = whitelist.isEmpty() ? null : new HashSet<>(whitelist);
         final List<String> blacklist = config.getList(JdbcSourceConnectorConfig.TABLE_BLACKLIST_CONFIG);
         final Set<String> blacklistSet = blacklist.isEmpty() ? null : new HashSet<>(blacklist);
+        final boolean qualifyTableNames = config.getBoolean(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG);
 
         if (whitelistSet != null && blacklistSet != null) {
             throw new ConnectException(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + " and "
@@ -120,13 +121,35 @@ public class JdbcSourceConnector extends SourceConnector {
             whitelistSet = Collections.emptySet();
 
         }
+        final String mode = config.getMode();
+        if (JdbcSourceConnectorConfig.MODE_INCREMENTING.equals(mode)
+                || JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING.equals(mode)
+        ) {
+            final String incrementingColumn =
+                    config.getString(JdbcSourceConnectorConfig.INCREMENTING_COLUMN_NAME_CONFIG);
+            if (!qualifyTableNames && (incrementingColumn == null || incrementingColumn.isEmpty())) {
+                // Otherwise, we may infer the wrong incrementing key for the table
+                // TODO: This restraint is not necessary in all cases, but additional logic will be required to
+                //       distinguish when it is and is not, and without that logic, the connector will fail to query
+                //       tables by trying to read a non-existent column, which is likely to be very confusing to users.
+                //       This is still technically possible even with explicitly-specified column names, but that
+                //       can happen regardless of whether unqualified table names are used
+                throw new ConnectException(
+                        "When using unqualified table names and either " + JdbcSourceConnectorConfig.MODE_INCREMENTING
+                                + " or " + JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING + " mode, an "
+                                + "incrementing column name must be explicitly provided via the '"
+                                + JdbcSourceConnectorConfig.INCREMENTING_COLUMN_NAME_CONFIG + "' property."
+                );
+            }
+        }
         tableMonitorThread = new TableMonitorThread(
             dialect,
             cachedConnectionProvider,
             context,
             tablePollMs,
             whitelistSet,
-            blacklistSet
+            blacklistSet,
+            qualifyTableNames
         );
         tableMonitorThread.start();
     }

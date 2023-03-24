@@ -50,6 +50,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JdbcSourceConnector.class, DatabaseDialect.class})
@@ -172,6 +173,29 @@ public class JdbcSourceConnectorTest {
     }
 
     @Test
+    public void testPartitioningUnqualifiedTables() throws Exception {
+        connProps.put(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG, "false");
+        // Tests distributing tables across multiple tasks, in this case unevenly
+        db.createTable("test1", "id", "INT NOT NULL");
+        db.createTable("test2", "id", "INT NOT NULL");
+        db.createTable("test3", "id", "INT NOT NULL");
+        db.createTable("test4", "id", "INT NOT NULL");
+        connector.start(connProps);
+        final List<Map<String, String>> configs = connector.taskConfigs(3);
+        assertEquals(3, configs.size());
+        assertTaskConfigsHaveParentConfigs(configs);
+
+        assertEquals(unqualifiedTables("test1", "test2"), configs.get(0).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+        assertNull(configs.get(0).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+        assertEquals(unqualifiedTables("test3"), configs.get(1).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+        assertNull(configs.get(1).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+        assertEquals(unqualifiedTables("test4"), configs.get(2).get(JdbcSourceTaskConfig.TABLES_CONFIG));
+        assertNull(configs.get(2).get(JdbcSourceTaskConfig.QUERY_CONFIG));
+
+        connector.stop();
+    }
+
+    @Test
     public void testPartitioningQuery() throws Exception {
         // Tests "partitioning" when config specifies running a custom query
         db.createTable("test1", "id", "INT NOT NULL");
@@ -189,12 +213,22 @@ public class JdbcSourceConnectorTest {
         connector.stop();
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testConflictingQueryTableSettings() {
         final String sampleQuery = "SELECT foo, bar FROM sample_table";
         connProps.put(JdbcSourceConnectorConfig.QUERY_CONFIG, sampleQuery);
         connProps.put(JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG, "foo,bar");
-        connector.start(connProps);
+        assertThrows(ConnectException.class, () -> connector.start(connProps));
+
+        connector = new JdbcSourceConnector();
+        connProps.remove(JdbcSourceConnectorConfig.QUERY_CONFIG);
+        connProps.put(JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG, "false");
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_INCREMENTING);
+        assertThrows(ConnectException.class, () -> connector.start(connProps));
+
+        connector = new JdbcSourceConnector();
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+        assertThrows(ConnectException.class, () -> connector.start(connProps));
     }
 
     private void assertTaskConfigsHaveParentConfigs(final List<Map<String, String>> configs) {
@@ -205,9 +239,18 @@ public class JdbcSourceConnectorTest {
     }
 
     private String tables(final String... names) {
+        return tables(true, names);
+    }
+
+    private String unqualifiedTables(final String... names) {
+        return tables(false, names);
+    }
+
+    private String tables(final boolean qualified, final String... names) {
+        final String schema = qualified ? "APP" : null;
         final List<TableId> tableIds = new ArrayList<>();
         for (final String name : names) {
-            tableIds.add(new TableId(null, "APP", name));
+            tableIds.add(new TableId(null, schema, name));
         }
         final ExpressionBuilder builder = ExpressionBuilder.create();
         builder.appendList().delimitedBy(",").of(tableIds);

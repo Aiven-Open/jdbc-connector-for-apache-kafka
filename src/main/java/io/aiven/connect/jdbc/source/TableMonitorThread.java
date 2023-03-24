@@ -20,6 +20,7 @@ package io.aiven.connect.jdbc.source;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,8 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.TABLE_NAMES_QUALIFY_CONFIG;
+
 /**
  * Thread that monitors the database for changes to the set of tables in the database that this
  * connector should load data from.
@@ -49,8 +52,9 @@ public class TableMonitorThread extends Thread {
     private final ConnectorContext context;
     private final CountDownLatch shutdownLatch;
     private final long pollMs;
-    private Set<String> whitelist;
-    private Set<String> blacklist;
+    private final Set<String> whitelist;
+    private final Set<String> blacklist;
+    private final boolean qualifyTableNames;
     private List<TableId> tables;
     private Map<String, List<TableId>> duplicates;
 
@@ -59,7 +63,8 @@ public class TableMonitorThread extends Thread {
                               final ConnectorContext context,
                               final long pollMs,
                               final Set<String> whitelist,
-                              final Set<String> blacklist
+                              final Set<String> blacklist,
+                              final boolean qualifyTableNames
     ) {
         this.dialect = dialect;
         this.connectionProvider = connectionProvider;
@@ -68,8 +73,8 @@ public class TableMonitorThread extends Thread {
         this.pollMs = pollMs;
         this.whitelist = whitelist;
         this.blacklist = blacklist;
+        this.qualifyTableNames = qualifyTableNames;
         this.tables = null;
-
     }
 
     @Override
@@ -113,7 +118,7 @@ public class TableMonitorThread extends Thread {
         if (tables == null) {
             throw new ConnectException("Tables could not be updated quickly enough.");
         }
-        if (!duplicates.isEmpty()) {
+        if (qualifyTableNames && !duplicates.isEmpty()) {
             final String configText;
             if (whitelist != null) {
                 configText = "'" + JdbcSourceConnectorConfig.TABLE_WHITELIST_CONFIG + "'";
@@ -128,7 +133,8 @@ public class TableMonitorThread extends Thread {
                 + "the topic and downstream processing errors. To prevent such processing errors, the "
                 + "JDBC Source connector fails to start when it detects duplicate table name "
                 + "configurations. Update the connector's " + configText + " config to include exactly "
-                + "one table in each of the tables listed below.\n\t";
+                + "one table in each of the tables listed below or, to use unqualified table names, consider "
+                + "setting " + TABLE_NAMES_QUALIFY_CONFIG + " to 'false'.\n\t";
             throw new ConnectException(msg + duplicates.values());
         }
         return tables;
@@ -177,22 +183,35 @@ public class TableMonitorThread extends Thread {
             filteredTables.addAll(tables);
         }
 
-        if (!filteredTables.equals(this.tables)) {
+        final List<TableId> newTables;
+        if (!qualifyTableNames) {
+            newTables = filteredTables.stream()
+                    .map(TableId::unqualified)
+                    .distinct()
+                    .collect(Collectors.toList());
+        } else {
+            newTables = filteredTables;
+        }
+
+        if (!newTables.equals(this.tables)) {
             log.info(
                 "After filtering the tables are: {}",
                 dialect.expressionBuilder()
                     .appendList()
                     .delimitedBy(",")
-                    .of(filteredTables)
+                    .of(newTables)
             );
-            final Map<String, List<TableId>> duplicates = filteredTables.stream()
-                .collect(Collectors.groupingBy(TableId::tableName))
-                .entrySet().stream()
-                .filter(entry -> entry.getValue().size() > 1)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            this.duplicates = duplicates;
+            if (qualifyTableNames) {
+                this.duplicates = newTables.stream()
+                    .collect(Collectors.groupingBy(TableId::tableName))
+                    .entrySet().stream()
+                    .filter(entry -> entry.getValue().size() > 1)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            } else {
+                this.duplicates = Collections.emptyMap();
+            }
             final List<TableId> previousTables = this.tables;
-            this.tables = filteredTables;
+            this.tables = newTables;
             notifyAll();
             // Only return true if the table list wasn't previously null, i.e. if this was not the
             // first table lookup

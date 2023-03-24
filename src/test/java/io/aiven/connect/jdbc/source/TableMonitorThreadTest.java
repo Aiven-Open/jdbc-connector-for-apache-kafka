@@ -38,14 +38,18 @@ import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(Parameterized.class)
 @PrepareForTest({JdbcSourceTask.class})
 @PowerMockIgnore("javax.management.*")
 public class TableMonitorThreadTest {
@@ -54,6 +58,7 @@ public class TableMonitorThreadTest {
     private static final TableId FOO = new TableId(null, null, "foo");
     private static final TableId BAR = new TableId(null, null, "bar");
     private static final TableId BAZ = new TableId(null, null, "baz");
+    private static final TableId QUAL = new TableId("fully", "qualified", "name");
 
     private static final TableId DUP1 = new TableId(null, "dup1", "dup");
     private static final TableId DUP2 = new TableId(null, "dup2", "dup");
@@ -75,6 +80,9 @@ public class TableMonitorThreadTest {
     public static final Set<String> VIEW_TABLE_TYPES = Collections.unmodifiableSet(
         new HashSet<>(Arrays.asList("VIEW"))
     );
+
+    private final boolean qualifiedTableNames;
+
     private TableMonitorThread tableMonitorThread;
 
     @Mock
@@ -86,17 +94,32 @@ public class TableMonitorThreadTest {
     @Mock
     private ConnectorContext context;
 
+    @Parameterized.Parameters
+    public static Iterable<? extends Object> data() {
+        return Arrays.asList(false, true);
+    }
+
+    public TableMonitorThreadTest(final boolean qualifiedTableNames) {
+        this.qualifiedTableNames = qualifiedTableNames;
+    }
+
     @Test
     public void testSingleLookup() throws Exception {
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, null);
-        expectTableNames(LIST_FOO, shutdownThread());
+        tableMonitorThread = newTableMonitorThread(null, null);
+        final String expectedTableName;
+        if (qualifiedTableNames) {
+            expectTableNames(LIST_FOO, shutdownThread());
+            expectedTableName = "foo";
+        } else {
+            expectTableNames(Collections.singletonList(QUAL), shutdownThread());
+            expectedTableName = "name";
+        }
         EasyMock.replay(connectionProvider, dialect);
 
         tableMonitorThread.start();
         tableMonitorThread.join();
-        checkTableNames("foo").execute();
+        checkTableNames(expectedTableName).execute();
 
         EasyMock.verify(connectionProvider, dialect);
     }
@@ -105,8 +128,7 @@ public class TableMonitorThreadTest {
     public void testWhitelist() throws Exception {
         final Set<String> whitelist = new HashSet<>(Arrays.asList("foo", "bar"));
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, whitelist, null);
+        tableMonitorThread = newTableMonitorThread(whitelist, null);
         expectTableNames(LIST_FOO_BAR, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
 
@@ -121,8 +143,7 @@ public class TableMonitorThreadTest {
     public void testBlacklist() throws Exception {
         final Set<String> blacklist = new HashSet<>(Arrays.asList("bar", "baz"));
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, blacklist);
+        tableMonitorThread = newTableMonitorThread(null, blacklist);
         expectTableNames(LIST_FOO_BAR_BAZ, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
 
@@ -136,8 +157,7 @@ public class TableMonitorThreadTest {
     @Test
     public void testReconfigOnUpdate() throws Exception {
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, null);
+        tableMonitorThread = newTableMonitorThread(null, null);
         expectTableNames(LIST_FOO);
         expectTableNames(LIST_FOO, checkTableNames("foo"));
 
@@ -162,8 +182,7 @@ public class TableMonitorThreadTest {
 
     @Test
     public void testInvalidConnection() throws Exception {
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, null);
+        tableMonitorThread = newTableMonitorThread(null, null);
         EasyMock.expect(connectionProvider.getConnection()).andAnswer(new IAnswer<Connection>() {
             @Override
             public Connection answer() throws Throwable {
@@ -182,46 +201,61 @@ public class TableMonitorThreadTest {
         EasyMock.verify(connectionProvider);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testDuplicates() throws Exception {
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, null);
+        tableMonitorThread = newTableMonitorThread(null, null);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
         tableMonitorThread.start();
         tableMonitorThread.join();
-        tableMonitorThread.tables();
+
+        if (qualifiedTableNames) {
+            assertThrows(ConnectException.class, tableMonitorThread::tables);
+        } else {
+            checkTableNames("foo", "bar", "baz", "dup");
+        }
+
         EasyMock.verify(connectionProvider, dialect);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testDuplicateWithUnqualifiedWhitelist() throws Exception {
         final Set<String> whitelist = new HashSet<>(Arrays.asList("dup"));
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, whitelist, null);
+        tableMonitorThread = newTableMonitorThread(whitelist, null);
         expectTableNames(LIST_DUP_ONLY, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
 
         tableMonitorThread.start();
         tableMonitorThread.join();
-        tableMonitorThread.tables();
+
+        if (qualifiedTableNames) {
+            assertThrows(ConnectException.class, tableMonitorThread::tables);
+        } else {
+            checkTableNames("dup");
+        }
+
         EasyMock.verify(connectionProvider, dialect);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testDuplicateWithUnqualifiedBlacklist() throws Exception {
         final Set<String> blacklist = new HashSet<>(Arrays.asList("foo"));
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, blacklist);
+        tableMonitorThread = newTableMonitorThread(null, blacklist);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
 
         tableMonitorThread.start();
         tableMonitorThread.join();
-        tableMonitorThread.tables();
+
+        if (qualifiedTableNames) {
+            assertThrows(ConnectException.class, tableMonitorThread::tables);
+        } else {
+            checkTableNames("bar", "baz", "dup");
+        }
+
         EasyMock.verify(connectionProvider, dialect);
     }
 
@@ -229,14 +263,19 @@ public class TableMonitorThreadTest {
     public void testDuplicateWithQualifiedWhitelist() throws Exception {
         final Set<String> whitelist = new HashSet<>(Arrays.asList("dup1.dup", "foo"));
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, whitelist, null);
+        tableMonitorThread = newTableMonitorThread(whitelist, null);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
 
         tableMonitorThread.start();
         tableMonitorThread.join();
-        checkTableIds(DUP1, FOO);
+
+        if (qualifiedTableNames) {
+            checkTableIds(DUP1, FOO);
+        } else {
+            checkTableNames("dup", "foo");
+        }
+
         EasyMock.verify(connectionProvider, dialect);
     }
 
@@ -244,15 +283,31 @@ public class TableMonitorThreadTest {
     public void testDuplicateWithQualifiedBlacklist() throws Exception {
         final Set<String> blacklist = new HashSet<>(Arrays.asList("dup1.dup", "foo"));
         EasyMock.expect(dialect.expressionBuilder()).andReturn(ExpressionBuilder.create()).anyTimes();
-        tableMonitorThread = new TableMonitorThread(dialect, connectionProvider, context,
-            POLL_INTERVAL, null, blacklist);
+        tableMonitorThread = newTableMonitorThread(null, blacklist);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
         EasyMock.replay(connectionProvider, dialect);
 
         tableMonitorThread.start();
         tableMonitorThread.join();
-        checkTableIds(DUP2, BAR, BAZ);
+
+        if (qualifiedTableNames) {
+            checkTableIds(DUP2, BAR, BAZ);
+        } else {
+            checkTableNames("dup", "bar", "baz");
+        }
         EasyMock.verify(connectionProvider, dialect);
+    }
+
+    private TableMonitorThread newTableMonitorThread(final Set<String> whitelist, final Set<String> blacklist) {
+        return new TableMonitorThread(
+                dialect,
+                connectionProvider,
+                context,
+                POLL_INTERVAL,
+                whitelist,
+                blacklist,
+                qualifiedTableNames
+        );
     }
 
     private interface Op {
