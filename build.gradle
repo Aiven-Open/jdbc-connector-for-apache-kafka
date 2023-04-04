@@ -158,7 +158,7 @@ configurations {
 dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
 
-    runtimeOnly "org.xerial:sqlite-jdbc:3.41.0.0"
+    runtimeOnly "org.xerial:sqlite-jdbc:3.41.2.1"
     runtimeOnly "org.postgresql:postgresql:42.5.4"
     runtimeOnly "net.sourceforge.jtds:jtds:1.3.1"
     runtimeOnly "net.snowflake:snowflake-jdbc:3.13.27"
