@@ -174,7 +174,7 @@ dependencies {
     testImplementation "org.powermock:powermock-api-easymock:2.0.9"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
-    testImplementation "commons-io:commons-io:2.11.0"
+    testImplementation "commons-io:commons-io:2.12.0"
     testImplementation "org.apache.derby:derby:$derbyVersion"
     testImplementation "org.apache.derby:derbyclient:$derbyVersion"
     testImplementation "org.apache.derby:derbyshared:$derbyVersion"
