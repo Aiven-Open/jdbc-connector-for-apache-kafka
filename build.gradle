@@ -121,9 +121,8 @@ ext {
     jacksonVersion = "2.15.2" // This Jackson is used in the tests.
     jupiterVersion = "5.9.3"
     jettyVersion = "11.0.15"
-    junit4Version = "4.13.2"
     servletVersion = "4.0.1"
-    testcontainersVersion = '1.17.6'
+    testcontainersVersion = '1.18.3'
     awaitilityVersion = '4.2.0'
     jupiterVersion = "5.9.1"
     log4jVersion = "2.20.0"
@@ -186,7 +185,6 @@ dependencies {
     integrationTestRuntimeOnly "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
-    integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
 
     integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
     integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
@@ -196,13 +194,13 @@ dependencies {
     integrationTestImplementation "org.eclipse.jetty:jetty-http:$jettyVersion"
     integrationTestImplementation "org.eclipse.jetty:jetty-server:$jettyVersion"
     integrationTestImplementation "org.eclipse.jetty:jetty-util:$jettyVersion"
-    integrationTestImplementation "junit:junit:$junit4Version" // This is for testcontainers
+    integrationTestImplementation "org.junit.jupiter:junit-jupiter:$jupiterVersion"
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
     integrationTestImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:postgresql:$testcontainersVersion"
     integrationTestImplementation "org.awaitility:awaitility:$awaitilityVersion"
-    integrationTestImplementation("org.assertj:assertj-db:2.0.2")
+    integrationTestImplementation "org.assertj:assertj-db:2.0.2"
 
     // Make test utils from 'test' available in 'integration-test'
     integrationTestImplementation sourceSets.test.output
