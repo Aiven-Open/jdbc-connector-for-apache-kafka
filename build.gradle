@@ -121,7 +121,6 @@ ext {
     jacksonVersion = "2.15.2" // This Jackson is used in the tests.
     jupiterVersion = "5.9.3"
     jettyVersion = "11.0.15"
-    junit4Version = "4.13.2"
     servletVersion = "4.0.1"
     testcontainersVersion = '1.17.6'
     awaitilityVersion = '4.2.0'
@@ -186,7 +185,6 @@ dependencies {
     integrationTestRuntimeOnly "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
-    integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
 
     integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
     integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
@@ -196,7 +194,7 @@ dependencies {
     integrationTestImplementation "org.eclipse.jetty:jetty-http:$jettyVersion"
     integrationTestImplementation "org.eclipse.jetty:jetty-server:$jettyVersion"
     integrationTestImplementation "org.eclipse.jetty:jetty-util:$jettyVersion"
-    integrationTestImplementation "junit:junit:$junit4Version" // This is for testcontainers
+    integrationTestImplementation "org.junit.jupiter:junit-jupiter:$jupiterVersion"
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
     integrationTestImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
