@@ -130,7 +130,7 @@ ext {
     // Integration tests are not necessary to change these
     slf4jVersion = "1.7.36"
     derbyVersion = "10.15.2.0"
-    mockitoVersion = '5.2.0'
+    mockitoVersion = '5.4.0'
 }
 
 sourceSets {
