@@ -215,6 +215,77 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
             )
         );
     }
+    
+    @Test
+    public void putPropagatesToDbWithAutoCreateAndPkModeKafkaHandleTombstone() throws Exception {
+        final Map<String, String> props = new HashMap<>();
+        props.put("connection.url", sqliteHelper.sqliteUri());
+        props.put("auto.create", "true");
+        props.put("pk.mode", "kafka");
+        props.put("pk.fields", "kafka_topic,kafka_partition,kafka_offset");
+        final String timeZoneID = "America/Los_Angeles";
+        final TimeZone timeZone = TimeZone.getTimeZone(timeZoneID);
+        props.put("db.timezone", timeZoneID);
+        props.put("handle.tombstone", "true");
+
+        final JdbcSinkTask task = new JdbcSinkTask();
+        task.initialize(mock(SinkTaskContext.class));
+
+        task.start(props);
+
+        final Struct struct = new Struct(SCHEMA)
+                .put("firstName", "Alex")
+                .put("lastName", "Smith")
+                .put("bool", true)
+                .put("short", (short) 1234)
+                .put("byte", (byte) -32)
+                .put("long", 12425436L)
+                .put("float", (float) 2356.3)
+                .put("double", -2436546.56457)
+                .put("age", 21)
+                .put("modified", new Date(1474661402123L));
+
+        final String topic = "atopic";
+
+        // Add a tombstone record
+        task.put(Collections.singleton(
+                new SinkRecord(topic, 1, null, null, null, null, 43)
+        ));
+
+        // Add a normal record
+        task.put(Collections.singleton(
+                new SinkRecord(topic, 1, null, null, SCHEMA, struct, 42)
+        ));
+
+        assertEquals(
+            1,
+            sqliteHelper.select(
+                "SELECT * FROM " + topic,
+                new SqliteHelper.ResultSetReadCallback() {
+                    @Override
+                    public void read(final ResultSet rs) throws SQLException {
+                        assertEquals(topic, rs.getString("kafka_topic"));
+                        assertEquals(1, rs.getInt("kafka_partition"));
+                        assertEquals(42, rs.getLong("kafka_offset"));
+                        assertEquals(struct.getString("firstName"), rs.getString("firstName"));
+                        assertEquals(struct.getString("lastName"), rs.getString("lastName"));
+                        assertEquals(struct.getBoolean("bool"), rs.getBoolean("bool"));
+                        assertEquals(struct.getInt8("byte").byteValue(), rs.getByte("byte"));
+                        assertEquals(struct.getInt16("short").shortValue(), rs.getShort("short"));
+                        assertEquals(struct.getInt32("age").intValue(), rs.getInt("age"));
+                        assertEquals(struct.getInt64("long").longValue(), rs.getLong("long"));
+                        assertEquals(struct.getFloat32("float"), rs.getFloat("float"), 0.01);
+                        assertEquals(struct.getFloat64("double"), rs.getDouble("double"), 0.01);
+                        final java.sql.Timestamp dbTimestamp = rs.getTimestamp(
+                            "modified",
+                            DateTimeUtils.getTimeZoneCalendar(timeZone)
+                        );
+                        assertEquals(((java.util.Date) struct.get("modified")).getTime(), dbTimestamp.getTime());
+                    }
+                }
+            )
+        );
+    }
 
     @Test
     public void retries() throws SQLException {

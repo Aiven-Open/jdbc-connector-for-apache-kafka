@@ -20,6 +20,7 @@ package io.aiven.connect.jdbc.sink;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -68,6 +69,17 @@ public class JdbcSinkTask extends SinkTask {
         if (records.isEmpty()) {
             return;
         }
+        // Skip tombstone records if handle.tombstone is true
+        final Collection<SinkRecord> filteredRecords = config.handleTombstone
+                ? records.stream()
+                .filter(record -> record.value() != null)
+                .collect(Collectors.toList())
+                : records;
+
+        if (filteredRecords.isEmpty()) {
+            return;
+        }
+
         final SinkRecord first = records.iterator().next();
         final int recordsCount = records.size();
         log.debug(

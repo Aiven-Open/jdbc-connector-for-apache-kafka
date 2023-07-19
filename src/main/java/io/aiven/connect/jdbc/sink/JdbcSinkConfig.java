@@ -182,6 +182,8 @@ public class JdbcSinkConfig extends JdbcConfig {
     private static final String DATAMAPPING_GROUP = "Data Mapping";
     private static final String DDL_GROUP = "DDL Support";
     private static final String RETRIES_GROUP = "Retries";
+    public static final String HANDLE_TOMBSTONE_CONFIG = "handle.tombstone";
+    private static final String HANDLE_TOMBSTONE_DOC = "Skip tombstone records";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef();
 
@@ -354,7 +356,11 @@ public class JdbcSinkConfig extends JdbcConfig {
                 RETRIES_GROUP,
                 2,
                 ConfigDef.Width.SHORT,
-                RETRY_BACKOFF_MS_DISPLAY);
+                RETRY_BACKOFF_MS_DISPLAY)
+            .define(HANDLE_TOMBSTONE_CONFIG,
+                ConfigDef.Type.BOOLEAN, false,
+                ConfigDef.Importance.MEDIUM, HANDLE_TOMBSTONE_DOC);
+
     }
 
     public final String tableNameFormat;
@@ -370,6 +376,7 @@ public class JdbcSinkConfig extends JdbcConfig {
     public final List<String> pkFields;
     public final Set<String> fieldsWhitelist;
     public final TimeZone timeZone;
+    public final boolean handleTombstone;
 
     public JdbcSinkConfig(final Map<?, ?> props) {
         super(CONFIG_DEF, props);
@@ -387,6 +394,7 @@ public class JdbcSinkConfig extends JdbcConfig {
         fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
         final String dbTimeZone = getString(DB_TIMEZONE_CONFIG);
         timeZone = TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
+        handleTombstone = getBoolean(HANDLE_TOMBSTONE_CONFIG);
     }
 
     static Map<String, String> topicToTableMapping(final List<String> value) {

@@ -158,6 +158,13 @@ Data Mapping
   * Default: ""
   * Importance: medium
 
+``handle.tombstone``
+  Controls whether tombstone (deletion) records in Kafka are processed by the connector. If set to `true`, tombstone records are skipped.
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
 DDL Support
 ^^^^^^^^^^^
 
