@@ -110,7 +110,7 @@ publishing {
 }
 
 ext {
-    kafkaVersion = "2.2.0"
+    kafkaVersion = "7.4.1-ce"
     slf4jVersion = "1.7.36"
     derbyVersion = "10.15.2.0"
 
