@@ -164,7 +164,7 @@ dependencies {
     runtimeOnly "com.microsoft.sqlserver:mssql-jdbc:11.2.3.jre11"
     runtimeOnly "mysql:mysql-connector-java:8.0.33"
 
-    implementation "com.google.guava:guava:31.1-jre"
+    implementation "com.google.guava:guava:32.1.2-jre"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
 
     testImplementation "junit:junit:4.13.2"
