@@ -36,6 +36,7 @@ import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
+import org.apache.kafka.connect.source.SourceTaskContext;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
@@ -55,7 +56,9 @@ import org.slf4j.LoggerFactory;
 public class JdbcSourceTask extends SourceTask {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
+    private static final long EMPTY_POLL_DURATION_MS = 1000L;
 
+    private Thread pollThread;
     private Time time;
     private JdbcSourceTaskConfig config;
     private DatabaseDialect dialect;
@@ -69,6 +72,12 @@ public class JdbcSourceTask extends SourceTask {
 
     public JdbcSourceTask(final Time time) {
         this.time = time;
+    }
+
+    @Override
+    public void initialize(final SourceTaskContext context) {
+        super.initialize(context);
+        pollThread = Thread.currentThread();
     }
 
     @Override
@@ -268,7 +277,13 @@ public class JdbcSourceTask extends SourceTask {
     public void stop() throws ConnectException {
         log.info("Stopping JDBC source task");
         running.set(false);
-        // All resources are closed at the end of 'poll()' when no longer running or
+        if (Thread.currentThread().equals(pollThread)) {
+            // Later versions of Kafka Connect invoke `stop()` on the same thread as `poll()`,
+            // and then never invoke poll() again
+            // So, we have to clean up everything now
+            closeResources();
+        }
+        // Otherwise, all resources are closed at the end of 'poll()' when no longer running or
         // if there is an error
     }
 
@@ -298,7 +313,17 @@ public class JdbcSourceTask extends SourceTask {
     public List<SourceRecord> poll() throws InterruptedException {
         log.trace("Polling for new data");
 
+        // We don't want to block in this method too long, for two reasons:
+        // 1 - Newer versions of Kafka Connect don't invoke stop() on a separate thread,
+        //     so we have to return from this method before the task can be shut down
+        // 2 - If the connector is paused, its status won't be updated in the Kafka Connect
+        //     REST API until we return from this method
+        final long deadline = time.milliseconds() + EMPTY_POLL_DURATION_MS;
         while (running.get()) {
+            if (time.milliseconds() >= deadline) {
+                return null;
+            }
+
             final TableQuerier querier = tableQueue.peek();
 
             if (!querier.querying()) {
@@ -351,12 +376,14 @@ public class JdbcSourceTask extends SourceTask {
             }
         }
 
-        // Only in case of shutdown
-        final TableQuerier querier = tableQueue.peek();
-        if (querier != null) {
-            resetAndRequeueHead(querier);
+        if (!running.get()) {
+            // Only in case of shutdown
+            final TableQuerier querier = tableQueue.peek();
+            if (querier != null) {
+                resetAndRequeueHead(querier);
+            }
+            closeResources();
         }
-        closeResources();
         return null;
     }
 

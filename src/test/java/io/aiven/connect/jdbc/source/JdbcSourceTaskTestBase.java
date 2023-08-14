@@ -37,6 +37,10 @@ import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapp
 
 public class JdbcSourceTaskTestBase {
 
+    // Shameless hack: use a (much) lower poll interval than the empty poll duration (i.e.,
+    // how long we'll block in poll() for before just returning a null batch of records)
+    protected static final long POLL_INTERVAL_MS = 100;
+
     protected static final String SINGLE_TABLE_NAME = "test";
     protected static final TableId SINGLE_TABLE_ID = new TableId(null, null, SINGLE_TABLE_NAME);
     protected static final Map<String, String> SINGLE_TABLE_PARTITION =
@@ -101,6 +105,7 @@ public class JdbcSourceTaskTestBase {
         props.put(JdbcSourceTaskConfig.TABLES_CONFIG, SINGLE_TABLE_NAME);
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG, TOPIC_PREFIX);
+        props.put(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG, Long.toString(POLL_INTERVAL_MS));
         if (completeMapping) {
             props.put(JdbcSourceTaskConfig.NUMERIC_MAPPING_CONFIG, NumericMapping.BEST_FIT.toString());
         } else {
@@ -115,6 +120,7 @@ public class JdbcSourceTaskTestBase {
         props.put(JdbcSourceTaskConfig.TABLES_CONFIG, SINGLE_TABLE_NAME + "," + SECOND_TABLE_NAME);
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG, TOPIC_PREFIX);
+        props.put(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG, Long.toString(POLL_INTERVAL_MS));
         return props;
     }
 
