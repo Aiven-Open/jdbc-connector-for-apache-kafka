@@ -110,7 +110,7 @@ publishing {
 }
 
 ext {
-    kafkaVersion = "2.2.0"
+    kafkaVersion = "3.3.2"
     slf4jVersion = "1.7.36"
     derbyVersion = "10.16.1.1"
 
@@ -187,13 +187,7 @@ dependencies {
     integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
 
     integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
-    integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
-    integrationTestImplementation "javax.servlet:javax.servlet-api:$servletVersion"
     integrationTestImplementation "org.apache.avro:avro:$avroVersion"
-    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
-    integrationTestImplementation "org.eclipse.jetty:jetty-http:$jettyVersion"
-    integrationTestImplementation "org.eclipse.jetty:jetty-server:$jettyVersion"
-    integrationTestImplementation "org.eclipse.jetty:jetty-util:$jettyVersion"
     integrationTestImplementation "org.junit.jupiter:junit-jupiter:$jupiterVersion"
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version

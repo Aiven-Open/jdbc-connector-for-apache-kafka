@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.source.ExactlyOnceSupport;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
@@ -229,6 +230,30 @@ public class JdbcSourceConnectorTest {
         connector = new JdbcSourceConnector();
         connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
         assertThrows(ConnectException.class, () -> connector.start(connProps));
+    }
+
+    @Test
+    public void testExactlyOnceSupport() {
+        connProps.remove(JdbcSourceConnectorConfig.MODE_CONFIG);
+        assertEquals(ExactlyOnceSupport.UNSUPPORTED, connector.exactlyOnceSupport(connProps));
+
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, null);
+        assertEquals(ExactlyOnceSupport.UNSUPPORTED, connector.exactlyOnceSupport(connProps));
+
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, "unsupported mode");
+        assertEquals(ExactlyOnceSupport.UNSUPPORTED, connector.exactlyOnceSupport(connProps));
+
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
+        assertEquals(ExactlyOnceSupport.UNSUPPORTED, connector.exactlyOnceSupport(connProps));
+
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_TIMESTAMP);
+        assertEquals(ExactlyOnceSupport.UNSUPPORTED, connector.exactlyOnceSupport(connProps));
+
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_INCREMENTING);
+        assertEquals(ExactlyOnceSupport.SUPPORTED, connector.exactlyOnceSupport(connProps));
+
+        connProps.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+        assertEquals(ExactlyOnceSupport.SUPPORTED, connector.exactlyOnceSupport(connProps));
     }
 
     private void assertTaskConfigsHaveParentConfigs(final List<Map<String, String>> configs) {

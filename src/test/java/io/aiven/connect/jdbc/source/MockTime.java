@@ -18,6 +18,7 @@
 package io.aiven.connect.jdbc.source;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.apache.kafka.common.utils.Time;
 
@@ -60,4 +61,9 @@ public class MockTime implements Time {
         this.nanos += TimeUnit.NANOSECONDS.convert(ms, TimeUnit.MILLISECONDS);
     }
 
+    @Override
+    public void waitObject(final Object obj, final Supplier<Boolean> condition, final long deadlineMs) {
+        // Required by a later version of the MockTime interface; we don't use this method at all in our tests
+        throw new UnsupportedOperationException();
+    }
 }
