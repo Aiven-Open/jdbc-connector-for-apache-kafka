@@ -29,6 +29,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.source.ExactlyOnceSupport;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.util.ConnectorUtils;
 
@@ -214,5 +215,16 @@ public class JdbcSourceConnector extends SourceConnector {
     @Override
     public ConfigDef config() {
         return JdbcSourceConnectorConfig.CONFIG_DEF;
+    }
+
+    @Override
+    public ExactlyOnceSupport exactlyOnceSupport(final Map<String, String> props) {
+        final String rawMode = props.get(JdbcSourceConnectorConfig.MODE_CONFIG);
+        // We don't support exactly-once in bulk mode (there's no offsets tracking), and we
+        // don't currently support exactly-once in timestamp mode (there may be multiple rows
+        // with the same timestamp, which can lead to either data loss or duplicates on restart)
+        final boolean supported = JdbcSourceConnectorConfig.MODE_INCREMENTING.equals(rawMode)
+                || JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING.equals(rawMode);
+        return supported ? ExactlyOnceSupport.SUPPORTED : ExactlyOnceSupport.UNSUPPORTED;
     }
 }
