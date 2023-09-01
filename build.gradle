@@ -122,7 +122,7 @@ ext {
     jupiterVersion = "5.10.0"
     jettyVersion = "11.0.15"
     servletVersion = "4.0.1"
-    testcontainersVersion = '1.18.3'
+    testcontainersVersion = '1.19.0'
     awaitilityVersion = '4.2.0'
     jupiterVersion = "5.9.1"
     log4jVersion = "2.20.0"
