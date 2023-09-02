@@ -163,6 +163,7 @@ dependencies {
     runtimeOnly "net.snowflake:snowflake-jdbc:3.14.0"
     runtimeOnly "com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre11"
     runtimeOnly "mysql:mysql-connector-java:8.0.33"
+    runtimeOnly "com.clickhouse:clickhouse-jdbc:0.4.6"
 
     implementation "com.google.guava:guava:32.1.2-jre"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
