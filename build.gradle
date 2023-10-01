@@ -168,7 +168,7 @@ dependencies {
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
 
     testImplementation "junit:junit:4.13.2"
-    testImplementation "org.easymock:easymock:5.1.0"
+    testImplementation "org.easymock:easymock:5.2.0"
     testImplementation "org.powermock:powermock-module-junit4:2.0.9"
     testImplementation "org.powermock:powermock-api-easymock:2.0.9"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
