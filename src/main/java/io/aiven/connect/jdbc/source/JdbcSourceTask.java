@@ -39,7 +39,6 @@ import org.apache.kafka.connect.source.SourceTask;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.dialect.DatabaseDialects;
-import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.TableId;
@@ -59,7 +58,7 @@ public class JdbcSourceTask extends SourceTask {
     private Time time;
     private JdbcSourceTaskConfig config;
     private DatabaseDialect dialect;
-    private CachedConnectionProvider cachedConnectionProvider;
+    private SourceConnectionProvider cachedConnectionProvider;
     private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -155,6 +154,11 @@ public class JdbcSourceTask extends SourceTask {
             = config.getLong(JdbcSourceTaskConfig.INCREMENTING_INITIAL_VALUE_CONFIG);
         final boolean validateNonNulls
             = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
+
+        if (config.getBoolean(JdbcSourceTaskConfig.INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG)) {
+            new StartupMetricUpdater(dialect, cachedConnectionProvider, config)
+                    .initializeAndExecuteMetric(properties, query);
+        }
 
         for (final String tableOrQuery : tablesOrQuery) {
             final List<Map<String, String>> tablePartitionsToCheck;

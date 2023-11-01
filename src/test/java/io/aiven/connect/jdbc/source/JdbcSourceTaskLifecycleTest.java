@@ -17,9 +17,15 @@
 
 package io.aiven.connect.jdbc.source;
 
+import javax.management.ObjectName;
+
+import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -28,6 +34,7 @@ import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 
 import org.easymock.EasyMock;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -37,6 +44,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JdbcSourceTask.class})
@@ -48,6 +56,18 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
     @Mock
     private Connection conn;
+
+    @Before
+    public void beforeEach() throws Exception {
+        super.setup();
+        // cleanup JMX beans
+        final ObjectName mbeanQuery = new ObjectName("io.aiven.connect.jdbc.initialImportCount:*");
+        final Set<ObjectName> objectNamesToClean = ManagementFactory.getPlatformMBeanServer()
+                .queryNames(mbeanQuery, null);
+        for (final ObjectName objectName : objectNamesToClean) {
+            ManagementFactory.getPlatformMBeanServer().unregisterMBean(objectName);
+        }
+    }
 
     @Test(expected = ConnectException.class)
     public void testMissingParentConfig() {
@@ -172,7 +192,80 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
         assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
             time.milliseconds());
         validatePollResultTable(records, 1, SECOND_TABLE_NAME);
+    }
 
+    @Test
+    public void testStartupMetricMultipleTables() throws Exception {
+        db.createTable(SINGLE_TABLE_NAME, "id", "INT");
+        db.createTable(SECOND_TABLE_NAME, "id", "INT");
+
+        final int mbeanCountBefore = ManagementFactory.getPlatformMBeanServer().getMBeanCount();
+
+        final Map<String, String> properties = twoTableConfig();
+        properties.put(JdbcSourceTaskConfig.INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG, Boolean.TRUE.toString());
+
+        db.insert(SINGLE_TABLE_NAME, "id", 1);
+        db.insert(SECOND_TABLE_NAME, "id", 2);
+        db.insert(SECOND_TABLE_NAME, "id", 3);
+
+        task.start(properties);
+        // wait for task to execute
+        task.poll();
+
+        assertEquals((Integer) (mbeanCountBefore + 2), ManagementFactory.getPlatformMBeanServer().getMBeanCount());
+
+        final ObjectName mbeanQuery = new ObjectName("io.aiven.connect.jdbc.initialImportCount:"  + "*");
+        final Set<ObjectName> objectNames = ManagementFactory.getPlatformMBeanServer().queryNames(mbeanQuery, null);
+
+        assertEquals(2, objectNames.size());
+
+        Optional<ObjectName> objectName = objectNames.stream().filter(filterByTableName(SINGLE_TABLE_NAME)).findFirst();
+        assertTrue(objectName.isPresent());
+        assertEquals(1L, ManagementFactory.getPlatformMBeanServer().getAttribute(objectName.get(), "Counter"));
+
+        objectName = objectNames.stream().filter(filterByTableName(SECOND_TABLE_NAME)).findFirst();
+        assertTrue(objectName.isPresent());
+        assertEquals(2L, ManagementFactory.getPlatformMBeanServer().getAttribute(objectName.get(), "Counter"));
+    }
+
+    @Test
+    public void testStartupMetricQuery() throws Exception {
+        db.createTable(SINGLE_TABLE_NAME, "id", "INT");
+        db.createTable(SECOND_TABLE_NAME, "id", "INT");
+
+        final int mbeanCountBefore = ManagementFactory.getPlatformMBeanServer().getMBeanCount();
+
+        final Map<String, String> properties = twoTableConfig();
+        properties.put(JdbcSourceTaskConfig.TABLES_CONFIG, "");
+        properties.put(JdbcSourceTaskConfig.QUERY_CONFIG,
+                "SELECT * FROM \"" + SINGLE_TABLE_NAME + "\" WHERE \"id\" > 0");
+        properties.put("name", "soneTaskName");
+        properties.put(JdbcSourceTaskConfig.INITIAL_MESSAGE_COUNT_METRIC_ENABLED_CONFIG, Boolean.TRUE.toString());
+
+        db.insert(SINGLE_TABLE_NAME, "id", 1);
+        db.insert(SINGLE_TABLE_NAME, "id", 2);
+        db.insert(SINGLE_TABLE_NAME, "id", 3);
+
+        task.start(properties);
+        // wait for task to execute
+        task.poll();
+
+        assertEquals((Integer) (mbeanCountBefore + 1), ManagementFactory.getPlatformMBeanServer().getMBeanCount());
+
+        final ObjectName mbeanQuery = new ObjectName("io.aiven.connect.jdbc.initialImportCount:"  + "*");
+        final Set<ObjectName> objectNames = ManagementFactory.getPlatformMBeanServer().queryNames(mbeanQuery, null);
+
+        assertEquals(1, objectNames.size());
+
+        final Optional<ObjectName> objectName = objectNames.stream().findFirst();
+        assertEquals("io.aiven.connect.jdbc.initialImportCount:task=\"soneTaskName\",topic=\"test-\"",
+                objectName.get().getCanonicalName());
+
+        assertEquals(3L, ManagementFactory.getPlatformMBeanServer().getAttribute(objectName.get(), "Counter"));
+    }
+
+    private static Predicate<ObjectName> filterByTableName(final String tableName) {
+        return objectName -> ("\"" + tableName + "\"").equals(objectName.getKeyProperty("table"));
     }
 
     @Test
