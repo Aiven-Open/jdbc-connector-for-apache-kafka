@@ -36,6 +36,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
 import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
@@ -133,6 +134,8 @@ public interface DatabaseDialect extends ConnectionProvider {
      * @return the dialect's name; never null
      */
     String name();
+
+    public void setDialectSpecificProperties(final JdbcConfig config);
 
     /**
      * Create a new prepared statement using the specified database connection.

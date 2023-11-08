@@ -216,4 +216,17 @@ public class OracleDatabaseDialect extends GenericDatabaseDialect {
             .replaceAll("(:thin:[^/]*)/([^@]*)@", "$1/****@")
             .replaceAll("(:oci[^:]*:[^/]*)/([^@]*)@", "$1/****@");
     }
+
+    @Override
+    public void setDialectSpecificProperties(
+        final JdbcConfig config
+    ) {
+        if (config.getOracleEncryptionClient() != null) {
+            System.setProperty(JdbcConfig.ORACLE_ENCRYPTION_CLIENT_CONFIG, config.getOracleEncryptionClient());
+        }
+
+        if (config.getOracleChecksumClient() != null) {
+            System.setProperty(JdbcConfig.ORACLE_CHECKSUM_CLIENT_CONFIG, config.getOracleChecksumClient());
+        }
+    }
 }
