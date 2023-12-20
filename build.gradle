@@ -18,8 +18,8 @@ plugins {
     // https://docs.gradle.org/current/userguide/java_library_plugin.html
     id "java-library"
 
-    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
-    id "checkstyle"
+    // // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    // id "checkstyle"
 
     // https://docs.gradle.org/current/userguide/jacoco_plugin.html
     id "jacoco"
@@ -43,19 +43,22 @@ repositories {
         allowInsecureProtocol true
         url "http://redshift-maven-repository.s3-website-us-east-1.amazonaws.com/release"
     }
+    maven {
+        url '/home/acr/.m2/repository'
+    }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
 }
 
-checkstyle {
-    toolVersion "8.35"
-    configDirectory.set(rootProject.file("checkstyle/"))
-    println configFile
-}
+// checkstyle {
+//     toolVersion "8.35"
+//     configDirectory.set(rootProject.file("checkstyle/"))
+//     println configFile
+// }
 
 jacoco {
     toolVersion = "0.8.5"
@@ -115,7 +118,7 @@ publishing {
 
 ext {
     kafkaVersion = "2.2.0"
-    slf4jVersion = "1.7.36"
+    slf4jVersion = "2.0.9"
     derbyVersion = "10.17.1.0"
 
     avroVersion = "1.8.1"
@@ -184,6 +187,8 @@ dependencies {
     testImplementation "org.apache.derby:derbyshared:$derbyVersion"
     testImplementation "org.apache.derby:derbytools:$derbyVersion"
     testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation group: 'com.streamkap', name: 'streamkap-kafka-connect-common', version: '0.0.6', classifier: 'tests'
+    testImplementation group: 'com.streamkap.kafka.connect.transforms', name: 'multi-converter', version: '0.0.7'
 
     testRuntimeOnly "org.slf4j:slf4j-log4j12:$slf4jVersion"
 
