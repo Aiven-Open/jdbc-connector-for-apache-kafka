@@ -7,7 +7,12 @@ import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
+
+import java.nio.ByteBuffer;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HexFormat;
 import java.util.List;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -79,11 +84,31 @@ public class RedshiftDatabaseDialect extends PostgreSqlDatabaseDialect {
       case STRING:
         return "VARCHAR(5000)";
       case BYTES:
-        return "BYTEA";
+        // return "VARBYTE";
+        return "VARCHAR";
       case ARRAY:
         return getSqlTypeFromSchema(schema.valueSchema()) + "[]";
       default:
         return null;
+    }
+  }
+
+  @Override
+  protected boolean maybeBindPrimitive(PreparedStatement statement, int index, Schema schema, Object value)
+      throws SQLException {
+    if (schema.type() == Schema.Type.BYTES) {
+      final byte[] bytes;
+      if (value instanceof ByteBuffer) {
+        final ByteBuffer buffer = ((ByteBuffer) value).slice();
+        bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+      } else {
+        bytes = (byte[]) value;
+      }
+      statement.setString(index, HexFormat.of().formatHex(bytes));
+      return true;
+    } else {
+      return super.maybeBindPrimitive(statement, index, schema, value);
     }
   }
 

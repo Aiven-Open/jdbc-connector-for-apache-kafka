@@ -135,7 +135,7 @@ ext {
     log4jVersion = "2.20.0"
 
     // Integration tests are not necessary to change these
-    slf4jVersion = "1.7.36"
+    slf4jVersion = "2.0.9"
     derbyVersion = "10.15.2.0"
     mockitoVersion = '5.5.0'
 }
@@ -173,7 +173,7 @@ dependencies {
 
     implementation "com.google.guava:guava:32.1.3-jre"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
-    implementation "com.amazon.redshift:redshift-jdbc42:1.2.41.1065"
+    implementation "com.amazon.redshift:redshift-jdbc42:2.1.0.24"
 
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.easymock:easymock:5.2.0"

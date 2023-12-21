@@ -39,10 +39,11 @@ public class RedshiftIT extends StreamkapSinkITBase<JdbcSinkTask> {
 
         config.put("connection.url", "jdbc:redshift://admin.424842667740.us-west-2.redshift-serverless.amazonaws.com:5439/dev?user=streamkap_user&password=Admin1234");
         config.put("connection.user", "streamkap_user");
-        config.put("connection.password", "Admin1234");
+        config.put("connection.password", "*****");
         config.put("dialect.name", "RedshiftDatabaseDialect");
         config.put("insert.mode", "multi");
         config.put("auto.create", "true");
+        config.put("table.name.format", "dev.public.${topic}");
 
         return config;
     }
