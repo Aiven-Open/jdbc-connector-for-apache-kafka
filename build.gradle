@@ -119,7 +119,7 @@ ext {
     confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.15.2" // This Jackson is used in the tests.
-    jupiterVersion = "5.10.0"
+    jupiterVersion = "5.10.1"
     jettyVersion = "11.0.15"
     servletVersion = "4.0.1"
     testcontainersVersion = '1.19.3'
