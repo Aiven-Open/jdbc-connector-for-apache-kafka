@@ -120,7 +120,7 @@ ext {
     hamcrestVersion = "2.2"
     jacksonVersion = "2.15.2" // This Jackson is used in the tests.
     jupiterVersion = "5.10.1"
-    jettyVersion = "11.0.15"
+    jettyVersion = "12.0.6"
     servletVersion = "4.0.1"
     testcontainersVersion = '1.19.3'
     awaitilityVersion = '4.2.0'
