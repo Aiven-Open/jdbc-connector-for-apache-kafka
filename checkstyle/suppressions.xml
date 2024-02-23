@@ -47,7 +47,7 @@
 
 
     <suppress checks="ClassFanOutComplexity"
-              files="(DatabaseDialect|GenericDatabaseDialect).java"/>
+              files="(DatabaseDialect|GenericDatabaseDialect|JdbcSourceTask).java"/>
 
     <suppress checks="ClassDataAbstractionCoupling" files=".*Test|ConnectRunner.java"/>
     <suppress checks="JavaNCSS" files=".*Test\.java"/>
