@@ -60,6 +60,20 @@ public class JdbcConfig extends AbstractConfig {
             + "specific dialect. All properly-packaged dialects in the JDBC connector plugin "
             + "can be used.";
 
+    public static final String ORACLE_ENCRYPTION_CLIENT_CONFIG = "oracle.net.encryption_client";
+    private static final String ORACLE_ENCRYPTION_CLIENT_DISPLAY = "Oracle encryption";
+    private static final String ORACLE_ENCRYPTION_CLIENT_DOC =
+        "This parameter defines the level of security that the client wants to negotiate with "
+            + "the server. The permitted values are \"REJECTED\", \"ACCEPTED\", \"REQUESTED\" and "
+            + "\"REQUIRED\"";
+
+    public static final String ORACLE_CHECKSUM_CLIENT_CONFIG = "oracle.net.crypto_checksum_client";
+    private static final String ORACLE_CHECKSUM_CLIENT_DISPLAY = "Oracle crypto checksum";
+    private static final String ORACLE_CHECKSUM_CLIENT_DOC =
+        "This parameter defines the level of security that the client wants to negotiate with "
+            + "the server for data integrity. The permitted values are \"REJECTED\", \"ACCEPTED\", "
+            + "\"REQUESTED\" and \"REQUIRED\"";
+
     public static final String SQL_QUOTE_IDENTIFIERS_CONFIG = "sql.quote.identifiers";
     private static final Boolean SQL_QUOTE_IDENTIFIERS_DEFAULT = true;
     private static final String SQL_QUOTE_IDENTIFIERS_DOC =
@@ -81,6 +95,14 @@ public class JdbcConfig extends AbstractConfig {
 
     public final String getConnectionUser() {
         return getString(CONNECTION_USER_CONFIG);
+    }
+
+    public final String getOracleEncryptionClient() {
+        return getString(JdbcConfig.ORACLE_ENCRYPTION_CLIENT_CONFIG);
+    }
+
+    public final String getOracleChecksumClient() {
+        return getString(JdbcConfig.ORACLE_CHECKSUM_CLIENT_CONFIG);
     }
 
     public final TimeZone getDBTimeZone() {
@@ -168,6 +190,36 @@ public class JdbcConfig extends AbstractConfig {
             ConfigDef.Width.MEDIUM,
             DIALECT_NAME_DISPLAY,
             DatabaseDialectRecommender.INSTANCE
+        );
+    }
+
+    protected static void defineOracleEncryptionClient(final ConfigDef configDef, final int orderInGroup) {
+        configDef.define(
+            JdbcConfig.ORACLE_ENCRYPTION_CLIENT_CONFIG,
+            ConfigDef.Type.STRING,
+            null,
+            null,
+            ConfigDef.Importance.LOW,
+            JdbcConfig.ORACLE_ENCRYPTION_CLIENT_DOC,
+            DATABASE_GROUP,
+            orderInGroup,
+            ConfigDef.Width.LONG,
+            JdbcConfig.ORACLE_ENCRYPTION_CLIENT_DISPLAY
+        );
+    }
+
+    protected static void defineOracleChecksumClient(final ConfigDef configDef, final int orderInGroup) {
+        configDef.define(
+            JdbcConfig.ORACLE_CHECKSUM_CLIENT_CONFIG,
+            ConfigDef.Type.STRING,
+            null,
+            null,
+            ConfigDef.Importance.LOW,
+            JdbcConfig.ORACLE_CHECKSUM_CLIENT_DOC,
+            DATABASE_GROUP,
+            orderInGroup,
+            ConfigDef.Width.LONG,
+            JdbcConfig.ORACLE_CHECKSUM_CLIENT_DISPLAY
         );
     }
 

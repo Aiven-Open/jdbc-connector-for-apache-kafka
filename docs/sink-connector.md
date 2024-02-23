@@ -52,6 +52,10 @@ For example, for PostgreSQL the connection URL might look like
 jdbc:postgresql://localhost:5432/test?user=fred&password=secret&ssl=true
 ```
 
+For Oracle databases it's possible to configure [network data
+encryption and integrity](https://docs.oracle.com/cd/B19306_01/network.102/b14268/asojbdc.htm#g1007990)
+by setting `oracle.net.encryption_client` and `oracle.net.crypto_checksum_client`.
+
 ### SQL Dialects
 
 Different databases use different dialects of SQL. The connector

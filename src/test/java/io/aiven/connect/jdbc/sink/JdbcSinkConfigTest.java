@@ -22,9 +22,12 @@ import java.util.Map;
 
 import org.apache.kafka.common.config.ConfigException;
 
+import io.aiven.connect.jdbc.config.JdbcConfig;
+
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 
 public class JdbcSinkConfigTest {
@@ -71,4 +74,22 @@ public class JdbcSinkConfigTest {
         new JdbcSinkConfig(props);
     }
 
+    @Test
+    public void shouldParseOracleSpecificConfiguration() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+
+        JdbcSinkConfig config = new JdbcSinkConfig(props);
+
+        assertNull(config.getOracleEncryptionClient());
+        assertNull(config.getOracleChecksumClient());
+
+        props.put(JdbcConfig.ORACLE_ENCRYPTION_CLIENT_CONFIG, "REQUIRED");
+        props.put(JdbcConfig.ORACLE_CHECKSUM_CLIENT_CONFIG, "ACCEPTED");
+
+        config = new JdbcSinkConfig(props);
+
+        assertEquals(config.getOracleEncryptionClient(), "REQUIRED");
+        assertEquals(config.getOracleChecksumClient(), "ACCEPTED");
+    }
 }

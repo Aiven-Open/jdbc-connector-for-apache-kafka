@@ -186,6 +186,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     }
 
     @Override
+    public void setDialectSpecificProperties(
+        final JdbcConfig config
+    ) {
+    }
+
+    @Override
     public String name() {
         return getClass().getSimpleName().replace("DatabaseDialect", "");
     }

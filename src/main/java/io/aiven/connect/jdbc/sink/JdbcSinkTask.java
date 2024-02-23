@@ -58,6 +58,7 @@ public class JdbcSinkTask extends SinkTask {
             final String connectionUrl = config.getConnectionUrl();
             dialect = DatabaseDialects.findBestFor(connectionUrl, config);
         }
+        dialect.setDialectSpecificProperties(config);
         final DbStructure dbStructure = new DbStructure(dialect);
         log.info("Initializing writer using SQL dialect: {}", dialect.getClass().getSimpleName());
         writer = new JdbcDbWriter(config, dialect, dbStructure);

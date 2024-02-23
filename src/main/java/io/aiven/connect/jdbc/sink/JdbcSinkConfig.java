@@ -194,6 +194,8 @@ public class JdbcSinkConfig extends JdbcConfig {
         defineDbTimezone(CONFIG_DEF, ++orderInGroup);
         defineDialectName(CONFIG_DEF, ++orderInGroup);
         defineSqlQuoteIdentifiers(CONFIG_DEF, ++orderInGroup);
+        defineOracleEncryptionClient(CONFIG_DEF, ++orderInGroup);
+        defineOracleChecksumClient(CONFIG_DEF, ++orderInGroup);
 
         // Writes
         CONFIG_DEF
