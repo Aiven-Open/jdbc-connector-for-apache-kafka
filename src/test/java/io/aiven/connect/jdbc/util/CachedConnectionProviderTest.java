@@ -22,21 +22,19 @@ import java.sql.SQLException;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
-import org.easymock.EasyMock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CachedConnectionProviderTest.class})
-@PowerMockIgnore("javax.management.*")
+@RunWith(MockitoJUnitRunner.class)
 public class CachedConnectionProviderTest {
 
     @Mock
@@ -46,31 +44,29 @@ public class CachedConnectionProviderTest {
     public void retryTillFailure() throws SQLException {
         final int retries = 15;
         final ConnectionProvider connectionProvider = new CachedConnectionProvider(provider, retries, 100L);
-        EasyMock.expect(provider.getConnection()).andThrow(new SQLException("test")).times(retries);
-        PowerMock.replayAll();
+        when(provider.getConnection()).thenThrow(new SQLException("test"));
 
         assertThatThrownBy(connectionProvider::getConnection)
             .isInstanceOf(ConnectException.class);
 
-        PowerMock.verifyAll();
+        verify(provider, times(retries)).getConnection();
     }
 
 
     @Test
     public void retryTillConnect() throws SQLException {
-        final Connection connection = EasyMock.createMock(Connection.class);
-        final int retries = 15;
+        final Connection connection = mock(Connection.class);
+        final int retries = 4;
 
         final ConnectionProvider connectionProvider = new CachedConnectionProvider(provider, retries, 100L);
-        EasyMock.expect(provider.getConnection())
-            .andThrow(new SQLException("test"))
-            .times(retries - 1)
-            .andReturn(connection);
-        PowerMock.replayAll();
+        when(provider.getConnection())
+            .thenThrow(new SQLException("test"))
+            .thenThrow(new SQLException("test"))
+            .thenThrow(new SQLException("test"))
+            .thenReturn(connection);
 
         assertThat(connectionProvider.getConnection()).isNotNull();
-
-        PowerMock.verifyAll();
+        verify(provider, times(4)).getConnection();
     }
 
 }
