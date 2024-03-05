@@ -18,7 +18,6 @@
 package io.aiven.connect.jdbc.source;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +36,7 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TimestampIncrementingCriteriaTest {
 
@@ -77,25 +76,25 @@ public class TimestampIncrementingCriteriaTest {
             criteria = this.criteria;
         }
         final TimestampIncrementingOffset offset = criteria.extractValues(schema, record, null);
-        assertEquals(expected, offset.getIncrementingOffset().longValue());
+        assertThat(offset.getIncrementingOffset()).isEqualTo(expected);
     }
 
     @Test
-    public void extractIntOffset() throws SQLException {
+    public void extractIntOffset() {
         schema = SchemaBuilder.struct().field("id", SchemaBuilder.INT32_SCHEMA).build();
         record = new Struct(schema).put("id", 42);
         assertExtractedOffset(42L, schema, record);
     }
 
     @Test
-    public void extractLongOffset() throws SQLException {
+    public void extractLongOffset() {
         schema = SchemaBuilder.struct().field("id", SchemaBuilder.INT64_SCHEMA).build();
         record = new Struct(schema).put("id", 42L);
         assertExtractedOffset(42L, schema, record);
     }
 
     @Test
-    public void extractDecimalOffset() throws SQLException {
+    public void extractDecimalOffset() {
         final Schema decimalSchema = Decimal.schema(0);
         schema = SchemaBuilder.struct().field("id", decimalSchema).build();
         record = new Struct(schema).put("id", new BigDecimal(42));
@@ -103,7 +102,7 @@ public class TimestampIncrementingCriteriaTest {
     }
 
     @Test(expected = ConnectException.class)
-    public void extractTooLargeDecimalOffset() throws SQLException {
+    public void extractTooLargeDecimalOffset() {
         final Schema decimalSchema = Decimal.schema(0);
         schema = SchemaBuilder.struct().field("id", decimalSchema).build();
         record = new Struct(schema).put(
@@ -113,7 +112,7 @@ public class TimestampIncrementingCriteriaTest {
     }
 
     @Test(expected = ConnectException.class)
-    public void extractFractionalDecimalOffset() throws SQLException {
+    public void extractFractionalDecimalOffset() {
         final Schema decimalSchema = Decimal.schema(2);
         schema = SchemaBuilder.struct().field("id", decimalSchema).build();
         record = new Struct(schema).put("id", new BigDecimal("42.42"));
@@ -121,7 +120,7 @@ public class TimestampIncrementingCriteriaTest {
     }
 
     @Test
-    public void extractWithIncColumn() throws SQLException {
+    public void extractWithIncColumn() {
         schema = SchemaBuilder.struct()
             .field("id", SchemaBuilder.INT32_SCHEMA)
             .field(TS1_COLUMN.name(), Timestamp.SCHEMA)

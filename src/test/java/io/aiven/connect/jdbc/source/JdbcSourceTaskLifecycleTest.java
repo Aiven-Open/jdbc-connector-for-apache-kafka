@@ -36,7 +36,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JdbcSourceTask.class})
@@ -99,15 +99,13 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
         // First poll should happen immediately
         task.poll();
-        assertEquals(startTime, time.milliseconds());
+        assertThat(time.milliseconds()).isEqualTo(startTime);
 
         // Subsequent polls have to wait for timeout
         task.poll();
-        assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-            time.milliseconds());
+        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
         task.poll();
-        assertEquals(startTime + 2 * JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-            time.milliseconds());
+        assertThat(time.milliseconds()).isEqualTo(startTime + 2 * JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
 
         task.stop();
     }
@@ -129,16 +127,15 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
         db.insert(SINGLE_TABLE_NAME, "id", 2);
 
         List<SourceRecord> records = task.poll();
-        assertEquals(startTime, time.milliseconds());
-        assertEquals(1, records.size());
+        assertThat(time.milliseconds()).isEqualTo(startTime);
+        assertThat(records).hasSize(1);
         records = task.poll();
-        assertEquals(startTime, time.milliseconds());
-        assertEquals(1, records.size());
+        assertThat(time.milliseconds()).isEqualTo(startTime);
+        assertThat(records).hasSize(1);
 
         // Subsequent poll should wait for next timeout
         task.poll();
-        assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-            time.milliseconds());
+        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
 
     }
 
@@ -155,22 +152,20 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
         // Both tables should be polled immediately, in order
         List<SourceRecord> records = task.poll();
-        assertEquals(startTime, time.milliseconds());
-        assertEquals(1, records.size());
-        assertEquals(SINGLE_TABLE_PARTITION, records.get(0).sourcePartition());
+        assertThat(time.milliseconds()).isEqualTo(startTime);
+        assertThat(records).hasSize(1);
+        assertThat(records.get(0).sourcePartition()).isEqualTo(SINGLE_TABLE_PARTITION);
         records = task.poll();
-        assertEquals(startTime, time.milliseconds());
-        assertEquals(1, records.size());
-        assertEquals(SECOND_TABLE_PARTITION, records.get(0).sourcePartition());
+        assertThat(time.milliseconds()).isEqualTo(startTime);
+        assertThat(records).hasSize(1);
+        assertThat(records.get(0).sourcePartition()).isEqualTo(SECOND_TABLE_PARTITION);
 
         // Subsequent poll should wait for next timeout
         records = task.poll();
-        assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-            time.milliseconds());
+        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
         validatePollResultTable(records, 1, SINGLE_TABLE_NAME);
         records = task.poll();
-        assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-            time.milliseconds());
+        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
         validatePollResultTable(records, 1, SECOND_TABLE_NAME);
 
     }
@@ -196,35 +191,33 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
         // Both tables should be polled immediately, in order
         for (int i = 0; i < 2; i++) {
             final List<SourceRecord> records = task.poll();
-            assertEquals(startTime, time.milliseconds());
+            assertThat(time.milliseconds()).isEqualTo(startTime);
             validatePollResultTable(records, 1, SINGLE_TABLE_NAME);
         }
         for (int i = 0; i < 2; i++) {
             final List<SourceRecord> records = task.poll();
-            assertEquals(startTime, time.milliseconds());
+            assertThat(time.milliseconds()).isEqualTo(startTime);
             validatePollResultTable(records, 1, SECOND_TABLE_NAME);
         }
 
         // Subsequent poll should wait for next timeout
         for (int i = 0; i < 2; i++) {
             final List<SourceRecord> records = task.poll();
-            assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-                time.milliseconds());
+            assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
             validatePollResultTable(records, 1, SINGLE_TABLE_NAME);
         }
         for (int i = 0; i < 2; i++) {
             final List<SourceRecord> records = task.poll();
-            assertEquals(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT,
-                time.milliseconds());
+            assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
             validatePollResultTable(records, 1, SECOND_TABLE_NAME);
         }
     }
 
     private static void validatePollResultTable(final List<SourceRecord> records,
                                                 final int expected, final String table) {
-        assertEquals(expected, records.size());
+        assertThat(records).hasSize(expected);
         for (final SourceRecord record : records) {
-            assertEquals(table, record.sourcePartition().get(JdbcSourceConnectorConstants.TABLE_NAME_KEY));
+            assertThat(record.sourcePartition().get(JdbcSourceConnectorConstants.TABLE_NAME_KEY)).isEqualTo(table);
         }
     }
 }

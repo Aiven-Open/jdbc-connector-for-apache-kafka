@@ -24,8 +24,8 @@ import org.apache.kafka.common.config.ConfigException;
 
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 public class JdbcSinkConfigTest {
 
@@ -33,7 +33,7 @@ public class JdbcSinkConfigTest {
     public void shouldReturnEmptyMapForUndefinedMapping() {
         final Map<String, String> props = new HashMap<>();
         props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
-        assertTrue(new JdbcSinkConfig(props).topicsToTablesMapping.isEmpty());
+        assertThat(new JdbcSinkConfig(props).topicsToTablesMapping).isEmpty();
     }
 
     @Test
@@ -44,15 +44,15 @@ public class JdbcSinkConfigTest {
 
         JdbcSinkConfig config = new JdbcSinkConfig(props);
 
-        assertEquals(config.topicsToTablesMapping.size(), 2);
-        assertEquals(config.topicsToTablesMapping.get("t0"), "tbl0");
-        assertEquals(config.topicsToTablesMapping.get("t1"), "tbl1");
+        assertThat(config.topicsToTablesMapping)
+            .containsExactly(
+                entry("t0", "tbl0"),
+                entry("t1", "tbl1"));
 
         props.put(JdbcSinkConfig.TOPICS_TO_TABLES_MAPPING, "t3:tbl3");
         config = new JdbcSinkConfig(props);
 
-        assertEquals(config.topicsToTablesMapping.size(), 1);
-        assertEquals(config.topicsToTablesMapping.get("t3"), "tbl3");
+        assertThat(config.topicsToTablesMapping).containsExactly(entry("t3", "tbl3"));
     }
 
     @Test(expected = ConfigException.class)

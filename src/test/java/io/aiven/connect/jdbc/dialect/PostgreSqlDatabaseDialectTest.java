@@ -45,8 +45,8 @@ import io.aiven.connect.jdbc.util.TableId;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDatabaseDialect> {
@@ -129,22 +129,20 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
                                              final String typeName,
                                              final Schema schemaType,
                                              final Class<T> clazz) {
-        assertNotNull(
-                dialect.createColumnConverter(
-                        new ColumnMapping(
-                                createColumnDefinition(
-                                        new ColumnId(
-                                                new TableId(
-                                                        "test_catalog",
-                                                        "test",
-                                                        "test_table"
-                                                ),
-                                                "column"
-                                        ), jdbcType, typeName, clazz), 1,
-                                new Field("a", 1, schemaType)
-                        )
-                )
-        );
+        assertThat(dialect.createColumnConverter(
+            new ColumnMapping(
+                createColumnDefinition(
+                    new ColumnId(
+                        new TableId(
+                            "test_catalog",
+                            "test",
+                            "test_table"
+                        ),
+                        "column"
+                    ), jdbcType, typeName, clazz), 1,
+                new Field("a", 1, schemaType)
+            )
+        )).isNotNull();
     }
 
     @Test

@@ -45,8 +45,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Parameterized.class)
@@ -211,7 +211,7 @@ public class TableMonitorThreadTest {
         tableMonitorThread.join();
 
         if (qualifiedTableNames) {
-            assertThrows(ConnectException.class, tableMonitorThread::tables);
+            assertThatThrownBy(tableMonitorThread::tables).isInstanceOf(ConnectException.class);
         } else {
             checkTableNames("foo", "bar", "baz", "dup");
         }
@@ -231,7 +231,7 @@ public class TableMonitorThreadTest {
         tableMonitorThread.join();
 
         if (qualifiedTableNames) {
-            assertThrows(ConnectException.class, tableMonitorThread::tables);
+            assertThatThrownBy(tableMonitorThread::tables).isInstanceOf(ConnectException.class);
         } else {
             checkTableNames("dup");
         }
@@ -251,7 +251,7 @@ public class TableMonitorThreadTest {
         tableMonitorThread.join();
 
         if (qualifiedTableNames) {
-            assertThrows(ConnectException.class, tableMonitorThread::tables);
+            assertThatThrownBy(tableMonitorThread::tables).isInstanceOf(ConnectException.class);
         } else {
             checkTableNames("bar", "baz", "dup");
         }
@@ -332,13 +332,13 @@ public class TableMonitorThreadTest {
                     final TableId id = new TableId(null, null, expectedTableName);
                     expectedTableIds.add(id);
                 }
-                assertEquals(expectedTableIds, tableMonitorThread.tables());
+                assertThat(tableMonitorThread.tables()).isEqualTo(expectedTableIds);
             }
         };
     }
 
     protected void checkTableIds(final TableId... expectedTables) {
-        assertEquals(Arrays.asList(expectedTables), tableMonitorThread.tables());
+        assertThat(tableMonitorThread.tables()).containsExactly(expectedTables);
     }
 
     protected void expectTableNames(final List<TableId> expectedTableIds, final Op... operations)

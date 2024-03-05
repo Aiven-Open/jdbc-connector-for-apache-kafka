@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Parameterized.class)
 public class NumericMappingConfigTest {
@@ -70,7 +70,7 @@ public class NumericMappingConfigTest {
     }
 
     @Test
-    public void testNumericMapping() throws Exception {
+    public void testNumericMapping() {
         props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, "jdbc:foo:bar");
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
@@ -82,6 +82,6 @@ public class NumericMappingConfigTest {
             props.put(JdbcSourceConnectorConfig.NUMERIC_MAPPING_CONFIG, extendedMapping);
         }
         final JdbcSourceConnectorConfig config = new JdbcSourceConnectorConfig(props);
-        assertEquals(expected, NumericMapping.get(config));
+        assertThat(NumericMapping.get(config)).isEqualTo(expected);
     }
 }

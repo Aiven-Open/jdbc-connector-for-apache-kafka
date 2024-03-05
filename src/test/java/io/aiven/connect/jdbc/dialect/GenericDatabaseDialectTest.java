@@ -21,11 +21,9 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -55,10 +53,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseDialect> {
 
@@ -123,7 +118,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
     @Test
     public void testGetTablesEmpty() throws Exception {
         newDialectFor(TABLE_TYPES, null);
-        assertEquals(Collections.emptyList(), dialect.tableIds(conn));
+        assertThat(dialect.tableIds(conn)).isEmpty();
     }
 
     @Test
@@ -131,7 +126,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         newDialectFor(TABLE_TYPES, null);
         db.createTable("test", "id", "INT");
         final TableId test = new TableId(null, "APP", "test");
-        assertEquals(Arrays.asList(test), dialect.tableIds(conn));
+        assertThat(dialect.tableIds(conn)).containsExactly(test);
     }
 
     @Test
@@ -140,14 +135,14 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         newDialectFor(types, null);
         db.createTable("test", "id", "INT");
         final TableId test = new TableId(null, "APP", "test");
-        assertEquals(Arrays.asList(test), dialect.tableIds(conn));
+        assertThat(dialect.tableIds(conn)).containsExactly(test);
     }
 
     @Test
     public void testNotFindTablesWithUnknownTableType() throws Exception {
         newDialectFor(Collections.singleton("view"), null);
         db.createTable("test", "id", "INT");
-        assertEquals(Arrays.asList(), dialect.tableIds(conn));
+        assertThat(dialect.tableIds(conn)).isEmpty();
     }
 
     @Test
@@ -159,8 +154,7 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         final TableId test = new TableId(null, "APP", "test");
         final TableId foo = new TableId(null, "APP", "foo");
         final TableId zab = new TableId(null, "APP", "zab");
-        assertEquals(new HashSet<>(Arrays.asList(test, foo, zab)),
-            new HashSet<>(dialect.tableIds(conn)));
+        assertThat(dialect.tableIds(conn)).containsExactlyInAnyOrder(test, foo, zab);
     }
 
     @Test
@@ -190,20 +184,20 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         assertTableNames(types, null, someTable, publicTable, privateTable, anotherPrivateTable);
 
         TableDefinition defn = dialect.describeTable(db.getConnection(), someTable);
-        assertEquals(someTable, defn.id());
-        assertEquals("INTEGER", defn.definitionForColumn("id").typeName());
+        assertThat(defn.id()).isEqualTo(someTable);
+        assertThat(defn.definitionForColumn("id").typeName()).isEqualTo("INTEGER");
 
         defn = dialect.describeTable(db.getConnection(), publicTable);
-        assertEquals(publicTable, defn.id());
-        assertEquals("INTEGER", defn.definitionForColumn("id").typeName());
+        assertThat(defn.id()).isEqualTo(publicTable);
+        assertThat(defn.definitionForColumn("id").typeName()).isEqualTo("INTEGER");
 
         defn = dialect.describeTable(db.getConnection(), privateTable);
-        assertEquals(privateTable, defn.id());
-        assertEquals("INTEGER", defn.definitionForColumn("id").typeName());
+        assertThat(defn.id()).isEqualTo(privateTable);
+        assertThat(defn.definitionForColumn("id").typeName()).isEqualTo("INTEGER");
 
         defn = dialect.describeTable(db.getConnection(), anotherPrivateTable);
-        assertEquals(anotherPrivateTable, defn.id());
-        assertEquals("INTEGER", defn.definitionForColumn("id").typeName());
+        assertThat(defn.id()).isEqualTo(anotherPrivateTable);
+        assertThat(defn.definitionForColumn("id").typeName()).isEqualTo("INTEGER");
     }
 
     protected void assertTableNames(
@@ -214,16 +208,16 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         newDialectFor(tableTypes, schemaPattern);
         final Collection<TableId> ids = dialect.tableIds(db.getConnection());
         for (final TableId expectedTableId : expectedTableIds) {
-            assertTrue(ids.contains(expectedTableId));
+            assertThat(ids).contains(expectedTableId);
         }
-        assertEquals(expectedTableIds.length, ids.size());
+        assertThat(ids).hasSameSizeAs(expectedTableIds);
     }
 
     @Test
     public void testDescribeTableOnEmptyDb() throws SQLException {
         final TableId someTable = new TableId(null, "APP", "some_table");
         final TableDefinition defn = dialect.describeTable(db.getConnection(), someTable);
-        assertNull(defn);
+        assertThat(defn).isNull();
     }
 
     @Test
@@ -234,24 +228,24 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
             "name", "VARCHAR(255) not null",
             "optional_age", "INTEGER");
         final TableDefinition defn = dialect.describeTable(db.getConnection(), tableId);
-        assertEquals(tableId, defn.id());
+        assertThat(defn.id()).isEqualTo(tableId);
         ColumnDefinition columnDefn = defn.definitionForColumn("id");
-        assertEquals("INTEGER", columnDefn.typeName());
-        assertEquals(Types.INTEGER, columnDefn.type());
-        assertEquals(true, columnDefn.isPrimaryKey());
-        assertEquals(false, columnDefn.isOptional());
+        assertThat(columnDefn.typeName()).isEqualTo("INTEGER");
+        assertThat(columnDefn.type()).isEqualTo(Types.INTEGER);
+        assertThat(columnDefn.isPrimaryKey()).isTrue();
+        assertThat(columnDefn.isOptional()).isFalse();
 
         columnDefn = defn.definitionForColumn("name");
-        assertEquals("VARCHAR", columnDefn.typeName());
-        assertEquals(Types.VARCHAR, columnDefn.type());
-        assertEquals(false, columnDefn.isPrimaryKey());
-        assertEquals(false, columnDefn.isOptional());
+        assertThat(columnDefn.typeName()).isEqualTo("VARCHAR");
+        assertThat(columnDefn.type()).isEqualTo(Types.VARCHAR);
+        assertThat(columnDefn.isPrimaryKey()).isFalse();
+        assertThat(columnDefn.isOptional()).isFalse();
 
         columnDefn = defn.definitionForColumn("optional_age");
-        assertEquals("INTEGER", columnDefn.typeName());
-        assertEquals(Types.INTEGER, columnDefn.type());
-        assertEquals(false, columnDefn.isPrimaryKey());
-        assertEquals(true, columnDefn.isOptional());
+        assertThat(columnDefn.typeName()).isEqualTo("INTEGER");
+        assertThat(columnDefn.type()).isEqualTo(Types.INTEGER);
+        assertThat(columnDefn.isPrimaryKey()).isFalse();
+        assertThat(columnDefn.isOptional()).isTrue();
     }
 
     @Test
@@ -263,10 +257,10 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         ColumnId bar = new ColumnId(test, "bar");
         Map<ColumnId, ColumnDefinition> defns = dialect
             .describeColumns(db.getConnection(), "test", null);
-        assertTrue(defns.get(id).isAutoIncrement());
-        assertFalse(defns.get(bar).isAutoIncrement());
-        assertFalse(defns.get(id).isOptional());
-        assertTrue(defns.get(bar).isOptional());
+        assertThat(defns.get(id).isAutoIncrement()).isTrue();
+        assertThat(defns.get(bar).isAutoIncrement()).isFalse();
+        assertThat(defns.get(id).isOptional()).isFalse();
+        assertThat(defns.get(bar).isOptional()).isTrue();
 
         // No auto increment
         db.createTable("none", "id", "INTEGER", "bar", "INTEGER");
@@ -274,10 +268,10 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         id = new ColumnId(none, "id");
         bar = new ColumnId(none, "bar");
         defns = dialect.describeColumns(db.getConnection(), "none", null);
-        assertFalse(defns.get(id).isAutoIncrement());
-        assertFalse(defns.get(bar).isAutoIncrement());
-        assertTrue(defns.get(id).isOptional());
-        assertTrue(defns.get(bar).isOptional());
+        assertThat(defns.get(id).isAutoIncrement()).isFalse();
+        assertThat(defns.get(bar).isAutoIncrement()).isFalse();
+        assertThat(defns.get(id).isOptional()).isTrue();
+        assertThat(defns.get(bar).isOptional()).isTrue();
 
         // We can't check multiple columns because Derby ties auto increment to identity and
         // disallows multiple auto increment columns. This is probably ok, multiple auto increment
@@ -291,9 +285,9 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         id = new ColumnId(mixed, "id");
         bar = new ColumnId(mixed, "bar");
         defns = dialect.describeColumns(db.getConnection(), "mixed", null);
-        assertFalse(defns.get(foo).isAutoIncrement());
-        assertTrue(defns.get(id).isAutoIncrement());
-        assertFalse(defns.get(bar).isAutoIncrement());
+        assertThat(defns.get(foo).isAutoIncrement()).isFalse();
+        assertThat(defns.get(id).isAutoIncrement()).isTrue();
+        assertThat(defns.get(bar).isAutoIncrement()).isFalse();
 
         // Derby does not seem to allow null
         db.createTable("tstest", "ts", "TIMESTAMP NOT NULL", "tsdefault", "TIMESTAMP", "tsnull",
@@ -304,10 +298,10 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         final ColumnId tsnull = new ColumnId(tstest, "tsnull");
 
         defns = dialect.describeColumns(db.getConnection(), "tstest", null);
-        assertFalse(defns.get(ts).isOptional());
+        assertThat(defns.get(ts).isOptional()).isFalse();
         // The default for TIMESTAMP columns can vary between databases, but for Derby it is nullable
-        assertTrue(defns.get(tsdefault).isOptional());
-        assertTrue(defns.get(tsnull).isOptional());
+        assertThat(defns.get(tsdefault).isOptional()).isTrue();
+        assertThat(defns.get(tsnull).isOptional()).isTrue();
     }
 
     @Test(expected = ConnectException.class)
@@ -351,14 +345,14 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         final GenericDatabaseDialect dialect = dummyDialect();
         final ExpressionBuilder builder = dialect.expressionBuilder();
         dialect.formatColumnValue(builder, schema.name(), schema.parameters(), schema.type(), value);
-        assertEquals(expected, builder.toString());
+        assertThat(builder).hasToString(expected);
     }
 
     private void verifyWriteColumnSpec(final String expected, final SinkRecordField field) {
         final GenericDatabaseDialect dialect = dummyDialect();
         final ExpressionBuilder builder = dialect.expressionBuilder();
         dialect.writeColumnSpec(builder, field);
-        assertEquals(expected, builder.toString());
+        assertThat(builder).hasToString(expected);
     }
 
     private GenericDatabaseDialect dummyDialect() {

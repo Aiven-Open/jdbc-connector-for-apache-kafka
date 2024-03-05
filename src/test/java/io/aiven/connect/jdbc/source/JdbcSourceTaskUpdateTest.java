@@ -43,11 +43,9 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 
 // Tests of polling that return data updates, i.e. verifies the different behaviors for getting
 // incremental data updates from the database
@@ -77,11 +75,11 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         task.start(singleTableConfig());
 
         List<SourceRecord> records = task.poll();
-        assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
+        assertThat(countIntValues(records, "id")).containsExactly(entry(1, 1));
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         records = task.poll();
-        assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
+        assertThat(countIntValues(records, "id")).containsExactly(entry(1, 1));
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         db.insert(SINGLE_TABLE_NAME, "id", 2);
@@ -89,12 +87,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         final Map<Integer, Integer> twoRecords = new HashMap<>();
         twoRecords.put(1, 1);
         twoRecords.put(2, 1);
-        assertEquals(twoRecords, countIntValues(records, "id"));
+        assertThat(countIntValues(records, "id")).isEqualTo(twoRecords);
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         db.delete(SINGLE_TABLE_NAME, new EmbeddedDerby.EqualsCondition(column, 1));
         records = task.poll();
-        assertEquals(Collections.singletonMap(2, 1), countIntValues(records, "id"));
+        assertThat(countIntValues(records, "id")).containsExactly(entry(2, 1));
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
     }
 
@@ -135,12 +133,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     @Test
     public void testManualIncrementing() throws Exception {
-        manualIncrementingInternal(null, Arrays.asList(0));
+        manualIncrementingInternal(null, List.of(0));
     }
 
     @Test
     public void testManualIncrementingManualId() throws Exception {
-        manualIncrementingInternal(-1L, Arrays.asList(0));
+        manualIncrementingInternal(-1L, List.of(0));
     }
 
     @Test
@@ -205,12 +203,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     @Test
     public void testTimestamp() throws Exception {
-        timestampInternal(null, Arrays.asList(1));
+        timestampInternal(null, List.of(1));
     }
 
     @Test
     public void testTimestampManualOffset() throws Exception {
-        timestampInternal(0L, Arrays.asList(1));
+        timestampInternal(0L, List.of(1));
     }
 
     @Test
@@ -403,16 +401,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             "modified", "TIMESTAMP NOT NULL",
             "id", "INT NOT NULL");
 
-        try {
-            startTask("modified", "id", null, 0L, invalidTimeZoneID, null, null);
-            fail("A ConfigException should have been thrown");
-        } catch (final ConnectException e) {
-            assertTrue(e.getCause() instanceof ConfigException);
-            final ConfigException configException = (ConfigException) e.getCause();
-            assertThat(configException.getMessage(),
-                equalTo(
-                    "Invalid value Europe/Invalid for configuration db.timezone: Invalid time zone identifier"));
-        }
+        assertThatThrownBy(() ->
+            startTask("modified", "id", null, 0L, invalidTimeZoneID, null, null))
+            .isInstanceOf(ConnectException.class)
+            .hasCauseInstanceOf(ConfigException.class)
+            .hasRootCauseMessage(
+                "Invalid value Europe/Invalid for configuration db.timezone: Invalid time zone identifier");
     }
 
     @Test
@@ -694,10 +688,10 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             + "ON (\"test\".\"user_id\" = \"users\".\"user_id\")");
 
         List<SourceRecord> records = task.poll();
-        assertEquals(1, records.size());
+        assertThat(records).hasSize(1);
         Map<Integer, Integer> recordUserIdCounts = new HashMap<>();
         recordUserIdCounts.put(1, 1);
-        assertEquals(recordUserIdCounts, countIntValues(records, "id"));
+        assertThat(countIntValues(records, "id")).isEqualTo(recordUserIdCounts);
         assertRecordsTopic(records, TOPIC_PREFIX);
         assertRecordsSourcePartition(records, QUERY_SOURCE_PARTITION);
 
@@ -706,18 +700,18 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         db.insert(SINGLE_TABLE_NAME, "id", 4, "user_id", 2);
 
         records = task.poll();
-        assertEquals(4, records.size());
+        assertThat(records).hasSize(4);
         recordUserIdCounts = new HashMap<>();
         recordUserIdCounts.put(1, 2);
         recordUserIdCounts.put(2, 2);
-        assertEquals(recordUserIdCounts, countIntValues(records, "user_id"));
+        assertThat(countIntValues(records, "user_id")).isEqualTo(recordUserIdCounts);
         assertRecordsTopic(records, TOPIC_PREFIX);
         assertRecordsSourcePartition(records, QUERY_SOURCE_PARTITION);
     }
 
     @Test
     public void testCustomQueryWithTimestamp() throws Exception {
-        expectInitializeNoOffsets(Arrays.asList(JOIN_QUERY_PARTITION));
+        expectInitializeNoOffsets(List.of(JOIN_QUERY_PARTITION));
 
         PowerMock.replayAll();
 
@@ -776,7 +770,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     }
 
     private String mode(final String timestampColumn, final String incrementingColumn) {
-        String mode = null;
+        final String mode;
         if (timestampColumn != null && incrementingColumn != null) {
             mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
         } else if (timestampColumn != null) {
@@ -822,17 +816,17 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     private void verifyIncrementingFirstPoll(final String topic) throws Exception {
         final List<SourceRecord> records = task.poll();
-        assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
-        assertEquals(Collections.singletonMap(1L, 1), countIntIncrementingOffsets(records, "id"));
+        assertThat(countIntValues(records, "id")).isEqualTo(Collections.singletonMap(1, 1));
+        assertThat(countIntIncrementingOffsets(records, "id")).isEqualTo(Collections.singletonMap(1L, 1));
         assertIncrementingOffsets(records);
         assertRecordsTopic(records, topic);
     }
 
     private List<SourceRecord> verifyMultiTimestampFirstPoll(final String topic) throws Exception {
         final List<SourceRecord> records = task.poll();
-        assertEquals(1, records.size());
-        assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
-        assertEquals(Collections.singletonMap(10L, 1), countTimestampValues(records, "created"));
+        assertThat(records).hasSize(1);
+        assertThat(countIntValues(records, "id")).containsExactly(entry(1, 1));
+        assertThat(countTimestampValues(records, "created")).containsExactly(entry(10L, 1));
         assertMultiTimestampOffsets(records);
         assertRecordsTopic(records, topic);
         return records;
@@ -840,9 +834,9 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     private List<SourceRecord> verifyTimestampFirstPoll(final String topic) throws Exception {
         final List<SourceRecord> records = task.poll();
-        assertEquals(1, records.size());
-        assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
-        assertEquals(Collections.singletonMap(10L, 1), countTimestampValues(records, "modified"));
+        assertThat(records).hasSize(1);
+        assertThat(countIntValues(records, "id")).containsExactly(entry(1, 1));
+        assertThat(countTimestampValues(records, "modified")).containsExactly(entry(10L, 1));
         assertTimestampOffsets(records);
         assertRecordsTopic(records, topic);
         return records;
@@ -867,13 +861,13 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                                 final String topic)
         throws Exception {
         final List<SourceRecord> records = task.poll();
-        assertEquals(numRecords, records.size());
+        assertThat(records).hasSize(numRecords);
 
         final HashMap<T, Integer> valueCounts = new HashMap<>();
         for (final T value : values) {
             valueCounts.put(value, 1);
         }
-        assertEquals(valueCounts, countIntValues(records, valueField));
+        assertThat(countIntValues(records, valueField)).isEqualTo(valueCounts);
 
         if (timestampOffsets) {
             assertTimestampOffsets(records);
@@ -916,7 +910,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                 case INCREMENTING_OFFSET: {
                     final TimestampIncrementingOffset offset =
                         TimestampIncrementingOffset.fromMap(record.sourceOffset());
-                    extracted = (T) (Long) offset.getIncrementingOffset();
+                    extracted = (T) offset.getIncrementingOffset();
                     break;
                 }
                 case TIMESTAMP_OFFSET: {
@@ -956,7 +950,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             final long incrementingValue = incrementing instanceof Integer ? (long) (Integer) incrementing
                 : (Long) incrementing;
             final long offsetValue = TimestampIncrementingOffset.fromMap(record.sourceOffset()).getIncrementingOffset();
-            assertEquals(incrementingValue, offsetValue);
+            assertThat(offsetValue).isEqualTo(incrementingValue);
         }
     }
 
@@ -966,7 +960,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             final Timestamp timestampValue = (Timestamp) ((Struct) record.value()).get("modified");
             final Timestamp offsetValue =
                 TimestampIncrementingOffset.fromMap(record.sourceOffset()).getTimestampOffset();
-            assertEquals(timestampValue, offsetValue);
+            assertThat(offsetValue).isEqualTo(timestampValue);
         }
     }
 
@@ -978,20 +972,20 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             }
             final Timestamp offsetValue =
                 TimestampIncrementingOffset.fromMap(record.sourceOffset()).getTimestampOffset();
-            assertEquals(timestampValue, offsetValue);
+            assertThat(offsetValue).isEqualTo(timestampValue);
         }
     }
 
     private void assertRecordsTopic(final List<SourceRecord> records, final String topic) {
         for (final SourceRecord record : records) {
-            assertEquals(topic, record.topic());
+            assertThat(record.topic()).isEqualTo(topic);
         }
     }
 
     private void assertRecordsSourcePartition(final List<SourceRecord> records,
                                               final Map<String, String> partition) {
         for (final SourceRecord record : records) {
-            assertEquals(partition, record.sourcePartition());
+            assertThat(record.sourcePartition()).isEqualTo(partition);
         }
     }
 }

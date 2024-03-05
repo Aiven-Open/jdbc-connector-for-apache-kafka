@@ -34,10 +34,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqliteHelperTest {
 
@@ -84,60 +81,57 @@ public class SqliteHelperTest {
             tables.put(tableId.tableName(), dialect.describeTable(sqliteHelper.connection, tableId));
         }
 
-        assertEquals(tables.size(), 3);
-        assertTrue(tables.containsKey("employees"));
-        assertTrue(tables.containsKey("products"));
-        assertTrue(tables.containsKey("nonPk"));
+        assertThat(tables).containsOnlyKeys("employees", "products", "nonPk");
 
         final TableDefinition nonPk = tables.get("nonPk");
-        assertEquals(2, nonPk.columnCount());
+        assertThat(nonPk.columnCount()).isEqualTo(2);
 
         ColumnDefinition colDefn = nonPk.definitionForColumn("id");
-        assertTrue(colDefn.isOptional());
-        assertFalse(colDefn.isPrimaryKey());
-        assertEquals(Types.FLOAT, colDefn.type());
+        assertThat(colDefn.isOptional()).isTrue();
+        assertThat(colDefn.isPrimaryKey()).isFalse();
+        assertThat(colDefn.type()).isEqualTo(Types.FLOAT);
 
         colDefn = nonPk.definitionForColumn("response");
-        assertTrue(colDefn.isOptional());
-        assertFalse(colDefn.isPrimaryKey());
-        assertEquals(Types.VARCHAR, colDefn.type());
+        assertThat(colDefn.isOptional()).isTrue();
+        assertThat(colDefn.isPrimaryKey()).isFalse();
+        assertThat(colDefn.type()).isEqualTo(Types.VARCHAR);
 
         final TableDefinition employees = tables.get("employees");
-        assertEquals(4, employees.columnCount());
+        assertThat(employees.columnCount()).isEqualTo(4);
 
-        assertNotNull(employees.definitionForColumn("employee_id"));
-        assertFalse(employees.definitionForColumn("employee_id").isOptional());
-        assertTrue(employees.definitionForColumn("employee_id").isPrimaryKey());
-        assertEquals(Types.INTEGER, employees.definitionForColumn("employee_id").type());
-        assertNotNull(employees.definitionForColumn("last_name"));
-        assertFalse(employees.definitionForColumn("last_name").isOptional());
-        assertFalse(employees.definitionForColumn("last_name").isPrimaryKey());
-        assertEquals(Types.VARCHAR, employees.definitionForColumn("last_name").type());
-        assertNotNull(employees.definitionForColumn("first_name"));
-        assertTrue(employees.definitionForColumn("first_name").isOptional());
-        assertFalse(employees.definitionForColumn("first_name").isPrimaryKey());
-        assertEquals(Types.VARCHAR, employees.definitionForColumn("first_name").type());
-        assertNotNull(employees.definitionForColumn("hire_date"));
-        assertTrue(employees.definitionForColumn("hire_date").isOptional());
-        assertFalse(employees.definitionForColumn("hire_date").isPrimaryKey());
+        assertThat(employees.definitionForColumn("employee_id")).isNotNull();
+        assertThat(employees.definitionForColumn("employee_id").isOptional()).isFalse();
+        assertThat(employees.definitionForColumn("employee_id").isPrimaryKey()).isTrue();
+        assertThat(employees.definitionForColumn("employee_id").type()).isEqualTo(Types.INTEGER);
+        assertThat(employees.definitionForColumn("last_name")).isNotNull();
+        assertThat(employees.definitionForColumn("last_name").isOptional()).isFalse();
+        assertThat(employees.definitionForColumn("last_name").isPrimaryKey()).isFalse();
+        assertThat(employees.definitionForColumn("last_name").type()).isEqualTo(Types.VARCHAR);
+        assertThat(employees.definitionForColumn("first_name")).isNotNull();
+        assertThat(employees.definitionForColumn("first_name").isOptional()).isTrue();
+        assertThat(employees.definitionForColumn("first_name").isPrimaryKey()).isFalse();
+        assertThat(employees.definitionForColumn("first_name").type()).isEqualTo(Types.VARCHAR);
+        assertThat(employees.definitionForColumn("hire_date")).isNotNull();
+        assertThat(employees.definitionForColumn("hire_date").isOptional()).isTrue();
+        assertThat(employees.definitionForColumn("hire_date").isPrimaryKey()).isFalse();
         // sqlite returns VARCHAR for DATE. why?!
-        assertEquals(Types.VARCHAR, employees.definitionForColumn("hire_date").type());
+        assertThat(employees.definitionForColumn("hire_date").type()).isEqualTo(Types.VARCHAR);
         // assertEquals(columns.get("hire_date").getSqlType(), Types.DATE);
 
         final TableDefinition products = tables.get("products");
-        assertEquals(4, employees.columnCount());
+        assertThat(employees.columnCount()).isEqualTo(4);
 
-        assertNotNull(products.definitionForColumn("product_id"));
-        assertFalse(products.definitionForColumn("product_id").isOptional());
-        assertTrue(products.definitionForColumn("product_id").isPrimaryKey());
-        assertEquals(Types.INTEGER, products.definitionForColumn("product_id").type());
-        assertNotNull(products.definitionForColumn("product_name"));
-        assertFalse(products.definitionForColumn("product_name").isOptional());
-        assertFalse(products.definitionForColumn("product_name").isPrimaryKey());
-        assertEquals(Types.VARCHAR, products.definitionForColumn("product_name").type());
-        assertNotNull(products.definitionForColumn("quantity"));
-        assertFalse(products.definitionForColumn("quantity").isOptional());
-        assertFalse(products.definitionForColumn("quantity").isPrimaryKey());
-        assertEquals(Types.INTEGER, products.definitionForColumn("quantity").type());
+        assertThat(products.definitionForColumn("product_id")).isNotNull();
+        assertThat(products.definitionForColumn("product_id").isOptional()).isFalse();
+        assertThat(products.definitionForColumn("product_id").isPrimaryKey()).isTrue();
+        assertThat(products.definitionForColumn("product_id").type()).isEqualTo(Types.INTEGER);
+        assertThat(products.definitionForColumn("product_name")).isNotNull();
+        assertThat(products.definitionForColumn("product_name").isOptional()).isFalse();
+        assertThat(products.definitionForColumn("product_name").isPrimaryKey()).isFalse();
+        assertThat(products.definitionForColumn("product_name").type()).isEqualTo(Types.VARCHAR);
+        assertThat(products.definitionForColumn("quantity")).isNotNull();
+        assertThat(products.definitionForColumn("quantity").isOptional()).isFalse();
+        assertThat(products.definitionForColumn("quantity").isPrimaryKey()).isFalse();
+        assertThat(products.definitionForColumn("quantity").type()).isEqualTo(Types.INTEGER);
     }
 }
