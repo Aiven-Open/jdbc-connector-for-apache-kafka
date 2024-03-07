@@ -30,23 +30,19 @@ import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.CachedRecommenderValues;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.CachingRecommender;
 
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.list;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Recommender.class})
-@PowerMockIgnore("javax.management.*")
+@RunWith(MockitoJUnitRunner.class)
 public class JdbcSourceConnectorConfigTest {
 
     private EmbeddedDerby db;
@@ -120,12 +116,9 @@ public class JdbcSourceConnectorConfigTest {
         final List<String> results1 = Collections.singletonList("xyz");
         final List<String> results2 = Collections.singletonList("123");
         // Set up the mock recommender to be called twice, returning different results each time
-        EasyMock.expect(mockRecommender.validValues(EasyMock.anyObject(String.class), EasyMock.anyObject(Map.class)))
-            .andReturn(results1);
-        EasyMock.expect(mockRecommender.validValues(EasyMock.anyObject(String.class), EasyMock.anyObject(Map.class)))
-            .andReturn(results2);
-
-        PowerMock.replayAll();
+        when(mockRecommender.validValues(any(String.class), any(Map.class)))
+            .thenReturn(results1)
+            .thenReturn(results2);
 
         final CachingRecommender recommender = new CachingRecommender(mockRecommender, time, 1000L);
 
@@ -138,8 +131,6 @@ public class JdbcSourceConnectorConfigTest {
         // Wait for the cache to expire
         time.sleep(2000L);
         assertThat(recommender.validValues("x", config1)).isSameAs(results2);
-
-        PowerMock.verifyAll();
     }
 
     @Test

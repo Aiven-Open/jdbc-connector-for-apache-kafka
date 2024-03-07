@@ -39,7 +39,6 @@ import org.apache.kafka.connect.sink.SinkTaskContext;
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
 
-import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,9 +46,12 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.data.Offset.offset;
-import static org.easymock.EasyMock.expectLastCall;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-public class JdbcSinkTaskTest extends EasyMockSupport {
+public class JdbcSinkTaskTest {
     private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
     private static final Schema SCHEMA = SchemaBuilder.struct().name("com.example.Person")
@@ -209,17 +211,10 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
         final int retryBackoffMs = 1000;
 
         final Set<SinkRecord> records = Collections.singleton(new SinkRecord("stub", 0, null, null, null, null, 0));
-        final JdbcDbWriter mockWriter = createMock(JdbcDbWriter.class);
-        final SinkTaskContext ctx = createMock(SinkTaskContext.class);
+        final JdbcDbWriter mockWriter = mock(JdbcDbWriter.class);
+        final SinkTaskContext ctx = mock(SinkTaskContext.class);
 
-        mockWriter.write(records);
-        expectLastCall().andThrow(new SQLException()).times(1 + maxRetries);
-
-        ctx.timeout(retryBackoffMs);
-        expectLastCall().times(maxRetries);
-
-        mockWriter.closeQuietly();
-        expectLastCall().times(maxRetries);
+        doThrow(new SQLException()).when(mockWriter).write(records);
 
         final JdbcSinkTask task = new JdbcSinkTask() {
             @Override
@@ -235,8 +230,6 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
         props.put(JdbcSinkConfig.RETRY_BACKOFF_MS, String.valueOf(retryBackoffMs));
         task.start(props);
 
-        replayAll();
-
         assertThatThrownBy(() -> task.put(records)).isInstanceOf(RetriableException.class);
         assertThatThrownBy(() -> task.put(records)).isInstanceOf(RetriableException.class);
         assertThatThrownBy(() -> task.put(records))
@@ -244,6 +237,8 @@ public class JdbcSinkTaskTest extends EasyMockSupport {
             .isInstanceOf(ConnectException.class)
             .hasCauseInstanceOf(SQLException.class);
 
-        verifyAll();
+        verify(ctx, times(maxRetries)).timeout(retryBackoffMs);
+        verify(mockWriter, times(maxRetries)).closeQuietly();
+        verify(mockWriter, times(maxRetries + 1)).write(records);
     }
 }

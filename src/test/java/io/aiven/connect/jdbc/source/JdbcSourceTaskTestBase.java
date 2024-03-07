@@ -28,12 +28,13 @@ import org.apache.kafka.connect.storage.OffsetStorageReader;
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
-import org.powermock.api.easymock.annotation.Mock;
+import org.mockito.Mock;
 
 import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 public class JdbcSourceTaskTestBase {
 
@@ -120,8 +121,8 @@ public class JdbcSourceTaskTestBase {
 
     protected <T> void expectInitialize(final Collection<Map<String, T>> partitions,
                                         final Map<Map<String, T>, Map<String, Object>> offsets) {
-        EasyMock.expect(taskContext.offsetStorageReader()).andReturn(reader);
-        EasyMock.expect(reader.offsets(EasyMock.eq(partitions))).andReturn(offsets);
+        when(taskContext.offsetStorageReader()).thenReturn(reader);
+        when(reader.offsets(eq(partitions))).thenReturn(offsets);
     }
 
     protected <T> void expectInitializeNoOffsets(final Collection<Map<String, T>> partitions) {

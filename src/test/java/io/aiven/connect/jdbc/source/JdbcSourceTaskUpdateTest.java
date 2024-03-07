@@ -38,20 +38,16 @@ import io.aiven.connect.jdbc.util.DateTimeUtils;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.Mockito.verify;
 
 // Tests of polling that return data updates, i.e. verifies the different behaviors for getting
 // incremental data updates from the database
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({JdbcSourceTask.class})
-@PowerMockIgnore("javax.management.*")
+@RunWith(MockitoJUnitRunner.class)
 public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     private static final Map<String, String> QUERY_SOURCE_PARTITION
         = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
@@ -103,15 +99,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION)
         );
 
-
-        PowerMock.replayAll();
-
         // Incrementing column must be NOT NULL
         db.createTable(SINGLE_TABLE_NAME, "id", "INT");
 
         startTask(null, "id", null);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test(expected = ConnectException.class)
@@ -121,14 +114,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION)
         );
 
-        PowerMock.replayAll();
-
         // Timestamp column must be NOT NULL
         db.createTable(SINGLE_TABLE_NAME, "modified", "TIMESTAMP");
 
         startTask("modified", null, null);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -152,7 +143,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION)
         );
 
-        PowerMock.replayAll();
 
         db.createTable(SINGLE_TABLE_NAME,
             "id", "INT NOT NULL");
@@ -170,7 +160,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(2, "id", Arrays.asList(2, 3), false, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -179,8 +169,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
         );
-
-        PowerMock.replayAll();
 
         final String extraColumn = "col";
         // Need extra column to be able to insert anything, extra is ignored.
@@ -198,7 +186,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(2, "id", Arrays.asList(2, 3), false, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -221,8 +209,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
         );
-
-        PowerMock.replayAll();
 
         // Manage these manually so we can verify the emitted values
         db.createTable(SINGLE_TABLE_NAME,
@@ -258,7 +244,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(2, "id", Arrays.asList(3, 4), true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -268,7 +254,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION)
         );
 
-        PowerMock.replayAll();
         // Manage these manually so we can verify the emitted values
         db.createTable(SINGLE_TABLE_NAME,
             "modified", "TIMESTAMP",
@@ -293,7 +278,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(3, "id", Arrays.asList(2, 3, 4), false, false, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -302,8 +287,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
         );
-
-        PowerMock.replayAll();
 
         // Manage these manually so we can verify the emitted values
         db.createTable(SINGLE_TABLE_NAME,
@@ -333,7 +316,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         Thread.sleep(500);
         verifyPoll(2, "id", Arrays.asList(4, 5), true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
 
@@ -343,8 +326,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
         );
-
-        PowerMock.replayAll();
 
         // Manage these manually so we can verify the emitted values
         db.createTable(SINGLE_TABLE_NAME,
@@ -366,7 +347,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(2, "id", Arrays.asList(3, 1), true, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -375,8 +356,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION_WITH_VERSION,
             SINGLE_TABLE_PARTITION)
         );
-
-        PowerMock.replayAll();
 
         final String timeZoneID = "America/Los_Angeles";
         final TimeZone timeZone = TimeZone.getTimeZone(timeZoneID);
@@ -390,7 +369,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         startTask("modified", "id", null, 0L, timeZoneID, null, null);
         verifyIncrementingAndTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
     }
 
     @Test
@@ -416,7 +394,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             SINGLE_TABLE_PARTITION)
         );
 
-        PowerMock.replayAll();
 
         // Manage these manually so we can verify the emitted values
         db.createTable(SINGLE_TABLE_NAME,
@@ -439,7 +416,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(2, "id", Arrays.asList(3, 1), false, true, true, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -476,8 +453,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             offsets
         );
 
-        PowerMock.replayAll();
-
         db.createTable(SINGLE_TABLE_NAME, "id", "INT NOT NULL");
         db.insert(SINGLE_TABLE_NAME, "id", 1);
         db.insert(SINGLE_TABLE_NAME, "id", 2);
@@ -488,7 +463,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         // Effectively skips first poll
         verifyPoll(2, "id", Arrays.asList(2, 3), false, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -526,8 +501,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             offsets
         );
 
-        PowerMock.replayAll();
-
         final String extraColumn = "col";
         // Use BIGINT here to test LONG columns
         db.createTable(SINGLE_TABLE_NAME,
@@ -542,7 +515,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         // Effectively skips first poll
         verifyPoll(2, "id", Arrays.asList(2L, 3L), false, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -580,7 +553,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             offsets
         );
 
-        PowerMock.replayAll();
 
         // Timestamp is managed manually here so we can verify handling of duplicate values
         db.createTable(SINGLE_TABLE_NAME,
@@ -602,7 +574,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         // Effectively skips first poll
         verifyPoll(2, "id", Arrays.asList(3, 4), true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
     @Test
@@ -639,8 +611,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             offsets
         );
 
-        PowerMock.replayAll();
-
         // Timestamp is managed manually here so we can verify handling of duplicate values
         db.createTable(SINGLE_TABLE_NAME,
             "modified", "TIMESTAMP NOT NULL",
@@ -667,7 +637,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
         verifyPoll(3, "id", Arrays.asList(4, 5, 1), true, true, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        PowerMock.verifyAll();
+        verify(taskContext).offsetStorageReader();
     }
 
 
@@ -713,8 +683,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     public void testCustomQueryWithTimestamp() throws Exception {
         expectInitializeNoOffsets(List.of(JOIN_QUERY_PARTITION));
 
-        PowerMock.replayAll();
-
         db.createTable(JOIN_TABLE_NAME, "user_id", "INT", "name", "VARCHAR(64)");
         db.insert(JOIN_TABLE_NAME, "user_id", 1, "name", "Alice");
         db.insert(JOIN_TABLE_NAME, "user_id", 2, "name", "Bob");
@@ -749,8 +717,6 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
             "user_id", 2);
 
         verifyPoll(2, "id", Arrays.asList(3, 4), true, false, false, TOPIC_PREFIX);
-
-        PowerMock.verifyAll();
     }
 
     private void startTask(final String timestampColumn, final String incrementingColumn, final String query) {

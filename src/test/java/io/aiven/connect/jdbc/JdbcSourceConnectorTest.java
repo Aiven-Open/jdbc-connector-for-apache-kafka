@@ -28,7 +28,6 @@ import java.util.Map;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
-import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 import io.aiven.connect.jdbc.source.EmbeddedDerby;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
 import io.aiven.connect.jdbc.source.JdbcSourceTask;
@@ -37,22 +36,19 @@ import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({JdbcSourceConnector.class, DatabaseDialect.class})
-@PowerMockIgnore("javax.management.*")
 public class JdbcSourceConnectorTest {
 
     private JdbcSourceConnector connector;
@@ -101,33 +97,16 @@ public class JdbcSourceConnectorTest {
 
     @Test
     public void testStartStop() throws Exception {
-        final CachedConnectionProvider mockCachedConnectionProvider =
-            PowerMock.createMock(CachedConnectionProvider.class);
-        PowerMock.expectNew(
-            CachedConnectionProvider.class,
-            EasyMock.anyObject(DatabaseDialect.class),
-            EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_ATTEMPTS_DEFAULT),
-            EasyMock.eq(JdbcSourceConnectorConfig.CONNECTION_BACKOFF_DEFAULT))
-            .andReturn(mockCachedConnectionProvider);
+        final Connection conn = mock(Connection.class);
+        when(conn.getMetaData()).thenThrow(new SQLException());
+        try (MockedConstruction<CachedConnectionProvider> mockCachedConnectionProvider =
+                 mockConstruction(CachedConnectionProvider.class,
+                     (mock, context) -> when(mock.getConnection()).thenReturn(conn))) {
 
-        // Should request a connection, then should close it on stop(). The background thread may also
-        // request connections any time it performs updates.
-        final Connection conn = PowerMock.createMock(Connection.class);
-        EasyMock.expect(mockCachedConnectionProvider.getConnection()).andReturn(conn).anyTimes();
-
-        // Since we're just testing start/stop, we don't worry about the value here but need to stub
-        // something since the background thread will be started and try to lookup metadata.
-        EasyMock.expect(conn.getMetaData()).andStubThrow(new SQLException());
-        // Close will be invoked both for the SQLExeption and when the connector is stopped
-        mockCachedConnectionProvider.close();
-        PowerMock.expectLastCall().atLeastOnce();
-
-        PowerMock.replayAll();
-
-        connector.start(connProps);
-        connector.stop();
-
-        PowerMock.verifyAll();
+            connector.start(connProps);
+            connector.stop();
+            verify(mockCachedConnectionProvider.constructed().get(0), atLeastOnce()).close();
+        }
     }
 
     @Test
