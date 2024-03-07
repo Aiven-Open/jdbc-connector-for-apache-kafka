@@ -1,4 +1,5 @@
 import java.io.FileOutputStream
+import java.net.URL
 
 /*
  * Copyright 2021 Aiven Oy and jdbc-connector-for-apache-kafka contributors
@@ -45,6 +46,15 @@ java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
     withSourcesJar()
+}
+
+tasks.wrapper {
+    doFirst {
+        val sha256Sum = URL("$distributionUrl.sha256").readText()
+        propertiesFile.appendText("distributionSha256Sum=${sha256Sum}\n")
+        println("Added checksum to wrapper properties")
+    }
+    distributionType = Wrapper.DistributionType.ALL
 }
 
 checkstyle {
