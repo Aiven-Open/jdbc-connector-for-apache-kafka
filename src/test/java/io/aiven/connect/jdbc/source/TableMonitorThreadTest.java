@@ -35,14 +35,12 @@ import io.aiven.connect.jdbc.util.ConnectionProvider;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,7 +52,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(Parameterized.class)
+@ExtendWith(MockitoExtension.class)
 public class TableMonitorThreadTest {
     private static final long POLL_INTERVAL = 100;
 
@@ -84,8 +82,6 @@ public class TableMonitorThreadTest {
         new HashSet<>(Arrays.asList("VIEW"))
     );
 
-    private final boolean qualifiedTableNames;
-
     private TableMonitorThread tableMonitorThread;
 
     @Mock
@@ -97,24 +93,11 @@ public class TableMonitorThreadTest {
     @Mock
     private ConnectorContext context;
 
-    @Parameterized.Parameters
-    public static Iterable<? extends Object> data() {
-        return Arrays.asList(false, true);
-    }
-
-    public TableMonitorThreadTest(final boolean qualifiedTableNames) {
-        this.qualifiedTableNames = qualifiedTableNames;
-    }
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
-
-    @Test
-    public void testSingleLookup() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testSingleLookup(final boolean qualifiedTableNames) throws Exception {
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(null, null);
+        tableMonitorThread = newTableMonitorThread(null, null, qualifiedTableNames);
         final String expectedTableName;
         if (qualifiedTableNames) {
             expectTableNames(LIST_FOO, shutdownThread());
@@ -130,11 +113,12 @@ public class TableMonitorThreadTest {
         verify(dialect).expressionBuilder();
     }
 
-    @Test
-    public void testWhitelist() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testWhitelist(final boolean qualifiedTableNames) throws Exception {
         final Set<String> whitelist = new HashSet<>(Arrays.asList("foo", "bar"));
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(whitelist, null);
+        tableMonitorThread = newTableMonitorThread(whitelist, null, qualifiedTableNames);
         expectTableNames(LIST_FOO_BAR, shutdownThread());
 
         tableMonitorThread.start();
@@ -144,11 +128,12 @@ public class TableMonitorThreadTest {
         verify(dialect, atLeastOnce()).expressionBuilder();
     }
 
-    @Test
-    public void testBlacklist() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testBlacklist(final boolean qualifiedTableNames) throws Exception {
         final Set<String> blacklist = new HashSet<>(Arrays.asList("bar", "baz"));
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(null, blacklist);
+        tableMonitorThread = newTableMonitorThread(null, blacklist, qualifiedTableNames);
         expectTableNames(LIST_FOO_BAR_BAZ, shutdownThread());
 
         tableMonitorThread.start();
@@ -158,12 +143,12 @@ public class TableMonitorThreadTest {
         verify(dialect, atLeastOnce()).expressionBuilder();
     }
 
-    @Test
-    public void testReconfigOnUpdate() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testReconfigOnUpdate(final boolean qualifiedTableNames) throws Exception {
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(null, null);
-        expectTableNames(LIST_FOO);
-        expectTableNames(LIST_FOO, checkTableNames("foo"));
+        tableMonitorThread = newTableMonitorThread(null, null, qualifiedTableNames);
+        when(connectionProvider.getConnection()).thenReturn(connection);
 
         // Change the result to trigger a task reconfiguration
         expectTableNames(LIST_FOO_BAR);
@@ -179,15 +164,13 @@ public class TableMonitorThreadTest {
         verify(dialect, times(2)).expressionBuilder();
     }
 
-    @Test
-    public void testInvalidConnection() throws Exception {
-        tableMonitorThread = newTableMonitorThread(null, null);
-        when(connectionProvider.getConnection()).thenAnswer(new Answer<Connection>() {
-            @Override
-            public Connection answer(final InvocationOnMock invocation) throws Throwable {
-                tableMonitorThread.shutdown();
-                throw new ConnectException("Simulated error with the db.");
-            }
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testInvalidConnection(final boolean qualifiedTableNames) throws Exception {
+        tableMonitorThread = newTableMonitorThread(null, null, qualifiedTableNames);
+        when(connectionProvider.getConnection()).thenAnswer((Answer<Connection>) invocation -> {
+            tableMonitorThread.shutdown();
+            throw new ConnectException("Simulated error with the db.");
         });
 
         tableMonitorThread.start();
@@ -196,10 +179,11 @@ public class TableMonitorThreadTest {
         verify(connectionProvider).getConnection();
     }
 
-    @Test
-    public void testDuplicates() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testDuplicates(final boolean qualifiedTableNames) throws Exception {
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(null, null);
+        tableMonitorThread = newTableMonitorThread(null, null, qualifiedTableNames);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
         tableMonitorThread.start();
         tableMonitorThread.join();
@@ -213,11 +197,12 @@ public class TableMonitorThreadTest {
         verify(dialect).expressionBuilder();
     }
 
-    @Test
-    public void testDuplicateWithUnqualifiedWhitelist() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testDuplicateWithUnqualifiedWhitelist(final boolean qualifiedTableNames) throws Exception {
         final Set<String> whitelist = new HashSet<>(Arrays.asList("dup"));
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(whitelist, null);
+        tableMonitorThread = newTableMonitorThread(whitelist, null, qualifiedTableNames);
         expectTableNames(LIST_DUP_ONLY, shutdownThread());
 
         tableMonitorThread.start();
@@ -232,11 +217,12 @@ public class TableMonitorThreadTest {
         verify(dialect, atLeastOnce()).expressionBuilder();
     }
 
-    @Test
-    public void testDuplicateWithUnqualifiedBlacklist() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testDuplicateWithUnqualifiedBlacklist(final boolean qualifiedTableNames) throws Exception {
         final Set<String> blacklist = new HashSet<>(Arrays.asList("foo"));
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(null, blacklist);
+        tableMonitorThread = newTableMonitorThread(null, blacklist, qualifiedTableNames);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
         tableMonitorThread.start();
         tableMonitorThread.join();
@@ -250,11 +236,12 @@ public class TableMonitorThreadTest {
         verify(dialect, atLeastOnce()).expressionBuilder();
     }
 
-    @Test
-    public void testDuplicateWithQualifiedWhitelist() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testDuplicateWithQualifiedWhitelist(final boolean qualifiedTableNames) throws Exception {
         final Set<String> whitelist = new HashSet<>(Arrays.asList("dup1.dup", "foo"));
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(whitelist, null);
+        tableMonitorThread = newTableMonitorThread(whitelist, null, qualifiedTableNames);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
 
         tableMonitorThread.start();
@@ -269,11 +256,12 @@ public class TableMonitorThreadTest {
         verify(dialect, atLeastOnce()).expressionBuilder();
     }
 
-    @Test
-    public void testDuplicateWithQualifiedBlacklist() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testDuplicateWithQualifiedBlacklist(final boolean qualifiedTableNames) throws Exception {
         final Set<String> blacklist = new HashSet<>(Arrays.asList("dup1.dup", "foo"));
         when(dialect.expressionBuilder()).thenReturn(ExpressionBuilder.create());
-        tableMonitorThread = newTableMonitorThread(null, blacklist);
+        tableMonitorThread = newTableMonitorThread(null, blacklist, qualifiedTableNames);
         expectTableNames(LIST_DUP_WITH_ALL, shutdownThread());
 
         tableMonitorThread.start();
@@ -287,15 +275,16 @@ public class TableMonitorThreadTest {
         verify(dialect, atLeastOnce()).expressionBuilder();
     }
 
-    private TableMonitorThread newTableMonitorThread(final Set<String> whitelist, final Set<String> blacklist) {
+    private TableMonitorThread newTableMonitorThread(final Set<String> whitelist, final Set<String> blacklist,
+                                                     final boolean qualifiedTableNames) {
         return new TableMonitorThread(
-                dialect,
-                connectionProvider,
-                context,
-                POLL_INTERVAL,
-                whitelist,
-                blacklist,
-                qualifiedTableNames
+            dialect,
+            connectionProvider,
+            context,
+            POLL_INTERVAL,
+            whitelist,
+            blacklist,
+            qualifiedTableNames
         );
     }
 

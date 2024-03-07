@@ -35,10 +35,10 @@ import org.apache.kafka.connect.source.SourceRecord;
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.verify;
 
 // Tests of polling that return data updates, i.e. verifies the different behaviors for getting
 // incremental data updates from the database
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     private static final Map<String, String> QUERY_SOURCE_PARTITION
         = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
@@ -55,7 +55,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
 
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone(ZoneOffset.UTC);
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         task.stop();
         super.tearDown();
@@ -92,7 +92,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testIncrementingInvalidColumn() throws Exception {
         expectInitializeNoOffsets(Arrays.asList(
             SINGLE_TABLE_PARTITION_WITH_VERSION,
@@ -102,12 +102,11 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         // Incrementing column must be NOT NULL
         db.createTable(SINGLE_TABLE_NAME, "id", "INT");
 
-        startTask(null, "id", null);
-
-        verify(taskContext).offsetStorageReader();
+        assertThatThrownBy(() -> startTask(null, "id", null))
+            .isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testTimestampInvalidColumn() throws Exception {
         expectInitializeNoOffsets(Arrays.asList(
             SINGLE_TABLE_PARTITION_WITH_VERSION,
@@ -117,9 +116,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         // Timestamp column must be NOT NULL
         db.createTable(SINGLE_TABLE_NAME, "modified", "TIMESTAMP");
 
-        startTask("modified", null, null);
-
-        verify(taskContext).offsetStorageReader();
+        assertThatThrownBy(() -> startTask("modified", null, null))
+            .isInstanceOf(ConnectException.class);
     }
 
     @Test

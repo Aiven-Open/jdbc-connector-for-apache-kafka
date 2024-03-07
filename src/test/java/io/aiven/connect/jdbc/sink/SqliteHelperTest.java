@@ -30,9 +30,9 @@ import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,12 +40,12 @@ public class SqliteHelperTest {
 
     private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, SQLException {
         sqliteHelper.setUp();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException, SQLException {
         sqliteHelper.tearDown();
     }

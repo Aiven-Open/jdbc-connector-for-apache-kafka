@@ -20,22 +20,20 @@ package io.aiven.connect.jdbc.source;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.NumericMapping;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(Parameterized.class)
 public class NumericMappingConfigTest {
     private Map<String, String> props;
 
-    @Parameterized.Parameters
-    public static Iterable<Object[]> mapping() {
-        return Arrays.asList(
+    public static Stream<Object[]> mapping() {
+        return Arrays.stream(
             new Object[][]{
                 {NumericMapping.NONE, false, null},
                 {NumericMapping.NONE, false, "none"},
@@ -55,22 +53,15 @@ public class NumericMappingConfigTest {
         );
     }
 
-    @Parameterized.Parameter(0)
-    public NumericMapping expected;
-
-    @Parameterized.Parameter(1)
-    public boolean precisionMapping;
-
-    @Parameterized.Parameter(2)
-    public String extendedMapping;
-
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         props = new HashMap<>();
     }
 
-    @Test
-    public void testNumericMapping() {
+    @ParameterizedTest
+    @MethodSource("mapping")
+    public void testNumericMapping(final NumericMapping expected, final boolean precisionMapping,
+                                   final String extendedMapping) {
         props.put(JdbcSourceConnectorConfig.CONNECTION_URL_CONFIG, "jdbc:foo:bar");
         props.put(JdbcSourceConnectorConfig.MODE_CONFIG, JdbcSourceConnectorConfig.MODE_BULK);
         props.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");

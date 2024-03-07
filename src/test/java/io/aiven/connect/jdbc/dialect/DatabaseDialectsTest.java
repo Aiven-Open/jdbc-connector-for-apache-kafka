@@ -26,10 +26,11 @@ import org.apache.kafka.connect.errors.ConnectException;
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static junit.framework.TestCase.assertSame;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class DatabaseDialectsTest {
 
@@ -104,14 +105,16 @@ public class DatabaseDialectsTest {
         assertDialect(MockDatabaseDialect.class, "jdbc:mock:argle");
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void shouldNotFindDialectForInvalidUrl() {
-        DatabaseDialects.extractJdbcUrlInfo("jdbc:protocolinvalid;field=value;");
+        assertThatThrownBy(() -> DatabaseDialects.extractJdbcUrlInfo("jdbc:protocolinvalid;field=value;"))
+            .isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void shouldNotFindDialectForInvalidUrlMissingJdbcPrefix() {
-        DatabaseDialects.extractJdbcUrlInfo("mysql://Server:port");
+        assertThatThrownBy(() -> DatabaseDialects.extractJdbcUrlInfo("mysql://Server:port"))
+            .isInstanceOf(ConnectException.class);
     }
 
     private void assertDialect(

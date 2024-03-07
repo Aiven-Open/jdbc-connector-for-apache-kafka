@@ -28,7 +28,7 @@ import org.apache.kafka.connect.data.Schema;
 
 import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

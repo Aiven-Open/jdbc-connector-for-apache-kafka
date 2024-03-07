@@ -36,9 +36,9 @@ import io.aiven.connect.jdbc.util.CachedConnectionProvider;
 import io.aiven.connect.jdbc.util.ExpressionBuilder;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,7 +55,7 @@ public class JdbcSourceConnectorTest {
     private EmbeddedDerby db;
     private Map<String, String> connProps;
 
-    @Before
+    @BeforeEach
     public void setup() {
         connector = new JdbcSourceConnector();
         db = new EmbeddedDerby();
@@ -65,7 +65,7 @@ public class JdbcSourceConnectorTest {
         connProps.put(JdbcSourceConnectorConfig.TOPIC_PREFIX_CONFIG, "test-");
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         db.close();
         db.dropDatabase();

@@ -17,7 +17,6 @@
 
 package io.aiven.connect.jdbc.source;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
@@ -26,37 +25,30 @@ import org.apache.kafka.connect.source.SourceRecord;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
-    @Mock
-    private SourceConnectionProvider mockSourceConnectionProvider;
-
-    @Mock
-    private Connection conn;
-
-    @Test(expected = ConnectException.class)
+    @Test
     public void testMissingParentConfig() {
         final Map<String, String> props = singleTableConfig();
         props.remove(JdbcConfig.CONNECTION_URL_CONFIG);
-        task.start(props);
+        assertThatThrownBy(() -> task.start(props))
+            .isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void testMissingTables() {
         final Map<String, String> props = singleTableConfig();
         props.remove(JdbcSourceTaskConfig.TABLES_CONFIG);
-        task.start(props);
+        assertThatThrownBy(() -> task.start(props))
+            .isInstanceOf(ConnectException.class);
     }
 
     @Test

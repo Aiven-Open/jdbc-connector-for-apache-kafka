@@ -36,9 +36,9 @@ import io.aiven.connect.jdbc.dialect.DatabaseDialects;
 import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static java.sql.Statement.SUCCESS_NO_INFO;
@@ -56,12 +56,12 @@ public class BufferedRecordsTest {
     private final SqliteHelper sqliteHelper = new SqliteHelper(getClass().getSimpleName());
     private final String dbUrl = sqliteHelper.sqliteUri();
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, SQLException {
         sqliteHelper.setUp();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException, SQLException {
         sqliteHelper.tearDown();
     }
@@ -146,7 +146,7 @@ public class BufferedRecordsTest {
         buffer.add(recordA);
 
         final Schema schemaB = SchemaBuilder.struct().field("name", Schema.STRING_SCHEMA).build();
-        final Struct valueB = new Struct(schemaA).put("name", "cubb");
+        final Struct valueB = new Struct(schemaB).put("name", "cubb");
         final SinkRecord recordB = wrapInSinkRecord(valueB);
         buffer.add(recordB);
         buffer.flush();

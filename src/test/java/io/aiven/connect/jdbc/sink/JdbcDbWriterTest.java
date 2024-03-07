@@ -41,11 +41,12 @@ import io.aiven.connect.jdbc.dialect.SqliteDatabaseDialect;
 import io.aiven.connect.jdbc.util.TableDefinition;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.data.Offset.offset;
 
 public class JdbcDbWriterTest {
@@ -55,12 +56,12 @@ public class JdbcDbWriterTest {
     private JdbcDbWriter writer = null;
     private DatabaseDialect dialect;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, SQLException {
         sqliteHelper.setUp();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException, SQLException {
         if (writer != null) {
             writer.closeQuietly();
@@ -119,7 +120,7 @@ public class JdbcDbWriterTest {
         assertThat(tableId.tableName()).isEqualTo("same_table");
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void shouldThrowConnectExceptionForUnknownTopicToTableMapping() {
         final Map<String, String> props = new HashMap<>();
         props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
@@ -130,7 +131,8 @@ public class JdbcDbWriterTest {
         dialect = new SqliteDatabaseDialect(jdbcSinkConfig);
         final DbStructure dbStructure = new DbStructure(dialect);
         final JdbcDbWriter writer = new JdbcDbWriter(jdbcSinkConfig, dialect, dbStructure);
-        writer.generateTableNameFor("another_topic");
+        assertThatThrownBy(() -> writer.generateTableNameFor("another_topic"))
+            .isInstanceOf(ConnectException.class);
     }
 
     @Test
@@ -188,10 +190,11 @@ public class JdbcDbWriterTest {
         }
     }
 
-    @Test(expected = SQLException.class)
-    public void multiInsertWithKafkaPkFailsDueToUniqueConstraint() throws SQLException {
-        writeSameRecordTwiceExpectingSingleUpdate(
-            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, "");
+    @Test
+    public void multiInsertWithKafkaPkFailsDueToUniqueConstraint() {
+        assertThatThrownBy(() -> writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, ""))
+            .isInstanceOf(SQLException.class);
     }
 
     @Test
@@ -200,10 +203,11 @@ public class JdbcDbWriterTest {
             JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.KAFKA, "");
     }
 
-    @Test(expected = SQLException.class)
-    public void multiInsertWithRecordKeyPkFailsDueToUniqueConstraint() throws SQLException {
-        writeSameRecordTwiceExpectingSingleUpdate(
-            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, "");
+    @Test
+    public void multiInsertWithRecordKeyPkFailsDueToUniqueConstraint() {
+        assertThatThrownBy(() -> writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, ""))
+            .isInstanceOf(SQLException.class);
     }
 
     @Test
@@ -212,10 +216,11 @@ public class JdbcDbWriterTest {
             JdbcSinkConfig.InsertMode.UPSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY, "");
     }
 
-    @Test(expected = SQLException.class)
-    public void multiInsertWithRecordValuePkFailsDueToUniqueConstraint() throws SQLException {
-        writeSameRecordTwiceExpectingSingleUpdate(
-            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title");
+    @Test
+    public void multiInsertWithRecordValuePkFailsDueToUniqueConstraint() {
+        assertThatThrownBy(() -> writeSameRecordTwiceExpectingSingleUpdate(
+            JdbcSinkConfig.InsertMode.INSERT, JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE, "author,title"))
+            .isInstanceOf(SQLException.class);
     }
 
     @Test

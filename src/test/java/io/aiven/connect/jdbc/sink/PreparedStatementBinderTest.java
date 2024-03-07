@@ -18,6 +18,7 @@
 package io.aiven.connect.jdbc.sink;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -45,18 +46,17 @@ import io.aiven.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.aiven.connect.jdbc.sink.metadata.SchemaPair;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class PreparedStatementBinderTest {
 
     private DatabaseDialect dialect;
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         final Map<String, String> props = new HashMap<>();
         props.put(JdbcConfig.CONNECTION_URL_CONFIG, "jdbc:bogus:something");
@@ -97,7 +97,7 @@ public class PreparedStatementBinderTest {
             .put("double", -2436546.56457)
             .put("bytes", new byte[]{-32, 124})
             .put("age", 30)
-            .put("decimal", new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN))
+            .put("decimal", new BigDecimal("1.5").setScale(0, RoundingMode.HALF_EVEN))
             .put("date", new java.util.Date(0))
             .put("time", new java.util.Date(1000))
             .put("timestamp", new java.util.Date(100));
@@ -126,36 +126,33 @@ public class PreparedStatementBinderTest {
 
         int index = 1;
         // key field first
-        verify(statement, times(1)).setLong(index++, valueStruct.getInt64("long"));
+        verify(statement).setLong(index++, valueStruct.getInt64("long"));
         // rest in order of schema def
-        verify(statement, times(1)).setString(index++, valueStruct.getString("firstName"));
-        verify(statement, times(1)).setString(index++, valueStruct.getString("lastName"));
-        verify(statement, times(1)).setInt(index++, valueStruct.getInt32("age"));
-        verify(statement, times(1)).setBoolean(index++, valueStruct.getBoolean("bool"));
-        verify(statement, times(1)).setShort(index++, valueStruct.getInt16("short"));
-        verify(statement, times(1)).setByte(index++, valueStruct.getInt8("byte"));
-        verify(statement, times(1)).setFloat(index++, valueStruct.getFloat32("float"));
-        verify(statement, times(1)).setDouble(index++, valueStruct.getFloat64("double"));
-        verify(statement, times(1)).setBytes(index++, valueStruct.getBytes("bytes"));
-        verify(statement, times(1)).setBigDecimal(index++, (BigDecimal) valueStruct.get("decimal"));
+        verify(statement).setString(index++, valueStruct.getString("firstName"));
+        verify(statement).setString(index++, valueStruct.getString("lastName"));
+        verify(statement).setInt(index++, valueStruct.getInt32("age"));
+        verify(statement).setBoolean(index++, valueStruct.getBoolean("bool"));
+        verify(statement).setShort(index++, valueStruct.getInt16("short"));
+        verify(statement).setByte(index++, valueStruct.getInt8("byte"));
+        verify(statement).setFloat(index++, valueStruct.getFloat32("float"));
+        verify(statement).setDouble(index++, valueStruct.getFloat64("double"));
+        verify(statement).setBytes(index++, valueStruct.getBytes("bytes"));
+        verify(statement).setBigDecimal(index++, (BigDecimal) valueStruct.get("decimal"));
         final Calendar utcCalendar = DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC));
         verify(
-            statement,
-            times(1)
+            statement
         ).setDate(index++, new java.sql.Date(((java.util.Date) valueStruct.get("date")).getTime()), utcCalendar);
         verify(
-            statement,
-            times(1)
+            statement
         ).setTime(index++, new java.sql.Time(((java.util.Date) valueStruct.get("time")).getTime()), utcCalendar);
         verify(
-            statement,
-            times(1)
+            statement
         ).setTimestamp(
             index++,
             new java.sql.Timestamp(((java.util.Date) valueStruct.get("timestamp")).getTime()),
             utcCalendar);
         // last field is optional and is null-valued in struct
-        verify(statement, times(1)).setObject(index++, null);
+        verify(statement).setObject(index++, null);
     }
 
     @Test
@@ -192,9 +189,9 @@ public class PreparedStatementBinderTest {
 
         int index = 1;
         // key field first
-        verify(statement, times(1)).setLong(index++, valueStruct.getInt64("long"));
+        verify(statement).setLong(index++, valueStruct.getInt64("long"));
         // rest in order of schema def
-        verify(statement, times(1)).setString(index++, valueStruct.getString("firstName"));
+        verify(statement).setString(index++, valueStruct.getString("firstName"));
     }
 
     @Test
@@ -232,9 +229,9 @@ public class PreparedStatementBinderTest {
         int index = 1;
 
         // non key first
-        verify(statement, times(1)).setString(index++, valueStruct.getString("firstName"));
+        verify(statement).setString(index++, valueStruct.getString("firstName"));
         // last the keys
-        verify(statement, times(1)).setLong(index++, valueStruct.getInt64("long"));
+        verify(statement).setLong(index++, valueStruct.getInt64("long"));
     }
 
 }

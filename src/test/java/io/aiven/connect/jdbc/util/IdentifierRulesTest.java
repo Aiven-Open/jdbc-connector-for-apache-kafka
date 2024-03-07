@@ -17,10 +17,8 @@
 
 package io.aiven.connect.jdbc.util;
 
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,9 +26,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class IdentifierRulesTest {
 
     private IdentifierRules rules;
-    private List<String> parts;
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         rules = IdentifierRules.DEFAULT;
     }

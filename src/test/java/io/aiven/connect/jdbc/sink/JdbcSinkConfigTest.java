@@ -22,9 +22,10 @@ import java.util.Map;
 
 import org.apache.kafka.common.config.ConfigException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
 public class JdbcSinkConfigTest {
@@ -55,20 +56,22 @@ public class JdbcSinkConfigTest {
         assertThat(config.topicsToTablesMapping).containsExactly(entry("t3", "tbl3"));
     }
 
-    @Test(expected = ConfigException.class)
+    @Test
     public void shouldThrowExceptionForWrongMappingFormat() {
         final Map<String, String> props = new HashMap<>();
         props.put(JdbcSinkConfig.TOPICS_TO_TABLES_MAPPING, "asd:asd,asd");
 
-        new JdbcSinkConfig(props);
+        assertThatThrownBy(() -> new JdbcSinkConfig(props))
+            .isInstanceOf(ConfigException.class);
     }
 
-    @Test(expected = ConfigException.class)
+    @Test
     public void shouldThrowExceptionForEmptyMappingFormat() {
         final Map<String, String> props = new HashMap<>();
         props.put(JdbcSinkConfig.TOPICS_TO_TABLES_MAPPING, ",,,,,,asd");
 
-        new JdbcSinkConfig(props);
+        assertThatThrownBy(() -> new JdbcSinkConfig(props))
+            .isInstanceOf(ConfigException.class);
     }
 
 }
