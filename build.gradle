@@ -167,8 +167,10 @@ dependencies {
     implementation "com.google.guava:guava:33.0.0-jre"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
 
-    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+    testImplementation "org.junit.vintage:junit-vintage-engine:$jupiterVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
     testImplementation "commons-io:commons-io:2.14.0"
     testImplementation "org.apache.derby:derby:$derbyVersion"
@@ -202,6 +204,10 @@ dependencies {
 
     // Make test utils from 'test' available in 'integration-test'
     integrationTestImplementation sourceSets.test.output
+}
+
+test {
+    useJUnitPlatform()
 }
 
 task integrationTest(type: Test) {

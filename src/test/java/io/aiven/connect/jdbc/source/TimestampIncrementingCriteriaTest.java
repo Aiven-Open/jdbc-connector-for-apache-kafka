@@ -33,10 +33,11 @@ import org.apache.kafka.connect.errors.ConnectException;
 import io.aiven.connect.jdbc.util.ColumnId;
 import io.aiven.connect.jdbc.util.TableId;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TimestampIncrementingCriteriaTest {
 
@@ -54,7 +55,7 @@ public class TimestampIncrementingCriteriaTest {
     private Struct record;
     private TimeZone utcTimeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         criteria = new TimestampIncrementingCriteria(null, null, utcTimeZone);
         criteriaInc = new TimestampIncrementingCriteria(INCREMENTING_COLUMN, null, utcTimeZone);
@@ -101,22 +102,24 @@ public class TimestampIncrementingCriteriaTest {
         assertExtractedOffset(42L, schema, record);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void extractTooLargeDecimalOffset() {
         final Schema decimalSchema = Decimal.schema(0);
         schema = SchemaBuilder.struct().field("id", decimalSchema).build();
         record = new Struct(schema).put(
             "id",
             new BigDecimal(Long.MAX_VALUE).add(new BigDecimal(1)));
-        assertExtractedOffset(42L, schema, record);
+        assertThatThrownBy(() -> assertExtractedOffset(42L, schema, record))
+            .isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void extractFractionalDecimalOffset() {
         final Schema decimalSchema = Decimal.schema(2);
         schema = SchemaBuilder.struct().field("id", decimalSchema).build();
         record = new Struct(schema).put("id", new BigDecimal("42.42"));
-        assertExtractedOffset(42L, schema, record);
+        assertThatThrownBy(() -> assertExtractedOffset(42L, schema, record))
+            .isInstanceOf(ConnectException.class);
     }
 
     @Test

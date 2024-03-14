@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import org.apache.kafka.common.config.ConfigException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

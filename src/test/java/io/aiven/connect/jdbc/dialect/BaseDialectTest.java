@@ -19,6 +19,7 @@ package io.aiven.connect.jdbc.dialect;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -64,8 +65,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(Parameterized.class)
@@ -356,7 +357,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
         verifyBindField(
             ++index,
             Decimal.schema(0),
-            new BigDecimal("1.5").setScale(0, BigDecimal.ROUND_HALF_EVEN)
+            new BigDecimal("1.5").setScale(0, RoundingMode.HALF_EVEN)
         ).setBigDecimal(index, new BigDecimal(2));
         final Calendar utcCalendar = DateTimeUtils.getTimeZoneCalendar(TimeZone.getTimeZone(ZoneOffset.UTC));
         verifyBindField(
@@ -400,22 +401,31 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
         }
     }
 
-    @Test(expected = ConnectException.class)
-    public void bindFieldStructUnsupported() throws SQLException {
+    @Test
+    public void bindFieldStructUnsupported() {
         final Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
-        dialect.bindField(mock(PreparedStatement.class), 1, structSchema, new Struct(structSchema));
+        assertThatThrownBy(() -> dialect.bindField(mock(PreparedStatement.class), 1, structSchema,
+            new Struct(structSchema)))
+            .isInstanceOf(ConnectException.class)
+            .hasMessage("Unsupported source data type: STRUCT");
     }
 
-    @Test(expected = ConnectException.class)
-    public void bindFieldArrayUnsupported() throws SQLException {
+    @Test
+    public void bindFieldArrayUnsupported() {
         final Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
-        dialect.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList());
+        assertThatThrownBy(
+            () -> dialect.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList()))
+            .isInstanceOf(ConnectException.class)
+            .hasMessage("Unsupported source data type: ARRAY");
     }
 
-    @Test(expected = ConnectException.class)
-    public void bindFieldMapUnsupported() throws SQLException {
+    @Test
+    public void bindFieldMapUnsupported() {
         final Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
-        dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
+        assertThatThrownBy(
+            () -> dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap()))
+            .isInstanceOf(ConnectException.class)
+            .hasMessage("Unsupported source data type: MAP");
     }
 
     protected void assertSanitizedUrl(final String url, final String expectedSanitizedUrl) {
@@ -430,7 +440,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
         throws SQLException {
         final PreparedStatement statement = mock(PreparedStatement.class);
         dialect.bindField(statement, index, schema, value);
-        return verify(statement, times(1));
+        return verify(statement);
     }
 
     /**

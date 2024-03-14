@@ -28,9 +28,10 @@ import org.apache.kafka.connect.errors.ConnectException;
 import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
 
 import com.google.common.collect.Lists;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FieldsMetadataTest {
 
@@ -39,24 +40,26 @@ public class FieldsMetadataTest {
         .field("name", Schema.STRING_SCHEMA).build();
     private static final Schema SIMPLE_MAP_SCHEMA = SchemaBuilder.map(SchemaBuilder.INT64_SCHEMA, Schema.STRING_SCHEMA);
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void valueSchemaMustBePresentForPkModeRecordValue() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
-            Collections.emptyList(),
-            SIMPLE_PRIMITIVE_SCHEMA,
-            null
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
+                Collections.emptyList(),
+                SIMPLE_PRIMITIVE_SCHEMA,
+                null
+            )).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void valueSchemaMustBeStructIfPresent() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.KAFKA,
-            Collections.emptyList(),
-            SIMPLE_PRIMITIVE_SCHEMA,
-            SIMPLE_PRIMITIVE_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.KAFKA,
+                Collections.emptyList(),
+                SIMPLE_PRIMITIVE_SCHEMA,
+                SIMPLE_PRIMITIVE_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
     @Test
@@ -78,14 +81,15 @@ public class FieldsMetadataTest {
         ).allFields.keySet())).isEqualTo(List.of("__connect_topic", "__connect_partition", "__connect_offset"));
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void metadataMayNotBeEmpty() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.NONE,
-            Collections.emptyList(),
-            null,
-            null
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.NONE,
+                Collections.emptyList(),
+                null,
+                null
+            )).isInstanceOf(ConnectException.class);
     }
 
     @Test
@@ -129,14 +133,15 @@ public class FieldsMetadataTest {
         assertThat(metadata.nonKeyFieldNames).isEqualTo(Collections.singleton("name"));
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void kafkaPkModeBadFieldSpec() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.KAFKA,
-            List.of("lone"),
-            null,
-            SIMPLE_STRUCT_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.KAFKA,
+                List.of("lone"),
+                null,
+                SIMPLE_STRUCT_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
     /**
@@ -166,54 +171,59 @@ public class FieldsMetadataTest {
         assertThat(metadata.allFields.get("name").isOptional()).isFalse();
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void recordKeyPkModeWithPrimitiveKeyButMultiplePkFieldsSpecified() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
-            List.of("pk1", "pk2"),
-            SIMPLE_PRIMITIVE_SCHEMA,
-            SIMPLE_STRUCT_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
+                List.of("pk1", "pk2"),
+                SIMPLE_PRIMITIVE_SCHEMA,
+                SIMPLE_STRUCT_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void recordKeyPkModeButKeySchemaMissing() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
-            Collections.emptyList(),
-            null,
-            SIMPLE_STRUCT_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
+                Collections.emptyList(),
+                null,
+                SIMPLE_STRUCT_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void recordKeyPkModeButKeySchemaAsNonStructCompositeType() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
-            Collections.emptyList(),
-            SIMPLE_MAP_SCHEMA,
-            SIMPLE_STRUCT_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
+                Collections.emptyList(),
+                SIMPLE_MAP_SCHEMA,
+                SIMPLE_STRUCT_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void recordKeyPkModeWithStructKeyButMissingField() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
-            Collections.singletonList("nonexistent"),
-            SIMPLE_STRUCT_SCHEMA,
-            SIMPLE_STRUCT_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY,
+                Collections.singletonList("nonexistent"),
+                SIMPLE_STRUCT_SCHEMA,
+                SIMPLE_STRUCT_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
-    @Test(expected = ConnectException.class)
+    @Test
     public void recordValuePkModeWithMissingPkField() {
-        extract(
-            JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
-            List.of("nonexistent"),
-            SIMPLE_PRIMITIVE_SCHEMA,
-            SIMPLE_STRUCT_SCHEMA
-        );
+        assertThatThrownBy(() ->
+            extract(
+                JdbcSinkConfig.PrimaryKeyMode.RECORD_VALUE,
+                List.of("nonexistent"),
+                SIMPLE_PRIMITIVE_SCHEMA,
+                SIMPLE_STRUCT_SCHEMA
+            )).isInstanceOf(ConnectException.class);
     }
 
     @Test

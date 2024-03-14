@@ -39,9 +39,9 @@ import org.apache.kafka.connect.sink.SinkTaskContext;
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.DateTimeUtils;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -67,12 +67,12 @@ public class JdbcSinkTaskTest {
         .field("modified", Timestamp.SCHEMA)
         .build();
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, SQLException {
         sqliteHelper.setUp();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException, SQLException {
         sqliteHelper.tearDown();
     }

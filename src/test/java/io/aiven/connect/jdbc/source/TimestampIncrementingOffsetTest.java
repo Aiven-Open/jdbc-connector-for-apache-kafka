@@ -19,8 +19,8 @@ package io.aiven.connect.jdbc.source;
 
 import java.sql.Timestamp;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,7 +34,7 @@ public class TimestampIncrementingOffsetTest {
     private Timestamp nanos;
     private TimestampIncrementingOffset nanosOffset;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         final long millis = System.currentTimeMillis();
         nanos = new Timestamp(millis);
@@ -70,7 +70,6 @@ public class TimestampIncrementingOffsetTest {
     @Test
     public void testGetTimestampOffset() {
         assertThat(unset.getTimestampOffset()).isNull();
-        final Timestamp zero = new Timestamp(0);
         assertThat(tsOnly.getTimestampOffset()).isEqualTo(ts);
         assertThat(tsOnly.getTimestampOffset()).isEqualTo(ts);
         assertThat(incOnly.getTimestampOffset()).isNull();

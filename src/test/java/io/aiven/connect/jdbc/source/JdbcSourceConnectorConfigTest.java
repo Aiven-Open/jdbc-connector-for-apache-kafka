@@ -30,19 +30,19 @@ import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.CachedRecommenderValues;
 import io.aiven.connect.jdbc.source.JdbcSourceConnectorConfig.CachingRecommender;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.list;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class JdbcSourceConnectorConfigTest {
 
     private EmbeddedDerby db;
@@ -53,7 +53,7 @@ public class JdbcSourceConnectorConfigTest {
     private Recommender mockRecommender;
     private final MockTime time = new MockTime();
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         configDef = null;
         results = null;
@@ -72,7 +72,7 @@ public class JdbcSourceConnectorConfigTest {
         db.createTable("another_private_table", "id", "INT");
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         db.close();
         db.dropDatabase();
