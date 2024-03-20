@@ -91,6 +91,13 @@ Database
   * Valid Values: [none, precision_only, best_fit]
   * Importance: low
 
+``table.names.qualify``
+  Whether to use fully-qualified table names when querying the database. If disabled, queries will be performed with unqualified table names. This may be useful if the database has been configured with a search path to automatically direct unqualified queries to the correct table when there are multiple tables available with the same unqualified name
+
+  * Type: boolean
+  * Default: true
+  * Importance: low
+
 ``db.timezone``
   Name of the JDBC timezone that should be used in the connector when querying with time-based criteria. Defaults to UTC.
 
@@ -131,7 +138,7 @@ Mode
   * Type: string
   * Valid Values: [bulk, timestamp, incrementing, timestamp+incrementing]
   * Importance: high
-  * Dependents: ``incrementing.column.name``, ``timestamp.column.name``, ``validate.non.null``
+  * Dependents: ``incrementing.column.name``, ``timestamp.column.name``, ``validate.non.null``, ``timestamp.initial.ms``, ``incrementing.initial``
 
 ``incrementing.column.name``
   The name of the strictly incrementing column to use to detect new rows. Any empty value indicates the column should be autodetected by looking for an auto-incrementing column. This column may not be nullable.
@@ -159,6 +166,20 @@ Mode
 
   * Type: string
   * Default: ""
+  * Importance: medium
+
+``timestamp.initial.ms``
+  The initial value of timestamp when selecting records. The records having timestamp greater than the value are included in the result. Defaults to 0.
+
+  * Type: long
+  * Default: 0
+  * Importance: medium
+
+``incrementing.initial``
+  For the incrementing column, consider only the rows that have the value greater than this. Use this if you need to pick up rows with negative or zero value,  or if you want to skip rows.
+
+  * Type: long
+  * Default: -1
   * Importance: medium
 
 Connector
@@ -221,17 +242,4 @@ Connector
   * Default: 0
   * Importance: high
 
-``timestamp.initial.ms``
-  The initial value of timestamp when selecting records. The records having timestamp greater than the value are included in the result.
-
-  * Type: long
-  * Default: 0
-  * Importance: medium
-
-``incrementing.initial``
-  The initial value of incremental column when selecting records. The records the incremental column with value greater than the configured value are included in the result.
-
-  * Type: long
-  * Default: -1
-  * Importance: medium
 

@@ -60,7 +60,7 @@ Writes
 
   ``multi``
 
-      Use multi-row inserts, e.g. ``INSERT INTO table_name (column_list) VALUES (value_list_1), (value_list_2), ... (value_list_n);``
+      Use multi-row ``INSERT`` statements.
 
   ``upsert``
 
@@ -100,6 +100,14 @@ Data Mapping
 
   * Type: boolean
   * Default: false
+  * Importance: medium
+
+``topics.to.tables.mapping``
+  Kafka topics to database tables mapping. Comma-separated list of topic to table mapping in the format: topic_name:table_name. If the destination table found in the mapping, it would override generated one defined in table.name.format.
+
+  * Type: list
+  * Default: null
+  * Valid Values: io.aiven.connect.jdbc.sink.JdbcSinkConfig$1@6d4b1c02
   * Importance: medium
 
 ``pk.mode``
