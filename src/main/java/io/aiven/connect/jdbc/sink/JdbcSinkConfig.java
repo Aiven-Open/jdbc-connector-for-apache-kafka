@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,13 +29,19 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.config.ConfigValue;
 
 import io.aiven.connect.jdbc.config.JdbcConfig;
 import io.aiven.connect.jdbc.util.StringUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JdbcSinkConfig extends JdbcConfig {
+    private static final Logger log = LoggerFactory.getLogger(JdbcSinkConfig.class);
 
     public enum InsertMode {
         INSERT,
@@ -176,6 +182,12 @@ public class JdbcSinkConfig extends JdbcConfig {
             + " while this configuration is applicable for the other columns.";
     private static final String FIELDS_WHITELIST_DISPLAY = "Fields Whitelist";
 
+    public static final String DELETE_ENABLED = "delete.enabled";
+    private static final String DELETE_ENABLED_DEFAULT = "false";
+    private static final String DELETE_ENABLED_DOC =
+            "Whether to enable the deletion of rows in the target table on tombstone messages";
+    private static final String DELETE_ENABLED_DISPLAY = "Delete enabled";
+
     private static final ConfigDef.Range NON_NEGATIVE_INT_VALIDATOR = ConfigDef.Range.atLeast(0);
 
     private static final String WRITES_GROUP = "Writes";
@@ -218,7 +230,20 @@ public class JdbcSinkConfig extends JdbcConfig {
                 BATCH_SIZE_DOC, WRITES_GROUP,
                 2,
                 ConfigDef.Width.SHORT,
-                BATCH_SIZE_DISPLAY);
+                BATCH_SIZE_DISPLAY)
+            .define(
+                // Delete can only be enabled with delete.enabled=true,
+                // but only when the pk.mode is set to record_key.
+                // This is because deleting a row from the table
+                // requires the primary key be used as criteria.
+                DELETE_ENABLED,
+                ConfigDef.Type.BOOLEAN,
+                DELETE_ENABLED_DEFAULT,
+                ConfigDef.Importance.MEDIUM,
+                DELETE_ENABLED_DOC, WRITES_GROUP,
+                3,
+                ConfigDef.Width.SHORT,
+                DELETE_ENABLED_DISPLAY);
 
         // Data Mapping
         CONFIG_DEF
@@ -370,6 +395,7 @@ public class JdbcSinkConfig extends JdbcConfig {
     public final List<String> pkFields;
     public final Set<String> fieldsWhitelist;
     public final TimeZone timeZone;
+    public final boolean deleteEnabled;
 
     public JdbcSinkConfig(final Map<?, ?> props) {
         super(CONFIG_DEF, props);
@@ -387,6 +413,7 @@ public class JdbcSinkConfig extends JdbcConfig {
         fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
         final String dbTimeZone = getString(DB_TIMEZONE_CONFIG);
         timeZone = TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
+        deleteEnabled = getBoolean(DELETE_ENABLED);
     }
 
     static Map<String, String> topicToTableMapping(final List<String> value) {
@@ -436,5 +463,23 @@ public class JdbcSinkConfig extends JdbcConfig {
         System.out.println("=========================================");
         System.out.println();
         System.out.println(CONFIG_DEF.toEnrichedRst());
+    }
+
+    public static void validateDeleteEnabled(final Config config) {
+        // Collect all configuration values
+        final Map<String, ConfigValue> configValues = config.configValues().stream()
+                .collect(Collectors.toMap(ConfigValue::name, v -> v));
+
+        // Check if DELETE_ENABLED is true
+        final ConfigValue deleteEnabledConfigValue = configValues.get(JdbcSinkConfig.DELETE_ENABLED);
+        final boolean deleteEnabled = (boolean) deleteEnabledConfigValue.value();
+
+        // Check if PK_MODE is RECORD_KEY
+        final ConfigValue pkModeConfigValue = configValues.get(JdbcSinkConfig.PK_MODE);
+        final String pkMode = (String) pkModeConfigValue.value();
+
+        if (deleteEnabled && !JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY.name().equalsIgnoreCase(pkMode)) {
+            deleteEnabledConfigValue.addErrorMessage("Delete support only works with pk.mode=record_key");
+        }
     }
 }

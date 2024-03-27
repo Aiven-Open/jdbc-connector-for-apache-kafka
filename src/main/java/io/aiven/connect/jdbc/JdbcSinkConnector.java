@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,7 +69,10 @@ public final class JdbcSinkConnector extends SinkConnector {
     @Override
     public Config validate(final Map<String, String> connectorConfigs) {
         // TODO cross-fields validation here: pkFields against the pkMode
-        return super.validate(connectorConfigs);
+        final Config config = super.validate(connectorConfigs);
+
+        JdbcSinkConfig.validateDeleteEnabled(config);
+        return config;
     }
 
     @Override

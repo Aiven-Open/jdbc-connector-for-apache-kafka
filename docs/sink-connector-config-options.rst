@@ -83,6 +83,25 @@ Writes
   * Valid Values: [0,...]
   * Importance: medium
 
+``delete.enabled``
+  Enable deletion of rows based on tombstone messages.
+
+  * Type: boolean
+  * Default: false
+  * Importance: medium
+
+  Note:
+
+  A tombstone message has:
+
+  -   a not null key
+  -   a null value
+
+  In case of tombstone messages and ``delete.enabled`` set to ``true``,
+  the JDBC sink connector will delete the row referenced by the
+  message key. If set to ``true``, it requires the ``pk.mode`` to be
+  ``record_key`` to be able to identify the rows to delete.
+
 Data Mapping
 ^^^^^^^^^^^^
 

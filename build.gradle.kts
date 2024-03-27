@@ -2,7 +2,7 @@ import java.io.FileOutputStream
 import java.net.URL
 
 /*
- * Copyright 2021 Aiven Oy and jdbc-connector-for-apache-kafka contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,6 +163,7 @@ dependencies {
 
     runtimeOnly("org.xerial:sqlite-jdbc:3.46.0.0")
     runtimeOnly("org.postgresql:postgresql:42.7.3")
+    runtimeOnly("com.oracle.database.jdbc:ojdbc8:23.4.0.24.05")
     runtimeOnly("net.sourceforge.jtds:jtds:1.3.1")
     runtimeOnly("net.snowflake:snowflake-jdbc:3.16.0")
     runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11")
@@ -201,6 +202,8 @@ dependencies {
     integrationTestImplementation("org.testcontainers:kafka:$testcontainersVersion") // this is not Kafka version
     integrationTestImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     integrationTestImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+    integrationTestImplementation("org.testcontainers:oracle-free:$testcontainersVersion")
+
     integrationTestImplementation("org.awaitility:awaitility:$awaitilityVersion")
     integrationTestImplementation("org.assertj:assertj-db:2.0.2")
 

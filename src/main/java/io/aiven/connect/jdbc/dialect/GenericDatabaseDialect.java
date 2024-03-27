@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  * Copyright 2018 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1396,6 +1396,30 @@ public class GenericDatabaseDialect implements DatabaseDialect {
                 .collect(Collectors.joining(","));
 
         return insertStatement + allRowsPlaceholder;
+    }
+
+    @Override
+    public String buildDeleteStatement(
+            final TableId table,
+            final int records,
+            final Collection<ColumnId> keyColumns
+    ) {
+        if (records < 1) {
+            throw new IllegalArgumentException("number of records must be a positive number, but got: " + records);
+        }
+        if (isEmpty(keyColumns)) {
+            throw new IllegalArgumentException("no columns specified");
+        }
+        requireNonNull(table, "table must not be null");
+        final ExpressionBuilder builder = expressionBuilder();
+        builder.append("DELETE FROM ");
+        builder.append(table);
+        builder.append(" WHERE ");
+        builder.appendList()
+                .delimitedBy(" AND ")
+                .transformedBy(ExpressionBuilder.columnNamesWith(" = ?"))
+                .of(keyColumns);
+        return builder.toString();
     }
 
     @Override

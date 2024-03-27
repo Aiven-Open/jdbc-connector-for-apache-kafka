@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,6 +95,11 @@ public class PreparedStatementBinder implements StatementBinder {
             statement.addBatch();
         }
         return nextIndex;
+    }
+
+    public void bindTombstoneRecord(final SinkRecord record) throws SQLException {
+        bindKeyFields(record, 1);
+        statement.addBatch();
     }
 
     protected int bindKeyFields(final SinkRecord record, int index) throws SQLException {
