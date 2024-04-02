@@ -118,7 +118,7 @@ val jacksonVersion = "2.15.2" // This Jackson is used in the tests.
 val jupiterVersion = "5.10.1"
 val jettyVersion = "11.0.15"
 val servletVersion = "4.0.1"
-val testcontainersVersion = "1.19.6"
+val testcontainersVersion = "1.19.7"
 val awaitilityVersion = "4.2.0"
 val log4jVersion = "2.20.0"
 
