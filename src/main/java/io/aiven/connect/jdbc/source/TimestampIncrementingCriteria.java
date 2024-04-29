@@ -190,10 +190,9 @@ public class TimestampIncrementingCriteria {
             extractedTimestamp = extractOffsetTimestamp(schema, record);
             assert previousOffset == null
                 || previousOffset.getTimestampOffset() == null
-                || (previousOffset.getTimestampOffset() != null
+                || previousOffset.getTimestampOffset() != null
                 && previousOffset.getTimestampOffset().compareTo(
-                extractedTimestamp) <= 0
-            );
+                extractedTimestamp) <= 0;
         }
         Long extractedId = null;
         if (hasIncrementedColumn()) {

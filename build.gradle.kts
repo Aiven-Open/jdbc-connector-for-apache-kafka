@@ -58,7 +58,7 @@ tasks.wrapper {
 }
 
 checkstyle {
-    toolVersion = "8.35"
+    toolVersion = "10.16.0"
     configDirectory.set(rootProject.file("checkstyle/"))
 }
 
