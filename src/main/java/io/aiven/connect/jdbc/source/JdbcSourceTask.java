@@ -81,6 +81,7 @@ public class JdbcSourceTask extends SourceTask {
         log.info("Starting JDBC source task");
         try {
             config = new JdbcSourceTaskConfig(properties);
+            config.validate();
         } catch (final ConfigException e) {
             throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e);
         }
@@ -101,10 +102,7 @@ public class JdbcSourceTask extends SourceTask {
 
         final List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
         final String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
-        if ((tables.isEmpty() && query.isEmpty()) || (!tables.isEmpty() && !query.isEmpty())) {
-            throw new ConnectException("Invalid configuration: each JdbcSourceTask must have at "
-                + "least one table assigned to it or one query specified");
-        }
+
         final TableQuerier.QueryMode queryMode = !query.isEmpty()
             ? TableQuerier.QueryMode.QUERY
             : TableQuerier.QueryMode.TABLE;
