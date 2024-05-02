@@ -129,7 +129,7 @@ val jupiterVersion = "5.10.2"
 val jettyVersion = "11.0.15"
 val servletVersion = "4.0.1"
 val testcontainersVersion = "1.19.7"
-val awaitilityVersion = "4.2.0"
+val awaitilityVersion = "4.2.1"
 val log4jVersion = "2.20.0"
 
 // Integration tests are not necessary to change these
@@ -183,7 +183,7 @@ dependencies {
     testImplementation("org.apache.derby:derbyshared:$derbyVersion")
     testImplementation("org.apache.derby:derbytools:$derbyVersion")
     testImplementation("org.assertj:assertj-core:3.25.3")
-    testImplementation("org.awaitility:awaitility:4.2.0")
+    testImplementation("org.awaitility:awaitility:4.2.1")
 
     testRuntimeOnly("org.slf4j:slf4j-log4j12:$slf4jVersion")
 
