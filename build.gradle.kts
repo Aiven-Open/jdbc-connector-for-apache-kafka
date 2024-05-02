@@ -177,7 +177,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:$mockitoVersion")
     testImplementation("org.mockito:mockito-junit-jupiter:$mockitoVersion")
     testImplementation("org.apache.kafka:connect-api:$kafkaVersion")
-    testImplementation("commons-io:commons-io:2.14.0")
+    testImplementation("commons-io:commons-io:2.16.1")
     testImplementation("org.apache.derby:derby:$derbyVersion")
     testImplementation("org.apache.derby:derbyclient:$derbyVersion")
     testImplementation("org.apache.derby:derbyshared:$derbyVersion")
