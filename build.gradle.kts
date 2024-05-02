@@ -182,7 +182,7 @@ dependencies {
     testImplementation("org.apache.derby:derbyclient:$derbyVersion")
     testImplementation("org.apache.derby:derbyshared:$derbyVersion")
     testImplementation("org.apache.derby:derbytools:$derbyVersion")
-    testImplementation("org.assertj:assertj-core:3.25.2")
+    testImplementation("org.assertj:assertj-core:3.25.3")
     testImplementation("org.awaitility:awaitility:4.2.0")
 
     testRuntimeOnly("org.slf4j:slf4j-log4j12:$slf4jVersion")
