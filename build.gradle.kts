@@ -166,7 +166,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql:42.7.3")
     runtimeOnly("net.sourceforge.jtds:jtds:1.3.1")
     runtimeOnly("net.snowflake:snowflake-jdbc:3.14.2")
-    runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11")
+    runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre11-preview")
     runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
 
     implementation("com.google.guava:guava:33.1.0-jre")
