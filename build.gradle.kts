@@ -162,7 +162,7 @@ val integrationTestRuntimeOnly: Configuration by configurations.getting {
 dependencies {
     compileOnly("org.apache.kafka:connect-api:$kafkaVersion")
 
-    runtimeOnly("org.xerial:sqlite-jdbc:3.45.2.0")
+    runtimeOnly("org.xerial:sqlite-jdbc:3.45.3.0")
     runtimeOnly("org.postgresql:postgresql:42.7.3")
     runtimeOnly("net.sourceforge.jtds:jtds:1.3.1")
     runtimeOnly("net.snowflake:snowflake-jdbc:3.16.0")
