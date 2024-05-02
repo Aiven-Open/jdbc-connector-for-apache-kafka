@@ -120,13 +120,14 @@ publishing {
 val kafkaVersion = "2.2.0"
 val slf4jVersion = "2.0.13"
 
-val avroVersion = "1.8.1"
-// Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
-val confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
+val avroVersion = "1.11.3"
+// For compatibility tests use version 5.5.15
+// 5.5.x is recent enough to have Avro 1.9.2 and compatible with Avro 1.11.3
+// and to support Jackson 2.10.0+
+val confluentPlatformVersion = "5.5.15"
 val hamcrestVersion = "2.2"
-val jacksonVersion = "2.17.0" // This Jackson is used in the tests.
+val jacksonVersion = "2.17.0"
 val jupiterVersion = "5.10.2"
-val jettyVersion = "12.0.8"
 val servletVersion = "4.0.1"
 val testcontainersVersion = "1.19.7"
 val awaitilityVersion = "4.2.1"
@@ -187,9 +188,15 @@ dependencies {
 
     testRuntimeOnly("org.slf4j:slf4j-log4j12:$slf4jVersion")
 
-    integrationTestRuntimeOnly("io.confluent:kafka-avro-serializer:$confluentPlatformVersion")
-    integrationTestRuntimeOnly("io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion")
-    integrationTestRuntimeOnly("io.confluent:kafka-json-serializer:$confluentPlatformVersion")
+    integrationTestRuntimeOnly("io.confluent:kafka-avro-serializer:$confluentPlatformVersion") {
+        exclude(group = "org.apache.kafka", module = "kafka-clients")
+    }
+    integrationTestRuntimeOnly("io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion") {
+        exclude(group = "org.apache.kafka", module = "kafka-clients")
+    }
+    integrationTestRuntimeOnly("io.confluent:kafka-json-serializer:$confluentPlatformVersion") {
+        exclude(group = "org.apache.kafka", module = "kafka-clients")
+    }
     integrationTestRuntimeOnly("org.slf4j:slf4j-log4j12:$slf4jVersion")
 
     integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion")
@@ -197,9 +204,6 @@ dependencies {
     integrationTestImplementation("javax.servlet:javax.servlet-api:$servletVersion")
     integrationTestImplementation("org.apache.avro:avro:$avroVersion")
     integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion")
-    integrationTestImplementation("org.eclipse.jetty:jetty-http:$jettyVersion")
-    integrationTestImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
-    integrationTestImplementation("org.eclipse.jetty:jetty-util:$jettyVersion")
     integrationTestImplementation("org.junit.jupiter:junit-jupiter:$jupiterVersion")
     integrationTestImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     integrationTestImplementation("org.testcontainers:kafka:$testcontainersVersion") // this is not Kafka version
