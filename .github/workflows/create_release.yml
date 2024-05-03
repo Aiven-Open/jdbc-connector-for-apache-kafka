@@ -18,9 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Java SDK
-        uses: actions/setup-java@v1.4.3
+        uses: actions/setup-java@v4.2.1
         with:
-          java-version: 11
+          distribution: 'jdkfile'
+          java-version: '17'
 
       - name: Checkout code
         uses: actions/checkout@v2
