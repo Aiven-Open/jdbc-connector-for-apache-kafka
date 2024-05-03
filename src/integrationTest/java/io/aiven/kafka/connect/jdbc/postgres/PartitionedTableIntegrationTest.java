@@ -62,7 +62,7 @@ public class PartitionedTableIntegrationTest extends AbstractPostgresIT {
             + "(\n"
             + "    name  text      not null,\n"
             + "    value text      not null,\n"
-            + "    date  timestamp not null default '2022-03-04'\n"
+            + "    date  timestamp with time zone not null default '2022-03-04'\n"
             + ")";
     private static final String CREATE_TABLE_WITH_PARTITION = CREATE_TABLE + " partition by RANGE (date)";
     private static final String CREATE_PARTITION =

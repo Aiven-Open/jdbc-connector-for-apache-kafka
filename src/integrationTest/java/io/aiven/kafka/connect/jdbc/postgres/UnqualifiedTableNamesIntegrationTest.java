@@ -48,7 +48,7 @@ public class UnqualifiedTableNamesIntegrationTest extends AbstractPostgresIT {
                     + "    id int          generated always as identity primary key,\n"
                     + "    name  text      not null,\n"
                     + "    value text      not null,\n"
-                    + "    date  timestamp not null default current_timestamp\n"
+                    + "    date  timestamp with time zone not null default current_timestamp\n"
                     + ")";
     private static final String POPULATE_PREFERRED_TABLE =
             "insert into " + PREFERRED_SCHEMA + "." + TABLE + " (name, value) values\n"
