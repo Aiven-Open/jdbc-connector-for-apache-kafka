@@ -118,7 +118,7 @@ publishing {
 }
 
 val kafkaVersion = "2.2.0"
-val slf4jVersion = "1.7.36"
+val slf4jVersion = "2.0.13"
 
 val avroVersion = "1.8.1"
 // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
@@ -190,6 +190,7 @@ dependencies {
     integrationTestRuntimeOnly("io.confluent:kafka-avro-serializer:$confluentPlatformVersion")
     integrationTestRuntimeOnly("io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion")
     integrationTestRuntimeOnly("io.confluent:kafka-json-serializer:$confluentPlatformVersion")
+    integrationTestRuntimeOnly("org.slf4j:slf4j-log4j12:$slf4jVersion")
 
     integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion")
     integrationTestImplementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
