@@ -24,21 +24,21 @@ public final class SchemaRegistryContainer extends GenericContainer<SchemaRegist
     public static final int SCHEMA_REGISTRY_PORT = 8081;
 
     public SchemaRegistryContainer(final KafkaContainer kafka) {
-        this("5.0.4", kafka);
+        this("3.7.0", kafka);
     }
 
     public SchemaRegistryContainer(final String confluentPlatformVersion, final KafkaContainer kafka) {
-        super("confluentinc/cp-schema-registry:" + confluentPlatformVersion);
+        super("ghcr.io/aiven/karapace:" + confluentPlatformVersion);
 
         dependsOn(kafka);
         withNetwork(kafka.getNetwork());
         withNetworkAliases("schema-registry-" + Base58.randomString(6));
 
-        withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS",
+        withEnv("KARAPACE_BOOTSTRAP_URI",
             String.format("PLAINTEXT://%s:%s", kafka.getNetworkAliases().get(0), 9092));
 
         withExposedPorts(SCHEMA_REGISTRY_PORT);
-        withEnv("SCHEMA_REGISTRY_HOST_NAME", "localhost");
+        withEnv("SCHEMA_REGISTRY_HOST_NAME", "localhost"); // probably useless for karapace
     }
 
     public String getSchemaRegistryUrl() {
