@@ -1,16 +1,12 @@
 name: Create release
 
 on:
-  workflow_dispatch:
-    inputs:
-      commit_hash:
-        description: "Hash of 'Release version x.y.z' commit"
-        required: true
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
 
 jobs:
   build:
@@ -26,11 +22,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.commit_hash }}
+          ref: ${{ github.ref }}
 
       - name: Check commit title and extract version
         run: |
-          export commit_title=$(git log --pretty=format:%s -1 ${{ github.event.inputs.commit_hash }})
+          export commit_title=$(git log --pretty=format:%s -1 ${{ github.ref }})
           echo "Commit title: $commit_title"
           if [[ $commit_title =~ ^Release\ version\ [0-9]*\.[0-9]*\.[0-9]*$ ]]; then
             echo "Valid commit title"
@@ -54,13 +50,6 @@ jobs:
           echo tar_path=`realpath ./build/distributions/${tar_file}` >> $GITHUB_ENV
           echo zip_path=`realpath ./build/distributions/${zip_file}` >> $GITHUB_ENV
 
-      - name: Create tag
-        run: |
-          git config --local user.name "GitHub Action"
-          git config --local user.email "action@github.com"
-          git tag -a "v${{ env.version }}" -m "Release version ${{ env.version }}"
-          git push origin "v${{ env.version }}"
-
       - name: Create release draft
         id: create_release
         uses: actions/create-release@v1
@@ -69,7 +58,7 @@ jobs:
         with:
           tag_name: "v${{ env.version }}"
           release_name: "v${{ env.version }}"
-          commitish: ${{ github.event.inputs.commit_hash }}
+          commitish: ${{ github.ref }}
           body: |
             *Fill in*
           draft: true
