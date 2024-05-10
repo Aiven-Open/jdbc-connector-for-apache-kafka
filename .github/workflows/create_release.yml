@@ -58,7 +58,7 @@ jobs:
         with:
           tag_name: "v${{ env.version }}"
           release_name: "v${{ env.version }}"
-          commitish: ${{ github.ref }}
+          commitish: ${{ github.sha }}
           body: |
             *Fill in*
           draft: true
