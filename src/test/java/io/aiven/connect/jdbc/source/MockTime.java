@@ -18,7 +18,9 @@
 package io.aiven.connect.jdbc.source;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
+import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.utils.Time;
 
 /**
@@ -58,6 +60,25 @@ public class MockTime implements Time {
     @Override
     public void sleep(final long ms) {
         this.nanos += TimeUnit.NANOSECONDS.convert(ms, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void waitObject(final Object object, final Supplier<Boolean> condition, final long deadlineMs)
+        throws InterruptedException {
+        synchronized (object) {
+            while (true) {
+                if (condition.get()) {
+                    return;
+                }
+
+                final long currentTimeMs = milliseconds();
+                if (currentTimeMs >= deadlineMs) {
+                    throw new TimeoutException("Condition not satisfied before deadline");
+                }
+
+                object.wait(deadlineMs - currentTimeMs);
+            }
+        }
     }
 
 }
