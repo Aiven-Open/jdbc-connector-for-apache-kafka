@@ -281,7 +281,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         return config;
     }
 
-    private static final void addDatabaseOptions(final ConfigDef config) {
+    private static void addDatabaseOptions(final ConfigDef config) {
         int orderInGroup = 0;
         defineConnectionUrl(config, ++orderInGroup,
             Arrays.asList(TABLE_WHITELIST_CONFIG, TABLE_BLACKLIST_CONFIG));
@@ -389,7 +389,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         defineSqlQuoteIdentifiers(config, ++orderInGroup);
     }
 
-    private static final void addModeOptions(final ConfigDef config) {
+    private static void addModeOptions(final ConfigDef config) {
         int orderInGroup = 0;
         config.define(
             MODE_CONFIG,
@@ -480,7 +480,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
         );
     }
 
-    private static final void addConnectorOptions(final ConfigDef config) {
+    private static void addConnectorOptions(final ConfigDef config) {
         int orderInGroup = 0;
         config.define(
             TABLE_TYPE_CONFIG,
@@ -558,7 +558,6 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
     private static class TableRecommender implements Recommender {
 
-        @SuppressWarnings("unchecked")
         @Override
         public List<Object> validValues(final String name, final Map<String, Object> config) {
             try {
@@ -568,8 +567,10 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
                 }
                 // Create the dialect to get the tables ...
                 final JdbcConfig jdbcConfig = new JdbcConfig(CONFIG_DEF, config);
-                final DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
-                try (final Connection db = dialect.getConnection()) {
+                try (
+                    final DatabaseDialect dialect = DatabaseDialects.findBestFor(dbUrl, jdbcConfig);
+                    final Connection db = dialect.getConnection()
+                ) {
                     final List<Object> result = new LinkedList<>();
                     for (final TableId id : dialect.tableIds(db)) {
                         // Just add the unqualified table name
@@ -757,7 +758,7 @@ public class JdbcSourceConnectorConfig extends JdbcConfig {
 
         @Override
         public List<Object> validValues(final String name, final Map<String, Object> connectorConfigs) {
-            return new ArrayList<Object>(canonicalValues);
+            return new ArrayList<>(canonicalValues);
         }
 
         @Override

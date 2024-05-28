@@ -82,11 +82,6 @@ public class SybaseDatabaseDialect extends GenericDatabaseDialect {
     }
 
     @Override
-    protected String checkConnectionQuery() {
-        return "SELECT 1";
-    }
-
-    @Override
     protected String getSqlType(final SinkRecordField field) {
         if (field.schemaName() != null) {
             switch (field.schemaName()) {

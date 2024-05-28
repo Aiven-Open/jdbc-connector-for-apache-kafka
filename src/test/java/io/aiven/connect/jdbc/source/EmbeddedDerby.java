@@ -44,8 +44,8 @@ public class EmbeddedDerby {
     private static final String NAME_PREFIX = "__test_database_";
     private static final String PROTOCOL = "jdbc:derby:";
 
-    private String name;
-    private Connection conn;
+    private final String name;
+    private final Connection conn;
 
     public EmbeddedDerby() {
         this("default");
@@ -261,7 +261,7 @@ public class EmbeddedDerby {
 
     public static class CaseSensitive {
 
-        private String name;
+        private final String name;
 
         public CaseSensitive(final String name) {
             this.name = name;
@@ -296,8 +296,8 @@ public class EmbeddedDerby {
 
     public static class EqualsCondition extends Condition {
 
-        private Object left;
-        private Object right;
+        private final Object left;
+        private final Object right;
 
         public EqualsCondition(final Object left, final Object right) {
             this.left = left;

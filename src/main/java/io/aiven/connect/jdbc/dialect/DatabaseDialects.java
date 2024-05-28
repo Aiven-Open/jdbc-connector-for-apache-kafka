@@ -133,6 +133,9 @@ public class DatabaseDialects {
                 bestScore = score;
             }
         }
+        if (bestMatch == null) {
+            throw new ConnectException("Could not find best dialect match.");
+        }
         LOG.debug("Using dialect {} with score {} against {}", bestMatch, bestScore, info);
         return bestMatch.create(config);
     }

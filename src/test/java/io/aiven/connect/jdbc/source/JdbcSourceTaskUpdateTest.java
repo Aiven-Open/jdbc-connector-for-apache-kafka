@@ -298,7 +298,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         startTask("modified", null, null, 4L, "UTC", null, null);
         verifyTimestampFirstPoll(TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        final Long currentTime = new Date().getTime();
+        final long currentTime = new Date().getTime();
 
         // Validate that we are seeing 2,3 but not 4,5 as they are getting delayed to the next round
         // using "toString" and not UTC because Derby's current_timestamp is always local time

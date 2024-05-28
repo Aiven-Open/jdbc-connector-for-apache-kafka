@@ -63,7 +63,7 @@ public class JdbcSourceTask extends SourceTask {
     private JdbcSourceTaskConfig config;
     private DatabaseDialect dialect;
     private CachedConnectionProvider cachedConnectionProvider;
-    private final PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
+    private final PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<>();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final Object pollLock = new Object();
 
@@ -309,7 +309,9 @@ public class JdbcSourceTask extends SourceTask {
 
             while (running.get()) {
                 final TableQuerier querier = tableQueue.peek();
-
+                if (querier == null) {
+                    throw new ConnectException("TableQueue.peek() returned null.");
+                }
                 if (!querier.querying()) {
                     // If not in the middle of an update, wait for next update time
                     final long nextUpdate = querier.getLastUpdate()
@@ -318,7 +320,7 @@ public class JdbcSourceTask extends SourceTask {
                     final long sleepMs = Math.min(untilNext, MAX_QUERY_SLEEP_MS);
                     if (sleepMs > 0) {
                         log.trace("Waiting {} ms to poll {} next ({} ms total left to wait)",
-                            sleepMs, querier.toString(), untilNext);
+                                sleepMs, querier, untilNext);
                         time.sleep(sleepMs);
                         // Return control to the Connect runtime periodically
                         // See https://kafka.apache.org/37/javadoc/org/apache/kafka/connect/source/SourceTask.html#poll():
@@ -330,7 +332,7 @@ public class JdbcSourceTask extends SourceTask {
 
                 final List<SourceRecord> results = new ArrayList<>();
                 try {
-                    log.debug("Checking for next block of results from {}", querier.toString());
+                    log.debug("Checking for next block of results from {}", querier);
                     querier.maybeStartQuery(cachedConnectionProvider.getConnection());
 
                     final int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
@@ -346,14 +348,14 @@ public class JdbcSourceTask extends SourceTask {
                     }
 
                     if (results.isEmpty()) {
-                        log.trace("No updates for {}", querier.toString());
+                        log.trace("No updates for {}", querier);
                         continue;
                     }
 
-                    log.debug("Returning {} records for {}", results.size(), querier.toString());
+                    log.debug("Returning {} records for {}", results.size(), querier);
                     return results;
                 } catch (final SQLException sqle) {
-                    log.error("Failed to run query for table {}: {}", querier.toString(), sqle);
+                    log.error("Failed to run query for table {}: {}", querier, sqle);
                     resetAndRequeueHead(querier);
                     return null;
                 } catch (final Throwable t) {
@@ -370,7 +372,7 @@ public class JdbcSourceTask extends SourceTask {
     }
 
     private void resetAndRequeueHead(final TableQuerier expectedHead) {
-        log.debug("Resetting querier {}", expectedHead.toString());
+        log.debug("Resetting querier {}", expectedHead);
         final TableQuerier removedQuerier = tableQueue.poll();
         assert removedQuerier == expectedHead;
         expectedHead.reset(time.milliseconds());
