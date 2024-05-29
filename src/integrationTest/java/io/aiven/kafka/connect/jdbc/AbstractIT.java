@@ -141,10 +141,17 @@ public abstract class AbstractIT {
 
     @AfterEach
     final void tearDown() {
-        connectRunner.stop();
-        producer.close();
-        consumer.close();
-
-        connectRunner.awaitStop();
+        if (connectRunner != null) {
+            connectRunner.stop();
+        }
+        if (producer != null) {
+            producer.close();
+        }
+        if (consumer != null) {
+            consumer.close();
+        }
+        if (connectRunner != null) {
+            connectRunner.awaitStop();
+        }
     }
 }

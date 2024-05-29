@@ -56,6 +56,9 @@ public class JdbcSourceTask extends SourceTask {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcSourceTask.class);
 
+    // Visible for testing
+    public static final int MAX_QUERY_SLEEP_MS = 100;
+
     private Time time;
     private JdbcSourceTaskConfig config;
     private DatabaseDialect dialect;
@@ -304,12 +307,16 @@ public class JdbcSourceTask extends SourceTask {
                 final long nextUpdate = querier.getLastUpdate()
                     + config.getInt(JdbcSourceTaskConfig.POLL_INTERVAL_MS_CONFIG);
                 final long untilNext = nextUpdate - time.milliseconds();
-                final long sleepMs = Math.min(untilNext, 100);
+                final long sleepMs = Math.min(untilNext, MAX_QUERY_SLEEP_MS);
                 if (sleepMs > 0) {
                     log.trace("Waiting {} ms to poll {} next ({} ms total left to wait)",
                         sleepMs, querier.toString(), untilNext);
                     time.sleep(sleepMs);
-                    continue; // Re-check stop flag before continuing
+                    // Return control to the Connect runtime periodically
+                    // See https://kafka.apache.org/37/javadoc/org/apache/kafka/connect/source/SourceTask.html#poll():
+                    // "If no data is currently available, this method should block but return control to the caller
+                    // regularly (by returning null)"
+                    return null;
                 }
             }
 

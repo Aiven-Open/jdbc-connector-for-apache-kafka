@@ -64,7 +64,7 @@ public class TimestampIncrementingCriteriaTest {
     }
 
     protected void assertExtractedOffset(final long expected, final Schema schema, final Struct record) {
-        TimestampIncrementingCriteria criteria = null;
+        final TimestampIncrementingCriteria criteria;
         if (schema.field(INCREMENTING_COLUMN.name()) != null) {
             if (schema.field(TS1_COLUMN.name()) != null) {
                 criteria = criteriaIncTs;

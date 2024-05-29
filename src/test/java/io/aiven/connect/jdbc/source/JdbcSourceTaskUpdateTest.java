@@ -74,12 +74,12 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         assertThat(countIntValues(records, "id")).containsExactly(entry(1, 1));
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
-        records = task.poll();
+        records = pollRecords(task);
         assertThat(countIntValues(records, "id")).containsExactly(entry(1, 1));
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         db.insert(SINGLE_TABLE_NAME, "id", 2);
-        records = task.poll();
+        records = pollRecords(task);
         final Map<Integer, Integer> twoRecords = new HashMap<>();
         twoRecords.put(1, 1);
         twoRecords.put(2, 1);
@@ -87,7 +87,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         db.delete(SINGLE_TABLE_NAME, new EmbeddedDerby.EqualsCondition(column, 1));
-        records = task.poll();
+        records = pollRecords(task);
         assertThat(countIntValues(records, "id")).containsExactly(entry(2, 1));
         assertRecordsTopic(records, TOPIC_PREFIX + SINGLE_TABLE_NAME);
     }
@@ -667,7 +667,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         db.insert(SINGLE_TABLE_NAME, "id", 3, "user_id", 2);
         db.insert(SINGLE_TABLE_NAME, "id", 4, "user_id", 2);
 
-        records = task.poll();
+        records = pollRecords(task);
         assertThat(records).hasSize(4);
         recordUserIdCounts = new HashMap<>();
         recordUserIdCounts.put(1, 2);
@@ -775,6 +775,8 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         if (timeZone != null) {
             taskConfig.put(JdbcConfig.DB_TIMEZONE_CONFIG, timeZone);
         }
+
+        taskConfig.put(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG, "100");
         return taskConfig;
     }
 
@@ -824,7 +826,11 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
                                 final boolean multiTimestampOffsets,
                                 final String topic)
         throws Exception {
-        final List<SourceRecord> records = task.poll();
+        List<SourceRecord> records = null;
+        // May need to retry polling occasionally
+        for (int retries = 0; retries < 10 && records == null; retries++) {
+            records = task.poll();
+        }
         assertThat(records).hasSize(numRecords);
 
         final HashMap<T, Integer> valueCounts = new HashMap<>();

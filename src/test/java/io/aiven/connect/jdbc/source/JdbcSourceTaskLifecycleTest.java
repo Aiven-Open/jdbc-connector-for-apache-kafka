@@ -79,9 +79,9 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
         // Subsequent polls have to wait for timeout
         task.poll();
-        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
+        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceTask.MAX_QUERY_SLEEP_MS);
         task.poll();
-        assertThat(time.milliseconds()).isEqualTo(startTime + 2 * JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
+        assertThat(time.milliseconds()).isEqualTo(startTime + 2 * JdbcSourceTask.MAX_QUERY_SLEEP_MS);
 
         task.stop();
     }
@@ -111,8 +111,7 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
         // Subsequent poll should wait for next timeout
         task.poll();
-        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
-
+        assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceTask.MAX_QUERY_SLEEP_MS);
     }
 
     @Test
@@ -137,13 +136,12 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
         assertThat(records.get(0).sourcePartition()).isEqualTo(SECOND_TABLE_PARTITION);
 
         // Subsequent poll should wait for next timeout
-        records = task.poll();
+        records = pollRecords(task);
         assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
         validatePollResultTable(records, 1, SINGLE_TABLE_NAME);
-        records = task.poll();
+        records = pollRecords(task);
         assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
         validatePollResultTable(records, 1, SECOND_TABLE_NAME);
-
     }
 
     @Test
@@ -178,7 +176,8 @@ public class JdbcSourceTaskLifecycleTest extends JdbcSourceTaskTestBase {
 
         // Subsequent poll should wait for next timeout
         for (int i = 0; i < 2; i++) {
-            final List<SourceRecord> records = task.poll();
+            final List<SourceRecord> records;
+            records = pollRecords(task);
             assertThat(time.milliseconds()).isEqualTo(startTime + JdbcSourceConnectorConfig.POLL_INTERVAL_MS_DEFAULT);
             validatePollResultTable(records, 1, SINGLE_TABLE_NAME);
         }

@@ -19,9 +19,11 @@ package io.aiven.connect.jdbc.source;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.common.utils.Time;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
@@ -127,6 +129,14 @@ public class JdbcSourceTaskTestBase {
 
     protected void initializeTask() {
         task.initialize(taskContext);
+    }
+
+    final List<SourceRecord> pollRecords(final JdbcSourceTask task) throws InterruptedException {
+        List<SourceRecord> records = null;
+        while (records == null) {
+            records = task.poll();
+        }
+        return records;
     }
 
 }

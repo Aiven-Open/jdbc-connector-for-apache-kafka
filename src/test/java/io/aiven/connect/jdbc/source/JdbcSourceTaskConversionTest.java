@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Date;
@@ -53,7 +54,9 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
     @BeforeEach
     public void setup() throws Exception {
         super.setup();
-        task.start(singleTableConfig(extendedMapping));
+        final Map<String, String> taskConfig = singleTableConfig(extendedMapping);
+        taskConfig.put(JdbcSourceConnectorConfig.POLL_INTERVAL_MS_CONFIG, "1");
+        task.start(taskConfig);
     }
 
     @AfterEach
@@ -303,7 +306,11 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
         }
         db.createTable(SINGLE_TABLE_NAME, "id", sqlColumnSpec);
         db.insert(SINGLE_TABLE_NAME, "id", sqlValue);
-        final List<SourceRecord> records = task.poll();
+        List<SourceRecord> records = null;
+        // May need to retry polling
+        for (int retries = 0; retries < 10 && records == null; retries++) {
+            records = task.poll();
+        }
         validateRecords(records, convertedSchema, convertedValue);
         db.dropTable(SINGLE_TABLE_NAME);
     }
