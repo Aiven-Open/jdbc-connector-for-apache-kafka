@@ -133,7 +133,7 @@ val log4jVersion = "2.20.0"
 
 // Integration tests are not necessary to change these
 val derbyVersion = "10.15.2.0"
-val mockitoVersion = "5.11.0"
+val mockitoVersion = "5.12.0"
 
 sourceSets {
     create("integrationTest") {
