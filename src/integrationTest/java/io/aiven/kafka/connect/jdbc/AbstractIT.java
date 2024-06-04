@@ -19,6 +19,7 @@ package io.aiven.kafka.connect.jdbc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import org.testcontainers.utility.DockerImageName;
 public abstract class AbstractIT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractIT.class);
+    protected static final Duration CONTAINER_STARTUP_TIMEOUT = Duration.ofMinutes(5);
     protected static final String TEST_TOPIC_NAME = "test_topic";
     private static final String DEFAULT_KAFKA_TAG = "5.4.3";
     private static final DockerImageName DEFAULT_IMAGE_NAME =
@@ -57,11 +59,13 @@ public abstract class AbstractIT {
     @Container
     protected KafkaContainer kafkaContainer = new KafkaContainer(DEFAULT_IMAGE_NAME)
         .withNetwork(Network.newNetwork())
-        .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
+        .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
+        .withStartupTimeout(CONTAINER_STARTUP_TIMEOUT);
 
     @Container
     protected SchemaRegistryContainer schemaRegistryContainer =
-        new SchemaRegistryContainer(kafkaContainer);
+        new SchemaRegistryContainer(kafkaContainer)
+            .withStartupTimeout(CONTAINER_STARTUP_TIMEOUT);
 
     protected ConnectRunner connectRunner;
 
