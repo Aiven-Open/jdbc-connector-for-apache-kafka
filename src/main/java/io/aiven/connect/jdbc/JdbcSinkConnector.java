@@ -68,10 +68,10 @@ public final class JdbcSinkConnector extends SinkConnector {
 
     @Override
     public Config validate(final Map<String, String> connectorConfigs) {
-        // TODO cross-fields validation here: pkFields against the pkMode
         final Config config = super.validate(connectorConfigs);
 
         JdbcSinkConfig.validateDeleteEnabled(config);
+        JdbcSinkConfig.validatePKModeAgainstPKFields(config);
         return config;
     }
 

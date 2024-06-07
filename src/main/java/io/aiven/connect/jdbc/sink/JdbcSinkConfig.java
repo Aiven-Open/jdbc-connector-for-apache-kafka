@@ -482,4 +482,65 @@ public class JdbcSinkConfig extends JdbcConfig {
             deleteEnabledConfigValue.addErrorMessage("Delete support only works with pk.mode=record_key");
         }
     }
+
+    public static void validatePKModeAgainstPKFields(final Config config) {
+        // Collect all configuration values
+        final Map<String, ConfigValue> configValues = config.configValues().stream()
+                .collect(Collectors.toMap(ConfigValue::name, v -> v));
+
+        final ConfigValue pkModeConfigValue = configValues.get(JdbcSinkConfig.PK_MODE);
+        final ConfigValue pkFieldsConfigValue = configValues.get(JdbcSinkConfig.PK_FIELDS);
+
+        if (pkModeConfigValue == null || pkFieldsConfigValue == null) {
+            return; // If either pkMode or pkFields are not configured, there's nothing to validate
+        }
+
+        final String pkMode = (String) pkModeConfigValue.value();
+        final List<String> pkFields = (List<String>) pkFieldsConfigValue.value();
+
+        if (pkMode == null) {
+            return; // If pkMode is null, skip validation
+        }
+
+        switch (pkMode.toLowerCase()) {
+            case "none":
+                validateNoPKFields(pkFieldsConfigValue, pkFields);
+                break;
+            case "kafka":
+                validateKafkaPKFields(pkFieldsConfigValue, pkFields);
+                break;
+            case "record_key":
+            case "record_value":
+                validatePKFieldsRequired(pkFieldsConfigValue, pkFields);
+                break;
+            default:
+                pkFieldsConfigValue.addErrorMessage("Invalid pkMode value: " + pkMode);
+                break;
+        }
+    }
+
+    private static void validateNoPKFields(final ConfigValue pkFieldsConfigValue, final List<String> pkFields) {
+        if (pkFields != null && !pkFields.isEmpty()) {
+            pkFieldsConfigValue.addErrorMessage(
+                    "Primary key fields should not be set when pkMode is 'none'."
+            );
+        }
+    }
+
+    private static void validateKafkaPKFields(final ConfigValue pkFieldsConfigValue, final List<String> pkFields) {
+        if (pkFields == null || pkFields.size() != 3) {
+            pkFieldsConfigValue.addErrorMessage(
+                    "Primary key fields must be set with three fields "
+                            + "(topic, partition, offset) when pkMode is 'kafka'."
+            );
+        }
+    }
+
+    private static void validatePKFieldsRequired(final ConfigValue pkFieldsConfigValue, final List<String> pkFields) {
+        if (pkFields == null || pkFields.isEmpty()) {
+            pkFieldsConfigValue.addErrorMessage(
+                    "Primary key fields must be set when pkMode is 'record_key' or 'record_value'."
+            );
+        }
+    }
 }
