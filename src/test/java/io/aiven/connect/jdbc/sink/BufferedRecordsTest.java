@@ -45,6 +45,7 @@ import static java.sql.Statement.SUCCESS_NO_INFO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -189,6 +190,98 @@ public class BufferedRecordsTest {
         verify(connectionMock).prepareStatement(eq("UPDATE \"dummy\" SET \"name\" = ?"));
 
     }
+
+    @Test
+    public void testInsertModeWithDeleteEnabled() throws SQLException {
+        final HashMap<Object, Object> props = new HashMap<>();
+        props.put("connection.url", "");
+        props.put("auto.create", true);
+        props.put("auto.evolve", true);
+        props.put("batch.size", 1000);
+        props.put("pk.mode", "record_key");
+        props.put("pk.fields", "id");
+        props.put("delete.enabled", true);
+        final JdbcSinkConfig config = new JdbcSinkConfig(props);
+
+        final DatabaseDialect dbDialect = DatabaseDialects.findBestFor(dbUrl, config);
+        final DbStructure dbStructureMock = mock(DbStructure.class);
+        when(dbStructureMock.createOrAmendIfNecessary(any(JdbcSinkConfig.class),
+                any(Connection.class),
+                any(TableId.class),
+                any(FieldsMetadata.class)))
+                .thenReturn(true);
+
+        final Connection connectionMock = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        when(connectionMock.prepareStatement(contains("INSERT"))).thenReturn(preparedStatement);
+        when(preparedStatement.executeBatch()).thenReturn(new int[0]);
+
+        final PreparedStatement deletePreparedStatement = mock(PreparedStatement.class);
+        when(connectionMock.prepareStatement(contains("DELETE"))).thenReturn(deletePreparedStatement);
+        when(deletePreparedStatement.executeBatch()).thenReturn(new int[]{1});
+
+        final TableId tableId = new TableId(null, null, "dummy");
+        final BufferedRecords buffer = new BufferedRecords(config, tableId, dbDialect, dbStructureMock, connectionMock);
+        final Schema keySchema = SchemaBuilder.struct()
+                .field("id", SchemaBuilder.INT64_SCHEMA);
+
+        final Struct keyStruct = new Struct(keySchema).put("id", 0L);
+        final Schema valueSchema = null;
+        final Struct valueStruct = null;
+
+        final SinkRecord recordA = new SinkRecord("dummy-topic", 0, keySchema, keyStruct, valueSchema, valueStruct, 0);
+        buffer.add(recordA);
+        buffer.flush();
+
+        verify(connectionMock).prepareStatement(contains("DELETE FROM \"dummy\" WHERE \"id\" = ?"));
+    }
+
+    @Test
+    public void testMultiInsertModeWithDeleteEnabled() throws SQLException {
+        final HashMap<Object, Object> props = new HashMap<>();
+        props.put("connection.url", "");
+        props.put("auto.create", true);
+        props.put("auto.evolve", true);
+        props.put("batch.size", 1000);
+        props.put("pk.mode", "record_key");
+        props.put("pk.fields", "id");
+        props.put("delete.enabled", true);
+        props.put("insert.mode", "MULTI");
+        final JdbcSinkConfig config = new JdbcSinkConfig(props);
+
+        final DatabaseDialect dbDialect = DatabaseDialects.findBestFor(dbUrl, config);
+        final DbStructure dbStructureMock = mock(DbStructure.class);
+        when(dbStructureMock.createOrAmendIfNecessary(any(JdbcSinkConfig.class),
+                any(Connection.class),
+                any(TableId.class),
+                any(FieldsMetadata.class)))
+                .thenReturn(true);
+
+        final Connection connectionMock = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        when(connectionMock.prepareStatement(contains("INSERT"))).thenReturn(preparedStatement);
+        when(preparedStatement.executeBatch()).thenReturn(new int[0]);
+
+        final PreparedStatement deletePreparedStatement = mock(PreparedStatement.class);
+        when(connectionMock.prepareStatement(contains("DELETE"))).thenReturn(deletePreparedStatement);
+        when(deletePreparedStatement.executeBatch()).thenReturn(new int[]{1});
+
+        final TableId tableId = new TableId(null, null, "dummy");
+        final BufferedRecords buffer = new BufferedRecords(config, tableId, dbDialect, dbStructureMock, connectionMock);
+        final Schema keySchema = SchemaBuilder.struct()
+                .field("id", SchemaBuilder.INT64_SCHEMA);
+
+        final Struct keyStruct = new Struct(keySchema).put("id", 0L);
+        final Schema valueSchema = null;
+        final Struct valueStruct = null;
+
+        final SinkRecord recordA = new SinkRecord("dummy-topic", 0, keySchema, keyStruct, valueSchema, valueStruct, 0);
+        buffer.add(recordA);
+        buffer.flush();
+
+        verify(connectionMock).prepareStatement(contains("DELETE FROM \"dummy\" WHERE \"id\" = ?"));
+    }
+
 
     @Test
     public void testInsertModeMultiAutomaticFlush() throws SQLException {

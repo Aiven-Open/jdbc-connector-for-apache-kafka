@@ -182,6 +182,26 @@ the same.
 
 To use this mode, set `pk.mode=record_value`.
 
+## Deletion Handling
+
+### Tombstone Messages
+
+A tombstone message is a special type of record in Kafka that signifies
+the deletion of a key. It has:
+
+- a not null **key**
+- a null **value**
+
+Tombstone messages are typically used in compacted topics to indicate
+that the key should be removed from the downstream system.
+
+In case of tombstone messages and `delete.enabled` set to `true`,
+the JDBC sink connector will delete the row referenced by the
+message key. If set to `true`, it requires the `pk.mode` to be
+`record_key` to be able to identify the rows to delete.
+
+To enable deletion handling, set `delete.enabled=true`.
+
 ## Table Auto-Creation and Auto-Evolution
 
 ### Auto-Creation

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class PartitionedTableIntegrationTest extends AbstractPostgresIT {
 
     @Test
     final void testBasicDelivery() throws ExecutionException, InterruptedException, SQLException {
-        executeUpdate(CREATE_TABLE);
+        executeSqlStatement(CREATE_TABLE);
         connectRunner.createConnector(basicSinkConnectorConfig());
 
         sendTestData(1000);
@@ -82,8 +82,8 @@ public class PartitionedTableIntegrationTest extends AbstractPostgresIT {
 
     @Test
     final void testBasicDeliveryForPartitionedTable() throws ExecutionException, InterruptedException, SQLException {
-        executeUpdate(CREATE_TABLE_WITH_PARTITION);
-        executeUpdate(CREATE_PARTITION);
+        executeSqlStatement(CREATE_TABLE_WITH_PARTITION);
+        executeSqlStatement(CREATE_PARTITION);
         connectRunner.createConnector(basicSinkConnectorConfig());
 
         sendTestData(1000);

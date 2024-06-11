@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,10 +69,10 @@ public class UnqualifiedTableNamesIntegrationTest extends AbstractPostgresIT {
         // Make sure that the topic starts empty
         assertEmptyPoll(Duration.ofSeconds(1));
 
-        executeUpdate(createSchema(PREFERRED_SCHEMA));
-        executeUpdate(setSearchPath(postgreSqlContainer.getDatabaseName()));
-        executeUpdate(CREATE_PREFERRED_TABLE);
-        executeUpdate(POPULATE_PREFERRED_TABLE);
+        executeSqlStatement(createSchema(PREFERRED_SCHEMA));
+        executeSqlStatement(setSearchPath(postgreSqlContainer.getDatabaseName()));
+        executeSqlStatement(CREATE_PREFERRED_TABLE);
+        executeSqlStatement(POPULATE_PREFERRED_TABLE);
         connectRunner.createConnector(basicTimestampModeSourceConnectorConfig());
 
         await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(100))
@@ -107,19 +107,19 @@ public class UnqualifiedTableNamesIntegrationTest extends AbstractPostgresIT {
         // Make sure that the topic starts empty
         assertEmptyPoll(Duration.ofSeconds(1));
 
-        executeUpdate(createSchema(PREFERRED_SCHEMA));
-        executeUpdate(createSchema(OTHER_SCHEMA));
-        executeUpdate(setSearchPath(postgreSqlContainer.getDatabaseName()));
-        executeUpdate(CREATE_PREFERRED_TABLE);
-        executeUpdate(POPULATE_PREFERRED_TABLE);
-        executeUpdate(CREATE_OTHER_TABLE);
-        executeUpdate(POPULATE_OTHER_TABLE);
+        executeSqlStatement(createSchema(PREFERRED_SCHEMA));
+        executeSqlStatement(createSchema(OTHER_SCHEMA));
+        executeSqlStatement(setSearchPath(postgreSqlContainer.getDatabaseName()));
+        executeSqlStatement(CREATE_PREFERRED_TABLE);
+        executeSqlStatement(POPULATE_PREFERRED_TABLE);
+        executeSqlStatement(CREATE_OTHER_TABLE);
+        executeSqlStatement(POPULATE_OTHER_TABLE);
         connectRunner.createConnector(connectorConfig);
 
         await().atMost(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(100))
                 .until(this::assertSingleNewRecordProduced);
 
-        executeUpdate(POPULATE_OTHER_TABLE);
+        executeSqlStatement(POPULATE_OTHER_TABLE);
 
         // Make sure that, even after adding another row to the other table, the connector
         // doesn't publish any new records
@@ -127,7 +127,7 @@ public class UnqualifiedTableNamesIntegrationTest extends AbstractPostgresIT {
 
         // Add one more row to the preferred table, and verify that the connector
         // is able to read it
-        executeUpdate(POPULATE_PREFERRED_TABLE);
+        executeSqlStatement(POPULATE_PREFERRED_TABLE);
         await().atMost(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(100))
                 .until(this::assertSingleNewRecordProduced);
 
@@ -136,7 +136,7 @@ public class UnqualifiedTableNamesIntegrationTest extends AbstractPostgresIT {
 
         // Add one more row to the preferred table, and verify that the connector
         // is able to read it
-        executeUpdate(POPULATE_PREFERRED_TABLE);
+        executeSqlStatement(POPULATE_PREFERRED_TABLE);
         await().atMost(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(100))
                 .until(this::assertSingleNewRecordProduced);
 

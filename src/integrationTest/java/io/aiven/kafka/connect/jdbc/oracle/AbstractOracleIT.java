@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.aiven.kafka.connect.jdbc.postgres;
+package io.aiven.kafka.connect.jdbc.oracle;
 
 import javax.sql.DataSource;
 
@@ -26,22 +26,19 @@ import java.util.Map;
 
 import io.aiven.kafka.connect.jdbc.AbstractIT;
 
-import org.assertj.core.util.Arrays;
-import org.postgresql.ds.PGSimpleDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import oracle.jdbc.pool.OracleDataSource;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class AbstractPostgresIT extends AbstractIT {
+public class AbstractOracleIT extends AbstractIT {
 
-    public static final String DEFAULT_POSTGRES_TAG = "10.20";
-    private static final DockerImageName DEFAULT_POSTGRES_IMAGE_NAME =
-            DockerImageName.parse("postgres")
-                    .withTag(DEFAULT_POSTGRES_TAG);
-
+    public static final String DEFAULT_ORACLE_TAG = "slim-faststart";
+    private static final DockerImageName DEFAULT_ORACLE_IMAGE_NAME =
+            DockerImageName.parse("gvenzl/oracle-free")
+                    .withTag(DEFAULT_ORACLE_TAG);
     @Container
-    protected final PostgreSQLContainer<?> postgreSqlContainer = new PostgreSQLContainer<>(DEFAULT_POSTGRES_IMAGE_NAME)
-        .withStartupTimeout(CONTAINER_STARTUP_TIMEOUT);
+    protected final OracleContainer oracleContainer = new OracleContainer(DEFAULT_ORACLE_IMAGE_NAME);
 
     protected void executeSqlStatement(final String sqlStatement) throws SQLException {
         try (final Connection connection = getDatasource().getConnection();
@@ -50,28 +47,31 @@ public class AbstractPostgresIT extends AbstractIT {
         }
     }
 
-    protected DataSource getDatasource() {
-        final PGSimpleDataSource pgSimpleDataSource = new PGSimpleDataSource();
-        pgSimpleDataSource.setServerNames(Arrays.array(postgreSqlContainer.getHost()));
-        pgSimpleDataSource.setPortNumbers(new int[] {postgreSqlContainer.getMappedPort(5432)});
-        pgSimpleDataSource.setDatabaseName(postgreSqlContainer.getDatabaseName());
-        pgSimpleDataSource.setUser(postgreSqlContainer.getUsername());
-        pgSimpleDataSource.setPassword(postgreSqlContainer.getPassword());
-        return pgSimpleDataSource;
+    protected DataSource getDatasource() throws SQLException {
+        final OracleDataSource dataSource = new OracleDataSource();
+        dataSource.setServerName(oracleContainer.getHost());
+        // Assuming the default Oracle port is 1521
+        dataSource.setPortNumber(oracleContainer.getMappedPort(1521));
+        // Or use setDatabaseName() if that's how your Oracle is configured
+        dataSource.setServiceName(oracleContainer.getDatabaseName());
+        dataSource.setUser(oracleContainer.getUsername());
+        dataSource.setPassword(oracleContainer.getPassword());
+        dataSource.setDriverType("thin");
+        return dataSource;
     }
+
 
     protected Map<String, String> basicConnectorConfig() {
         final HashMap<String, String> config = new HashMap<>();
+        config.put("tasks.max", "1");
+        config.put("connection.url", oracleContainer.getJdbcUrl());
+        config.put("connection.user", oracleContainer.getUsername());
+        config.put("connection.password", oracleContainer.getPassword());
+        config.put("dialect.name", "OracleDatabaseDialect");
         config.put("key.converter", "io.confluent.connect.avro.AvroConverter");
         config.put("key.converter.schema.registry.url", schemaRegistryContainer.getSchemaRegistryUrl());
         config.put("value.converter", "io.confluent.connect.avro.AvroConverter");
         config.put("value.converter.schema.registry.url", schemaRegistryContainer.getSchemaRegistryUrl());
-        config.put("tasks.max", "1");
-        config.put("connection.url", postgreSqlContainer.getJdbcUrl());
-        config.put("connection.user", postgreSqlContainer.getUsername());
-        config.put("connection.password", postgreSqlContainer.getPassword());
-        config.put("dialect.name", "PostgreSqlDatabaseDialect");
         return config;
     }
-
 }

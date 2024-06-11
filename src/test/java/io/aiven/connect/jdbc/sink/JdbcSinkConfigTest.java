@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
+ * Copyright 2024 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
  * Copyright 2016 Confluent Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JdbcSinkConfigTest {
 
@@ -74,4 +76,17 @@ public class JdbcSinkConfigTest {
             .isInstanceOf(ConfigException.class);
     }
 
+    @Test
+    public void verifyDeleteEnabled() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.DELETE_ENABLED, "true");
+        props.put(JdbcSinkConfig.PK_MODE, "record_key");
+        JdbcSinkConfig config = new JdbcSinkConfig(props);
+        assertTrue(config.deleteEnabled);
+
+        props.remove(JdbcSinkConfig.DELETE_ENABLED);
+        config = new JdbcSinkConfig(props);
+        assertFalse(config.deleteEnabled);
+    }
 }
