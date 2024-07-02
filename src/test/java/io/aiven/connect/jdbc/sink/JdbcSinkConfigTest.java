@@ -20,7 +20,10 @@ package io.aiven.connect.jdbc.sink;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigException;
+
+import io.aiven.connect.jdbc.JdbcSinkConnector;
 
 import org.junit.jupiter.api.Test;
 
@@ -88,5 +91,86 @@ public class JdbcSinkConfigTest {
         props.remove(JdbcSinkConfig.DELETE_ENABLED);
         config = new JdbcSinkConfig(props);
         assertFalse(config.deleteEnabled);
+    }
+
+    public void shouldValidatePKModeNoneWithPKFieldsSet() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.PK_MODE, "none");
+        props.put(JdbcSinkConfig.PK_FIELDS, "id");
+
+        final Config config = new JdbcSinkConnector().validate(props);
+
+        assertTrue(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
+        assertTrue(config.configValues().stream()
+                .filter(cv -> cv.name().equals(JdbcSinkConfig.PK_FIELDS))
+                .flatMap(cv -> cv.errorMessages().stream())
+                .anyMatch(msg -> msg.contains("Primary key fields should not be set when pkMode is 'none'")));
+    }
+
+    @Test
+    public void shouldValidatePKModeKafkaWithInvalidPKFields() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.PK_MODE, "kafka");
+        props.put(JdbcSinkConfig.PK_FIELDS, "topic,partition");
+
+        final Config config = new JdbcSinkConnector().validate(props);
+
+        assertTrue(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
+        assertTrue(config.configValues().stream()
+                .filter(cv -> cv.name().equals(JdbcSinkConfig.PK_FIELDS))
+                .flatMap(cv -> cv.errorMessages().stream())
+                .anyMatch(msg -> msg.contains(
+                        "Primary key fields must be set with three fields "
+                                + "(topic, partition, offset) when pkMode is 'kafka'"
+                )));
+    }
+
+    @Test
+    public void shouldValidatePKModeRecordKeyWithNoPKFields() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.PK_MODE, "record_key");
+
+        final Config config = new JdbcSinkConnector().validate(props);
+
+        assertTrue(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
+        assertTrue(config.configValues().stream()
+                .filter(cv -> cv.name().equals(JdbcSinkConfig.PK_FIELDS))
+                .flatMap(cv -> cv.errorMessages().stream())
+                .anyMatch(msg -> msg.contains(
+                        "Primary key fields must be set when pkMode is 'record_key' or 'record_value'"
+                )));
+    }
+
+    @Test
+    public void shouldValidatePKModeRecordValueWithNoPKFields() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.PK_MODE, "record_value");
+
+        final Config config = new JdbcSinkConnector().validate(props);
+
+        assertTrue(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
+        assertTrue(config.configValues().stream()
+                .filter(cv -> cv.name().equals(JdbcSinkConfig.PK_FIELDS))
+                .flatMap(cv -> cv.errorMessages().stream())
+                .anyMatch(msg -> msg.contains(
+                        "Primary key fields must be set when pkMode is 'record_key' or 'record_value'"
+                )));
+    }
+
+    @Test
+    public void shouldValidateValidPKModeAndPKFields() {
+        final Map<String, String> props = new HashMap<>();
+        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
+        props.put(JdbcSinkConfig.PK_MODE, "record_key");
+        props.put(JdbcSinkConfig.PK_FIELDS, "id");
+
+        final Config config = new JdbcSinkConnector().validate(props);
+
+        assertFalse(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
+
     }
 }
