@@ -124,7 +124,7 @@ val avroVersion = "1.8.1"
 // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
 val confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
 val hamcrestVersion = "2.2"
-val jacksonVersion = "2.17.0" // This Jackson is used in the tests.
+val jacksonVersion = "2.17.1" // This Jackson is used in the tests.
 val jupiterVersion = "5.10.3"
 val servletVersion = "4.0.1"
 val testcontainersVersion = "1.19.8"
