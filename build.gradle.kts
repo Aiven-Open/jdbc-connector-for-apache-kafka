@@ -165,7 +165,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql:42.7.3")
     runtimeOnly("com.oracle.database.jdbc:ojdbc8:23.4.0.24.05")
     runtimeOnly("net.sourceforge.jtds:jtds:1.3.1")
-    runtimeOnly("net.snowflake:snowflake-jdbc:3.16.0")
+    runtimeOnly("net.snowflake:snowflake-jdbc:3.16.1")
     runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11")
     runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
 
