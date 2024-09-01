@@ -120,7 +120,7 @@ publishing {
 val kafkaVersion = "3.3.2"
 val slf4jVersion = "2.0.13"
 
-val avroVersion = "1.8.1"
+val avroVersion = "1.12.0"
 // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
 val confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
 val hamcrestVersion = "2.2"
