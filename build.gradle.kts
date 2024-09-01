@@ -167,7 +167,7 @@ dependencies {
     runtimeOnly("net.sourceforge.jtds:jtds:1.3.1")
     runtimeOnly("net.snowflake:snowflake-jdbc:3.16.1")
     runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11")
-    runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
+    runtimeOnly("com.mysql:mysql-connector-j:9.0.0")
 
     implementation("com.google.guava:guava:33.2.1-jre")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
