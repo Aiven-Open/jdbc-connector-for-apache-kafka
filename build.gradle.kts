@@ -48,9 +48,10 @@ java {
     withSourcesJar()
 }
 
-tasks.wrapper {
+tasks.withType<Wrapper> {
     doFirst {
-        val sha256Sum = URL("$distributionUrl.sha256").readText()
+        val sha256Sum = uri("$distributionUrl.sha256").toURL().readText()
+
         propertiesFile.appendText("distributionSha256Sum=${sha256Sum}\n")
         println("Added checksum to wrapper properties")
     }
