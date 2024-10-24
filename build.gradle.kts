@@ -60,7 +60,7 @@ tasks.withType<Wrapper> {
 
 checkstyle {
     toolVersion = "10.16.0"
-    configDirectory.set(rootProject.file("checkstyle/"))
+    configDirectory.set(project.projectDir.resolve("checkstyle/"))
 }
 
 jacoco {
