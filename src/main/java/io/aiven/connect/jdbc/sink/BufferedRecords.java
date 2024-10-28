@@ -243,7 +243,7 @@ public class BufferedRecords {
         }
 
         if (successNoInfo) {
-            log.info("{} {} records:{} , but no count of the number of rows it affected is available",
+            log.debug("{} {} records:{} , but no count of the number of rows it affected is available",
                     config.insertMode,
                     recordType,
                     batchRecords.size()
@@ -296,13 +296,13 @@ public class BufferedRecords {
     }
 
     public void close() throws SQLException {
-        log.info("Closing BufferedRecords with preparedStatement: {}", preparedStatement);
+        log.debug("Closing BufferedRecords with preparedStatement: {}", preparedStatement);
         if (preparedStatement != null) {
             preparedStatement.close();
             preparedStatement = null;
         }
 
-        log.info("Closing BufferedRecords with deletePreparedStatement: {}", deletePreparedStatement);
+        log.debug("Closing BufferedRecords with deletePreparedStatement: {}", deletePreparedStatement);
         if (deletePreparedStatement != null) {
             deletePreparedStatement.close();
             deletePreparedStatement = null;

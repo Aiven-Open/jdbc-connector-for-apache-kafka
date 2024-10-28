@@ -57,7 +57,7 @@ public class JdbcDbWriter {
         this.cachedConnectionProvider = new CachedConnectionProvider(this.dbDialect) {
             @Override
             protected void onConnect(final Connection connection) throws SQLException {
-                log.info("JdbcDbWriter Connected");
+                log.debug("JdbcDbWriter Connected");
                 connection.setAutoCommit(false);
             }
         };

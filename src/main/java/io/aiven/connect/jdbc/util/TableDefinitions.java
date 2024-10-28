@@ -63,7 +63,7 @@ public class TableDefinitions {
             if (dialect.tableExists(connection, tableId)) {
                 dbTable = dialect.describeTable(connection, tableId);
                 if (dbTable != null) {
-                    log.info("Setting metadata for table {} to {}", tableId, dbTable);
+                    log.debug("Setting metadata for table {} to {}", tableId, dbTable);
                     cache.put(tableId, dbTable);
                 }
             }
@@ -84,7 +84,7 @@ public class TableDefinitions {
         final TableId tableId
     ) throws SQLException {
         final TableDefinition dbTable = dialect.describeTable(connection, tableId);
-        log.info("Refreshing metadata for table {} to {}", tableId, dbTable);
+        log.debug("Refreshing metadata for table {} to {}", tableId, dbTable);
         cache.put(dbTable.id(), dbTable);
         return dbTable;
     }

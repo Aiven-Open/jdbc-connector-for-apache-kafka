@@ -102,7 +102,7 @@ public class DbStructure {
             );
         }
         final String sql = dbDialect.buildCreateTableStatement(tableId, fieldsMetadata.allFields.values());
-        log.info("Creating table with sql: {}", sql);
+        log.debug("Creating table with sql: {}", sql);
         dbDialect.applyDdlStatements(connection, Collections.singletonList(sql));
     }
 
@@ -159,7 +159,7 @@ public class DbStructure {
         }
 
         final List<String> amendTableQueries = dbDialect.buildAlterTable(tableId, missingFields);
-        log.info(
+        log.debug(
                 "Amending table to add missing fields:{} maxRetries:{} with SQL: {}",
                 missingFields,
                 maxRetries,
@@ -231,7 +231,7 @@ public class DbStructure {
         }
 
         if (missingFieldsIgnoreCase.size() > 0) {
-            log.info(
+            log.debug(
                     "Unable to find fields {} among column names {}",
                     missingFieldsIgnoreCase,
                     dbColumnNames

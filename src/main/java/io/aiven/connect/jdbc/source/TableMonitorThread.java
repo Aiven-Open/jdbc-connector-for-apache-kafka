@@ -194,7 +194,7 @@ public class TableMonitorThread extends Thread {
         }
 
         if (!newTables.equals(this.tables)) {
-            log.info(
+            log.debug(
                 "After filtering the tables are: {}",
                 dialect.expressionBuilder()
                     .appendList()

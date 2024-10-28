@@ -82,7 +82,7 @@ public class JdbcSourceTask extends SourceTask {
 
     @Override
     public void start(final Map<String, String> properties) {
-        log.info("Starting JDBC source task");
+        log.debug("Starting JDBC source task");
         try {
             config = new JdbcSourceTaskConfig(properties);
             config.validate();
@@ -100,7 +100,7 @@ public class JdbcSourceTask extends SourceTask {
             final String connectionUrl = config.getConnectionUrl();
             dialect = DatabaseDialects.findBestFor(connectionUrl, config);
         }
-        log.info("Using JDBC dialect {}", dialect.name());
+        log.debug("Using JDBC dialect {}", dialect.name());
 
         cachedConnectionProvider = new SourceConnectionProvider(dialect, maxConnAttempts, retryBackoff);
 
@@ -253,7 +253,7 @@ public class JdbcSourceTask extends SourceTask {
         }
 
         running.set(true);
-        log.info("Started JDBC source task");
+        log.debug("Started JDBC source task");
     }
 
     //This method returns a list of possible partition maps for different offset protocols
@@ -268,7 +268,7 @@ public class JdbcSourceTask extends SourceTask {
 
     @Override
     public void stop() throws ConnectException {
-        log.info("Stopping JDBC source task");
+        log.debug("Stopping JDBC source task");
         running.set(false);
         // Wait for any in-progress polls to stop before closing resources
         // On older versions of Kafka Connect, SourceTask::stop and SourceTask::poll may
@@ -281,7 +281,7 @@ public class JdbcSourceTask extends SourceTask {
     }
 
     protected void closeResources() {
-        log.info("Closing resources for JDBC source task");
+        log.debug("Closing resources for JDBC source task");
         try {
             if (cachedConnectionProvider != null) {
                 cachedConnectionProvider.close();
