@@ -127,7 +127,7 @@ val hamcrestVersion = "2.2"
 val jacksonVersion = "2.17.2" // This Jackson is used in the tests.
 val jupiterVersion = "5.11.0"
 val servletVersion = "4.0.1"
-val testcontainersVersion = "1.20.1"
+val testcontainersVersion = "1.20.2"
 val awaitilityVersion = "4.2.1"
 val log4jVersion = "2.20.0"
 
