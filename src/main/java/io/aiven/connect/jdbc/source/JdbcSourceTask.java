@@ -75,6 +75,23 @@ public class JdbcSourceTask extends SourceTask {
         this.time = time;
     }
 
+    // Validation methods
+    private boolean isIncrementingOrTimestampIncrementing(String incrementalMode) {
+        return incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
+                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+    }
+
+    private boolean isTimestampOrTimestampIncrementing(String incrementalMode) {
+        return incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
+                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+    }
+
+    private boolean isIncrementingMode(String mode) {
+        return mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)
+                || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)
+                || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING);
+    }
+
     @Override
     public String version() {
         return Version.getVersion();
@@ -118,9 +135,8 @@ public class JdbcSourceTask extends SourceTask {
         //used only in table mode
         final Map<String, List<Map<String, String>>> partitionsByTableFqn = new HashMap<>();
         Map<Map<String, String>, Map<String, Object>> offsets = null;
-        if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)
-            || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)
-            || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
+
+        if (isIncrementingMode(mode)) {
             final List<Map<String, String>> partitions = new ArrayList<>(tables.size());
             switch (queryMode) {
                 case TABLE:
@@ -390,7 +406,7 @@ public class JdbcSourceTask extends SourceTask {
             }
 
             boolean incrementingOptional = false;
-            boolean atLeastOneTimestampNotOptional = false;
+            boolean timestampRequired = false;
             final Connection conn = cachedConnectionProvider.getConnection();
             final Map<ColumnId, ColumnDefinition> defnsById = dialect.describeColumns(conn, table, null);
             for (final ColumnDefinition defn : defnsById.values()) {
@@ -399,7 +415,7 @@ public class JdbcSourceTask extends SourceTask {
                     incrementingOptional = defn.isOptional();
                 } else if (lowercaseTsColumns.contains(columnName.toLowerCase(Locale.getDefault()))) {
                     if (!defn.isOptional()) {
-                        atLeastOneTimestampNotOptional = true;
+                        timestampRequired = true;
                     }
                 }
             }
@@ -407,20 +423,20 @@ public class JdbcSourceTask extends SourceTask {
             // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
             // for table-based copying because custom query mode doesn't allow this to be looked up
             // without a query or parsing the query since we don't have a table name.
-            if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
-                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING))
-                && incrementingOptional) {
-                throw new ConnectException("Cannot make incremental queries using incrementing column "
-                    + incrementingColumn + " on " + table + " because this column "
-                    + "is nullable.");
+            if (isIncrementingOrTimestampIncrementing(incrementalMode) && incrementingOptional) {
+                String errorMessage = String.format(
+                        "Cannot make incremental queries using incrementing column %s on %s because this column is nullable.",
+                        incrementingColumn, table
+                );
+                throw new ConnectException(errorMessage);
             }
-            if ((incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
-                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING))
-                && !atLeastOneTimestampNotOptional) {
-                throw new ConnectException("Cannot make incremental queries using timestamp columns "
-                    + timestampColumns + " on " + table + " because all of these "
-                    + "columns "
-                    + "nullable.");
+
+            if (isTimestampOrTimestampIncrementing(incrementalMode) && !timestampRequired) {
+                String errorMessage = String.format(
+                        "Cannot make incremental queries using incrementing column %s on %s because all these columns nullable.",
+                        timestampColumns, table
+                );
+                throw new ConnectException(errorMessage);
             }
         } catch (final SQLException e) {
             throw new ConnectException("Failed trying to validate that columns used for offsets are NOT"
