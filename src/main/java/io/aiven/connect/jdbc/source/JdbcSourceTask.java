@@ -75,29 +75,40 @@ public class JdbcSourceTask extends SourceTask {
         this.time = time;
     }
 
-    // Validation methods
-    // Decompose Complex conditions into smaller parts
-    private boolean isIncrementingOrTimestampIncrementing(String incrementalMode) {
-        return isIncrementingMode(incrementalMode) && !isTimestampMode(incrementalMode);
+    // Smaller conditions for readability
+    private boolean isModeIncrementing(String mode) {
+        return mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING);
     }
 
-    private boolean isTimestampOrTimestampIncrementing(String incrementalMode) {
-        return isTimestampMode(incrementalMode) || isTimestampIncrementingMode(incrementalMode);
+    private boolean isModeTimestamp(String mode) {
+        return mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP);
     }
 
-    private boolean isIncrementingMode(String mode) {
-        return mode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
-                || mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING);
+    private boolean isModeTimestampIncrementing(String mode) {
+        return mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING);
     }
 
-    private boolean isTimestampMode(String mode) {
-        return mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
-                || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP);
+    private boolean isIncrementingOptionalMode(String incrementalMode) {
+        return incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
+                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
     }
 
-    private boolean isTimestampIncrementingMode(String mode) {
-        return mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)
-                || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING);
+    private boolean isTimestampOptionalMode(String incrementalMode) {
+        return incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
+                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+    }
+
+    // Composite validation methods
+    private boolean isSupportedTaskMode(String mode) {
+        return isModeIncrementing(mode) || isModeTimestamp(mode) || isModeTimestampIncrementing(mode);
+    }
+
+    private boolean isIncrementingModeOptional(String incrementalMode, boolean incrementingOptional) {
+        return isIncrementingOptionalMode(incrementalMode) && incrementingOptional;
+    }
+
+    private boolean isTimestampModeNotOptional(String incrementalMode, boolean atLeastOneTimestampNotOptional) {
+        return isTimestampOptionalMode(incrementalMode) && !atLeastOneTimestampNotOptional;
     }
 
     @Override
@@ -144,7 +155,7 @@ public class JdbcSourceTask extends SourceTask {
         final Map<String, List<Map<String, String>>> partitionsByTableFqn = new HashMap<>();
         Map<Map<String, String>, Map<String, Object>> offsets = null;
 
-        if (isIncrementingMode(mode)) {
+        if (isSupportedTaskMode(mode)) {
             final List<Map<String, String>> partitions = new ArrayList<>(tables.size());
             switch (queryMode) {
                 case TABLE:
@@ -431,7 +442,7 @@ public class JdbcSourceTask extends SourceTask {
             // Validate that requested columns for offsets are NOT NULL. Currently this is only performed
             // for table-based copying because custom query mode doesn't allow this to be looked up
             // without a query or parsing the query since we don't have a table name.
-            if (isIncrementingOrTimestampIncrementing(incrementalMode) && incrementingOptional) {
+            if (isIncrementingModeOptional(incrementalMode, incrementingOptional)) {
                 String errorMessage = String.format(
                         "Cannot make incremental queries using incrementing column %s on %s because this column is nullable.",
                         incrementingColumn, table
@@ -439,7 +450,7 @@ public class JdbcSourceTask extends SourceTask {
                 throw new ConnectException(errorMessage);
             }
 
-            if (isTimestampOrTimestampIncrementing(incrementalMode) && !timestampRequired) {
+            if (isTimestampModeNotOptional(incrementalMode, timestampRequired)) {
                 String errorMessage = String.format(
                         "Cannot make incremental queries using incrementing column %s on %s because all these columns nullable.",
                         timestampColumns, table
