@@ -76,19 +76,27 @@ public class JdbcSourceTask extends SourceTask {
     }
 
     // Validation methods
+    // Decompose Complex conditions into smaller parts
     private boolean isIncrementingOrTimestampIncrementing(String incrementalMode) {
-        return incrementalMode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
-                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+        return isIncrementingMode(incrementalMode) && !isTimestampMode(incrementalMode);
     }
 
     private boolean isTimestampOrTimestampIncrementing(String incrementalMode) {
-        return incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
-                || incrementalMode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING);
+        return isTimestampMode(incrementalMode) || isTimestampIncrementingMode(incrementalMode);
     }
 
     private boolean isIncrementingMode(String mode) {
-        return mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)
-                || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)
+        return mode.equals(JdbcSourceConnectorConfig.MODE_INCREMENTING)
+                || mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING);
+    }
+
+    private boolean isTimestampMode(String mode) {
+        return mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP)
+                || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP);
+    }
+
+    private boolean isTimestampIncrementingMode(String mode) {
+        return mode.equals(JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING)
                 || mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING);
     }
 

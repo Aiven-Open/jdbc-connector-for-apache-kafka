@@ -50,7 +50,9 @@ public class JdbcConfig extends AbstractConfig {
             + "querying with time-based criteria. Defaults to UTC.";
     private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB time zone";
 
-    public static final String DIALECT_NAME_CONFIG = "dialect.name";
+    // Deficient Encapsulation : This variable in not used outside of this class, but then after it declared as a public variable
+    // So I change access modifier from public to private
+    private static final String DIALECT_NAME_CONFIG = "dialect.name";
     private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
     private static final String DIALECT_NAME_DEFAULT = "";
     private static final String DIALECT_NAME_DOC =
