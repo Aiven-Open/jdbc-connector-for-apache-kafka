@@ -78,6 +78,10 @@ public class DbStructure {
         return amendIfNecessary(config, connection, tableId, fieldsMetadata, config.maxRetries);
     }
 
+    public TableDefinition tableDefinitionFor(final TableId tableId, final Connection connection) throws SQLException {
+        return tableDefns.tableDefinitionFor(connection, tableId);
+    }
+
     /**
      * @throws SQLException if CREATE failed
      */

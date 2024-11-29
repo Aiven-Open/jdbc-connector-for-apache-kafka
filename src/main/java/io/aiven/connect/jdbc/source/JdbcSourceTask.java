@@ -309,8 +309,6 @@ public class JdbcSourceTask extends SourceTask {
         }
     }
 
-
-
     //This method returns a list of possible partition maps for different offset protocols
     //This helps with the upgrades
     private List<Map<String, String>> possibleTablePartitions(final String table) {

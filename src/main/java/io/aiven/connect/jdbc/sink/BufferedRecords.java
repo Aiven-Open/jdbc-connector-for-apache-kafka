@@ -76,7 +76,6 @@ public class BufferedRecords {
         this.dbDialect = dbDialect;
         this.dbStructure = dbStructure;
         this.connection = connection;
-        tableDefinitions = new TableDefinitions(dbDialect);
     }
 
     public List<SinkRecord> add(final SinkRecord record) throws SQLException {
@@ -169,7 +168,7 @@ public class BufferedRecords {
                 fieldsMetadata
         );
 
-        tableDefinition = tableDefinitions.tableDefinitionFor(tableId, connection);
+        tableDefinition = dbStructure.tableDefinitionFor(tableId, connection);
     }
 
     public List<SinkRecord> flush() throws SQLException {
