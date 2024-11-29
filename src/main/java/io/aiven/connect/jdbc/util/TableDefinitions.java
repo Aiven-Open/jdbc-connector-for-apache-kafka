@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 
@@ -87,5 +88,14 @@ public class TableDefinitions {
         log.info("Refreshing metadata for table {} to {}", tableId, dbTable);
         cache.put(dbTable.id(), dbTable);
         return dbTable;
+    }
+
+    public TableDefinition tableDefinitionFor(final TableId tableId, final Connection connection) throws SQLException {
+        final var tblDefinition = this.get(connection, tableId);
+        if (Objects.nonNull(tblDefinition)) {
+            return tblDefinition;
+        } else {
+            return this.refresh(connection, tableId);
+        }
     }
 }

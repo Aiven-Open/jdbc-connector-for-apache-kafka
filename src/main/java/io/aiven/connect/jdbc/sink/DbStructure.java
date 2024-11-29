@@ -49,15 +49,6 @@ public class DbStructure {
         this.tableDefns = new TableDefinitions(dbDialect);
     }
 
-    public TableDefinition tableDefinitionFor(final TableId tableId, final Connection connection) throws SQLException {
-        final var tblDefinition = tableDefns.get(connection, tableId);
-        if (Objects.nonNull(tblDefinition)) {
-            return tblDefinition;
-        } else {
-            return tableDefns.refresh(connection, tableId);
-        }
-    }
-
     /**
      * @return whether a DDL operation was performed
      * @throws SQLException if a DDL operation was deemed necessary but failed
