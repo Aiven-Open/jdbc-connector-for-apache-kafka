@@ -460,63 +460,17 @@ public class JdbcSinkConfig extends JdbcConfig {
     public static void main(final String... args) {
         System.out.println("=========================================");
         System.out.println("JDBC Sink connector Configuration Options");
-        System.out.println("=========================================");
+        System.out.println("============================    =============");
         System.out.println();
         System.out.println(CONFIG_DEF.toEnrichedRst());
     }
 
     public static void validateDeleteEnabled(final Config config) {
-        // Collect all configuration values
-        final Map<String, ConfigValue> configValues = config.configValues().stream()
-                .collect(Collectors.toMap(ConfigValue::name, v -> v));
-
-        // Check if DELETE_ENABLED is true
-        final ConfigValue deleteEnabledConfigValue = configValues.get(JdbcSinkConfig.DELETE_ENABLED);
-        final boolean deleteEnabled = (boolean) deleteEnabledConfigValue.value();
-
-        // Check if PK_MODE is RECORD_KEY
-        final ConfigValue pkModeConfigValue = configValues.get(JdbcSinkConfig.PK_MODE);
-        final String pkMode = (String) pkModeConfigValue.value();
-
-        if (deleteEnabled && !JdbcSinkConfig.PrimaryKeyMode.RECORD_KEY.name().equalsIgnoreCase(pkMode)) {
-            deleteEnabledConfigValue.addErrorMessage("Delete support only works with pk.mode=record_key");
-        }
+        JdbcConfig.validateDeleteEnabled(config, DELETE_ENABLED, PK_MODE);
     }
 
     public static void validatePKModeAgainstPKFields(final Config config) {
-        // Collect all configuration values
-        final Map<String, ConfigValue> configValues = config.configValues().stream()
-                .collect(Collectors.toMap(ConfigValue::name, v -> v));
-
-        final ConfigValue pkModeConfigValue = configValues.get(JdbcSinkConfig.PK_MODE);
-        final ConfigValue pkFieldsConfigValue = configValues.get(JdbcSinkConfig.PK_FIELDS);
-
-        if (pkModeConfigValue == null || pkFieldsConfigValue == null) {
-            return; // If either pkMode or pkFields are not configured, there's nothing to validate
-        }
-
-        final String pkMode = (String) pkModeConfigValue.value();
-        final List<String> pkFields = (List<String>) pkFieldsConfigValue.value();
-
-        if (pkMode == null) {
-            return; // If pkMode is null, skip validation
-        }
-
-        switch (pkMode.toLowerCase()) {
-            case "none":
-                validateNoPKFields(pkFieldsConfigValue, pkFields);
-                break;
-            case "kafka":
-                validateKafkaPKFields(pkFieldsConfigValue, pkFields);
-                break;
-            case "record_key":
-            case "record_value":
-                validatePKFieldsRequired(pkFieldsConfigValue, pkFields);
-                break;
-            default:
-                pkFieldsConfigValue.addErrorMessage("Invalid pkMode value: " + pkMode);
-                break;
-        }
+        JdbcConfig.validatePKModeAgainstPKFields(config, PK_MODE, PK_FIELDS);
     }
 
     private static void validateNoPKFields(final ConfigValue pkFieldsConfigValue, final List<String> pkFields) {
@@ -526,6 +480,7 @@ public class JdbcSinkConfig extends JdbcConfig {
             );
         }
     }
+
 
     private static void validateKafkaPKFields(final ConfigValue pkFieldsConfigValue, final List<String> pkFields) {
         if (pkFields == null || pkFields.size() != 3) {

@@ -17,13 +17,13 @@
 package io.aiven.connect.jdbc.config;
 
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.common.config.types.Password;
 
 import io.aiven.connect.jdbc.util.TimeZoneValidator;
@@ -50,7 +50,9 @@ public class JdbcConfig extends AbstractConfig {
             + "querying with time-based criteria. Defaults to UTC.";
     private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB time zone";
 
-    public static final String DIALECT_NAME_CONFIG = "dialect.name";
+    // Deficient Encapsulation : This variable in not used outside of this class, but then after it declared as a public variable
+    // So I change access modifier from public to private
+    private static final String DIALECT_NAME_CONFIG = "dialect.name";
     private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
     private static final String DIALECT_NAME_DEFAULT = "";
     private static final String DIALECT_NAME_DOC =
@@ -184,4 +186,68 @@ public class JdbcConfig extends AbstractConfig {
             JdbcConfig.SQL_QUOTE_IDENTIFIERS_DISPLAY
         );
     }
+
+    protected static void validatePKModeAgainstPKFields(final Config config, final String pkMode, final String pkFields) {
+        final Map<String, ConfigValue> configValues = config.configValues().stream()
+                .collect(Collectors.toMap(ConfigValue::name, v -> v));
+
+        final ConfigValue pkModeConfigValue = configValues.get(pkMode);
+        final ConfigValue pkFieldsConfigValue = configValues.get(pkFields);
+
+        if (pkModeConfigValue == null || pkFieldsConfigValue == null) {
+            return;
+        }
+
+        final String mode = (String) pkModeConfigValue.value();
+        final List<String> fields = (List<String>) pkFieldsConfigValue.value();
+
+        if (mode == null) {
+            return;
+        }
+
+        switch (mode.toLowerCase()) {
+            case "none":
+                if (fields != null && !fields.isEmpty()) {
+                    pkFieldsConfigValue.addErrorMessage(
+                            "Primary key fields should not be set when pkMode is 'none'."
+                    );
+                }
+                break;
+            case "kafka":
+                if (fields == null || fields.size() != 3) {
+                    pkFieldsConfigValue.addErrorMessage(
+                            "Primary key fields must be set with three fields "
+                                    + "(topic, partition, offset) when pkMode is 'kafka'."
+                    );
+                }
+                break;
+            case "record_key":
+            case "record_value":
+                if (fields == null || fields.isEmpty()) {
+                    pkFieldsConfigValue.addErrorMessage(
+                            "Primary key fields must be set when pkMode is 'record_key' or 'record_value'."
+                    );
+                }
+                break;
+            default:
+                pkFieldsConfigValue.addErrorMessage("Invalid pkMode value: " + mode);
+                break;
+        }
+    }
+
+    protected static void validateDeleteEnabled(final Config config, final String deleteEnabledKey, final String pkModeKey) {
+        final Map<String, ConfigValue> configValues = config.configValues().stream()
+                .collect(Collectors.toMap(ConfigValue::name, v -> v));
+
+        final ConfigValue deleteEnabledConfigValue = configValues.get(deleteEnabledKey);
+        final boolean deleteEnabled = (boolean) deleteEnabledConfigValue.value();
+
+        final ConfigValue pkModeConfigValue = configValues.get(pkModeKey);
+        final String pkMode = (String) pkModeConfigValue.value();
+
+        if (deleteEnabled && !"record_key".equalsIgnoreCase(pkMode)) {
+            deleteEnabledConfigValue.addErrorMessage("Delete support only works with pk.mode=record_key");
+        }
+    }
+
 }

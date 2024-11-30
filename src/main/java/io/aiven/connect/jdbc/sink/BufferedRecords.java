@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.aiven.connect.jdbc.util.TableDefinitions;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
@@ -51,12 +52,12 @@ public class BufferedRecords {
     private final DatabaseDialect dbDialect;
     private final DbStructure dbStructure;
     private final Connection connection;
-
     private final List<SinkRecord> records = new ArrayList<>();
     private final List<SinkRecord> tombstoneRecords = new ArrayList<>();
     private SchemaPair currentSchemaPair;
     private FieldsMetadata fieldsMetadata;
     private TableDefinition tableDefinition;
+    private TableDefinitions tableDefinitions;
     private PreparedStatement preparedStatement;
     private StatementBinder preparedStatementBinder;
 

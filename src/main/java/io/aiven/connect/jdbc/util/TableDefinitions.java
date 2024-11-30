@@ -1,26 +1,10 @@
-/*
- * Copyright 2019 Aiven Oy and jdbc-connector-for-apache-kafka project contributors
- * Copyright 2018 Confluent Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.aiven.connect.jdbc.util;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.aiven.connect.jdbc.dialect.DatabaseDialect;
 
@@ -55,8 +39,8 @@ public class TableDefinitions {
      * @throws SQLException if there is any problem using the connection
      */
     public TableDefinition get(
-        final Connection connection,
-        final TableId tableId
+            final Connection connection,
+            final TableId tableId
     ) throws SQLException {
         TableDefinition dbTable = cache.get(tableId);
         if (dbTable == null) {
@@ -80,12 +64,31 @@ public class TableDefinitions {
      * @throws SQLException if there is any problem using the connection
      */
     public TableDefinition refresh(
-        final Connection connection,
-        final TableId tableId
+            final Connection connection,
+            final TableId tableId
     ) throws SQLException {
         final TableDefinition dbTable = dialect.describeTable(connection, tableId);
         log.info("Refreshing metadata for table {} to {}", tableId, dbTable);
         cache.put(dbTable.id(), dbTable);
         return dbTable;
+    }
+
+    /**
+     * Get the TableDefinition for a table, ensuring it is initialized in cache.
+     *
+     * @param connection the JDBC connection to use; may not be null
+     * @param tableId    the table identifier; may not be null
+     * @return the {@link TableDefinition} for the table
+     * @throws SQLException if there is any problem using the connection
+     */
+    public TableDefinition tableDefinitionFor(
+            final Connection connection,
+            final TableId tableId
+    ) throws SQLException {
+        TableDefinition tableDefn = get(connection, tableId);
+        if (tableDefn == null) {
+            tableDefn = refresh(connection, tableId);
+        }
+        return tableDefn;
     }
 }
