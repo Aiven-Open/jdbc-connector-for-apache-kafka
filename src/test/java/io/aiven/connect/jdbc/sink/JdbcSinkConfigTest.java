@@ -128,40 +128,6 @@ public class JdbcSinkConfigTest {
     }
 
     @Test
-    public void shouldValidatePKModeRecordKeyWithNoPKFields() {
-        final Map<String, String> props = new HashMap<>();
-        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
-        props.put(JdbcSinkConfig.PK_MODE, "record_key");
-
-        final Config config = new JdbcSinkConnector().validate(props);
-
-        assertTrue(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
-        assertTrue(config.configValues().stream()
-                .filter(cv -> cv.name().equals(JdbcSinkConfig.PK_FIELDS))
-                .flatMap(cv -> cv.errorMessages().stream())
-                .anyMatch(msg -> msg.contains(
-                        "Primary key fields must be set when pkMode is 'record_key' or 'record_value'"
-                )));
-    }
-
-    @Test
-    public void shouldValidatePKModeRecordValueWithNoPKFields() {
-        final Map<String, String> props = new HashMap<>();
-        props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");
-        props.put(JdbcSinkConfig.PK_MODE, "record_value");
-
-        final Config config = new JdbcSinkConnector().validate(props);
-
-        assertTrue(config.configValues().stream().anyMatch(cv -> cv.errorMessages().size() > 0));
-        assertTrue(config.configValues().stream()
-                .filter(cv -> cv.name().equals(JdbcSinkConfig.PK_FIELDS))
-                .flatMap(cv -> cv.errorMessages().stream())
-                .anyMatch(msg -> msg.contains(
-                        "Primary key fields must be set when pkMode is 'record_key' or 'record_value'"
-                )));
-    }
-
-    @Test
     public void shouldValidateValidPKModeAndPKFields() {
         final Map<String, String> props = new HashMap<>();
         props.put(JdbcSinkConfig.CONNECTION_URL_CONFIG, "jdbc://localhost");

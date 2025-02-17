@@ -301,13 +301,15 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         final Long currentTime = new Date().getTime();
 
         // Validate that we are seeing 2,3 but not 4,5 as they are getting delayed to the next round
-        // Using "toString" and not UTC because Derby's current_timestamp is always local time
+        // using "toString" and not UTC because Derby's current_timestamp is always local time
         // (i.e. doesn't honor Calendar settings)
         db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime).toString(), "id", 2);
         db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime + 1L).toString(), "id", 3);
         db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime + 500L).toString(), "id", 4);
         db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime + 501L).toString(), "id", 5);
 
+        // avoid flaky test where only 1 record gets received
+        Thread.sleep(1);
         verifyPoll(2, "id", Arrays.asList(2, 3), true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         // make sure we get the rest
