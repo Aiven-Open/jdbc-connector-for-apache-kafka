@@ -19,7 +19,6 @@ package io.aiven.connect.jdbc.sink;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -47,23 +46,18 @@ public class JdbcSinkConfig extends JdbcConfig {
         INSERT,
         MULTI,
         UPSERT,
-        UPDATE;
+        UPDATE
     }
 
     public enum PrimaryKeyMode {
         NONE,
         KAFKA,
         RECORD_KEY,
-        RECORD_VALUE;
+        RECORD_VALUE
     }
 
-    public static final List<String> DEFAULT_KAFKA_PK_NAMES = Collections.unmodifiableList(
-        Arrays.asList(
-            "__connect_topic",
-            "__connect_partition",
-            "__connect_offset"
-        )
-    );
+    public static final List<String> DEFAULT_KAFKA_PK_NAMES =
+        List.of("__connect_topic", "__connect_partition", "__connect_offset");
 
     public static final String TABLE_NAME_FORMAT = "table.name.format";
     public static final String TABLE_NAME_FORMAT_DEFAULT = "${topic}";

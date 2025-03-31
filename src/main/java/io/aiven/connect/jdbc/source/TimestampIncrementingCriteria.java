@@ -83,7 +83,7 @@ public class TimestampIncrementingCriteria {
         final TimeZone timeZone
     ) {
         this.timestampColumns =
-            timestampColumns != null ? timestampColumns : Collections.<ColumnId>emptyList();
+            timestampColumns != null ? timestampColumns : Collections.emptyList();
         this.incrementingColumn = incrementingColumn;
         this.timeZone = timeZone;
     }
@@ -274,7 +274,7 @@ public class TimestampIncrementingCriteria {
             || incrementingColumnValue instanceof Short || incrementingColumnValue instanceof Byte;
     }
 
-    protected String coalesceTimestampColumns(final ExpressionBuilder builder) {
+    protected void coalesceTimestampColumns(final ExpressionBuilder builder) {
         if (timestampColumns.size() == 1) {
             builder.append(timestampColumns.get(0));
         } else {
@@ -282,7 +282,6 @@ public class TimestampIncrementingCriteria {
             builder.appendList().delimitedBy(",").of(timestampColumns);
             builder.append(")");
         }
-        return builder.toString();
     }
 
     protected void timestampIncrementingWhereClause(final ExpressionBuilder builder) {

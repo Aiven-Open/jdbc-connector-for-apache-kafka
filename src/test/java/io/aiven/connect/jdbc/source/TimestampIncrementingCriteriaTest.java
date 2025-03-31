@@ -53,7 +53,7 @@ public class TimestampIncrementingCriteriaTest {
     private TimestampIncrementingCriteria criteriaIncTs;
     private Schema schema;
     private Struct record;
-    private TimeZone utcTimeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
+    private final TimeZone utcTimeZone = TimeZone.getTimeZone(ZoneOffset.UTC);
 
     @BeforeEach
     public void beforeEach() {

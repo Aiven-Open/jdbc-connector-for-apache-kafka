@@ -1094,7 +1094,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
             }
 
             case Types.BIT: {
-                /**
+                /*
                  * BIT should be either 0 or 1.
                  * TODO: Postgres handles this differently, returning a string "t" or "f". See the
                  * elasticsearch-jdbc plugin for an example of how this is handled

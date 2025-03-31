@@ -111,7 +111,7 @@ public final class SchemaMapping {
      * values are to be mapped/converted and then set on the corresponding {@link Field} in supplied
      * {@link Struct} objects.
      *
-     * @return the array of {@link FieldSetter} instances; never null and never empty
+     * @return the list of {@link FieldSetter} instances; never null and never empty
      */
     List<FieldSetter> fieldSetters() {
         return fieldSetters;

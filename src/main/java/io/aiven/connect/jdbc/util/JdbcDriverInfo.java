@@ -112,10 +112,7 @@ public class JdbcDriverInfo {
         if (this.jdbcMajorVersion() > jdbcMajorVersion) {
             return true;
         }
-        if (jdbcMajorVersion == jdbcMajorVersion() && jdbcMinorVersion() >= jdbcMinorVersion) {
-            return true;
-        }
-        return false;
+        return jdbcMajorVersion == jdbcMajorVersion() && jdbcMinorVersion() >= jdbcMinorVersion;
     }
 
     @Override
