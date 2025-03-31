@@ -168,6 +168,7 @@ dependencies {
     runtimeOnly("net.snowflake:snowflake-jdbc:3.16.1")
     runtimeOnly("com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11")
     runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
+    runtimeOnly("com.amazon.redshift:redshift-jdbc42:2.1.0.30")
 
     implementation("com.google.guava:guava:33.2.1-jre")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
