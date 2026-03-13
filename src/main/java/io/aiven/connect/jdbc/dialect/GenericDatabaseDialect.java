@@ -137,6 +137,8 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     private volatile JdbcDriverInfo jdbcDriverInfo;
     private final TimeZone timeZone;
     private final boolean quoteIdentifiers;
+    protected String upsertConditionalColumn;
+    protected String upsertConditionalOperator;
 
     /**
      * Create a new dialect instance with the given connector configuration.
@@ -163,9 +165,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         connectionUsername = config.getConnectionUser();
         connectionPassword = config.getConnectionPassword();
         if (config instanceof JdbcSinkConfig) {
+            final JdbcSinkConfig sinkConfig = (JdbcSinkConfig) config;
             catalogPattern = JdbcSourceTaskConfig.CATALOG_PATTERN_DEFAULT;
             schemaPattern = JdbcSourceTaskConfig.SCHEMA_PATTERN_DEFAULT;
             tableTypes = new HashSet<>(getDefaultSinkTableTypes());
+            upsertConditionalColumn = sinkConfig.upsertConditionalColumn;
+            upsertConditionalOperator = sinkConfig.upsertConditionalOperator;
         } else {
             catalogPattern = config.getString(JdbcSourceTaskConfig.CATALOG_PATTERN_CONFIG);
             schemaPattern = config.getString(JdbcSourceTaskConfig.SCHEMA_PATTERN_CONFIG);

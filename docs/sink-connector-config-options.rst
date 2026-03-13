@@ -102,6 +102,21 @@ Writes
   message key. If set to ``true``, it requires the ``pk.mode`` to be
   ``record_key`` to be able to identify the rows to delete.
 
+``upsert.conditional.column``
+  The name of the column to use for conditional upsert. If set, the upsert will only perform an update if the condition is met.
+
+  * Type: string
+  * Default: ""
+  * Importance: low
+
+``upsert.conditional.operator``
+  The operator to use for the conditional upsert comparison. Valid operators are <, >, <=, >=, =.
+
+  * Type: string
+  * Default: >=
+  * Valid Values: [<, >, <=, >=, =]
+  * Importance: low
+
 Data Mapping
 ^^^^^^^^^^^^
 

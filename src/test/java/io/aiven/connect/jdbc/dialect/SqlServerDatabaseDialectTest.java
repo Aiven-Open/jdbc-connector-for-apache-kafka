@@ -27,6 +27,7 @@ import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
+import io.aiven.connect.jdbc.sink.JdbcSinkConfig;
 import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 import io.aiven.connect.jdbc.util.TableId;
 
@@ -113,6 +114,23 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
     public void shouldBuildUpsertStatement() {
         final String expected = readQueryResourceForThisTest("upsert0");
         final String actual = dialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
+        assertQueryEquals(expected, actual);
+    }
+
+    @Test
+    public void shouldBuildUpsertConditionalStatement() {
+        final String expected;
+        if (quoteIdentifiersExpectedBehavior) {
+            expected = "merge into [myTable] with (HOLDLOCK) AS target using (select ? AS [id1], ? AS [id2], ? AS [columnA], ? AS [columnB], ? AS [columnC], ? AS [columnD]) AS incoming on (target.[id1]=incoming.[id1] and target.[id2]=incoming.[id2]) when matched AND (incoming.[columnA] >= target.[columnA]) then update set [columnA]=incoming.[columnA],[columnB]=incoming.[columnB],[columnC]=incoming.[columnC],[columnD]=incoming.[columnD] when not matched then insert ([columnA], [columnB], [columnC], [columnD], [id1], [id2]) values (incoming.[columnA],incoming.[columnB],incoming.[columnC],incoming.[columnD],incoming.[id1],incoming.[id2]);";
+        } else {
+            expected = "merge into myTable with (HOLDLOCK) AS target using (select ? AS id1, ? AS id2, ? AS columnA, ? AS columnB, ? AS columnC, ? AS columnD) AS incoming on (target.id1=incoming.id1 and target.id2=incoming.id2) when matched AND (incoming.columnA >= target.columnA) then update set columnA=incoming.columnA,columnB=incoming.columnB,columnC=incoming.columnC,columnD=incoming.columnD when not matched then insert (columnA, columnB, columnC, columnD, id1, id2) values (incoming.columnA,incoming.columnB,incoming.columnC,incoming.columnD,incoming.id1,incoming.id2);";
+        }
+        final SqlServerDatabaseDialect conditionalDialect = new SqlServerDatabaseDialect(sinkConfigWithUrl(
+            "jdbc:sqlserver://something",
+            JdbcSinkConfig.UPSERT_CONDITIONAL_COLUMN, "columnA",
+            JdbcSinkConfig.UPSERT_CONDITIONAL_OPERATOR, ">="
+        ));
+        final String actual = conditionalDialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
         assertQueryEquals(expected, actual);
     }
 
