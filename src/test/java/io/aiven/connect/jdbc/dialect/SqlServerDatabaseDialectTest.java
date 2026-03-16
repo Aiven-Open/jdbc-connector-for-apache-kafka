@@ -121,9 +121,23 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
     public void shouldBuildUpsertConditionalStatement() {
         final String expected;
         if (quoteIdentifiersExpectedBehavior) {
-            expected = "merge into [myTable] with (HOLDLOCK) AS target using (select ? AS [id1], ? AS [id2], ? AS [columnA], ? AS [columnB], ? AS [columnC], ? AS [columnD]) AS incoming on (target.[id1]=incoming.[id1] and target.[id2]=incoming.[id2]) when matched AND (incoming.[columnA] >= target.[columnA]) then update set [columnA]=incoming.[columnA],[columnB]=incoming.[columnB],[columnC]=incoming.[columnC],[columnD]=incoming.[columnD] when not matched then insert ([columnA], [columnB], [columnC], [columnD], [id1], [id2]) values (incoming.[columnA],incoming.[columnB],incoming.[columnC],incoming.[columnD],incoming.[id1],incoming.[id2]);";
+            expected = "merge into [myTable] with (HOLDLOCK) AS target using (select ? AS [id1], "
+                + "? AS [id2], ? AS [columnA], ? AS [columnB], ? AS [columnC], ? AS [columnD]) "
+                + "AS incoming on (target.[id1]=incoming.[id1] and target.[id2]=incoming.[id2]) "
+                + "when matched AND (incoming.[columnA] >= target.[columnA]) then update set "
+                + "[columnA]=incoming.[columnA],[columnB]=incoming.[columnB],[columnC]=incoming.[columnC],"
+                + "[columnD]=incoming.[columnD] when not matched then insert ([columnA], [columnB], "
+                + "[columnC], [columnD], [id1], [id2]) values (incoming.[columnA],incoming.[columnB],"
+                + "incoming.[columnC],incoming.[columnD],incoming.[id1],incoming.[id2]);";
         } else {
-            expected = "merge into myTable with (HOLDLOCK) AS target using (select ? AS id1, ? AS id2, ? AS columnA, ? AS columnB, ? AS columnC, ? AS columnD) AS incoming on (target.id1=incoming.id1 and target.id2=incoming.id2) when matched AND (incoming.columnA >= target.columnA) then update set columnA=incoming.columnA,columnB=incoming.columnB,columnC=incoming.columnC,columnD=incoming.columnD when not matched then insert (columnA, columnB, columnC, columnD, id1, id2) values (incoming.columnA,incoming.columnB,incoming.columnC,incoming.columnD,incoming.id1,incoming.id2);";
+            expected = "merge into myTable with (HOLDLOCK) AS target using (select ? AS id1, "
+                + "? AS id2, ? AS columnA, ? AS columnB, ? AS columnC, ? AS columnD) AS incoming "
+                + "on (target.id1=incoming.id1 and target.id2=incoming.id2) when matched AND "
+                + "(incoming.columnA >= target.columnA) then update set columnA=incoming.columnA,"
+                + "columnB=incoming.columnB,columnC=incoming.columnC,columnD=incoming.columnD "
+                + "when not matched then insert (columnA, columnB, columnC, columnD, id1, id2) "
+                + "values (incoming.columnA,incoming.columnB,incoming.columnC,incoming.columnD,"
+                + "incoming.id1,incoming.id2);";
         }
         final SqlServerDatabaseDialect conditionalDialect = new SqlServerDatabaseDialect(sinkConfigWithUrl(
             "jdbc:sqlserver://something",
