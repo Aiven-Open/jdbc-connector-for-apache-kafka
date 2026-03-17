@@ -176,21 +176,21 @@ public class JdbcSinkConfig extends JdbcConfig {
             + " while this configuration is applicable for the other columns.";
     private static final String FIELDS_WHITELIST_DISPLAY = "Fields Whitelist";
 
-    public static final String UPSERT_CONDITIONAL_COLUMN = "upsert.conditional.column";
-    private static final String UPSERT_CONDITIONAL_COLUMN_DEFAULT = "";
-    private static final String UPSERT_CONDITIONAL_COLUMN_DOC =
-        "The name of the column to use for conditional upsert. If set, the upsert will only "
+    public static final String UPDATE_CONDITIONAL_COLUMN = "update.conditional.column";
+    private static final String UPDATE_CONDITIONAL_COLUMN_DEFAULT = "";
+    private static final String UPDATE_CONDITIONAL_COLUMN_DOC =
+        "The name of the column to use for conditional update. If set, the upsert will only "
             + "perform an update if the condition is met. "
             + "Can be used for e.g. unordered data with timestamps or ordering identifiers. "
             + "Only supported for SQL Server dialect currently.";
-    private static final String UPSERT_CONDITIONAL_COLUMN_DISPLAY = "Upsert Conditional Column";
+    private static final String UPDATE_CONDITIONAL_COLUMN_DISPLAY = "Update Conditional Column";
 
-    public static final String UPSERT_CONDITIONAL_OPERATOR = "upsert.conditional.operator";
-    private static final String UPSERT_CONDITIONAL_OPERATOR_DEFAULT = ">=";
-    private static final String UPSERT_CONDITIONAL_OPERATOR_DOC =
-        "The operator to use for the conditional upsert comparison. "
+    public static final String UPDATE_CONDITIONAL_OPERATOR = "update.conditional.operator";
+    private static final String UPDATE_CONDITIONAL_OPERATOR_DEFAULT = ">=";
+    private static final String UPDATE_CONDITIONAL_OPERATOR_DOC =
+        "The operator to use for the conditional update comparison. "
             + "Valid operators are <, >, <=, >=, =.";
-    private static final String UPSERT_CONDITIONAL_OPERATOR_DISPLAY = "Upsert Conditional Operator";
+    private static final String UPDATE_CONDITIONAL_OPERATOR_DISPLAY = "Update Conditional Operator";
 
     public static final String DELETE_ENABLED = "delete.enabled";
     private static final String DELETE_ENABLED_DEFAULT = "false";
@@ -255,27 +255,27 @@ public class JdbcSinkConfig extends JdbcConfig {
                 ConfigDef.Width.SHORT,
                 DELETE_ENABLED_DISPLAY)
             .define(
-                UPSERT_CONDITIONAL_COLUMN,
+                UPDATE_CONDITIONAL_COLUMN,
                 ConfigDef.Type.STRING,
-                UPSERT_CONDITIONAL_COLUMN_DEFAULT,
+                UPDATE_CONDITIONAL_COLUMN_DEFAULT,
                 ConfigDef.Importance.LOW,
-                UPSERT_CONDITIONAL_COLUMN_DOC,
+                UPDATE_CONDITIONAL_COLUMN_DOC,
                 WRITES_GROUP,
                 4,
                 ConfigDef.Width.MEDIUM,
-                UPSERT_CONDITIONAL_COLUMN_DISPLAY
+                UPDATE_CONDITIONAL_COLUMN_DISPLAY
             )
             .define(
-                UPSERT_CONDITIONAL_OPERATOR,
+                UPDATE_CONDITIONAL_OPERATOR,
                 ConfigDef.Type.STRING,
-                UPSERT_CONDITIONAL_OPERATOR_DEFAULT,
+                UPDATE_CONDITIONAL_OPERATOR_DEFAULT,
                 ConfigDef.ValidString.in("<", ">", "<=", ">=", "="),
                 ConfigDef.Importance.LOW,
-                UPSERT_CONDITIONAL_OPERATOR_DOC,
+                UPDATE_CONDITIONAL_OPERATOR_DOC,
                 WRITES_GROUP,
                 5,
                 ConfigDef.Width.SHORT,
-                UPSERT_CONDITIONAL_OPERATOR_DISPLAY
+                UPDATE_CONDITIONAL_OPERATOR_DISPLAY
             );
 
         // Data Mapping
@@ -429,8 +429,8 @@ public class JdbcSinkConfig extends JdbcConfig {
     public final Set<String> fieldsWhitelist;
     public final TimeZone timeZone;
     public final boolean deleteEnabled;
-    public final String upsertConditionalColumn;
-    public final String upsertConditionalOperator;
+    public final String updateConditionalColumn;
+    public final String updateConditionalOperator;
 
     public JdbcSinkConfig(final Map<?, ?> props) {
         super(CONFIG_DEF, props);
@@ -449,8 +449,8 @@ public class JdbcSinkConfig extends JdbcConfig {
         final String dbTimeZone = getString(DB_TIMEZONE_CONFIG);
         timeZone = TimeZone.getTimeZone(ZoneId.of(dbTimeZone));
         deleteEnabled = getBoolean(DELETE_ENABLED);
-        upsertConditionalColumn = getString(UPSERT_CONDITIONAL_COLUMN);
-        upsertConditionalOperator = getString(UPSERT_CONDITIONAL_OPERATOR);
+        updateConditionalColumn = getString(UPDATE_CONDITIONAL_COLUMN).trim();
+        updateConditionalOperator = getString(UPDATE_CONDITIONAL_OPERATOR);
     }
 
     static Map<String, String> topicToTableMapping(final List<String> value) {

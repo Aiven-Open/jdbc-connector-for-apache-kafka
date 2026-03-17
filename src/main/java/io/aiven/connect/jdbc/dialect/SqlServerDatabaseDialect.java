@@ -173,15 +173,15 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
         builder.append(")");
         if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
             builder.append(" when matched");
-            if (upsertConditionalColumn != null && !upsertConditionalColumn.isEmpty()) {
+            if (updateConditionalColumn != null && !updateConditionalColumn.isEmpty()) {
                 builder.append(" AND (")
                     .append("incoming.")
-                    .appendIdentifier(upsertConditionalColumn)
+                    .appendIdentifier(updateConditionalColumn)
                     .append(" ")
-                    .append(upsertConditionalOperator)
+                    .append(updateConditionalOperator)
                     .append(" ")
                     .append("target.")
-                    .appendIdentifier(upsertConditionalColumn)
+                    .appendIdentifier(updateConditionalColumn)
                     .append(")");
             }
             builder.append(" then update set ");

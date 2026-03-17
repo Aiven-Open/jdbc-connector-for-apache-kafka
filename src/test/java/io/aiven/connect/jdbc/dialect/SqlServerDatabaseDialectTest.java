@@ -118,7 +118,7 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
     }
 
     @Test
-    public void shouldBuildUpsertConditionalStatement() {
+    public void shouldBuildUpdateConditionalStatement() {
         final String expected;
         if (quoteIdentifiersExpectedBehavior) {
             expected = "merge into [myTable] with (HOLDLOCK) AS target using (select ? AS [id1], "
@@ -141,8 +141,8 @@ public class SqlServerDatabaseDialectTest extends BaseDialectTest<SqlServerDatab
         }
         final SqlServerDatabaseDialect conditionalDialect = new SqlServerDatabaseDialect(sinkConfigWithUrl(
             "jdbc:sqlserver://something",
-            JdbcSinkConfig.UPSERT_CONDITIONAL_COLUMN, "columnA",
-            JdbcSinkConfig.UPSERT_CONDITIONAL_OPERATOR, ">="
+            JdbcSinkConfig.UPDATE_CONDITIONAL_COLUMN, "columnA",
+            JdbcSinkConfig.UPDATE_CONDITIONAL_OPERATOR, ">="
         ));
         final String actual = conditionalDialect.buildUpsertQueryStatement(tableId, pkColumns, columnsAtoD);
         assertQueryEquals(expected, actual);
