@@ -130,6 +130,27 @@ connector and the syntax they use for this:
 The connector does not support other databases for _upsert_ at the
 moment.
 
+#### Conditional Update
+
+In some cases, you might want to only update the existing row if some
+condition is met, for example, if the incoming record has a higher
+version number or a more recent timestamp than the one already in the
+database.
+
+This can be achieved by setting `update.conditional.column` and
+`update.conditional.operator`.
+
+For example, if you set:
+```properties
+update.conditional.column=version_number
+update.conditional.operator=>=
+```
+the connector will only update the existing row if the `version_number` in the
+incoming record is greater than or equal to the `version_number` in the
+existing row.
+
+Supported only in `SqlServerDatabaseDialect` and `insert.mode=upsert`
+
 ## Primary Keys
 
 The connector supports several sources of the primary key values.

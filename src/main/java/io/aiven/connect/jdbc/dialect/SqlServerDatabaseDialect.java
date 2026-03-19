@@ -172,7 +172,19 @@ public class SqlServerDatabaseDialect extends GenericDatabaseDialect {
             .of(keyColumns);
         builder.append(")");
         if (nonKeyColumns != null && !nonKeyColumns.isEmpty()) {
-            builder.append(" when matched then update set ");
+            builder.append(" when matched");
+            if (updateConditionalColumn != null && !updateConditionalColumn.isEmpty()) {
+                builder.append(" AND (")
+                    .append("incoming.")
+                    .appendIdentifier(updateConditionalColumn)
+                    .append(" ")
+                    .append(updateConditionalOperator)
+                    .append(" ")
+                    .append("target.")
+                    .appendIdentifier(updateConditionalColumn)
+                    .append(")");
+            }
+            builder.append(" then update set ");
             builder.appendList()
                 .delimitedBy(",")
                 .transformedBy(this::transformUpdate)

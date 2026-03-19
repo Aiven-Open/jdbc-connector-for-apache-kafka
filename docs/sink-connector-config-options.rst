@@ -102,6 +102,23 @@ Writes
   message key. If set to ``true``, it requires the ``pk.mode`` to be
   ``record_key`` to be able to identify the rows to delete.
 
+``update.conditional.column``
+  The name of the column to use for conditional update. If set, the upsert will only perform an update if the condition is met. If the key is found, but the condition is not met, the record will be discarded.
+
+  * Type: string
+  * Default: ""
+  * Importance: low
+
+  Supported only in `SqlServerDatabaseDialect` and `insert.mode=upsert`
+
+``update.conditional.operator``
+  The operator to use for the conditional update comparison. Valid operators are <, >, <=, >=, =.
+
+  * Type: string
+  * Default: >=
+  * Valid Values: [<, >, <=, >=, =]
+  * Importance: low
+
 Data Mapping
 ^^^^^^^^^^^^
 

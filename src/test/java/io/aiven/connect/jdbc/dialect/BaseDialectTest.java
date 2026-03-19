@@ -204,6 +204,9 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
         final Map<String, String> connProps = new HashMap<>();
         connProps.putAll(propertiesFromPairs(propertyPairs));
         connProps.put(JdbcConfig.CONNECTION_URL_CONFIG, url);
+        if (quoteIdentifiers != null) {
+            connProps.put(JdbcConfig.SQL_QUOTE_IDENTIFIERS_CONFIG, quoteIdentifiers.toString());
+        }
         return new JdbcSinkConfig(connProps);
     }
 
