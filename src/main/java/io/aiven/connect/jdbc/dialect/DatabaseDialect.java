@@ -328,6 +328,7 @@ public interface DatabaseDialect extends ConnectionProvider {
      * Build an INSERT statement for multiple rows.
      *
      * @param table            the identifier of the table; may not be null
+     * @param tableDefinition  the table definition; may be null if unknown
      * @param records          number of rows which will be inserted; must be a positive number
      * @param keyColumns       the identifiers of the columns in the primary/unique key; may not be null
      *                         but may be empty
@@ -337,6 +338,7 @@ public interface DatabaseDialect extends ConnectionProvider {
      */
     String buildMultiInsertStatement(
         TableId table,
+        TableDefinition tableDefinition,
         int records,
         Collection<ColumnId> keyColumns,
         Collection<ColumnId> nonKeyColumns

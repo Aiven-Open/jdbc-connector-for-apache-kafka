@@ -319,6 +319,7 @@ public class BufferedRecords {
         try {
             return dbDialect.buildMultiInsertStatement(
                     tableId,
+                    tableDefinition,
                     records.size(),
                     asColumns(fieldsMetadata.keyFieldNames),
                     asColumns(fieldsMetadata.nonKeyFieldNames)

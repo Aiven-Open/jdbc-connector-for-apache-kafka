@@ -226,6 +226,42 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
     }
 
     @Test
+    public void shouldBuildMultiInsertStatementMultipleRecords() {
+        final String expected = readQueryResourceForThisTest("multi_2_insert0");
+        final String actual = dialect.buildMultiInsertStatement(
+                castTypesTableId,
+                castTypesTableDefinition,
+                2,
+                List.of(castTypesPkColumn),
+                List.of(columnUuid, columnJson, columnJsonb));
+        assertQueryEquals(expected, actual);
+    }
+
+    @Test
+    public void shouldBuildMultiInsertStatementSingleRecord() {
+        final String expected = readQueryResourceForThisTest("multi_1_insert0");
+        final String actual = dialect.buildMultiInsertStatement(
+                castTypesTableId,
+                castTypesTableDefinition,
+                1,
+                List.of(castTypesPkColumn),
+                List.of(columnUuid, columnJson, columnJsonb));
+        assertQueryEquals(expected, actual);
+    }
+
+    @Test
+    public void shouldBuildMultiInsertStatementZeroRecords() {
+        assertThatThrownBy(() -> dialect.buildMultiInsertStatement(
+                castTypesTableId,
+                castTypesTableDefinition,
+                0,
+                List.of(castTypesPkColumn),
+                List.of(columnUuid, columnJson, columnJsonb)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("number of records must be a positive number, but got: 0");
+    }
+
+    @Test
     public void shouldBuildUpdateStatement() {
         final String expected = readQueryResourceForThisTest("update0");
         final String actual = dialect.buildUpdateStatement(
