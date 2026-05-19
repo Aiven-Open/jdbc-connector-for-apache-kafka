@@ -205,7 +205,7 @@ dependencies {
     integrationTestImplementation("org.testcontainers:oracle-free:$testcontainersVersion")
 
     integrationTestImplementation("org.awaitility:awaitility:$awaitilityVersion")
-    integrationTestImplementation("org.assertj:assertj-db:2.0.2")
+    integrationTestImplementation("org.assertj:assertj-db:3.0.0")
 
     // Make test utils from 'test' available in 'integration-test'
     integrationTestImplementation(sourceSets["test"].output)
