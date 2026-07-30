@@ -1,0 +1,1 @@
+INSERT INTO cast_types_table(pk,uuid_col,json_col,jsonb_col) VALUES(?,?::uuid,?::json,?::jsonb)

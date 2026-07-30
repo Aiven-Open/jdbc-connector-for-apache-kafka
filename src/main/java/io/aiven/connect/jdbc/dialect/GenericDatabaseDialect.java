@@ -1367,6 +1367,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
 
     @Override
     public String buildMultiInsertStatement(final TableId table,
+                                            final TableDefinition tableDefinition,
                                             final int records,
                                             final Collection<ColumnId> keyColumns,
                                             final Collection<ColumnId> nonKeyColumns) {
