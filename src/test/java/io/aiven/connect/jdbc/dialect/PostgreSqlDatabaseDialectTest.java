@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Field;
@@ -469,5 +470,25 @@ public class PostgreSqlDatabaseDialectTest extends BaseDialectTest<PostgreSqlDat
             () -> dialect.bindField(mock(PreparedStatement.class), 1, bytesSchema, Collections.emptyMap()))
                 .isInstanceOf(DataException.class)
                 .hasMessage("Unsupported schema type BYTES for ARRAY values");
+    }
+
+    @Test
+    public void shouldUseTrueLiteralForBooleanTrueDefault() {
+        final Schema booleanSchema = SchemaBuilder.bool()
+                .defaultValue(true)
+                .build();
+
+        final SinkRecordField booleanField = new SinkRecordField(
+                booleanSchema,
+                "is_active",
+                false
+        );
+
+        final String actual = dialect.buildCreateTableStatement(
+                tableId,
+                Collections.singletonList(booleanField)
+        );
+
+        assertThat(actual).contains("BOOLEAN DEFAULT TRUE");
     }
 }
