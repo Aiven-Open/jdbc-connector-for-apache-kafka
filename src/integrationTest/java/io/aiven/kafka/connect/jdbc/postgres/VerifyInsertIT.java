@@ -31,7 +31,6 @@ import io.aiven.connect.jdbc.JdbcSinkConnector;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.assertj.db.type.Table;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -143,8 +142,8 @@ public class VerifyInsertIT extends AbstractPostgresIT {
 
         await().atMost(Duration.ofSeconds(20)).pollInterval(Duration.ofSeconds(5))
                 .untilAsserted(() -> {
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).hasNumberOfRows(1);
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).column("ID")
+                    assertThat(table(TEST_TOPIC_NAME)).hasNumberOfRows(1);
+                    assertThat(table(TEST_TOPIC_NAME)).column("ID")
                             .value().isEqualTo("0");
                 });
     }
@@ -162,8 +161,8 @@ public class VerifyInsertIT extends AbstractPostgresIT {
 
         await().atMost(Duration.ofSeconds(20)).pollInterval(Duration.ofSeconds(5))
                 .untilAsserted(() -> {
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).hasNumberOfRows(1);
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).column("ID")
+                    assertThat(table(TEST_TOPIC_NAME)).hasNumberOfRows(1);
+                    assertThat(table(TEST_TOPIC_NAME)).column("ID")
                             .value().isEqualTo("0");
                 });
     }
@@ -181,8 +180,8 @@ public class VerifyInsertIT extends AbstractPostgresIT {
 
         await().atMost(Duration.ofSeconds(20)).pollInterval(Duration.ofSeconds(5))
                 .untilAsserted(() -> {
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).hasNumberOfRows(1);
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).column("ID")
+                    assertThat(table(TEST_TOPIC_NAME)).hasNumberOfRows(1);
+                    assertThat(table(TEST_TOPIC_NAME)).column("ID")
                             .value().isEqualTo("0");
                 });
     }
@@ -200,8 +199,8 @@ public class VerifyInsertIT extends AbstractPostgresIT {
 
         await().atMost(Duration.ofSeconds(20)).pollInterval(Duration.ofSeconds(5))
                 .untilAsserted(() -> {
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).hasNumberOfRows(5);
-                    assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).column("ID")
+                    assertThat(table(TEST_TOPIC_NAME)).hasNumberOfRows(5);
+                    assertThat(table(TEST_TOPIC_NAME)).column("ID")
                             .value().isEqualTo("0")
                             .value().isEqualTo("1")
                             .value().isEqualTo("2")
