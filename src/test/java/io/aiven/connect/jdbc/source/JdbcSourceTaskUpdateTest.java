@@ -309,7 +309,7 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
         db.insert(SINGLE_TABLE_NAME, "modified", new Timestamp(currentTime + 501L).toString(), "id", 5);
 
         // avoid flaky test where only 1 record gets received
-        Thread.sleep(1);
+        Thread.sleep(10);
         verifyPoll(2, "id", Arrays.asList(2, 3), true, false, false, TOPIC_PREFIX + SINGLE_TABLE_NAME);
 
         // make sure we get the rest
