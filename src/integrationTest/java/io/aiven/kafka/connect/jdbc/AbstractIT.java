@@ -16,9 +16,12 @@
 
 package io.aiven.kafka.connect.jdbc;
 
+import javax.sql.DataSource;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +37,9 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
 import org.apache.avro.generic.GenericRecord;
+import org.assertj.db.type.AssertDbConnection;
+import org.assertj.db.type.AssertDbConnectionFactory;
+import org.assertj.db.type.Table;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
@@ -69,6 +75,8 @@ public abstract class AbstractIT {
 
     protected ConnectRunner connectRunner;
 
+    protected AssertDbConnection connection;
+
     @BeforeEach
     void startKafka() throws Exception {
         LOGGER.info("Configure Kafka connect plugins");
@@ -77,6 +85,14 @@ public abstract class AbstractIT {
         setupKafkaConnect(pluginDir);
         producer = createProducer();
         consumer = createConsumer();
+        // Initialize AssertJ DB connection for database assertions
+        connection = AssertDbConnectionFactory.of(getDatasource()).create();
+    }
+
+    protected abstract DataSource getDatasource() throws SQLException;
+
+    protected Table table(final String tableName) {
+        return connection.table(tableName).build();
     }
 
     private static Path setupPluginDir() throws Exception {

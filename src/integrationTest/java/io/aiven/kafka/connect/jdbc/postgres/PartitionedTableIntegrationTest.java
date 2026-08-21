@@ -31,7 +31,6 @@ import io.aiven.connect.jdbc.JdbcSinkConnector;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
-import org.assertj.db.type.Table;
 import org.junit.jupiter.api.Test;
 
 import static org.apache.avro.generic.GenericData.Record;
@@ -77,7 +76,7 @@ public class PartitionedTableIntegrationTest extends AbstractPostgresIT {
         sendTestData(1000);
 
         await().atMost(Duration.ofSeconds(15)).pollInterval(Duration.ofMillis(100))
-            .untilAsserted(() -> assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).hasNumberOfRows(1000));
+            .untilAsserted(() -> assertThat(table(TEST_TOPIC_NAME)).hasNumberOfRows(1000));
     }
 
     @Test
@@ -89,7 +88,7 @@ public class PartitionedTableIntegrationTest extends AbstractPostgresIT {
         sendTestData(1000);
 
         await().atMost(Duration.ofSeconds(15)).pollInterval(Duration.ofMillis(100))
-            .untilAsserted(() -> assertThat(new Table(getDatasource(), TEST_TOPIC_NAME)).hasNumberOfRows(1000));
+            .untilAsserted(() -> assertThat(table(TEST_TOPIC_NAME)).hasNumberOfRows(1000));
     }
 
     private void sendTestData(final int numberOfRecords) throws InterruptedException, ExecutionException {
