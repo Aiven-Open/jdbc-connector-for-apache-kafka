@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Field;
@@ -37,6 +36,7 @@ import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.DataException;
 
+import io.aiven.connect.jdbc.sink.metadata.SinkRecordField;
 import io.aiven.connect.jdbc.source.ColumnMapping;
 import io.aiven.connect.jdbc.util.ColumnDefinition;
 import io.aiven.connect.jdbc.util.ColumnId;
