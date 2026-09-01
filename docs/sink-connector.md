@@ -384,9 +384,55 @@ is fine, our JSON structure perfectly fits this.
 
 The converter requires the knowledge of the value schema. We will use
 `org.apache.kafka.connect.json.JsonConverter` for values with enabled
-schemas. However currently (as of Kafka 2.2.1) `JsonConverter` with
-enabled schemas requires record values to contain explicit schemas in
-themselves. In our case, this looks like this:
+schemas.
+
+Given a Kafka topic with events like this:
+
+```json
+{
+    "text": "Hello",
+    "sent_at": 1560507792000
+}
+```
+
+A schema could be defined in a file `schema.json` like this
+
+```json
+{
+    "type": "struct",
+    "fields": [
+        { "field": "text", "type": "string", "optional": false },
+        { "field": "sent_at", "type": "int64", "name": "org.apache.kafka.connect.data.Timestamp", "optional": false }
+    ]
+}
+```
+
+Messages in this format should be published into `messages` topic.
+
+Here's a configuration that makes this case work, using a [config provider](https://kafka.apache.org/42/configuration/configuration-providers/#directoryconfigprovider) to reference the contents of the schema.json file:
+
+```properties
+name=example-jdbc-sink
+
+# These are defaults, but they're here for clarity:
+key.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter.schemas.enable=true
+value.converter.schema.content=${dirProvider:/path/to/schemas:schema.json}
+
+connector.class=io.aiven.connect.jdbc.JdbcSinkConnector
+connection.url=jdbc:postgresql://localhost:5432/kafkaconnect?user=postgres&password=mysecretpassword
+
+topics=messages
+
+# This is default, but it's here for clarity:
+insert.mode=insert
+```
+
+Prior to Kafka Connect 4.2, `JsonConverter` with enabled schemas requires
+record values to contain explicit schemas in themselves.
+
+That means that messages published to the `messages` topic need to look like this:
 ```json
 {
   "schema": {
@@ -403,9 +449,7 @@ themselves. In our case, this looks like this:
 }
 ```
 
-Messages in this format should be published into `messages` topic.
-
-Here's a configuration that makes this case work:
+A configuration that makes this case work would look like this:
 
 ```properties
 name=example-jdbc-sink
