@@ -58,6 +58,28 @@ import static java.util.stream.IntStream.range;
  */
 public class PostgreSqlDatabaseDialect extends GenericDatabaseDialect {
 
+    @Override
+    protected void formatColumnValue(
+            final ExpressionBuilder builder,
+            final String schemaName,
+            final Map<String, String> schemaParameters,
+            final Schema.Type type,
+            final Object value
+    ) {
+        if (type == Schema.Type.BOOLEAN) {
+            builder.append((Boolean) value ? "TRUE" : "FALSE");
+            return;
+        }
+
+        super.formatColumnValue(
+                builder,
+                schemaName,
+                schemaParameters,
+                type,
+                value
+        );
+    }
+
     private static final Map<Schema.Type, Class<?>> SUPPORTED_ARRAY_VALUE_TYPES_TO_JAVA = Map.of(
             Schema.Type.INT8, short.class,
             Schema.Type.INT16, short.class,
