@@ -309,10 +309,13 @@ public class ExpressionBuilder {
     ) {
         if (quoted) {
             appendLeadingQuote();
-        }
-        sb.append(name);
-        if (quoted) {
+            sb.append(name.replace(
+                rules.trailingQuoteString(),
+                rules.trailingQuoteString() + rules.trailingQuoteString()
+            ));
             appendTrailingQuote();
+        } else {
+            sb.append(name);
         }
         return this;
     }
@@ -328,10 +331,13 @@ public class ExpressionBuilder {
     public ExpressionBuilder appendIdentifier(final String name) {
         if (quoteIdentifiers) {
             appendLeadingQuote();
-        }
-        sb.append(name);
-        if (quoteIdentifiers) {
+            sb.append(name.replace(
+                rules.trailingQuoteString(),
+                rules.trailingQuoteString() + rules.trailingQuoteString()
+            ));
             appendTrailingQuote();
+        } else {
+            sb.append(name);
         }
         return this;
     }
